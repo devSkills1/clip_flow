@@ -1,0 +1,85 @@
+# macOS 平台特定忽略文件
+
+# Flutter 生成的临时文件
+Flutter/ephemeral/
+
+# Xcode 构建产物
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# macOS 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# 应用签名和证书
+*.p12
+*.p8
+*.mobileprovision
+*.cer
+*.crt
+*.key
+
+# 日志文件
+*.log
+*.log.*
+
+# 临时文件
+*.tmp
+*.temp
+temp/
+tmp/
+
+# 缓存文件
+.cache/
+*.cache
+
+# 用户数据
+user_data/
+data/
+*.dat
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 加密密钥
+*.key
+*.pem
+secrets/
+encryption_keys/
+
+# 配置文件
+.env
+.env.local
+config/local.json
+
+# 崩溃报告
+crash_reports/
+*.crash
+
+# 性能数据
+performance_data/
+*.perf
+
+# 备份文件
+*.bak
+*.backup
+*~
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.dmg
+
+# 应用包
+*.app/Contents/_CodeSignature/
+*.app/Contents/CodeResources
+*.app/Contents/embedded.provisionprofile

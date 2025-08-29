@@ -1,0 +1,83 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# 桌面应用特定
+**/macos/Flutter/ephemeral/
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/macos/build/
+**/windows/build/
+**/linux/build/
+
+# 数据库和敏感数据
+*.db
+*.sqlite
+*.sqlite3
+*.key
+*.pem
+*.p12
+*.pfx
+encryption_keys/
+secrets/
+
+# 日志和临时文件
+logs/
+*.log.*
+temp/
+tmp/
+*.tmp
+*.temp
+cache/
+.cache/
+
+# 用户数据
+user_data/
+data/
+*.dat
+
+# 配置文件
+.env
+.env.local
+config/local.json
+
+# 构建产物
+dist/
+out/
+target/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE
+.vscode/settings.json
+.vscode/launch.json
+
+# 压缩和备份
+*.zip
+*.tar.gz
+*.bak
+*~
+
+# 测试和性能
+coverage/
+*.lcov
+*.perf
+crash_reports/
+
+# 应用签名
+*.keystore
+*.jks
+*.p8

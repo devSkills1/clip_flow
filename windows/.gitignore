@@ -1,0 +1,91 @@
+# Windows 平台特定忽略文件
+
+# Flutter 生成的临时文件
+flutter/ephemeral/
+
+# Visual Studio 构建产物
+build/
+Debug/
+Release/
+x64/
+x86/
+*.vcxproj.user
+*.vcxproj.filters
+*.vcxproj.user.filters
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Windows 系统文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# 应用签名和证书
+*.pfx
+*.p12
+*.cer
+*.crt
+*.key
+
+# 日志文件
+*.log
+*.log.*
+
+# 临时文件
+*.tmp
+*.temp
+temp/
+tmp/
+
+# 缓存文件
+.cache/
+*.cache
+
+# 用户数据
+user_data/
+data/
+*.dat
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 加密密钥
+*.key
+*.pem
+secrets/
+encryption_keys/
+
+# 配置文件
+.env
+.env.local
+config/local.json
+
+# 崩溃报告
+crash_reports/
+*.dmp
+*.mdmp
+
+# 性能数据
+performance_data/
+*.perf
+
+# 备份文件
+*.bak
+*.backup
+*~
+
+# 压缩文件
+*.zip
+*.rar
+*.7z
+
+# 可执行文件
+*.exe
+*.dll
+*.pdb
