@@ -81,3 +81,22 @@ crash_reports/
 *.keystore
 *.jks
 *.p8
+
+# ===== 追加：pub get 后常见新增文件 =====
+# iOS/macOS 额外临时/生成
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/.last_build_id
+
+# Android 临时/构建缓存
+**/android/.gradle/
+**/android/.cxx/
+**/android/local.properties
+**/android/key.properties
+
+# VSCode 工作区（若不希望提交）
+.vscode/
+.vscode/*
+
+#忽略所有Pods文件
+ios/Pods/
+macos/Pods/

@@ -182,7 +182,7 @@ lib/
 
 - 项目主页：https://github.com/your-username/clip_flow_pro
 - 问题反馈：https://github.com/your-username/clip_flow_pro/issues
-- 邮箱：your-email@example.com
+- 邮箱：jr.lu.jobs@gmail.com
 
 ---
 
