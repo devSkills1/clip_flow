@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/models/clip_item.dart';
 import '../../../../shared/providers/app_providers.dart';
 import '../../../../core/utils/color_utils.dart';
+import '../../../../core/constants/clip_constants.dart';
 
 class ClipItemCard extends StatelessWidget {
   final ClipItem item;
@@ -29,14 +30,14 @@ class ClipItemCard extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
         child: Container(
           constraints: const BoxConstraints(
             minHeight: 120,
             maxHeight: 300,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(ClipConstants.smallPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -44,7 +45,7 @@ class ClipItemCard extends StatelessWidget {
                 Row(
                   children: [
                     _buildTypeIcon(),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: ClipConstants.smallPadding),
                     Expanded(
                       child: _buildTypeLabel(),
                     ),
@@ -52,7 +53,7 @@ class ClipItemCard extends StatelessWidget {
                   ],
                 ),
                 
-                const SizedBox(height: 8),
+                const SizedBox(height: ClipConstants.smallPadding),
                 
                 // 内容预览
                 Expanded(
@@ -60,7 +61,7 @@ class ClipItemCard extends StatelessWidget {
                 ),
                 
                 // 底部：时间和标签
-                const SizedBox(height: 8),
+                const SizedBox(height: ClipConstants.smallPadding),
                 _buildFooter(),
               ],
             ),
@@ -142,7 +143,7 @@ class ClipItemCard extends StatelessWidget {
     return Text(
       label,
       style: const TextStyle(
-        fontSize: 12,
+        fontSize: ClipConstants.captionFontSize,
         fontWeight: FontWeight.w500,
       ),
     );
@@ -197,24 +198,28 @@ class ClipItemCard extends StatelessWidget {
           height: 40,
           decoration: BoxDecoration(
             color: Color(int.parse(colorHex.replaceFirst('#', '0xFF'))),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
             border: Border.all(color: Colors.grey.shade300),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: ClipConstants.smallPadding),
         Text(
           colorHex,
           style: const TextStyle(
             fontFamily: 'monospace',
             fontWeight: FontWeight.w600,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
         Text(
           colorName,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: ClipConstants.captionFontSize,
             color: Colors.grey.shade600,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
         ),
       ],
     );
@@ -228,11 +233,11 @@ class ClipItemCard extends StatelessWidget {
           width: double.infinity,
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
           ),
           child: item.thumbnail != null && item.thumbnail!.isNotEmpty
               ? ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
                   child: Image.memory(
                     Uint8List.fromList(item.thumbnail!),
                     fit: BoxFit.contain,
@@ -268,7 +273,7 @@ class ClipItemCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Icon(Icons.insert_drive_file, size: 32),
-        const SizedBox(height: 8),
+        const SizedBox(height: ClipConstants.smallPadding),
         Text(
           fileName,
           style: const TextStyle(fontWeight: FontWeight.w500),
@@ -278,7 +283,7 @@ class ClipItemCard extends StatelessWidget {
         Text(
           _formatFileSize(fileSize),
           style: TextStyle(
-            fontSize: 12,
+            fontSize: ClipConstants.captionFontSize,
             color: Colors.grey.shade600,
           ),
         ),
@@ -306,16 +311,16 @@ class ClipItemCard extends StatelessWidget {
             Text(
               '$wordCount 字',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: ClipConstants.captionFontSize,
                 color: Colors.grey.shade600,
               ),
             ),
             if (lineCount > 1) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: ClipConstants.smallPadding),
               Text(
                 '$lineCount 行',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: ClipConstants.captionFontSize,
                   color: Colors.grey.shade600,
                 ),
               ),
@@ -473,15 +478,15 @@ class ClipItemCard extends StatelessWidget {
           ),
         ),
         if (tags.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: ClipConstants.smallPadding / 2),
           Wrap(
-            spacing: 4,
+            spacing: ClipConstants.smallPadding / 2,
             children: tags.take(3).map((tag) {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(ClipConstants.smallPadding / 2),
                 ),
                 child: Text(
                   tag.toString(),

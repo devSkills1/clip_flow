@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/clip_constants.dart';
 import '../../../../shared/providers/app_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -20,7 +21,7 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(ClipConstants.defaultPadding),
         children: [
           // 常规设置
           _buildSection(
@@ -273,7 +274,7 @@ class SettingsPage extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('选择最大保存的剪贴板历史记录数量'),
-            const SizedBox(height: 16),
+            const SizedBox(height: ClipConstants.defaultPadding),
             Row(
               children: [
                 Expanded(

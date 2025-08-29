@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/clip_item.dart';
+import '../../../../core/constants/clip_constants.dart';
 import '../../../../shared/providers/app_providers.dart';
 
 class FilterSidebar extends ConsumerWidget {
@@ -34,7 +35,7 @@ class FilterSidebar extends ConsumerWidget {
         children: [
           // 标题
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(ClipConstants.defaultPadding),
             child: Row(
               children: [
                 Icon(
@@ -81,7 +82,7 @@ class FilterSidebar extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: ClipConstants.defaultPadding, vertical: ClipConstants.smallPadding),
           child: Text(
             '类型',
             style: TextStyle(
@@ -154,7 +155,7 @@ class FilterSidebar extends ConsumerWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: ClipConstants.defaultPadding, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.transparent,
             border: Border(
@@ -171,7 +172,7 @@ class FilterSidebar extends ConsumerWidget {
                 size: 16,
                 color: isSelected ? Colors.blue : Colors.grey,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: ClipConstants.smallPadding),
               Text(
                 label,
                 style: TextStyle(
@@ -192,7 +193,7 @@ class FilterSidebar extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: ClipConstants.defaultPadding, vertical: ClipConstants.smallPadding),
           child: Text(
             '显示模式',
             style: TextStyle(
@@ -233,7 +234,7 @@ class FilterSidebar extends ConsumerWidget {
       child: InkWell(
         onTap: () => onDisplayModeChanged(mode),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: ClipConstants.defaultPadding, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.transparent,
             border: Border(
@@ -250,7 +251,7 @@ class FilterSidebar extends ConsumerWidget {
                 size: 16,
                 color: isSelected ? Colors.blue : Colors.grey,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: ClipConstants.smallPadding),
               Text(
                 label,
                 style: TextStyle(
@@ -268,7 +269,7 @@ class FilterSidebar extends ConsumerWidget {
 
   Widget _buildBottomActions(BuildContext context, WidgetRef ref) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(ClipConstants.defaultPadding),
       child: Column(
         children: [
           SizedBox(
@@ -284,7 +285,7 @@ class FilterSidebar extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: ClipConstants.smallPadding),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(

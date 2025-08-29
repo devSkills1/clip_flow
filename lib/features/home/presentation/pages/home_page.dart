@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/clip_item.dart';
 import '../../../../shared/providers/app_providers.dart';
 import '../../../../core/services/clipboard_service.dart';
+import '../../../../core/constants/clip_constants.dart';
 import '../widgets/clip_item_card.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/filter_sidebar.dart';
@@ -136,7 +137,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       case DisplayMode.compact:
         return ListView.builder(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(ClipConstants.defaultPadding),
           itemCount: items.length,
           itemBuilder: (context, index) {
             return ClipItemCard(
@@ -157,21 +158,21 @@ class _HomePageState extends ConsumerState<HomePage> {
             double childAspectRatio = 1.8;
             
             // 响应式布局：根据窗口宽度调整列数
-            if (constraints.maxWidth > 1200) {
+            if (constraints.maxWidth > ClipConstants.defaultWindowWidth) {
               crossAxisCount = 3;
               childAspectRatio = 1.6;
-            } else if (constraints.maxWidth < 600) {
+            } else if (constraints.maxWidth < ClipConstants.minWindowWidth) {
               crossAxisCount = 1;
               childAspectRatio = 2.5;
             }
             
             return GridView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(ClipConstants.defaultPadding),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+                crossAxisSpacing: ClipConstants.gridSpacing,
+                mainAxisSpacing: ClipConstants.gridSpacing,
                 childAspectRatio: childAspectRatio,
               ),
               itemCount: items.length,

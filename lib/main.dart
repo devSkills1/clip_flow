@@ -5,6 +5,7 @@ import 'app.dart';
 import 'core/services/clipboard_service.dart';
 import 'core/services/database_service.dart';
 import 'core/services/encryption_service.dart';
+import 'core/constants/clip_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +15,7 @@ void main() async {
   
   // 设置窗口属性
   WindowOptions windowOptions = const WindowOptions(
-    size: Size(800, 600),
+    size: Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
     center: true,
     backgroundColor: Colors.white,
     skipTaskbar: false,

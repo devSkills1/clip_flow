@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:image/image.dart' as img;
 
+import '../constants/clip_constants.dart';
+
 class ImageUtils {
   // 检测是否为图片文件
   static bool isImageFile(String filePath) {
@@ -11,8 +13,8 @@ class ImageUtils {
 
   // 生成缩略图
   static Future<Uint8List?> generateThumbnail(Uint8List imageData, {
-    int maxWidth = 200,
-    int maxHeight = 200,
+    int maxWidth = ClipConstants.thumbnailSize,
+    int maxHeight = ClipConstants.thumbnailSize,
   }) async {
     try {
       final image = img.decodeImage(imageData);
@@ -190,9 +192,9 @@ class ImageUtils {
 
   // 格式化文件大小
   static String formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    if (bytes < ClipConstants.bytesInKB) return '$bytes B';
+    if (bytes < ClipConstants.bytesInKB * ClipConstants.bytesInKB) return '${(bytes / ClipConstants.bytesInKB).toStringAsFixed(1)} KB';
+    if (bytes < ClipConstants.bytesInKB * ClipConstants.bytesInKB * ClipConstants.bytesInKB) return '${(bytes / (ClipConstants.bytesInKB * ClipConstants.bytesInKB)).toStringAsFixed(1)} MB';
+    return '${(bytes / (ClipConstants.bytesInKB * ClipConstants.bytesInKB * ClipConstants.bytesInKB)).toStringAsFixed(1)} GB';
   }
 }

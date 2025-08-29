@@ -139,7 +139,7 @@ class ClipboardService {
         break;
       default:
         // 文本内容分析
-        metadata['wordCount'] = content.split(' ').length;
+        metadata['wordCount'] = _calculateWordCount(content);
         metadata['lineCount'] = content.split('\n').length;
         break;
     }
@@ -179,6 +179,24 @@ class ClipboardService {
     } catch (e) {
       // 处理错误
     }
+  }
+
+  int _calculateWordCount(String content) {
+    if (content.isEmpty) return 0;
+    
+    // 移除首尾空白字符
+    final trimmed = content.trim();
+    if (trimmed.isEmpty) return 0;
+    
+    // 统计中文字符数
+    final chineseChars = RegExp(r'[\u4e00-\u9fa5]').allMatches(trimmed).length;
+    
+    // 统计英文单词数（按空格分割）
+    final englishText = trimmed.replaceAll(RegExp(r'[\u4e00-\u9fa5]'), ' ');
+    final englishWords = englishText.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
+    
+    // 返回中文字符数 + 英文单词数
+    return chineseChars + englishWords;
   }
 
   Future<Map<String, dynamic>> _extractImageMetadata(Uint8List imageBytes) async {

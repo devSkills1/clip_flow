@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'shared/providers/app_providers.dart';
+import 'core/constants/clip_constants.dart';
 
 class ClipFlowProApp extends ConsumerWidget {
   const ClipFlowProApp({super.key});
@@ -12,7 +13,7 @@ class ClipFlowProApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
-      title: 'ClipFlow Pro',
+      title: ClipConstants.appName,
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: ThemeData(
@@ -29,7 +30,7 @@ class ClipFlowProApp extends ConsumerWidget {
         cardTheme: CardThemeData(
           elevation: 2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
           ),
         ),
       ),
@@ -47,7 +48,7 @@ class ClipFlowProApp extends ConsumerWidget {
         cardTheme: CardThemeData(
           elevation: 2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
           ),
         ),
       ),

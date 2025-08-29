@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import '../constants/clip_constants.dart';
+
 class ColorUtils {
   // 检测是否为颜色值
   static bool isColorValue(String value) {
@@ -64,9 +66,9 @@ class ColorUtils {
       hex = hex.split('').map((c) => c + c).join();
     }
     
-    final r = int.parse(hex.substring(0, 2), radix: 16);
-    final g = int.parse(hex.substring(2, 4), radix: 16);
-    final b = int.parse(hex.substring(4, 6), radix: 16);
+    final r = int.parse(hex.substring(0, 2), radix: ClipConstants.hexRadix);
+    final g = int.parse(hex.substring(2, 4), radix: ClipConstants.hexRadix);
+    final b = int.parse(hex.substring(4, 6), radix: ClipConstants.hexRadix);
     
     return {'r': r, 'g': g, 'b': b};
   }

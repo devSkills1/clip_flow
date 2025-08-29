@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/clip_constants.dart';
+
 class SearchBarWidget extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onSearchChanged;
@@ -15,7 +17,7 @@ class SearchBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(ClipConstants.defaultPadding),
       child: TextField(
         controller: controller,
         onChanged: onSearchChanged,
@@ -29,7 +31,7 @@ class SearchBarWidget extends StatelessWidget {
                 )
               : null,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
             borderSide: BorderSide.none,
           ),
           filled: true,
