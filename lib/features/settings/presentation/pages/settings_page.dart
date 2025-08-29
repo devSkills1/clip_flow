@@ -278,7 +278,7 @@ class SettingsPage extends ConsumerWidget {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    value: ref.read(userPreferencesProvider).maxHistoryItems,
+                    initialValue: ref.read(userPreferencesProvider).maxHistoryItems,
                     items: [100, 200, 500, 1000, 2000].map((value) {
                       return DropdownMenuItem(
                         value: value,
@@ -312,37 +312,29 @@ class SettingsPage extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择主题模式'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<ThemeMode>(
-              title: const Text('浅色'),
-              value: ThemeMode.light,
-              groupValue: ref.read(themeModeProvider),
-              onChanged: (value) {
-                ref.read(themeModeProvider.notifier).state = value!;
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('深色'),
-              value: ThemeMode.dark,
-              groupValue: ref.read(themeModeProvider),
-              onChanged: (value) {
-                ref.read(themeModeProvider.notifier).state = value!;
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('跟随系统'),
-              value: ThemeMode.system,
-              groupValue: ref.read(themeModeProvider),
-              onChanged: (value) {
-                ref.read(themeModeProvider.notifier).state = value!;
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+        content: RadioGroup<ThemeMode>(
+          groupValue: ref.read(themeModeProvider),
+          onChanged: (value) {
+            ref.read(themeModeProvider.notifier).state = value!;
+            Navigator.of(context).pop();
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<ThemeMode>(
+                title: const Text('浅色'),
+                value: ThemeMode.light,
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('深色'),
+                value: ThemeMode.dark,
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('跟随系统'),
+                value: ThemeMode.system,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -353,43 +345,54 @@ class SettingsPage extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择默认显示模式'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<DisplayMode>(
-              title: const Text('紧凑'),
-              subtitle: const Text('列表形式，显示更多项目'),
-              value: DisplayMode.compact,
-              groupValue: ref.read(userPreferencesProvider).defaultDisplayMode,
-              onChanged: (value) {
-                ref.read(userPreferencesProvider.notifier)
-                    .setDefaultDisplayMode(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<DisplayMode>(
-              title: const Text('默认'),
-              subtitle: const Text('网格形式，平衡显示效果'),
-              value: DisplayMode.normal,
-              groupValue: ref.read(userPreferencesProvider).defaultDisplayMode,
-              onChanged: (value) {
-                ref.read(userPreferencesProvider.notifier)
-                    .setDefaultDisplayMode(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<DisplayMode>(
-              title: const Text('预览'),
-              subtitle: const Text('大卡片形式，突出内容预览'),
-              value: DisplayMode.preview,
-              groupValue: ref.read(userPreferencesProvider).defaultDisplayMode,
-              onChanged: (value) {
-                ref.read(userPreferencesProvider.notifier)
-                    .setDefaultDisplayMode(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+        content: RadioGroup<DisplayMode>(
+          groupValue: ref.read(userPreferencesProvider).defaultDisplayMode,
+          onChanged: (value) {
+            ref.read(userPreferencesProvider.notifier)
+                .setDefaultDisplayMode(value!);
+            Navigator.of(context).pop();
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('紧凑'),
+                subtitle: const Text('列表形式，显示更多项目'),
+                leading: Radio<DisplayMode>(
+                  value: DisplayMode.compact,
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier)
+                      .setDefaultDisplayMode(DisplayMode.compact);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                title: const Text('默认'),
+                subtitle: const Text('网格形式，平衡显示效果'),
+                leading: Radio<DisplayMode>(
+                  value: DisplayMode.normal,
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier)
+                      .setDefaultDisplayMode(DisplayMode.normal);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                title: const Text('预览'),
+                subtitle: const Text('大卡片形式，突出内容预览'),
+                leading: Radio<DisplayMode>(
+                  value: DisplayMode.preview,
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier)
+                      .setDefaultDisplayMode(DisplayMode.preview);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -400,30 +403,40 @@ class SettingsPage extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择语言'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('简体中文'),
-              value: 'zh_CN',
-              groupValue: ref.read(userPreferencesProvider).language,
-              onChanged: (value) {
-                ref.read(userPreferencesProvider.notifier)
-                    .setLanguage(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('English'),
-              value: 'en_US',
-              groupValue: ref.read(userPreferencesProvider).language,
-              onChanged: (value) {
-                ref.read(userPreferencesProvider.notifier)
-                    .setLanguage(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+        content: RadioGroup<String>(
+          groupValue: ref.read(userPreferencesProvider).language,
+          onChanged: (value) {
+            ref.read(userPreferencesProvider.notifier)
+                .setLanguage(value!);
+            Navigator.of(context).pop();
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('简体中文'),
+                leading: Radio<String>(
+                  value: 'zh_CN',
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier)
+                      .setLanguage('zh_CN');
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                title: const Text('English'),
+                leading: Radio<String>(
+                  value: 'en_US',
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier)
+                      .setLanguage('en_US');
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

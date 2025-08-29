@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:image/image.dart' as img;
 
 class ImageUtils {
@@ -125,16 +125,15 @@ class ImageUtils {
       // 简化图片以加快处理速度
       final resized = img.copyResize(image, width: 100, height: 100);
       
-      final colors = <Map<String, int>>[];
       final colorCounts = <String, int>{};
 
-      // 统计颜色
+      // 统计颜色（使用 image 4.x Pixel API 提取通道）
       for (int y = 0; y < resized.height; y++) {
         for (int x = 0; x < resized.width; x++) {
-          final pixel = resized.getPixel(x, y);
-          final r = img.getRed(pixel);
-          final g = img.getGreen(pixel);
-          final b = img.getBlue(pixel);
+          final p = resized.getPixel(x, y); // Pixel
+          final int r = p.r.toInt();
+          final int g = p.g.toInt();
+          final int b = p.b.toInt();
           
           // 量化颜色以减少相似色
           final quantizedR = (r ~/ 32) * 32;

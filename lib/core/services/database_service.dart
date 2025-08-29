@@ -64,6 +64,7 @@ class DatabaseService {
 
   Future<void> insertClipItem(ClipItem item) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     await _database!.insert(
       'clip_items',
@@ -83,6 +84,7 @@ class DatabaseService {
 
   Future<void> updateClipItem(ClipItem item) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     await _database!.update(
       'clip_items',
@@ -101,6 +103,7 @@ class DatabaseService {
 
   Future<void> deleteClipItem(String id) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     await _database!.delete(
       'clip_items',
@@ -111,12 +114,14 @@ class DatabaseService {
 
   Future<void> clearAllClipItems() async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     await _database!.delete('clip_items');
   }
 
   Future<List<ClipItem>> getAllClipItems({int? limit, int? offset}) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
       'clip_items',
@@ -130,6 +135,7 @@ class DatabaseService {
 
   Future<List<ClipItem>> getClipItemsByType(ClipType type, {int? limit, int? offset}) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
       'clip_items',
@@ -145,6 +151,7 @@ class DatabaseService {
 
   Future<List<ClipItem>> getFavoriteClipItems({int? limit, int? offset}) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
       'clip_items',
@@ -160,6 +167,7 @@ class DatabaseService {
 
   Future<List<ClipItem>> searchClipItems(String query, {int? limit, int? offset}) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
       'clip_items',
@@ -175,6 +183,7 @@ class DatabaseService {
 
   Future<ClipItem?> getClipItemById(String id) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
       'clip_items',
@@ -188,6 +197,7 @@ class DatabaseService {
 
   Future<void> toggleFavorite(String id) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final item = await getClipItemById(id);
     if (item != null) {
@@ -197,6 +207,7 @@ class DatabaseService {
 
   Future<int> getClipItemsCount() async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final result = await _database!.rawQuery('SELECT COUNT(*) as count FROM clip_items');
     return Sqflite.firstIntValue(result) ?? 0;
@@ -204,6 +215,7 @@ class DatabaseService {
 
   Future<int> getClipItemsCountByType(ClipType type) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final result = await _database!.rawQuery(
       'SELECT COUNT(*) as count FROM clip_items WHERE type = ?',
@@ -214,6 +226,7 @@ class DatabaseService {
 
   Future<int> getFavoriteClipItemsCount() async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final result = await _database!.rawQuery(
       'SELECT COUNT(*) as count FROM clip_items WHERE is_favorite = 1',
@@ -223,6 +236,7 @@ class DatabaseService {
 
   Future<void> deleteOldClipItems(int maxAgeInDays) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     final cutoffDate = DateTime.now().subtract(Duration(days: maxAgeInDays));
     
@@ -235,6 +249,7 @@ class DatabaseService {
 
   Future<void> deleteClipItemsByType(ClipType type) async {
     if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
 
     await _database!.delete(
       'clip_items',

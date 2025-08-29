@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:math' as math;
 
 class ColorUtils {
   // 检测是否为颜色值
@@ -84,36 +84,29 @@ class ColorUtils {
     return rgbToHsl(rgb['r']!, rgb['g']!, rgb['b']!);
   }
 
-  // RGB转HSL
+  // RGB转HSL（修复类型与 max/min 冲突）
   static Map<String, double> rgbToHsl(int r, int g, int b) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
+    final double rD = r / 255.0;
+    final double gD = g / 255.0;
+    final double bD = b / 255.0;
     
-    final max = [r, g, b].reduce(max);
-    final min = [r, g, b].reduce(min);
-    double h, s, l = (max + min) / 2;
+    final double maxVal = [rD, gD, bD].reduce(math.max);
+    final double minVal = [rD, gD, bD].reduce(math.min);
+    double h = 0;
+    double s = 0;
+    final double l = (maxVal + minVal) / 2.0;
     
-    if (max == min) {
-      h = s = 0; // 灰色
-    } else {
-      final d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      
-      switch (max) {
-        case r:
-          h = (g - b) / d + (g < b ? 6 : 0);
-          break;
-        case g:
-          h = (b - r) / d + 2;
-          break;
-        case b:
-          h = (r - g) / d + 4;
-          break;
-        default:
-          h = 0;
+    if (maxVal != minVal) {
+      final double d = maxVal - minVal;
+      s = l > 0.5 ? d / (2.0 - maxVal - minVal) : d / (maxVal + minVal);
+      if (maxVal == rD) {
+        h = (gD - bD) / d + (gD < bD ? 6.0 : 0.0);
+      } else if (maxVal == gD) {
+        h = (bD - rD) / d + 2.0;
+      } else {
+        h = (rD - gD) / d + 4.0;
       }
-      h /= 6;
+      h /= 6.0;
     }
     
     return {
@@ -134,14 +127,14 @@ class ColorUtils {
     if (s == 0) {
       r = g = b = l; // 灰色
     } else {
-      final hue2rgb = (double p, double q, double t) {
+      double hue2rgb(double p, double q, double t) {
         if (t < 0) t += 1;
         if (t > 1) t -= 1;
         if (t < 1 / 6) return p + (q - p) * 6 * t;
         if (t < 1 / 2) return q;
         if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
         return p;
-      };
+      }
       
       final q = l < 0.5 ? l * (1 + s) : l + s - l * s;
       final p = 2 * l - q;
@@ -157,7 +150,7 @@ class ColorUtils {
     };
   }
 
-  // 计算颜色相似度 (Delta E)
+  // 计算颜色相似度 (Delta E 简化)
   static double calculateColorSimilarity(String color1, String color2) {
     final rgb1 = hexToRgb(color1);
     final rgb2 = hexToRgb(color2);
@@ -170,12 +163,11 @@ class ColorUtils {
     final g2 = rgb2['g']!.toDouble();
     final b2 = rgb2['b']!.toDouble();
     
-    // 简单的欧几里得距离
     final deltaR = r1 - r2;
     final deltaG = g1 - g2;
     final deltaB = b1 - b2;
     
-    return sqrt(deltaR * deltaR + deltaG * deltaG + deltaB * deltaB);
+    return math.sqrt(deltaR * deltaR + deltaG * deltaG + deltaB * deltaB);
   }
 
   // 生成颜色变体
@@ -185,8 +177,8 @@ class ColorUtils {
     
     for (int i = 0; i < count; i++) {
       final h = (hsl['h']! + i * 30) % 360;
-      final s = (hsl['s']! + i * 10).clamp(0, 100);
-      final l = (hsl['l']! + i * 5).clamp(0, 100);
+      final s = (hsl['s']! + i * 10).clamp(0, 100).toDouble();
+      final l = (hsl['l']! + i * 5).clamp(0, 100).toDouble();
       
       final rgb = hslToRgb(h, s, l);
       final hex = rgbToHex(rgb['r']!, rgb['g']!, rgb['b']!);
@@ -203,7 +195,6 @@ class ColorUtils {
     final g = rgb['g']!;
     final b = rgb['b']!;
     
-    // 简单的颜色名称映射
     if (r > 200 && g < 100 && b < 100) return '红色';
     if (r < 100 && g > 200 && b < 100) return '绿色';
     if (r < 100 && g < 100 && b > 200) return '蓝色';

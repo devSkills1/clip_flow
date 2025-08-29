@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/clip_item.dart';
 import '../../../../shared/providers/app_providers.dart';
 
-class FilterSidebar extends StatelessWidget {
+class FilterSidebar extends ConsumerWidget {
   final ClipType? selectedType;
   final ValueChanged<ClipType?> onTypeSelected;
   final ValueChanged<DisplayMode> onDisplayModeChanged;
@@ -18,14 +19,14 @@ class FilterSidebar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: 200,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           right: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -51,18 +52,25 @@ class FilterSidebar extends StatelessWidget {
             ),
           ),
           
-          // 类型筛选
-          _buildTypeFilters(),
-          
-          const Divider(),
-          
-          // 显示模式
-          _buildDisplayModeSelector(),
-          
-          const Spacer(),
+          // 可滚动的内容区域
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // 类型筛选
+                  _buildTypeFilters(),
+                  
+                  const Divider(),
+                  
+                  // 显示模式
+                  _buildDisplayModeSelector(),
+                ],
+              ),
+            ),
+          ),
           
           // 底部操作
-          _buildBottomActions(context),
+          _buildBottomActions(context, ref),
         ],
       ),
     );
@@ -148,7 +156,7 @@ class FilterSidebar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+            color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isSelected ? Colors.blue : Colors.transparent,
@@ -227,7 +235,7 @@ class FilterSidebar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+            color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isSelected ? Colors.blue : Colors.transparent,
@@ -258,7 +266,7 @@ class FilterSidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomActions(BuildContext context) {
+  Widget _buildBottomActions(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -282,20 +290,22 @@ class FilterSidebar extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () {
                 // 清空历史记录
+                final historyNotifier = ref.read(clipboardHistoryProvider.notifier);
                 showDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
+                  builder: (dialogContext) => AlertDialog(
                     title: const Text('确认清空'),
                     content: const Text('确定要清空所有剪贴板历史吗？此操作不可恢复。'),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
                         child: const Text('取消'),
                       ),
                       TextButton(
                         onPressed: () {
                           // 清空历史记录
-                          Navigator.of(context).pop();
+                          historyNotifier.clearHistory();
+                          Navigator.of(dialogContext).pop();
                         },
                         child: const Text('清空'),
                       ),

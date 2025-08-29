@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/models/clip_item.dart';
 import '../../../../shared/providers/app_providers.dart';
+import '../../../../core/services/clipboard_service.dart';
 import '../widgets/clip_item_card.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/filter_sidebar.dart';
@@ -22,12 +22,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // 监听剪贴板流
-    ref.listen(clipboardStreamProvider, (previous, next) {
-      next.whenData((clipItem) {
-        ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
-      });
-    });
   }
 
   @override
@@ -39,6 +33,13 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // 监听剪贴板流
+    ref.listen<AsyncValue<ClipItem>>(clipboardStreamProvider, (previous, next) {
+      next.whenData((clipItem) {
+        ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
+      });
+    });
+    
     final clipboardHistory = ref.watch(clipboardHistoryProvider);
     final searchQuery = ref.watch(searchQueryProvider);
     final filterType = ref.watch(filterTypeProvider);
@@ -91,7 +92,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Expanded(
                   child: filteredItems.isEmpty
                       ? _buildEmptyState()
-                      : _buildClipboardList(filteredItems, displayMode),
+                      : _buildClipboardList(filteredItems, displayMode, searchQuery),
                 ),
               ],
             ),
@@ -130,7 +131,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildClipboardList(List<ClipItem> items, DisplayMode displayMode) {
+  Widget _buildClipboardList(List<ClipItem> items, DisplayMode displayMode, String searchQuery) {
     switch (displayMode) {
       case DisplayMode.compact:
         return ListView.builder(
@@ -141,6 +142,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             return ClipItemCard(
               item: items[index],
               displayMode: DisplayMode.compact,
+              searchQuery: searchQuery,
               onTap: () => _onItemTap(items[index]),
               onFavorite: () => _onFavoriteToggle(items[index]),
               onDelete: () => _onDeleteItem(items[index]),
@@ -149,45 +151,85 @@ class _HomePageState extends ConsumerState<HomePage> {
         );
         
       case DisplayMode.normal:
-        return GridView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.5,
-          ),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            return ClipItemCard(
-              item: items[index],
-              displayMode: DisplayMode.normal,
-              onTap: () => _onItemTap(items[index]),
-              onFavorite: () => _onFavoriteToggle(items[index]),
-              onDelete: () => _onDeleteItem(items[index]),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            int crossAxisCount = 2;
+            double childAspectRatio = 1.8;
+            
+            // 响应式布局：根据窗口宽度调整列数
+            if (constraints.maxWidth > 1200) {
+              crossAxisCount = 3;
+              childAspectRatio = 1.6;
+            } else if (constraints.maxWidth < 600) {
+              crossAxisCount = 1;
+              childAspectRatio = 2.5;
+            }
+            
+            return GridView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: childAspectRatio,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                return ClipItemCard(
+                  item: items[index],
+                  displayMode: DisplayMode.normal,
+                  searchQuery: searchQuery,
+                  onTap: () => _onItemTap(items[index]),
+                  onFavorite: () => _onFavoriteToggle(items[index]),
+                  onDelete: () => _onDeleteItem(items[index]),
+                );
+              },
             );
           },
         );
         
       case DisplayMode.preview:
-        return GridView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.2,
-          ),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            return ClipItemCard(
-              item: items[index],
-              displayMode: DisplayMode.preview,
-              onTap: () => _onItemTap(items[index]),
-              onFavorite: () => _onFavoriteToggle(items[index]),
-              onDelete: () => _onDeleteItem(items[index]),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            int crossAxisCount = 3;
+            double childAspectRatio = 1.5;
+            
+            // 响应式布局：根据窗口宽度调整列数
+            if (constraints.maxWidth > 1400) {
+              crossAxisCount = 4;
+              childAspectRatio = 1.4;
+            } else if (constraints.maxWidth > 900) {
+              crossAxisCount = 3;
+              childAspectRatio = 1.5;
+            } else if (constraints.maxWidth > 600) {
+              crossAxisCount = 2;
+              childAspectRatio = 1.6;
+            } else {
+              crossAxisCount = 1;
+              childAspectRatio = 2.0;
+            }
+            
+            return GridView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: childAspectRatio,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                return ClipItemCard(
+                  item: items[index],
+                  displayMode: DisplayMode.preview,
+                  searchQuery: searchQuery,
+                  onTap: () => _onItemTap(items[index]),
+                  onFavorite: () => _onFavoriteToggle(items[index]),
+                  onDelete: () => _onDeleteItem(items[index]),
+                );
+              },
             );
           },
         );

@@ -44,7 +44,11 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
       final updatedItem = state[existingIndex].copyWith(updatedAt: DateTime.now());
       state = [
         updatedItem,
-        ...state.where((_, index) => index != existingIndex),
+        ...state
+            .asMap()
+            .entries
+            .where((e) => e.key != existingIndex)
+            .map((e) => e.value),
       ];
     } else {
       // 添加新项目到列表开头

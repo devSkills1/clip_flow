@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -11,6 +12,7 @@ class ClipItemCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onFavorite;
   final VoidCallback onDelete;
+  final String? searchQuery;
 
   const ClipItemCard({
     super.key,
@@ -19,6 +21,7 @@ class ClipItemCard extends StatelessWidget {
     required this.onTap,
     required this.onFavorite,
     required this.onDelete,
+    this.searchQuery,
   });
 
   @override
@@ -27,34 +30,40 @@ class ClipItemCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 头部：类型图标和操作按钮
-              Row(
-                children: [
-                  _buildTypeIcon(),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildTypeLabel(),
-                  ),
-                  _buildActionButtons(),
-                ],
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // 内容预览
-              Expanded(
-                child: _buildContentPreview(),
-              ),
-              
-              // 底部：时间和标签
-              const SizedBox(height: 8),
-              _buildFooter(),
-            ],
+        child: Container(
+          constraints: const BoxConstraints(
+            minHeight: 120,
+            maxHeight: 300,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 头部：类型图标和操作按钮
+                Row(
+                  children: [
+                    _buildTypeIcon(),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTypeLabel(),
+                    ),
+                    _buildActionButtons(),
+                  ],
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // 内容预览
+                Expanded(
+                  child: _buildContentPreview(),
+                ),
+                
+                // 底部：时间和标签
+                const SizedBox(height: 8),
+                _buildFooter(),
+              ],
+            ),
           ),
         ),
       ),
@@ -212,15 +221,42 @@ class ClipItemCard extends StatelessWidget {
   }
 
   Widget _buildImagePreview() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Center(
-        child: Icon(Icons.image, size: 32, color: Colors.grey),
-      ),
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: item.thumbnail != null && item.thumbnail!.isNotEmpty
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.memory(
+                    Uint8List.fromList(item.thumbnail!),
+                    fit: BoxFit.contain,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.broken_image, 
+                          size: 32, 
+                          color: theme.colorScheme.outline,
+                        ),
+                      );
+                    },
+                  ),
+                )
+              : Center(
+                  child: Icon(
+                    Icons.image, 
+                    size: 32, 
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+        );
+      },
     );
   }
 
@@ -258,13 +294,13 @@ class ClipItemCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          content,
-          maxLines: displayMode == DisplayMode.compact ? 3 : 5,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 14),
+        Flexible(
+          child: _buildHighlightedText(
+            content,
+            maxLines: displayMode == DisplayMode.compact ? 3 : 5,
+          ),
         ),
-        const Spacer(),
+        const SizedBox(height: 8),
         Row(
           children: [
             Text(
@@ -287,6 +323,138 @@ class ClipItemCard extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildHighlightedText(String text, {required int maxLines}) {
+    if (searchQuery == null || searchQuery!.isEmpty) {
+      return Text(
+        text,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 14),
+        softWrap: true,
+      );
+    }
+
+    final query = searchQuery!.toLowerCase().trim();
+    if (query.isEmpty) {
+      return Text(
+        text,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 14),
+        softWrap: true,
+      );
+    }
+
+    // 按行分割文本，在每行内进行匹配，避免跨行高亮
+    final lines = text.split('\n');
+    final spans = <TextSpan>[];
+    
+    for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      final line = lines[lineIndex];
+      final lowerLine = line.toLowerCase();
+      
+      // 在当前行内查找匹配
+      final lineSpans = <TextSpan>[];
+      int lastEnd = 0;
+      
+      // 简单的字符串匹配，避免复杂的正则表达式
+      int searchIndex = 0;
+      while (searchIndex < lowerLine.length) {
+        final matchIndex = lowerLine.indexOf(query, searchIndex);
+        if (matchIndex == -1) break;
+        
+        // 检查是否是完整的词汇（简单版本）
+        bool isValidMatch = true;
+        
+        // 检查前一个字符
+        if (matchIndex > 0) {
+          final prevChar = lowerLine[matchIndex - 1];
+          if (RegExp(r'[a-zA-Z0-9\u4e00-\u9fa5]').hasMatch(prevChar)) {
+            isValidMatch = false;
+          }
+        }
+        
+        // 检查后一个字符
+        if (isValidMatch && matchIndex + query.length < lowerLine.length) {
+          final nextChar = lowerLine[matchIndex + query.length];
+          if (RegExp(r'[a-zA-Z0-9\u4e00-\u9fa5]').hasMatch(nextChar)) {
+            isValidMatch = false;
+          }
+        }
+        
+        if (isValidMatch) {
+          // 添加匹配前的文本
+          if (matchIndex > lastEnd) {
+            lineSpans.add(TextSpan(
+              text: line.substring(lastEnd, matchIndex),
+              style: const TextStyle(fontSize: 14),
+            ));
+          }
+          
+          // 添加高亮文本
+          lineSpans.add(TextSpan(
+            text: line.substring(matchIndex, matchIndex + query.length),
+            style: const TextStyle(
+              fontSize: 14,
+              backgroundColor: Colors.yellow,
+              color: Colors.black,
+            ),
+          ));
+          
+          lastEnd = matchIndex + query.length;
+          searchIndex = lastEnd;
+        } else {
+          searchIndex = matchIndex + 1;
+        }
+      }
+      
+      // 添加行内剩余文本
+      if (lastEnd < line.length) {
+        lineSpans.add(TextSpan(
+          text: line.substring(lastEnd),
+          style: const TextStyle(fontSize: 14),
+        ));
+      }
+      
+      // 如果没有匹配，添加整行
+      if (lineSpans.isEmpty) {
+        lineSpans.add(TextSpan(
+          text: line,
+          style: const TextStyle(fontSize: 14),
+        ));
+      }
+      
+      // 添加当前行的所有spans
+      spans.addAll(lineSpans);
+      
+      // 如果不是最后一行，添加换行符
+      if (lineIndex < lines.length - 1) {
+        spans.add(const TextSpan(
+          text: '\n',
+          style: TextStyle(fontSize: 14),
+        ));
+      }
+    }
+    
+    // 如果没有匹配项，返回原始文本
+    if (spans.isEmpty) {
+      return Text(
+        text,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 14),
+        softWrap: true,
+      );
+    }
+    
+    return RichText(
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      softWrap: true,
+      text: TextSpan(children: spans),
     );
   }
 

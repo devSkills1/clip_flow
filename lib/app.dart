@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import 'features/home/presentation/pages/home_page.dart';
-import 'features/settings/presentation/pages/settings_page.dart';
 import 'shared/providers/app_providers.dart';
 
 class ClipFlowProApp extends ConsumerWidget {
@@ -29,7 +26,7 @@ class ClipFlowProApp extends ConsumerWidget {
           centerTitle: true,
           elevation: 0,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -47,7 +44,7 @@ class ClipFlowProApp extends ConsumerWidget {
           centerTitle: true,
           elevation: 0,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

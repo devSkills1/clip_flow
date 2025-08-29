@@ -7,6 +7,7 @@ import '../models/clip_item.dart';
 import '../utils/color_utils.dart';
 import '../utils/image_utils.dart';
 
+
 class ClipboardService {
   static final ClipboardService _instance = ClipboardService._internal();
   factory ClipboardService() => _instance;
@@ -21,7 +22,10 @@ class ClipboardService {
   
   Timer? _pollingTimer;
   String _lastClipboardContent = '';
+  Uint8List? _lastImageContent;
   bool _isInitialized = false;
+  
+  static const MethodChannel _platformChannel = MethodChannel('clipboard_service');
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -40,6 +44,17 @@ class ClipboardService {
 
   Future<void> _checkClipboard() async {
     try {
+      // 首先检查图片数据
+      final imageBytes = await _getClipboardImage();
+      if (imageBytes != null && imageBytes.isNotEmpty) {
+        if (_lastImageContent == null || !_areImageBytesEqual(imageBytes, _lastImageContent!)) {
+          _lastImageContent = imageBytes;
+          await _processImageContent(imageBytes);
+          return;
+        }
+      }
+      
+      // 检查文本数据
       final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
       final currentContent = clipboardData?.text ?? '';
       
@@ -132,6 +147,64 @@ class ClipboardService {
     return metadata;
   }
 
+  Future<Uint8List?> _getClipboardImage() async {
+    try {
+      final result = await _platformChannel.invokeMethod<Uint8List>('getClipboardImage');
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  bool _areImageBytesEqual(Uint8List bytes1, Uint8List bytes2) {
+    if (bytes1.length != bytes2.length) return false;
+    for (int i = 0; i < bytes1.length; i++) {
+      if (bytes1[i] != bytes2[i]) return false;
+    }
+    return true;
+  }
+
+  Future<void> _processImageContent(Uint8List imageBytes) async {
+    try {
+      // 创建图片剪贴板项目
+      final clipItem = ClipItem(
+        type: ClipType.image,
+        content: imageBytes,
+        thumbnail: await ImageUtils.generateThumbnail(imageBytes),
+        metadata: await _extractImageMetadata(imageBytes),
+      );
+      
+      // 发送到流
+      _clipboardController.add(clipItem);
+    } catch (e) {
+      // 处理错误
+    }
+  }
+
+  Future<Map<String, dynamic>> _extractImageMetadata(Uint8List imageBytes) async {
+    final metadata = <String, dynamic>{
+      'sourceApp': await _getSourceApp(),
+      'contentLength': imageBytes.length,
+      'tags': <String>[],
+      'fileSize': imageBytes.length,
+    };
+
+    try {
+      final imageInfo = ImageUtils.getImageInfo(imageBytes);
+      metadata['imageFormat'] = imageInfo['format'];
+      metadata['width'] = imageInfo['width'];
+      metadata['height'] = imageInfo['height'];
+      metadata['aspectRatio'] = imageInfo['aspectRatio'];
+    } catch (e) {
+      // 无法获取图片信息
+      metadata['imageFormat'] = 'unknown';
+      metadata['width'] = 0;
+      metadata['height'] = 0;
+    }
+
+    return metadata;
+  }
+
   Future<String?> _getSourceApp() async {
     // 平台特定实现获取源应用
     try {
@@ -145,9 +218,33 @@ class ClipboardService {
 
   Future<void> setClipboardContent(ClipItem item) async {
     try {
-      final content = String.fromCharCodes(item.content);
-      await Clipboard.setData(ClipboardData(text: content));
-      _lastClipboardContent = content;
+      switch (item.type) {
+        case ClipType.image:
+          // 处理图片类型
+          await _setClipboardImage(item.content);
+          break;
+        case ClipType.text:
+        case ClipType.rtf:
+        case ClipType.html:
+        case ClipType.color:
+        case ClipType.file:
+        default:
+          // 处理文本类型
+          final content = String.fromCharCodes(item.content);
+          await Clipboard.setData(ClipboardData(text: content));
+          _lastClipboardContent = content;
+          break;
+      }
+    } catch (e) {
+      // 处理错误
+    }
+  }
+  
+  Future<void> _setClipboardImage(List<int> imageBytes) async {
+    try {
+      await _platformChannel.invokeMethod('setClipboardImage', {
+        'imageData': Uint8List.fromList(imageBytes),
+      });
     } catch (e) {
       // 处理错误
     }
