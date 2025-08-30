@@ -25,6 +25,7 @@ class SettingsPage extends ConsumerWidget {
         children: [
           // 常规设置
           _buildSection(
+            context,
             title: '常规',
             children: [
               _buildSwitchTile(
@@ -66,6 +67,7 @@ class SettingsPage extends ConsumerWidget {
           
           // 安全设置
           _buildSection(
+            context,
             title: '安全',
             children: [
               _buildSwitchTile(
@@ -91,6 +93,7 @@ class SettingsPage extends ConsumerWidget {
           
           // 外观设置
           _buildSection(
+            context,
             title: '外观',
             children: [
               _buildListTile(
@@ -124,6 +127,7 @@ class SettingsPage extends ConsumerWidget {
           
           // 关于
           _buildSection(
+            context,
             title: '关于',
             children: [
               _buildListTile(
@@ -155,7 +159,8 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildSection({
+  Widget _buildSection(
+    BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
@@ -166,8 +171,7 @@ class SettingsPage extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 8),
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -253,7 +257,7 @@ class SettingsPage extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('取消'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () {
               // 设置快捷键逻辑
               Navigator.of(context).pop();
@@ -280,6 +284,14 @@ class SettingsPage extends ConsumerWidget {
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: ref.read(userPreferencesProvider).maxHistoryItems,
+                    decoration: InputDecoration(
+                      labelText: '历史记录数量',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    ),
                     items: [100, 200, 500, 1000, 2000].map((value) {
                       return DropdownMenuItem(
                         value: value,
@@ -299,7 +311,7 @@ class SettingsPage extends ConsumerWidget {
           ],
         ),
         actions: [
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('确定'),
           ),

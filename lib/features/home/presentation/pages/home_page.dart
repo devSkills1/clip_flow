@@ -265,11 +265,15 @@ class _HomePageState extends ConsumerState<HomePage> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('取消'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () {
               ref.read(clipboardHistoryProvider.notifier).removeItem(item.id);
               Navigator.of(context).pop();
             },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
             child: const Text('删除'),
           ),
         ],

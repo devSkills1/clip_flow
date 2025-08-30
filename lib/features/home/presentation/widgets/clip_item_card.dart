@@ -28,6 +28,7 @@ class ClipItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
@@ -37,7 +38,7 @@ class ClipItemCard extends StatelessWidget {
             maxHeight: 300,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(ClipConstants.smallPadding),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -45,24 +46,24 @@ class ClipItemCard extends StatelessWidget {
                 Row(
                   children: [
                     _buildTypeIcon(),
-                    const SizedBox(width: ClipConstants.smallPadding),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _buildTypeLabel(),
                     ),
-                    _buildActionButtons(),
+                    _buildActionButtons(context),
                   ],
                 ),
                 
-                const SizedBox(height: ClipConstants.smallPadding),
+                const SizedBox(height: 12),
                 
                 // 内容预览
                 Expanded(
-                  child: _buildContentPreview(),
+                  child: _buildContentPreview(context),
                 ),
                 
                 // 底部：时间和标签
-                const SizedBox(height: ClipConstants.smallPadding),
-                _buildFooter(),
+                const SizedBox(height: 12),
+                _buildFooter(context),
               ],
             ),
           ),
@@ -149,31 +150,49 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
+        IconButton.filledTonal(
           onPressed: onFavorite,
           icon: Icon(
             item.isFavorite ? Icons.favorite : Icons.favorite_border,
-            size: 16,
-            color: item.isFavorite ? Colors.red : null,
+            size: 18,
           ),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
+          iconSize: 18,
+          style: IconButton.styleFrom(
+            backgroundColor: item.isFavorite 
+                ? theme.colorScheme.errorContainer
+                : theme.colorScheme.surfaceContainerHighest,
+            foregroundColor: item.isFavorite 
+                ? theme.colorScheme.onErrorContainer
+                : theme.colorScheme.onSurfaceVariant,
+            minimumSize: const Size(32, 32),
+            padding: EdgeInsets.zero,
+          ),
         ),
-        IconButton(
+        const SizedBox(width: 8),
+        IconButton.outlined(
           onPressed: onDelete,
-          icon: const Icon(Icons.delete_outline, size: 16),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
+          icon: const Icon(Icons.delete_outline),
+          iconSize: 18,
+          style: IconButton.styleFrom(
+            foregroundColor: theme.colorScheme.error,
+            side: BorderSide(
+              color: theme.colorScheme.outline.withValues(alpha: 0.5),
+            ),
+            minimumSize: const Size(32, 32),
+            padding: EdgeInsets.zero,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildContentPreview() {
+  Widget _buildContentPreview(BuildContext context) {
     switch (item.type) {
       case ClipType.color:
         return _buildColorPreview();
@@ -182,7 +201,7 @@ class ClipItemCard extends StatelessWidget {
       case ClipType.file:
         return _buildFilePreview();
       default:
-        return _buildTextPreview();
+        return _buildTextPreview(context);
     }
   }
 
@@ -291,7 +310,7 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTextPreview() {
+  Widget _buildTextPreview(BuildContext context) {
     final content = String.fromCharCodes(item.content);
     final wordCount = item.metadata['wordCount'] as int? ?? 0;
     final lineCount = item.metadata['lineCount'] as int? ?? 0;
@@ -301,6 +320,7 @@ class ClipItemCard extends StatelessWidget {
       children: [
         Flexible(
           child: _buildHighlightedText(
+              context,
             content,
             maxLines: displayMode == DisplayMode.compact ? 3 : 5,
           ),
@@ -331,13 +351,13 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHighlightedText(String text, {required int maxLines}) {
+  Widget _buildHighlightedText(BuildContext context, String text, {required int maxLines}) {
     if (searchQuery == null || searchQuery!.isEmpty) {
       return Text(
         text,
         maxLines: maxLines,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 14),
+        style: Theme.of(context).textTheme.bodyMedium,
         softWrap: true,
       );
     }
@@ -348,7 +368,7 @@ class ClipItemCard extends StatelessWidget {
         text,
         maxLines: maxLines,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 14),
+        style: Theme.of(context).textTheme.bodyMedium,
         softWrap: true,
       );
     }
@@ -395,17 +415,16 @@ class ClipItemCard extends StatelessWidget {
           if (matchIndex > lastEnd) {
             lineSpans.add(TextSpan(
               text: line.substring(lastEnd, matchIndex),
-              style: const TextStyle(fontSize: 14),
+              style: Theme.of(context).textTheme.bodyMedium,
             ));
           }
           
           // 添加高亮文本
           lineSpans.add(TextSpan(
             text: line.substring(matchIndex, matchIndex + query.length),
-            style: const TextStyle(
-              fontSize: 14,
-              backgroundColor: Colors.yellow,
-              color: Colors.black,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ));
           
@@ -420,7 +439,7 @@ class ClipItemCard extends StatelessWidget {
       if (lastEnd < line.length) {
         lineSpans.add(TextSpan(
           text: line.substring(lastEnd),
-          style: const TextStyle(fontSize: 14),
+          style: Theme.of(context).textTheme.bodyMedium,
         ));
       }
       
@@ -428,7 +447,7 @@ class ClipItemCard extends StatelessWidget {
       if (lineSpans.isEmpty) {
         lineSpans.add(TextSpan(
           text: line,
-          style: const TextStyle(fontSize: 14),
+          style: Theme.of(context).textTheme.bodyMedium,
         ));
       }
       
@@ -437,9 +456,9 @@ class ClipItemCard extends StatelessWidget {
       
       // 如果不是最后一行，添加换行符
       if (lineIndex < lines.length - 1) {
-        spans.add(const TextSpan(
+        spans.add(TextSpan(
           text: '\n',
-          style: TextStyle(fontSize: 14),
+          style: Theme.of(context).textTheme.bodyMedium,
         ));
       }
     }
@@ -450,7 +469,7 @@ class ClipItemCard extends StatelessWidget {
         text,
         maxLines: maxLines,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 14),
+        style: Theme.of(context).textTheme.bodyMedium,
         softWrap: true,
       );
     }
@@ -463,7 +482,7 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(BuildContext context) {
     final tags = item.metadata['tags'] as List<dynamic>? ?? [];
     final timeAgo = _getTimeAgo();
     
@@ -472,9 +491,8 @@ class ClipItemCard extends StatelessWidget {
       children: [
         Text(
           timeAgo,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade500,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         if (tags.isNotEmpty) ...[
@@ -490,9 +508,9 @@ class ClipItemCard extends StatelessWidget {
                 ),
                 child: Text(
                   tag.toString(),
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     fontSize: 10,
-                    color: Colors.blue.shade700,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               );
