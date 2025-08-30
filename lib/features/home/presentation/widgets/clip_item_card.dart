@@ -232,7 +232,7 @@ class ClipItemCard extends StatelessWidget {
         return Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
             borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
           ),
           child: item.thumbnail != null && item.thumbnail!.isNotEmpty

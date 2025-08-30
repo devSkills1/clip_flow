@@ -283,7 +283,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         final width = item.metadata['width'] as int? ?? 0;
         final height = item.metadata['height'] as int? ?? 0;
         final format = item.metadata['format'] as String? ?? '未知格式';
-        return '图片 (${width}x${height}, $format)';
+        return '图片 ($width x $height, $format)';
       case ClipType.file:
         final fileName = item.metadata['fileName'] as String? ?? '未知文件';
         return '文件: $fileName';
