@@ -278,10 +278,24 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   String _getItemPreview(ClipItem item) {
-    final content = String.fromCharCodes(item.content);
-    if (content.length > 50) {
-      return '${content.substring(0, 50)}...';
+    switch (item.type) {
+      case ClipType.image:
+        final width = item.metadata['width'] as int? ?? 0;
+        final height = item.metadata['height'] as int? ?? 0;
+        final format = item.metadata['format'] as String? ?? '未知格式';
+        return '图片 (${width}x${height}, $format)';
+      case ClipType.file:
+        final fileName = item.metadata['fileName'] as String? ?? '未知文件';
+        return '文件: $fileName';
+      case ClipType.color:
+        final colorHex = item.metadata['colorHex'] as String? ?? '#000000';
+        return '颜色: $colorHex';
+      default:
+        final content = String.fromCharCodes(item.content);
+        if (content.length > 50) {
+          return '${content.substring(0, 50)}...';
+        }
+        return content;
     }
-    return content;
   }
 }
