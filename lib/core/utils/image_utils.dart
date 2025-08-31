@@ -8,11 +8,21 @@ class ImageUtils {
   // 检测是否为图片文件
   static bool isImageFile(String filePath) {
     final extension = filePath.split('.').last.toLowerCase();
-    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'heic'].contains(extension);
+    return [
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'bmp',
+      'webp',
+      'svg',
+      'heic',
+    ].contains(extension);
   }
 
   // 生成缩略图
-  static Future<Uint8List?> generateThumbnail(Uint8List imageData, {
+  static Future<Uint8List?> generateThumbnail(
+    Uint8List imageData, {
     int maxWidth = ClipConstants.thumbnailSize,
     int maxHeight = ClipConstants.thumbnailSize,
   }) async {
@@ -34,7 +44,8 @@ class ImageUtils {
   }
 
   // 压缩图片
-  static Future<Uint8List?> compressImage(Uint8List imageData, {
+  static Future<Uint8List?> compressImage(
+    Uint8List imageData, {
     int quality = 80,
     int maxWidth = 1920,
     int maxHeight = 1080,
@@ -96,20 +107,31 @@ class ImageUtils {
 
     // JPEG
     if (data[0] == 0xFF && data[1] == 0xD8) return 'jpeg';
-    
+
     // PNG
-    if (data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47) return 'png';
-    
+    if (data[0] == 0x89 &&
+        data[1] == 0x50 &&
+        data[2] == 0x4E &&
+        data[3] == 0x47) {
+      return 'png';
+    }
+
     // GIF
     if (data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46) return 'gif';
-    
+
     // BMP
     if (data[0] == 0x42 && data[1] == 0x4D) return 'bmp';
-    
+
     // WebP
     if (data.length >= 12 &&
-        data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
-        data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50) {
+        data[0] == 0x52 &&
+        data[1] == 0x49 &&
+        data[2] == 0x46 &&
+        data[3] == 0x46 &&
+        data[8] == 0x57 &&
+        data[9] == 0x45 &&
+        data[10] == 0x42 &&
+        data[11] == 0x50) {
       return 'webp';
     }
 
@@ -117,7 +139,8 @@ class ImageUtils {
   }
 
   // 提取图片主色调
-  static List<Map<String, dynamic>> extractDominantColors(Uint8List imageData, {
+  static List<Map<String, dynamic>> extractDominantColors(
+    Uint8List imageData, {
     int colorCount = 5,
   }) {
     try {
@@ -126,7 +149,7 @@ class ImageUtils {
 
       // 简化图片以加快处理速度
       final resized = img.copyResize(image, width: 100, height: 100);
-      
+
       final colorCounts = <String, int>{};
 
       // 统计颜色（使用 image 4.x Pixel API 提取通道）
@@ -136,12 +159,12 @@ class ImageUtils {
           final int r = p.r.toInt();
           final int g = p.g.toInt();
           final int b = p.b.toInt();
-          
+
           // 量化颜色以减少相似色
           final quantizedR = (r ~/ 32) * 32;
           final quantizedG = (g ~/ 32) * 32;
           final quantizedB = (b ~/ 32) * 32;
-          
+
           final colorKey = '$quantizedR,$quantizedG,$quantizedB';
           colorCounts[colorKey] = (colorCounts[colorKey] ?? 0) + 1;
         }
@@ -178,7 +201,8 @@ class ImageUtils {
   }
 
   // 生成HTML img标签
-  static String toHtmlImage(String imagePath, {
+  static String toHtmlImage(
+    String imagePath, {
     String? altText,
     int? width,
     int? height,
@@ -186,15 +210,22 @@ class ImageUtils {
     final alt = altText ?? '图片';
     final widthAttr = width != null ? ' width="$width"' : '';
     final heightAttr = height != null ? ' height="$height"' : '';
-    
+
     return '<img src="$imagePath" alt="$alt"$widthAttr$heightAttr>';
   }
 
   // 格式化文件大小
   static String formatFileSize(int bytes) {
     if (bytes < ClipConstants.bytesInKB) return '$bytes B';
-    if (bytes < ClipConstants.bytesInKB * ClipConstants.bytesInKB) return '${(bytes / ClipConstants.bytesInKB).toStringAsFixed(1)} KB';
-    if (bytes < ClipConstants.bytesInKB * ClipConstants.bytesInKB * ClipConstants.bytesInKB) return '${(bytes / (ClipConstants.bytesInKB * ClipConstants.bytesInKB)).toStringAsFixed(1)} MB';
+    if (bytes < ClipConstants.bytesInKB * ClipConstants.bytesInKB) {
+      return '${(bytes / ClipConstants.bytesInKB).toStringAsFixed(1)} KB';
+    }
+    if (bytes <
+        ClipConstants.bytesInKB *
+            ClipConstants.bytesInKB *
+            ClipConstants.bytesInKB) {
+      return '${(bytes / (ClipConstants.bytesInKB * ClipConstants.bytesInKB)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (ClipConstants.bytesInKB * ClipConstants.bytesInKB * ClipConstants.bytesInKB)).toStringAsFixed(1)} GB';
   }
 }

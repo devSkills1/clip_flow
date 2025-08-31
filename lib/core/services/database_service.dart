@@ -3,6 +3,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../constants/clip_constants.dart';
+
 import '../models/clip_item.dart';
 
 class DatabaseService {
@@ -19,11 +21,11 @@ class DatabaseService {
     if (_isInitialized) return;
 
     final documentsDirectory = await getApplicationDocumentsDirectory();
-    final path = join(documentsDirectory.path, 'clipflow_pro.db');
+    final path = join(documentsDirectory.path, ClipConstants.databaseName);
 
     _database = await openDatabase(
       path,
-      version: 1,
+      version: ClipConstants.databaseVersion,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -33,7 +35,7 @@ class DatabaseService {
 
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE clip_items (
+      CREATE TABLE ${ClipConstants.clipItemsTable} (
         id TEXT PRIMARY KEY,
         type TEXT NOT NULL,
         content BLOB NOT NULL,
@@ -46,15 +48,15 @@ class DatabaseService {
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_clip_items_type ON clip_items(type)
+      CREATE INDEX idx_clip_items_type ON ${ClipConstants.clipItemsTable}(type)
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_clip_items_created_at ON clip_items(created_at)
+      CREATE INDEX idx_clip_items_created_at ON ${ClipConstants.clipItemsTable}(created_at)
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_clip_items_is_favorite ON clip_items(is_favorite)
+      CREATE INDEX idx_clip_items_is_favorite ON ${ClipConstants.clipItemsTable}(is_favorite)
     ''');
   }
 
@@ -66,20 +68,16 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
-    await _database!.insert(
-      'clip_items',
-      {
-        'id': item.id,
-        'type': item.type.name,
-        'content': item.content,
-        'thumbnail': item.thumbnail,
-        'metadata': jsonEncode(item.metadata),
-        'is_favorite': item.isFavorite ? 1 : 0,
-        'created_at': item.createdAt.toIso8601String(),
-        'updated_at': item.updatedAt.toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await _database!.insert(ClipConstants.clipItemsTable, {
+      'id': item.id,
+      'type': item.type.name,
+      'content': item.content,
+      'thumbnail': item.thumbnail,
+      'metadata': jsonEncode(item.metadata),
+      'is_favorite': item.isFavorite ? 1 : 0,
+      'created_at': item.createdAt.toIso8601String(),
+      'updated_at': item.updatedAt.toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<void> updateClipItem(ClipItem item) async {
@@ -87,7 +85,7 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     await _database!.update(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       {
         'type': item.type.name,
         'content': item.content,
@@ -106,7 +104,7 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     await _database!.delete(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -116,7 +114,7 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
-    await _database!.delete('clip_items');
+    await _database!.delete(ClipConstants.clipItemsTable);
   }
 
   Future<List<ClipItem>> getAllClipItems({int? limit, int? offset}) async {
@@ -124,7 +122,7 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       orderBy: 'created_at DESC',
       limit: limit,
       offset: offset,
@@ -133,12 +131,16 @@ class DatabaseService {
     return maps.map((map) => _mapToClipItem(map)).toList();
   }
 
-  Future<List<ClipItem>> getClipItemsByType(ClipType type, {int? limit, int? offset}) async {
+  Future<List<ClipItem>> getClipItemsByType(
+    ClipType type, {
+    int? limit,
+    int? offset,
+  }) async {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       where: 'type = ?',
       whereArgs: [type.name],
       orderBy: 'created_at DESC',
@@ -154,7 +156,7 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       where: 'is_favorite = ?',
       whereArgs: [1],
       orderBy: 'created_at DESC',
@@ -165,12 +167,16 @@ class DatabaseService {
     return maps.map((map) => _mapToClipItem(map)).toList();
   }
 
-  Future<List<ClipItem>> searchClipItems(String query, {int? limit, int? offset}) async {
+  Future<List<ClipItem>> searchClipItems(
+    String query, {
+    int? limit,
+    int? offset,
+  }) async {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       where: 'metadata LIKE ?',
       whereArgs: ['%$query%'],
       orderBy: 'created_at DESC',
@@ -186,7 +192,7 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     final List<Map<String, dynamic>> maps = await _database!.query(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -209,7 +215,9 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
-    final result = await _database!.rawQuery('SELECT COUNT(*) as count FROM clip_items');
+    final result = await _database!.rawQuery(
+      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable}',
+    );
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
@@ -218,7 +226,7 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     final result = await _database!.rawQuery(
-      'SELECT COUNT(*) as count FROM clip_items WHERE type = ?',
+      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable} WHERE type = ?',
       [type.name],
     );
     return Sqflite.firstIntValue(result) ?? 0;
@@ -229,7 +237,7 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     final result = await _database!.rawQuery(
-      'SELECT COUNT(*) as count FROM clip_items WHERE is_favorite = 1',
+      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable} WHERE is_favorite = 1',
     );
     return Sqflite.firstIntValue(result) ?? 0;
   }
@@ -239,9 +247,9 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     final cutoffDate = DateTime.now().subtract(Duration(days: maxAgeInDays));
-    
+
     await _database!.delete(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       where: 'created_at < ?',
       whereArgs: [cutoffDate.toIso8601String()],
     );
@@ -252,7 +260,7 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     await _database!.delete(
-      'clip_items',
+      ClipConstants.clipItemsTable,
       where: 'type = ?',
       whereArgs: [type.name],
     );

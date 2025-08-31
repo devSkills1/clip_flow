@@ -40,37 +40,51 @@ class EncryptionService {
 
   Future<Uint8List> encrypt(Uint8List data) async {
     if (!_isInitialized) await initialize();
-    if (_encrypter == null || _iv == null) throw Exception('Encryption not initialized');
+    if (_encrypter == null || _iv == null) {
+      throw Exception('Encryption not initialized');
+    }
     final enc = _encrypter!.encryptBytes(data, iv: _iv!);
     return Uint8List.fromList(enc.bytes);
   }
 
   Future<Uint8List> decrypt(Uint8List encryptedData) async {
     if (!_isInitialized) await initialize();
-    if (_encrypter == null || _iv == null) throw Exception('Encryption not initialized');
+    if (_encrypter == null || _iv == null) {
+      throw Exception('Encryption not initialized');
+    }
     final dec = _encrypter!.decryptBytes(Encrypted(encryptedData), iv: _iv!);
     return Uint8List.fromList(dec);
   }
 
   Future<String> encryptString(String text) async {
     if (!_isInitialized) await initialize();
-    if (_encrypter == null || _iv == null) throw Exception('Encryption not initialized');
+    if (_encrypter == null || _iv == null) {
+      throw Exception('Encryption not initialized');
+    }
     return _encrypter!.encrypt(text, iv: _iv!).base64;
   }
 
   Future<String> decryptString(String encryptedText) async {
     if (!_isInitialized) await initialize();
-    if (_encrypter == null || _iv == null) throw Exception('Encryption not initialized');
+    if (_encrypter == null || _iv == null) {
+      throw Exception('Encryption not initialized');
+    }
     return _encrypter!.decrypt(Encrypted.fromBase64(encryptedText), iv: _iv!);
   }
 
   Future<Map<String, dynamic>> encryptMap(Map<String, dynamic> data) async {
     final jsonString = jsonEncode(data);
     final encryptedString = await encryptString(jsonString);
-    return {'encrypted': true, 'data': encryptedString, 'timestamp': DateTime.now().toIso8601String()};
+    return {
+      'encrypted': true,
+      'data': encryptedString,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
   }
 
-  Future<Map<String, dynamic>> decryptMap(Map<String, dynamic> encryptedData) async {
+  Future<Map<String, dynamic>> decryptMap(
+    Map<String, dynamic> encryptedData,
+  ) async {
     if (encryptedData['encrypted'] != true) return encryptedData;
     final encryptedString = encryptedData['data'] as String;
     final decryptedString = await decryptString(encryptedString);
@@ -117,6 +131,11 @@ class EncryptionService {
     if (keyString == null) {
       return {'hasKey': false, 'keyLength': 0, 'isStrong': false};
     }
-    return {'hasKey': true, 'keyLength': keyString.length, 'isStrong': isKeyStrong(keyString), 'algorithm': 'AES-256-GCM'};
+    return {
+      'hasKey': true,
+      'keyLength': keyString.length,
+      'isStrong': isKeyStrong(keyString),
+      'algorithm': 'AES-256-GCM',
+    };
   }
 }

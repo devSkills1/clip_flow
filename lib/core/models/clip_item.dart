@@ -1,15 +1,6 @@
 import 'package:uuid/uuid.dart';
 
-enum ClipType {
-  text,
-  rtf,
-  html,
-  image,
-  color,
-  file,
-  audio,
-  video,
-}
+enum ClipType { text, rtf, html, image, color, file, audio, video }
 
 class ClipItem {
   final String id;
@@ -30,9 +21,9 @@ class ClipItem {
     this.isFavorite = false,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : id = id ?? const Uuid().v4(),
-        createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : id = id ?? const Uuid().v4(),
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   ClipItem copyWith({
     String? id,
@@ -77,8 +68,8 @@ class ClipItem {
         orElse: () => ClipType.text,
       ),
       content: List<int>.from(json['content']),
-      thumbnail: json['thumbnail'] != null 
-          ? List<int>.from(json['thumbnail']) 
+      thumbnail: json['thumbnail'] != null
+          ? List<int>.from(json['thumbnail'])
           : null,
       metadata: Map<String, dynamic>.from(json['metadata']),
       isFavorite: json['isFavorite'] ?? false,

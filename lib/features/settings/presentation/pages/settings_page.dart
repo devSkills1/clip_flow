@@ -41,7 +41,9 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: '关闭窗口时最小化到系统托盘',
                 value: preferences.minimizeToTray,
                 onChanged: (value) {
-                  ref.read(userPreferencesProvider.notifier).toggleMinimizeToTray();
+                  ref
+                      .read(userPreferencesProvider.notifier)
+                      .toggleMinimizeToTray();
                 },
               ),
               _buildListTile(
@@ -62,9 +64,9 @@ class SettingsPage extends ConsumerWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 安全设置
           _buildSection(
             context,
@@ -88,9 +90,9 @@ class SettingsPage extends ConsumerWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 外观设置
           _buildSection(
             context,
@@ -122,9 +124,9 @@ class SettingsPage extends ConsumerWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 关于
           _buildSection(
             context,
@@ -171,16 +173,12 @@ class SettingsPage extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 8),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
-        Card(
-          child: Column(
-            children: children,
-          ),
-        ),
+        Card(child: Column(children: children)),
       ],
     );
   }
@@ -283,14 +281,20 @@ class SettingsPage extends ConsumerWidget {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    initialValue: ref.read(userPreferencesProvider).maxHistoryItems,
+                    initialValue: ref
+                        .read(userPreferencesProvider)
+                        .maxHistoryItems,
                     decoration: InputDecoration(
                       labelText: '历史记录数量',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+                        borderRadius: BorderRadius.circular(
+                          ClipConstants.cardBorderRadius,
+                        ),
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      fillColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                     ),
                     items: [100, 200, 500, 1000, 2000].map((value) {
                       return DropdownMenuItem(
@@ -300,7 +304,8 @@ class SettingsPage extends ConsumerWidget {
                     }).toList(),
                     onChanged: (value) {
                       if (value != null) {
-                        ref.read(userPreferencesProvider.notifier)
+                        ref
+                            .read(userPreferencesProvider.notifier)
                             .setMaxHistoryItems(value);
                       }
                     },
@@ -361,7 +366,8 @@ class SettingsPage extends ConsumerWidget {
         content: RadioGroup<DisplayMode>(
           groupValue: ref.read(userPreferencesProvider).defaultDisplayMode,
           onChanged: (value) {
-            ref.read(userPreferencesProvider.notifier)
+            ref
+                .read(userPreferencesProvider.notifier)
                 .setDefaultDisplayMode(value!);
             Navigator.of(context).pop();
           },
@@ -371,11 +377,10 @@ class SettingsPage extends ConsumerWidget {
               ListTile(
                 title: const Text('紧凑'),
                 subtitle: const Text('列表形式，显示更多项目'),
-                leading: Radio<DisplayMode>(
-                  value: DisplayMode.compact,
-                ),
+                leading: Radio<DisplayMode>(value: DisplayMode.compact),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier)
+                  ref
+                      .read(userPreferencesProvider.notifier)
                       .setDefaultDisplayMode(DisplayMode.compact);
                   Navigator.of(context).pop();
                 },
@@ -383,11 +388,10 @@ class SettingsPage extends ConsumerWidget {
               ListTile(
                 title: const Text('默认'),
                 subtitle: const Text('网格形式，平衡显示效果'),
-                leading: Radio<DisplayMode>(
-                  value: DisplayMode.normal,
-                ),
+                leading: Radio<DisplayMode>(value: DisplayMode.normal),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier)
+                  ref
+                      .read(userPreferencesProvider.notifier)
                       .setDefaultDisplayMode(DisplayMode.normal);
                   Navigator.of(context).pop();
                 },
@@ -395,11 +399,10 @@ class SettingsPage extends ConsumerWidget {
               ListTile(
                 title: const Text('预览'),
                 subtitle: const Text('大卡片形式，突出内容预览'),
-                leading: Radio<DisplayMode>(
-                  value: DisplayMode.preview,
-                ),
+                leading: Radio<DisplayMode>(value: DisplayMode.preview),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier)
+                  ref
+                      .read(userPreferencesProvider.notifier)
                       .setDefaultDisplayMode(DisplayMode.preview);
                   Navigator.of(context).pop();
                 },
@@ -419,8 +422,7 @@ class SettingsPage extends ConsumerWidget {
         content: RadioGroup<String>(
           groupValue: ref.read(userPreferencesProvider).language,
           onChanged: (value) {
-            ref.read(userPreferencesProvider.notifier)
-                .setLanguage(value!);
+            ref.read(userPreferencesProvider.notifier).setLanguage(value!);
             Navigator.of(context).pop();
           },
           child: Column(
@@ -428,22 +430,20 @@ class SettingsPage extends ConsumerWidget {
             children: [
               ListTile(
                 title: const Text('简体中文'),
-                leading: Radio<String>(
-                  value: 'zh_CN',
-                ),
+                leading: Radio<String>(value: 'zh_CN'),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier)
+                  ref
+                      .read(userPreferencesProvider.notifier)
                       .setLanguage('zh_CN');
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
                 title: const Text('English'),
-                leading: Radio<String>(
-                  value: 'en_US',
-                ),
+                leading: Radio<String>(value: 'en_US'),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier)
+                  ref
+                      .read(userPreferencesProvider.notifier)
                       .setLanguage('en_US');
                   Navigator.of(context).pop();
                 },

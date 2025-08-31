@@ -25,10 +25,7 @@ class SearchBarWidget extends StatelessWidget {
           hintText: '搜索剪贴板历史...',
           prefixIcon: const Icon(Icons.search),
           suffixIcon: controller.text.isNotEmpty
-              ? IconButton(
-                  onPressed: onClear,
-                  icon: const Icon(Icons.clear),
-                )
+              ? IconButton(onPressed: onClear, icon: const Icon(Icons.clear))
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),

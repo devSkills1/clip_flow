@@ -14,10 +14,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const HomePage(),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const HomePage()),
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsPage(),
@@ -27,21 +24,27 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 // 剪贴板历史提供者
-final clipboardHistoryProvider = StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
-  return ClipboardHistoryNotifier();
-});
+final clipboardHistoryProvider =
+    StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
+      return ClipboardHistoryNotifier();
+    });
 
 class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   ClipboardHistoryNotifier() : super([]);
 
   void addItem(ClipItem item) {
     // 避免重复添加相同内容
-    final existingIndex = state.indexWhere((existing) => 
-        String.fromCharCodes(existing.content) == String.fromCharCodes(item.content));
-    
+    final existingIndex = state.indexWhere(
+      (existing) =>
+          String.fromCharCodes(existing.content) ==
+          String.fromCharCodes(item.content),
+    );
+
     if (existingIndex != -1) {
       // 更新现有项目的时间戳
-      final updatedItem = state[existingIndex].copyWith(updatedAt: DateTime.now());
+      final updatedItem = state[existingIndex].copyWith(
+        updatedAt: DateTime.now(),
+      );
       state = [
         updatedItem,
         ...state
@@ -53,7 +56,7 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     } else {
       // 添加新项目到列表开头
       state = [item, ...state];
-      
+
       // 限制历史记录数量
       if (state.length > 500) {
         state = state.take(500).toList();
@@ -88,14 +91,16 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
 
   List<ClipItem> search(String query) {
     if (query.isEmpty) return state;
-    
+
     final lowercaseQuery = query.toLowerCase();
     return state.where((item) {
       final content = String.fromCharCodes(item.content).toLowerCase();
-      final tags = (item.metadata['tags'] as List<dynamic>?)
-          ?.map((tag) => tag.toString().toLowerCase())
-          .join(' ') ?? '';
-      
+      final tags =
+          (item.metadata['tags'] as List<dynamic>?)
+              ?.map((tag) => tag.toString().toLowerCase())
+              .join(' ') ??
+          '';
+
       return content.contains(lowercaseQuery) || tags.contains(lowercaseQuery);
     }).toList();
   }
@@ -110,12 +115,15 @@ final filterTypeProvider = StateProvider<ClipType?>((ref) => null);
 // 显示模式提供者 (紧凑/默认/预览)
 enum DisplayMode { compact, normal, preview }
 
-final displayModeProvider = StateProvider<DisplayMode>((ref) => DisplayMode.normal);
+final displayModeProvider = StateProvider<DisplayMode>(
+  (ref) => DisplayMode.normal,
+);
 
 // 用户偏好设置提供者
-final userPreferencesProvider = StateNotifierProvider<UserPreferencesNotifier, UserPreferences>((ref) {
-  return UserPreferencesNotifier();
-});
+final userPreferencesProvider =
+    StateNotifierProvider<UserPreferencesNotifier, UserPreferences>((ref) {
+      return UserPreferencesNotifier();
+    });
 
 class UserPreferences {
   final bool autoStart;

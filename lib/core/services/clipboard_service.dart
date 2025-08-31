@@ -7,7 +7,6 @@ import '../models/clip_item.dart';
 import '../utils/color_utils.dart';
 import '../utils/image_utils.dart';
 
-
 class ClipboardService {
   static final ClipboardService _instance = ClipboardService._internal();
   factory ClipboardService() => _instance;
@@ -15,21 +14,23 @@ class ClipboardService {
 
   static ClipboardService get instance => _instance;
 
-  final StreamController<ClipItem> _clipboardController = 
+  final StreamController<ClipItem> _clipboardController =
       StreamController<ClipItem>.broadcast();
-  
+
   Stream<ClipItem> get clipboardStream => _clipboardController.stream;
-  
+
   Timer? _pollingTimer;
   String _lastClipboardContent = '';
   Uint8List? _lastImageContent;
   bool _isInitialized = false;
-  
-  static const MethodChannel _platformChannel = MethodChannel('clipboard_service');
+
+  static const MethodChannel _platformChannel = MethodChannel(
+    'clipboard_service',
+  );
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     // 启动剪贴板监听
     _startPolling();
     _isInitialized = true;
@@ -47,18 +48,20 @@ class ClipboardService {
       // 首先检查图片数据
       final imageBytes = await _getClipboardImage();
       if (imageBytes != null && imageBytes.isNotEmpty) {
-        if (_lastImageContent == null || !_areImageBytesEqual(imageBytes, _lastImageContent!)) {
+        if (_lastImageContent == null ||
+            !_areImageBytesEqual(imageBytes, _lastImageContent!)) {
           _lastImageContent = imageBytes;
           await _processImageContent(imageBytes);
           return;
         }
       }
-      
+
       // 检查文本数据
       final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
       final currentContent = clipboardData?.text ?? '';
-      
-      if (currentContent.isNotEmpty && currentContent != _lastClipboardContent) {
+
+      if (currentContent.isNotEmpty &&
+          currentContent != _lastClipboardContent) {
         _lastClipboardContent = currentContent;
         await _processClipboardContent(currentContent);
       }
@@ -71,14 +74,14 @@ class ClipboardService {
     try {
       // 检测内容类型
       final clipType = _detectContentType(content);
-      
+
       // 创建剪贴板项目
       final clipItem = ClipItem(
         type: clipType,
         content: content.codeUnits,
         metadata: await _extractMetadata(content, clipType),
       );
-      
+
       // 发送到流
       _clipboardController.add(clipItem);
     } catch (e) {
@@ -91,30 +94,37 @@ class ClipboardService {
     if (ColorUtils.isColorValue(content)) {
       return ClipType.color;
     }
-    
+
     // 检测文件路径
-    if (content.startsWith('file://') || content.contains('/') || content.contains('\\')) {
+    if (content.startsWith('file://') ||
+        content.contains('/') ||
+        content.contains('\\')) {
       final file = File(content.replaceFirst('file://', ''));
       if (file.existsSync()) {
         return ClipType.file;
       }
     }
-    
+
     // 检测HTML
-    if (content.contains('<html>') || content.contains('<div>') || content.contains('<p>')) {
+    if (content.contains('<html>') ||
+        content.contains('<div>') ||
+        content.contains('<p>')) {
       return ClipType.html;
     }
-    
+
     // 检测富文本
     if (content.contains('\\rtf') || content.contains('\\fonttbl')) {
       return ClipType.rtf;
     }
-    
+
     // 默认为纯文本
     return ClipType.text;
   }
 
-  Future<Map<String, dynamic>> _extractMetadata(String content, ClipType type) async {
+  Future<Map<String, dynamic>> _extractMetadata(
+    String content,
+    ClipType type,
+  ) async {
     final metadata = <String, dynamic>{
       'sourceApp': await _getSourceApp(),
       'contentLength': content.length,
@@ -149,7 +159,9 @@ class ClipboardService {
 
   Future<Uint8List?> _getClipboardImage() async {
     try {
-      final result = await _platformChannel.invokeMethod<Uint8List>('getClipboardImage');
+      final result = await _platformChannel.invokeMethod<Uint8List>(
+        'getClipboardImage',
+      );
       return result;
     } catch (e) {
       return null;
@@ -173,7 +185,7 @@ class ClipboardService {
         thumbnail: await ImageUtils.generateThumbnail(imageBytes),
         metadata: await _extractImageMetadata(imageBytes),
       );
-      
+
       // 发送到流
       _clipboardController.add(clipItem);
     } catch (e) {
@@ -183,23 +195,28 @@ class ClipboardService {
 
   int _calculateWordCount(String content) {
     if (content.isEmpty) return 0;
-    
+
     // 移除首尾空白字符
     final trimmed = content.trim();
     if (trimmed.isEmpty) return 0;
-    
+
     // 统计中文字符数
     final chineseChars = RegExp(r'[\u4e00-\u9fa5]').allMatches(trimmed).length;
-    
+
     // 统计英文单词数（按空格分割）
     final englishText = trimmed.replaceAll(RegExp(r'[\u4e00-\u9fa5]'), ' ');
-    final englishWords = englishText.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
-    
+    final englishWords = englishText
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .length;
+
     // 返回中文字符数 + 英文单词数
     return chineseChars + englishWords;
   }
 
-  Future<Map<String, dynamic>> _extractImageMetadata(Uint8List imageBytes) async {
+  Future<Map<String, dynamic>> _extractImageMetadata(
+    Uint8List imageBytes,
+  ) async {
     final metadata = <String, dynamic>{
       'sourceApp': await _getSourceApp(),
       'contentLength': imageBytes.length,
@@ -257,7 +274,7 @@ class ClipboardService {
       // 处理错误
     }
   }
-  
+
   Future<void> _setClipboardImage(List<int> imageBytes) async {
     try {
       await _platformChannel.invokeMethod('setClipboardImage', {

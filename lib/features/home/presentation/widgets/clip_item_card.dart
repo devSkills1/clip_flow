@@ -33,10 +33,7 @@ class ClipItemCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
         child: Container(
-          constraints: const BoxConstraints(
-            minHeight: 120,
-            maxHeight: 300,
-          ),
+          constraints: const BoxConstraints(minHeight: 120, maxHeight: 300),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -47,20 +44,16 @@ class ClipItemCard extends StatelessWidget {
                   children: [
                     _buildTypeIcon(),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildTypeLabel(),
-                    ),
+                    Expanded(child: _buildTypeLabel()),
                     _buildActionButtons(context),
                   ],
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // 内容预览
-                Expanded(
-                  child: _buildContentPreview(context),
-                ),
-                
+                Expanded(child: _buildContentPreview(context)),
+
                 // 底部：时间和标签
                 const SizedBox(height: 12),
                 _buildFooter(context),
@@ -75,7 +68,7 @@ class ClipItemCard extends StatelessWidget {
   Widget _buildTypeIcon() {
     IconData iconData;
     Color iconColor;
-    
+
     switch (item.type) {
       case ClipType.text:
         iconData = Icons.text_fields;
@@ -107,13 +100,13 @@ class ClipItemCard extends StatelessWidget {
         iconColor = Colors.pink;
         break;
     }
-    
+
     return Icon(iconData, size: 16, color: iconColor);
   }
 
   Widget _buildTypeLabel() {
     String label;
-    
+
     switch (item.type) {
       case ClipType.text:
         label = '文本';
@@ -140,7 +133,7 @@ class ClipItemCard extends StatelessWidget {
         label = '视频';
         break;
     }
-    
+
     return Text(
       label,
       style: const TextStyle(
@@ -152,7 +145,7 @@ class ClipItemCard extends StatelessWidget {
 
   Widget _buildActionButtons(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -164,10 +157,10 @@ class ClipItemCard extends StatelessWidget {
           ),
           iconSize: 18,
           style: IconButton.styleFrom(
-            backgroundColor: item.isFavorite 
+            backgroundColor: item.isFavorite
                 ? theme.colorScheme.errorContainer
                 : theme.colorScheme.surfaceContainerHighest,
-            foregroundColor: item.isFavorite 
+            foregroundColor: item.isFavorite
                 ? theme.colorScheme.onErrorContainer
                 : theme.colorScheme.onSurfaceVariant,
             minimumSize: const Size(32, 32),
@@ -208,7 +201,7 @@ class ClipItemCard extends StatelessWidget {
   Widget _buildColorPreview() {
     final colorHex = item.metadata['colorHex'] as String? ?? '#000000';
     final colorName = ColorUtils.getColorName(colorHex);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -256,7 +249,9 @@ class ClipItemCard extends StatelessWidget {
           ),
           child: item.thumbnail != null && item.thumbnail!.isNotEmpty
               ? ClipRRect(
-                  borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+                  borderRadius: BorderRadius.circular(
+                    ClipConstants.cardBorderRadius,
+                  ),
                   child: Image.memory(
                     Uint8List.fromList(item.thumbnail!),
                     fit: BoxFit.contain,
@@ -264,8 +259,8 @@ class ClipItemCard extends StatelessWidget {
                     errorBuilder: (context, error, stackTrace) {
                       return Center(
                         child: Icon(
-                          Icons.broken_image, 
-                          size: 32, 
+                          Icons.broken_image,
+                          size: 32,
                           color: theme.colorScheme.outline,
                         ),
                       );
@@ -274,8 +269,8 @@ class ClipItemCard extends StatelessWidget {
                 )
               : Center(
                   child: Icon(
-                    Icons.image, 
-                    size: 32, 
+                    Icons.image,
+                    size: 32,
                     color: theme.colorScheme.outline,
                   ),
                 ),
@@ -287,7 +282,7 @@ class ClipItemCard extends StatelessWidget {
   Widget _buildFilePreview() {
     final fileName = item.metadata['fileName'] as String? ?? '未知文件';
     final fileSize = item.metadata['fileSize'] as int? ?? 0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -314,13 +309,13 @@ class ClipItemCard extends StatelessWidget {
     final content = String.fromCharCodes(item.content);
     final wordCount = item.metadata['wordCount'] as int? ?? 0;
     final lineCount = item.metadata['lineCount'] as int? ?? 0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Flexible(
           child: _buildHighlightedText(
-              context,
+            context,
             content,
             maxLines: displayMode == DisplayMode.compact ? 3 : 5,
           ),
@@ -351,7 +346,11 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHighlightedText(BuildContext context, String text, {required int maxLines}) {
+  Widget _buildHighlightedText(
+    BuildContext context,
+    String text, {
+    required int maxLines,
+  }) {
     if (searchQuery == null || searchQuery!.isEmpty) {
       return Text(
         text,
@@ -376,24 +375,24 @@ class ClipItemCard extends StatelessWidget {
     // 按行分割文本，在每行内进行匹配，避免跨行高亮
     final lines = text.split('\n');
     final spans = <TextSpan>[];
-    
+
     for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       final line = lines[lineIndex];
       final lowerLine = line.toLowerCase();
-      
+
       // 在当前行内查找匹配
       final lineSpans = <TextSpan>[];
       int lastEnd = 0;
-      
+
       // 简单的字符串匹配，避免复杂的正则表达式
       int searchIndex = 0;
       while (searchIndex < lowerLine.length) {
         final matchIndex = lowerLine.indexOf(query, searchIndex);
         if (matchIndex == -1) break;
-        
+
         // 检查是否是完整的词汇（简单版本）
         bool isValidMatch = true;
-        
+
         // 检查前一个字符
         if (matchIndex > 0) {
           final prevChar = lowerLine[matchIndex - 1];
@@ -401,7 +400,7 @@ class ClipItemCard extends StatelessWidget {
             isValidMatch = false;
           }
         }
-        
+
         // 检查后一个字符
         if (isValidMatch && matchIndex + query.length < lowerLine.length) {
           final nextChar = lowerLine[matchIndex + query.length];
@@ -409,60 +408,64 @@ class ClipItemCard extends StatelessWidget {
             isValidMatch = false;
           }
         }
-        
+
         if (isValidMatch) {
           // 添加匹配前的文本
           if (matchIndex > lastEnd) {
-            lineSpans.add(TextSpan(
-              text: line.substring(lastEnd, matchIndex),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ));
+            lineSpans.add(
+              TextSpan(
+                text: line.substring(lastEnd, matchIndex),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            );
           }
-          
+
           // 添加高亮文本
-          lineSpans.add(TextSpan(
-            text: line.substring(matchIndex, matchIndex + query.length),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
+          lineSpans.add(
+            TextSpan(
+              text: line.substring(matchIndex, matchIndex + query.length),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
             ),
-          ));
-          
+          );
+
           lastEnd = matchIndex + query.length;
           searchIndex = lastEnd;
         } else {
           searchIndex = matchIndex + 1;
         }
       }
-      
+
       // 添加行内剩余文本
       if (lastEnd < line.length) {
-        lineSpans.add(TextSpan(
-          text: line.substring(lastEnd),
-          style: Theme.of(context).textTheme.bodyMedium,
-        ));
+        lineSpans.add(
+          TextSpan(
+            text: line.substring(lastEnd),
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        );
       }
-      
+
       // 如果没有匹配，添加整行
       if (lineSpans.isEmpty) {
-        lineSpans.add(TextSpan(
-          text: line,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ));
+        lineSpans.add(
+          TextSpan(text: line, style: Theme.of(context).textTheme.bodyMedium),
+        );
       }
-      
+
       // 添加当前行的所有spans
       spans.addAll(lineSpans);
-      
+
       // 如果不是最后一行，添加换行符
       if (lineIndex < lines.length - 1) {
-        spans.add(TextSpan(
-          text: '\n',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ));
+        spans.add(
+          TextSpan(text: '\n', style: Theme.of(context).textTheme.bodyMedium),
+        );
       }
     }
-    
+
     // 如果没有匹配项，返回原始文本
     if (spans.isEmpty) {
       return Text(
@@ -473,7 +476,7 @@ class ClipItemCard extends StatelessWidget {
         softWrap: true,
       );
     }
-    
+
     return RichText(
       maxLines: maxLines,
       overflow: TextOverflow.ellipsis,
@@ -485,7 +488,7 @@ class ClipItemCard extends StatelessWidget {
   Widget _buildFooter(BuildContext context) {
     final tags = item.metadata['tags'] as List<dynamic>? ?? [];
     final timeAgo = _getTimeAgo();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -504,7 +507,9 @@ class ClipItemCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(ClipConstants.smallPadding / 2),
+                  borderRadius: BorderRadius.circular(
+                    ClipConstants.smallPadding / 2,
+                  ),
                 ),
                 child: Text(
                   tag.toString(),
@@ -524,14 +529,16 @@ class ClipItemCard extends StatelessWidget {
   String _formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
   String _getTimeAgo() {
     final now = DateTime.now();
     final difference = now.difference(item.createdAt);
-    
+
     if (difference.inMinutes < 1) {
       return '刚刚';
     } else if (difference.inMinutes < 60) {

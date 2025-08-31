@@ -40,7 +40,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
       });
     });
-    
+
     final clipboardHistory = ref.watch(clipboardHistoryProvider);
     final searchQuery = ref.watch(searchQueryProvider);
     final filterType = ref.watch(filterTypeProvider);
@@ -48,13 +48,17 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // 过滤和搜索
     List<ClipItem> filteredItems = clipboardHistory;
-    
+
     if (filterType != null) {
-      filteredItems = filteredItems.where((item) => item.type == filterType).toList();
+      filteredItems = filteredItems
+          .where((item) => item.type == filterType)
+          .toList();
     }
-    
+
     if (searchQuery.isNotEmpty) {
-      filteredItems = ref.read(clipboardHistoryProvider.notifier).search(searchQuery);
+      filteredItems = ref
+          .read(clipboardHistoryProvider.notifier)
+          .search(searchQuery);
     }
 
     return Scaffold(
@@ -72,7 +76,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             },
             displayMode: displayMode,
           ),
-          
+
           // 主内容区域
           Expanded(
             child: Column(
@@ -88,12 +92,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ref.read(searchQueryProvider.notifier).state = '';
                   },
                 ),
-                
+
                 // 内容区域
                 Expanded(
                   child: filteredItems.isEmpty
                       ? _buildEmptyState()
-                      : _buildClipboardList(filteredItems, displayMode, searchQuery),
+                      : _buildClipboardList(
+                          filteredItems,
+                          displayMode,
+                          searchQuery,
+                        ),
                 ),
               ],
             ),
@@ -132,7 +140,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildClipboardList(List<ClipItem> items, DisplayMode displayMode, String searchQuery) {
+  Widget _buildClipboardList(
+    List<ClipItem> items,
+    DisplayMode displayMode,
+    String searchQuery,
+  ) {
     switch (displayMode) {
       case DisplayMode.compact:
         return ListView.builder(
@@ -150,13 +162,13 @@ class _HomePageState extends ConsumerState<HomePage> {
             );
           },
         );
-        
+
       case DisplayMode.normal:
         return LayoutBuilder(
           builder: (context, constraints) {
             int crossAxisCount = 2;
             double childAspectRatio = 1.8;
-            
+
             // 响应式布局：根据窗口宽度调整列数
             if (constraints.maxWidth > ClipConstants.defaultWindowWidth) {
               crossAxisCount = 3;
@@ -165,7 +177,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               crossAxisCount = 1;
               childAspectRatio = 2.5;
             }
-            
+
             return GridView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(ClipConstants.defaultPadding),
@@ -189,13 +201,13 @@ class _HomePageState extends ConsumerState<HomePage> {
             );
           },
         );
-        
+
       case DisplayMode.preview:
         return LayoutBuilder(
           builder: (context, constraints) {
             int crossAxisCount = 3;
             double childAspectRatio = 1.5;
-            
+
             // 响应式布局：根据窗口宽度调整列数
             if (constraints.maxWidth > 1400) {
               crossAxisCount = 4;
@@ -210,7 +222,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               crossAxisCount = 1;
               childAspectRatio = 2.0;
             }
-            
+
             return GridView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
@@ -240,7 +252,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _onItemTap(ClipItem item) {
     // 复制到剪贴板
     ref.read(clipboardServiceProvider).setClipboardContent(item);
-    
+
     // 显示提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

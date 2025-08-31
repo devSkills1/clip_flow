@@ -32,7 +32,7 @@ class ClipFlowProApp extends ConsumerWidget {
       useMaterial3: true,
       colorScheme: colorScheme,
       fontFamily: 'SF Pro Display',
-      
+
       // AppBar主题
       appBarTheme: AppBarTheme(
         centerTitle: true,
@@ -42,7 +42,7 @@ class ClipFlowProApp extends ConsumerWidget {
         foregroundColor: colorScheme.onSurface,
         surfaceTintColor: colorScheme.surfaceTint,
       ),
-      
+
       // Card主题
       cardTheme: CardThemeData(
         elevation: 1,
@@ -51,7 +51,7 @@ class ClipFlowProApp extends ConsumerWidget {
           borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
         ),
       ),
-      
+
       // FilledButton主题
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -60,7 +60,7 @@ class ClipFlowProApp extends ConsumerWidget {
           ),
         ),
       ),
-      
+
       // OutlinedButton主题
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -69,7 +69,7 @@ class ClipFlowProApp extends ConsumerWidget {
           ),
         ),
       ),
-      
+
       // TextButton主题
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -78,7 +78,7 @@ class ClipFlowProApp extends ConsumerWidget {
           ),
         ),
       ),
-      
+
       // InputDecoration主题
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -92,14 +92,14 @@ class ClipFlowProApp extends ConsumerWidget {
           vertical: 12,
         ),
       ),
-      
+
       // NavigationBar主题
       navigationBarTheme: NavigationBarThemeData(
         elevation: 1,
         backgroundColor: colorScheme.surface,
         surfaceTintColor: colorScheme.surfaceTint,
       ),
-      
+
       // Divider主题
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant,
@@ -118,7 +118,7 @@ class ClipFlowProApp extends ConsumerWidget {
       useMaterial3: true,
       colorScheme: colorScheme,
       fontFamily: 'SF Pro Display',
-      
+
       // AppBar主题
       appBarTheme: AppBarTheme(
         centerTitle: true,
@@ -128,7 +128,7 @@ class ClipFlowProApp extends ConsumerWidget {
         foregroundColor: colorScheme.onSurface,
         surfaceTintColor: colorScheme.surfaceTint,
       ),
-      
+
       // Card主题
       cardTheme: CardThemeData(
         elevation: 1,
@@ -137,7 +137,7 @@ class ClipFlowProApp extends ConsumerWidget {
           borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
         ),
       ),
-      
+
       // FilledButton主题
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -146,7 +146,7 @@ class ClipFlowProApp extends ConsumerWidget {
           ),
         ),
       ),
-      
+
       // OutlinedButton主题
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -155,7 +155,7 @@ class ClipFlowProApp extends ConsumerWidget {
           ),
         ),
       ),
-      
+
       // TextButton主题
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -164,7 +164,7 @@ class ClipFlowProApp extends ConsumerWidget {
           ),
         ),
       ),
-      
+
       // InputDecoration主题
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -178,14 +178,14 @@ class ClipFlowProApp extends ConsumerWidget {
           vertical: 12,
         ),
       ),
-      
+
       // NavigationBar主题
       navigationBarTheme: NavigationBarThemeData(
         elevation: 1,
         backgroundColor: colorScheme.surface,
         surfaceTintColor: colorScheme.surfaceTint,
       ),
-      
+
       // Divider主题
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant,

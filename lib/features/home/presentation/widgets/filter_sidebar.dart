@@ -64,7 +64,7 @@ class FilterSidebar extends ConsumerWidget {
               ],
             ),
           ),
-          
+
           // 可滚动的内容区域
           Expanded(
             child: SingleChildScrollView(
@@ -72,16 +72,16 @@ class FilterSidebar extends ConsumerWidget {
                 children: [
                   // 类型筛选
                   _buildTypeFilters(context),
-                  
+
                   const Divider(),
-                  
+
                   // 显示模式
                   _buildDisplayModeSelector(context),
                 ],
               ),
             ),
           ),
-          
+
           // 底部操作
           _buildBottomActions(context, ref),
         ],
@@ -94,7 +94,10 @@ class FilterSidebar extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: ClipConstants.defaultPadding, vertical: ClipConstants.smallPadding),
+          padding: const EdgeInsets.symmetric(
+            horizontal: ClipConstants.defaultPadding,
+            vertical: ClipConstants.smallPadding,
+          ),
           child: Text(
             '类型',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -118,7 +121,8 @@ class FilterSidebar extends ConsumerWidget {
         _buildFilterItem(
           icon: Icons.description,
           label: '富文本',
-          isSelected: selectedType == ClipType.rtf || selectedType == ClipType.html,
+          isSelected:
+              selectedType == ClipType.rtf || selectedType == ClipType.html,
           onTap: () => onTypeSelected(ClipType.rtf),
         ),
         _buildFilterItem(
@@ -171,11 +175,11 @@ class FilterSidebar extends ConsumerWidget {
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected 
+              color: isSelected
                   ? Theme.of(context).colorScheme.secondaryContainer
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
-              border: isSelected 
+              border: isSelected
                   ? Border.all(
                       color: Theme.of(context).colorScheme.secondary,
                       width: 1,
@@ -187,7 +191,7 @@ class FilterSidebar extends ConsumerWidget {
                 Icon(
                   icon,
                   size: 18,
-                  color: isSelected 
+                  color: isSelected
                       ? Theme.of(context).colorScheme.onSecondaryContainer
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -195,8 +199,10 @@ class FilterSidebar extends ConsumerWidget {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected 
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                    color: isSelected
                         ? Theme.of(context).colorScheme.onSecondaryContainer
                         : Theme.of(context).colorScheme.onSurface,
                   ),
@@ -214,7 +220,10 @@ class FilterSidebar extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: ClipConstants.defaultPadding, vertical: ClipConstants.smallPadding),
+          padding: const EdgeInsets.symmetric(
+            horizontal: ClipConstants.defaultPadding,
+            vertical: ClipConstants.smallPadding,
+          ),
           child: Text(
             '显示模式',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -248,7 +257,7 @@ class FilterSidebar extends ConsumerWidget {
     required DisplayMode mode,
   }) {
     final isSelected = displayMode == mode;
-    
+
     return Builder(
       builder: (context) => Material(
         color: Colors.transparent,
@@ -259,11 +268,11 @@ class FilterSidebar extends ConsumerWidget {
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected 
+              color: isSelected
                   ? Theme.of(context).colorScheme.primaryContainer
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
-              border: isSelected 
+              border: isSelected
                   ? Border.all(
                       color: Theme.of(context).colorScheme.primary,
                       width: 1,
@@ -275,7 +284,7 @@ class FilterSidebar extends ConsumerWidget {
                 Icon(
                   icon,
                   size: 18,
-                  color: isSelected 
+                  color: isSelected
                       ? Theme.of(context).colorScheme.onPrimaryContainer
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -283,18 +292,20 @@ class FilterSidebar extends ConsumerWidget {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                     color: isSelected 
-                         ? Theme.of(context).colorScheme.onPrimaryContainer
-                         : Theme.of(context).colorScheme.onSurface,
-                   ),
-                 ),
-               ],
-             ),
-           ),
-         ),
-       ),
-     );
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.onPrimaryContainer
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildBottomActions(BuildContext context, WidgetRef ref) {
@@ -311,7 +322,10 @@ class FilterSidebar extends ConsumerWidget {
               icon: const Icon(Icons.settings, size: 18),
               label: const Text('设置'),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
               ),
             ),
           ),
@@ -321,7 +335,9 @@ class FilterSidebar extends ConsumerWidget {
             child: OutlinedButton.icon(
               onPressed: () {
                 // 清空历史记录
-                final historyNotifier = ref.read(clipboardHistoryProvider.notifier);
+                final historyNotifier = ref.read(
+                  clipboardHistoryProvider.notifier,
+                );
                 showDialog(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
@@ -340,7 +356,9 @@ class FilterSidebar extends ConsumerWidget {
                         },
                         style: FilledButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.error,
-                          foregroundColor: Theme.of(context).colorScheme.onError,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onError,
                         ),
                         child: const Text('清空'),
                       ),
@@ -351,10 +369,15 @@ class FilterSidebar extends ConsumerWidget {
               icon: const Icon(Icons.clear_all, size: 18),
               label: const Text('清空历史'),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
                 foregroundColor: Theme.of(context).colorScheme.error,
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.error.withValues(alpha: 0.5),
                 ),
               ),
             ),
