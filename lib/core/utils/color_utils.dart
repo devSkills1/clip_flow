@@ -22,22 +22,18 @@ class ColorUtils {
   // HEX颜色检测（支持 #RGB/#RRGGBB 以及带透明度的 #RGBA/#RRGGBBAA）、
   // 兼容有#号、无#号
   static bool _isHexColor(String value) {
-    final hexPattern = RegExp(
-      ClipConstants.hexColorPattern,
-    );
+    final hexPattern = RegExp(ClipConstants.hexColorPattern);
     return hexPattern.hasMatch(value);
   }
 
   // RGB颜色检测（支持 rgb(...) 以及 rgba(..., a) 且 a ∈ [0,1]）
   static bool _isRgbColor(String value) {
-    final rgbPattern = RegExp(
-      ClipConstants.rgbColorPattern,
-    );
-    final rgbaPattern = RegExp(
-      ClipConstants.rgbaColorPattern,
-    );
+    final rgbPattern = RegExp(ClipConstants.rgbColorPattern);
+    final rgbaPattern = RegExp(ClipConstants.rgbaColorPattern);
 
-    if (!rgbPattern.hasMatch(value) && !rgbaPattern.hasMatch(value)) return false;
+    if (!rgbPattern.hasMatch(value) && !rgbaPattern.hasMatch(value)) {
+      return false;
+    }
 
     final match = rgbPattern.firstMatch(value) ?? rgbaPattern.firstMatch(value);
     if (match == null) return false;
@@ -46,7 +42,8 @@ class ColorUtils {
     final g = int.parse(match.group(2)!);
     final b = int.parse(match.group(3)!);
 
-    final rgbInRange = r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
+    final rgbInRange =
+        r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
     if (!rgbInRange) return false;
 
     // 如为 rgba，校验 alpha
@@ -60,9 +57,7 @@ class ColorUtils {
 
   // HSL颜色检测
   static bool _isHslColor(String value) {
-    final hslPattern = RegExp(
-      ClipConstants.hslColorPattern,
-    );
+    final hslPattern = RegExp(ClipConstants.hslColorPattern);
     if (!hslPattern.hasMatch(value)) return false;
 
     final match = hslPattern.firstMatch(value);

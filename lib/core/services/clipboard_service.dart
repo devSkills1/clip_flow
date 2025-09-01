@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/clip_item.dart';
 import '../utils/color_utils.dart';
 import '../utils/image_utils.dart';
+import '../constants/clip_constants.dart';
 
 class ClipboardService {
   static final ClipboardService _instance = ClipboardService._internal();
@@ -22,7 +26,28 @@ class ClipboardService {
   Timer? _pollingTimer;
   String _lastClipboardContent = '';
   Uint8List? _lastImageContent;
+  String? _lastImageHash; // 图片哈希值缓存
   bool _isInitialized = false;
+
+  // 剪贴板变化检测
+  int? _lastClipboardSequence; // 剪贴板序列号
+  DateTime? _lastClipboardCheckTime; // 上次检查时间
+
+  // 内容缓存机制
+  final Map<String, ClipItem> _contentCache = {}; // 内容哈希 -> ClipItem
+  final Map<String, DateTime> _cacheTimestamps = {}; // 缓存时间戳
+  static const int _maxCacheSize = 100; // 最大缓存数量
+  static const Duration _cacheExpiry = Duration(hours: 1); // 缓存过期时间
+
+  // 自适应轮询相关变量
+  int _currentPollingInterval = 500; // 当前轮询间隔(毫秒)
+  int _consecutiveNoChanges = 0; // 连续无变化次数
+  DateTime _lastChangeTime = DateTime.now(); // 上次变化时间
+
+  // 轮询间隔配置
+  static const int _minPollingInterval = 200; // 最小间隔(毫秒)
+  static const int _maxPollingInterval = 2000; // 最大间隔(毫秒)
+  static const int _noChangeThreshold = 10; // 无变化阈值
 
   static const MethodChannel _platformChannel = MethodChannel(
     'clipboard_service',
@@ -37,41 +62,208 @@ class ClipboardService {
   }
 
   void _startPolling() {
-    _pollingTimer = Timer.periodic(
-      const Duration(milliseconds: 500),
-      (timer) => _checkClipboard(),
-    );
+    _scheduleNextCheck();
+  }
+
+  void _scheduleNextCheck() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer(Duration(milliseconds: _currentPollingInterval), () {
+      _checkClipboard();
+      _scheduleNextCheck(); // 递归调度下次检查
+    });
+  }
+
+  void _adjustPollingInterval(bool hasChange) {
+    if (hasChange) {
+      // 检测到变化，重置计数器并降低间隔
+      _consecutiveNoChanges = 0;
+      _lastChangeTime = DateTime.now();
+      _currentPollingInterval = (_currentPollingInterval * 0.8).round().clamp(
+        _minPollingInterval,
+        _maxPollingInterval,
+      );
+    } else {
+      // 无变化，增加计数器
+      _consecutiveNoChanges++;
+
+      // 根据无变化次数和时间间隔调整轮询频率
+      if (_consecutiveNoChanges >= _noChangeThreshold) {
+        final timeSinceLastChange = DateTime.now().difference(_lastChangeTime);
+
+        if (timeSinceLastChange.inMinutes > 5) {
+          // 5分钟无变化，使用最大间隔
+          _currentPollingInterval = _maxPollingInterval;
+        } else if (timeSinceLastChange.inMinutes > 1) {
+          // 1分钟无变化，逐步增加间隔
+          _currentPollingInterval = (_currentPollingInterval * 1.2)
+              .round()
+              .clamp(_minPollingInterval, _maxPollingInterval);
+        }
+      }
+    }
+  }
+
+  /// 检查剪贴板是否有变化（快速检测）
+  Future<bool> _hasClipboardChanged() async {
+    try {
+      // 尝试获取剪贴板序列号（平台特定）
+      final sequence = await _getClipboardSequence();
+      if (sequence != null) {
+        if (_lastClipboardSequence == null ||
+            sequence != _lastClipboardSequence) {
+          _lastClipboardSequence = sequence;
+          return true;
+        }
+        return false;
+      }
+
+      // 如果无法获取序列号，使用时间戳检测
+      final now = DateTime.now();
+      if (_lastClipboardCheckTime == null) {
+        _lastClipboardCheckTime = now;
+        return true;
+      }
+
+      // 每次都检查，但可以通过其他优化减少实际内容获取
+      return true;
+    } catch (e) {
+      return true; // 出错时假设有变化
+    }
+  }
+
+  /// 获取剪贴板序列号（平台特定实现）
+  Future<int?> _getClipboardSequence() async {
+    try {
+      final result = await _platformChannel.invokeMethod<int>(
+        'getClipboardSequence',
+      );
+      return result;
+    } catch (e) {
+      return null; // 平台不支持时返回null
+    }
   }
 
   Future<void> _checkClipboard() async {
+    bool hasChange = false;
+
     try {
+      // 快速检测剪贴板是否有变化
+      final hasClipboardChanged = await _hasClipboardChanged();
+      if (!hasClipboardChanged) {
+        _adjustPollingInterval(false);
+        return;
+      }
+
       // 首先检查图片数据
       final imageBytes = await _getClipboardImage();
       if (imageBytes != null && imageBytes.isNotEmpty) {
         if (_lastImageContent == null ||
-            !_areImageBytesEqual(imageBytes, _lastImageContent!)) {
+            !(await _areImageBytesEqual(imageBytes, _lastImageContent))) {
           _lastImageContent = imageBytes;
+          // 重置哈希缓存，因为图片已更新
+          _lastImageHash = null;
           await _processImageContent(imageBytes);
-          return;
+          hasChange = true;
         }
+      } else if (_lastImageContent != null) {
+        // 剪贴板中没有图片了，清除缓存
+        _lastImageContent = null;
+        _lastImageHash = null;
       }
 
-      // 检查文本数据
-      final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-      final currentContent = clipboardData?.text ?? '';
+      // 检查文本数据（只有在没有图片变化时才检查）
+      if (!hasChange) {
+        final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+        final currentContent = clipboardData?.text ?? '';
 
-      if (currentContent.isNotEmpty &&
-          currentContent != _lastClipboardContent) {
-        _lastClipboardContent = currentContent;
-        await _processClipboardContent(currentContent);
+        if (currentContent.isNotEmpty &&
+            currentContent != _lastClipboardContent) {
+          _lastClipboardContent = currentContent;
+          await _processClipboardContent(currentContent);
+          hasChange = true;
+        }
       }
     } catch (e) {
       // 忽略剪贴板访问错误
+    }
+
+    // 调整轮询间隔
+    _adjustPollingInterval(hasChange);
+  }
+
+  /// 在 Isolate 中计算内容哈希值
+  static String _calculateContentHashInIsolate(String content) {
+    final bytes = utf8.encode(content);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  /// 计算内容哈希值用于缓存（异步）
+  Future<String> _calculateContentHash(String content) async {
+    // 对于短文本（<10KB），直接在主线程计算
+    if (content.length < ClipConstants.bytesInKB * 10) {
+      return _calculateContentHashInIsolate(content);
+    }
+
+    // 对于长文本，使用 Isolate 计算
+    try {
+      final result = await Isolate.run(
+        () => _calculateContentHashInIsolate(content),
+      );
+      return result;
+    } catch (e) {
+      // Isolate 失败时回退到主线程
+      return _calculateContentHashInIsolate(content);
+    }
+  }
+
+  /// 清理过期缓存
+  void _cleanExpiredCache() {
+    final now = DateTime.now();
+    final expiredKeys = <String>[];
+
+    for (final entry in _cacheTimestamps.entries) {
+      if (now.difference(entry.value) > _cacheExpiry) {
+        expiredKeys.add(entry.key);
+      }
+    }
+
+    for (final key in expiredKeys) {
+      _contentCache.remove(key);
+      _cacheTimestamps.remove(key);
+    }
+  }
+
+  /// 限制缓存大小
+  void _limitCacheSize() {
+    if (_contentCache.length <= _maxCacheSize) return;
+
+    // 按时间戳排序，移除最旧的条目
+    final sortedEntries = _cacheTimestamps.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+
+    final toRemove = sortedEntries.take(_contentCache.length - _maxCacheSize);
+    for (final entry in toRemove) {
+      _contentCache.remove(entry.key);
+      _cacheTimestamps.remove(entry.key);
     }
   }
 
   Future<void> _processClipboardContent(String content) async {
     try {
+      // 计算内容哈希
+      final contentHash = await _calculateContentHash(content);
+
+      // 检查缓存
+      if (_contentCache.containsKey(contentHash)) {
+        final cachedItem = _contentCache[contentHash]!;
+        // 更新时间戳并发送缓存的项目
+        final updatedItem = cachedItem.copyWith(updatedAt: DateTime.now());
+        _clipboardController.add(updatedItem);
+        _cacheTimestamps[contentHash] = DateTime.now();
+        return;
+      }
+
       // 检测内容类型
       final clipType = _detectContentType(content);
 
@@ -81,6 +273,14 @@ class ClipboardService {
         content: content.codeUnits,
         metadata: await _extractMetadata(content, clipType),
       );
+
+      // 添加到缓存
+      _contentCache[contentHash] = clipItem;
+      _cacheTimestamps[contentHash] = DateTime.now();
+
+      // 清理过期缓存和限制大小
+      _cleanExpiredCache();
+      _limitCacheSize();
 
       // 发送到流
       _clipboardController.add(clipItem);
@@ -168,16 +368,74 @@ class ClipboardService {
     }
   }
 
-  bool _areImageBytesEqual(Uint8List bytes1, Uint8List bytes2) {
-    if (bytes1.length != bytes2.length) return false;
-    for (int i = 0; i < bytes1.length; i++) {
-      if (bytes1[i] != bytes2[i]) return false;
+  /// 在 Isolate 中计算图片数据的SHA-256哈希值
+  static String _calculateImageHashInIsolate(Uint8List imageBytes) {
+    final digest = sha256.convert(imageBytes);
+    return digest.toString();
+  }
+
+  /// 计算图片数据的SHA-256哈希值（异步）
+  Future<String> _calculateImageHash(Uint8List imageBytes) async {
+    // 对于小图片（<50KB），直接在主线程计算
+    if (imageBytes.length < 51200) {
+      return _calculateImageHashInIsolate(imageBytes);
     }
-    return true;
+
+    // 对于大图片，使用 Isolate 计算
+    try {
+      final result = await Isolate.run(
+        () => _calculateImageHashInIsolate(imageBytes),
+      );
+      return result;
+    } catch (e) {
+      // Isolate 失败时回退到主线程
+      return _calculateImageHashInIsolate(imageBytes);
+    }
+  }
+
+  /// 使用哈希值比较图片是否相同（异步）
+  Future<bool> _areImageBytesEqual(
+    Uint8List newBytes,
+    Uint8List? lastBytes,
+  ) async {
+    // 快速长度检查
+    if (lastBytes == null) return false;
+    if (newBytes.length != lastBytes.length) return false;
+
+    // 对于小图片（<10KB），直接比较字节
+    if (newBytes.length < ClipConstants.thumbnailSize) {
+      for (int i = 0; i < newBytes.length; i++) {
+        if (newBytes[i] != lastBytes[i]) return false;
+      }
+      return true;
+    }
+
+    // 对于大图片，使用哈希值比较
+    final newHash = await _calculateImageHash(newBytes);
+    _lastImageHash ??= await _calculateImageHash(lastBytes);
+    final isEqual = newHash == _lastImageHash;
+    if (!isEqual) {
+      _lastImageHash = newHash; // 更新哈希缓存
+    }
+
+    return isEqual;
   }
 
   Future<void> _processImageContent(Uint8List imageBytes) async {
     try {
+      // 对于图片，使用已计算的哈希值作为缓存键
+      final imageHash = _lastImageHash ?? await _calculateImageHash(imageBytes);
+
+      // 检查缓存
+      if (_contentCache.containsKey(imageHash)) {
+        final cachedItem = _contentCache[imageHash]!;
+        // 更新时间戳并发送缓存的项目
+        final updatedItem = cachedItem.copyWith(updatedAt: DateTime.now());
+        _clipboardController.add(updatedItem);
+        _cacheTimestamps[imageHash] = DateTime.now();
+        return;
+      }
+
       // 创建图片剪贴板项目
       final clipItem = ClipItem(
         type: ClipType.image,
@@ -185,6 +443,14 @@ class ClipboardService {
         thumbnail: await ImageUtils.generateThumbnail(imageBytes),
         metadata: await _extractImageMetadata(imageBytes),
       );
+
+      // 添加到缓存
+      _contentCache[imageHash] = clipItem;
+      _cacheTimestamps[imageHash] = DateTime.now();
+
+      // 清理过期缓存和限制大小
+      _cleanExpiredCache();
+      _limitCacheSize();
 
       // 发送到流
       _clipboardController.add(clipItem);
@@ -297,6 +563,10 @@ class ClipboardService {
   void dispose() {
     _pollingTimer?.cancel();
     _clipboardController.close();
+
+    // 清理缓存
+    _contentCache.clear();
+    _cacheTimestamps.clear();
   }
 }
 

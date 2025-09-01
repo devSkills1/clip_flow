@@ -76,16 +76,23 @@ class ClipConstants {
   ];
 
   // 正则表达式
-  static const String hexColorPattern = r'^#?(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$';
+  static const String hexColorPattern =
+      r'^#?(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$';
 
-  static const String rgbColorPattern = r'^rgb\(\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*,\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*,\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*\)$';
-  static const String rgbaColorPattern = r'^rgb\(\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*,\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*,\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*\)$';
-  
-  static const String hslColorPattern = r'^hsl\(\s*(360|3[0-5]\d|[0-2]?\d\d?)\s*,\s*(100%|\d{1,2}%)\s*,\s*(100%|\d{1,2}%)\s*\)$';
-  static const String hslaColorPattern = r'^hsla\(\s*(360|3[0-5]\d|[0-2]?\d\d?)\s*,\s*(100%|\d{1,2}%)\s*,\s*(100%|\d{1,2}%)\s*,\s*(0|1|0\.\d+|1\.0)\s*\)$';
+  static const String rgbColorPattern =
+      r'^rgb\(\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*,\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*,\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*\)$';
+  static const String rgbaColorPattern =
+      r'^rgb\(\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*,\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*,\s*(0|255|25[0-4]|2[0-4]\d|[01]?\d\d?)\s*\)$';
 
-  static const String urlPattern = r'https?:\/\/(www\.)?[-\w@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{2,}\b([-\w()@:%_\+.~#?&//=]*(:\d{1,5})?)';
-  static const String emailPattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+  static const String hslColorPattern =
+      r'^hsl\(\s*(360|3[0-5]\d|[0-2]?\d\d?)\s*,\s*(100%|\d{1,2}%)\s*,\s*(100%|\d{1,2}%)\s*\)$';
+  static const String hslaColorPattern =
+      r'^hsla\(\s*(360|3[0-5]\d|[0-2]?\d\d?)\s*,\s*(100%|\d{1,2}%)\s*,\s*(100%|\d{1,2}%)\s*,\s*(0|1|0\.\d+|1\.0)\s*\)$';
+
+  static const String urlPattern =
+      r'https?:\/\/(www\.)?[-\w@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{2,}\b([-\w()@:%_\+.~#?&//=]*(:\d{1,5})?)';
+  static const String emailPattern =
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
 
   // 错误消息
   static const String errorDatabaseInit = '数据库初始化失败';
