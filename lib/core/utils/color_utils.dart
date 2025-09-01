@@ -1,5 +1,5 @@
-import 'dart:math' as math;
-
+import 'dart:math' as math; //Dart 的核心数学库dart:math导入，并为其指定了别名math。
+import 'dart:ui' show Color; //部分导入dart:ui库的语句，仅导入了该库中的Color类。
 import '../constants/clip_constants.dart';
 
 class ColorUtils {
@@ -19,33 +19,49 @@ class ColorUtils {
     return false;
   }
 
-  // HEX颜色检测
+  // HEX颜色检测（支持 #RGB/#RRGGBB 以及带透明度的 #RGBA/#RRGGBBAA）、
+  // 兼容有#号、无#号
   static bool _isHexColor(String value) {
-    final hexPattern = RegExp(r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$');
+    final hexPattern = RegExp(
+      ClipConstants.hexColorPattern,
+    );
     return hexPattern.hasMatch(value);
   }
 
-  // RGB颜色检测
+  // RGB颜色检测（支持 rgb(...) 以及 rgba(..., a) 且 a ∈ [0,1]）
   static bool _isRgbColor(String value) {
     final rgbPattern = RegExp(
-      r'^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$',
+      ClipConstants.rgbColorPattern,
     );
-    if (!rgbPattern.hasMatch(value)) return false;
+    final rgbaPattern = RegExp(
+      ClipConstants.rgbaColorPattern,
+    );
 
-    final match = rgbPattern.firstMatch(value);
+    if (!rgbPattern.hasMatch(value) && !rgbaPattern.hasMatch(value)) return false;
+
+    final match = rgbPattern.firstMatch(value) ?? rgbaPattern.firstMatch(value);
     if (match == null) return false;
 
     final r = int.parse(match.group(1)!);
     final g = int.parse(match.group(2)!);
     final b = int.parse(match.group(3)!);
 
-    return r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
+    final rgbInRange = r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
+    if (!rgbInRange) return false;
+
+    // 如为 rgba，校验 alpha
+    if (rgbaPattern.hasMatch(value)) {
+      final a = double.parse(match.group(4)!);
+      if (a < 0 || a > 1) return false;
+    }
+
+    return true;
   }
 
   // HSL颜色检测
   static bool _isHslColor(String value) {
     final hslPattern = RegExp(
-      r'^hsl\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*\)$',
+      ClipConstants.hslColorPattern,
     );
     if (!hslPattern.hasMatch(value)) return false;
 
@@ -59,11 +75,20 @@ class ColorUtils {
     return h >= 0 && h <= 360 && s >= 0 && s <= 100 && l >= 0 && l <= 100;
   }
 
-  // HEX转RGB
+  // HEX转RGB（兼容 #RGBA/#RRGGBBAA；忽略 alpha，仅返回 RGB）
   static Map<String, int> hexToRgb(String hex) {
     hex = hex.replaceFirst('#', '');
     if (hex.length == 3) {
+      // #RGB => #RRGGBB
       hex = hex.split('').map((c) => c + c).join();
+    } else if (hex.length == 4) {
+      // #RGBA => #RRGGBBAA
+      hex = hex.split('').map((c) => c + c).join();
+    }
+
+    if (hex.length == 8) {
+      // #RRGGBBAA => 仅取 RRGGBB，忽略末尾 AA
+      hex = hex.substring(0, 6);
     }
 
     final r = int.parse(hex.substring(0, 2), radix: ClipConstants.hexRadix);
@@ -207,5 +232,49 @@ class ColorUtils {
     if (r < 50 && g < 50 && b < 50) return '黑色';
 
     return '自定义颜色';
+  }
+
+  // 颜色值转换为16进制字符串
+  static String colorToHex(
+    Color color, {
+    bool includeAlpha = false,
+    bool withHash = true,
+    bool upperCase = false,
+  }) {
+    final r = (color.r * 255).round() & 0xff;
+    final g = (color.g * 255).round() & 0xff;
+    final b = (color.b * 255).round() & 0xff;
+    final a = (color.a * 255).round() & 0xff;
+
+    final hex = includeAlpha ? '$r$g$b$a' : '$r$g$b'; // 使用 CSS 风格的 RRGGBBAA
+    final out = withHash ? '#$hex' : hex;
+    return upperCase ? out.toUpperCase() : out;
+  }
+
+  // 16进制字符串转换为 Color（支持 #RGB/#RGBA/#RRGGBB/#RRGGBBAA，兼容无#）
+  static Color hexToColor(String hex) {
+    var value = hex.trim();
+    if (value.startsWith('#')) value = value.substring(1);
+
+    // 基于现有校验规则验证输入
+    if (!_isHexColor('#$value')) {
+      throw FormatException('Invalid hex color: $hex');
+    }
+
+    // #RGB/#RGBA -> #RRGGBB/#RRGGBBAA
+    if (value.length == 3 || value.length == 4) {
+      value = value.split('').map((c) => c + c).join();
+    }
+
+    // 若无透明度，默认 0xFF
+    if (value.length == 6) {
+      value = 'FF$value'; // AARRGGBB
+    } else if (value.length == 8) {
+      // 从 RRGGBBAA 转为 AARRGGBB（Color 构造函数使用 ARGB）
+      value = value.substring(6, 8) + value.substring(0, 6);
+    }
+
+    final argb = int.parse(value, radix: ClipConstants.hexRadix);
+    return Color(argb);
   }
 }
