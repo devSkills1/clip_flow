@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/models/clip_item.dart';
-import '../../features/home/presentation/pages/home_page.dart';
-import '../../features/settings/presentation/pages/settings_page.dart';
+import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/features/home/presentation/pages/home_page.dart';
+import 'package:clip_flow_pro/features/settings/presentation/pages/settings_page.dart';
 
 // 主题模式提供者
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
@@ -95,8 +95,7 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     final lowercaseQuery = query.toLowerCase();
     return state.where((item) {
       final content = String.fromCharCodes(item.content).toLowerCase();
-      final tags =
-          (item.metadata['tags'] as List<dynamic>?)
+      final tags = (item.metadata['tags'] as List?)
               ?.map((tag) => tag.toString().toLowerCase())
               .join(' ') ??
           '';
@@ -183,15 +182,15 @@ class UserPreferences {
 
   factory UserPreferences.fromJson(Map<String, dynamic> json) {
     return UserPreferences(
-      autoStart: json['autoStart'] ?? false,
-      minimizeToTray: json['minimizeToTray'] ?? true,
-      globalHotkey: json['globalHotkey'] ?? 'Cmd+Shift+V',
-      maxHistoryItems: json['maxHistoryItems'] ?? 500,
-      enableEncryption: json['enableEncryption'] ?? true,
-      enableOCR: json['enableOCR'] ?? true,
-      language: json['language'] ?? 'zh_CN',
+      autoStart: (json['autoStart'] as bool?) ?? false,
+      minimizeToTray: (json['minimizeToTray'] as bool?) ?? true,
+      globalHotkey: (json['globalHotkey'] as String?) ?? 'Cmd+Shift+V',
+      maxHistoryItems: (json['maxHistoryItems'] as int?) ?? 500,
+      enableEncryption: (json['enableEncryption'] as bool?) ?? true,
+      enableOCR: (json['enableOCR'] as bool?) ?? true,
+      language: (json['language'] as String?) ?? 'zh_CN',
       defaultDisplayMode: DisplayMode.values.firstWhere(
-        (e) => e.name == json['defaultDisplayMode'],
+        (e) => e.name == (json['defaultDisplayMode'] as String?),
         orElse: () => DisplayMode.normal,
       ),
     );

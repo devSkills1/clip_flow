@@ -1,0 +1,8 @@
+arb-dir: lib/l10n/arb
+template-arb-file: app_en.arb
+output-dir: lib/l10n/gen
+output-class: S
+output-localization-file: s.dart
+preferred-supported-locales:
+  - en
+  - zh

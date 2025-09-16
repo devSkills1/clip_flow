@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[pre-commit] Formatting..."
+dart format --fix .
+
+echo "[pre-commit] Applying dart fix..."
+dart fix --apply
+
+echo "[pre-commit] Analyzing..."
+flutter analyze
+
+echo "[pre-commit] Running tests with coverage..."
+# Adjust packages if using melos/workspaces.
+flutter test --coverage
+
+# Optional: simple coverage gate (lines). Replace with a robust tool if needed.
+if command -v genhtml >/dev/null 2>&1; then
+  genhtml coverage/lcov.info -o coverage/html >/dev/null 2>&1 || true
+fi
+
+echo "[pre-commit] Checking outdated dependencies..."
+flutter pub outdated || true
+
+echo "[pre-commit] Done."

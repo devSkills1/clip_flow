@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "appName": "Clip Flow Pro",
+  "@appName": {
+    "description": "Application display name"
+  },
+  "homeTitle": "Home",
+  "@homeTitle": {
+    "description": "Title for home page"
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Title for settings page"
+  }
+}

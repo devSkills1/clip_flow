@@ -1,0 +1,15 @@
+{
+  "@@locale": "zh",
+  "appName": "Clip Flow Pro",
+  "@appName": {
+    "description": "应用显示名称"
+  },
+  "homeTitle": "首页",
+  "@homeTitle": {
+    "description": "首页标题"
+  },
+  "settingsTitle": "设置",
+  "@settingsTitle": {
+    "description": "设置页面标题"
+  }
+}

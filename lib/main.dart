@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
-import 'app.dart';
-import 'core/services/clipboard_service.dart';
-import 'core/services/database_service.dart';
-import 'core/services/encryption_service.dart';
-import 'core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/app.dart';
+import 'package:clip_flow_pro/core/services/clipboard_service.dart';
+import 'package:clip_flow_pro/core/services/database_service.dart';
+import 'package:clip_flow_pro/core/services/encryption_service.dart';
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

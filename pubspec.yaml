@@ -76,6 +76,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  very_good_analysis: ^5.1.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -94,13 +95,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-  
-  # 明确指定支持的平台，排除移动端
-  platforms:
-    macos:
-    windows:
-    linux:
-    web:
+  generate: true
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
