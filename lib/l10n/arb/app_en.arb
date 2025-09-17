@@ -11,5 +11,205 @@
   "settingsTitle": "Settings",
   "@settingsTitle": {
     "description": "Title for settings page"
-  }
+  },
+
+  "sectionGeneral": "General",
+  "@sectionGeneral": {"description": "Settings - General section title"},
+
+  "sectionSecurity": "Security",
+  "@sectionSecurity": {"description": "Settings - Security section title"},
+
+  "sectionAppearance": "Appearance",
+  "@sectionAppearance": {"description": "Settings - Appearance section title"},
+
+  "sectionAbout": "About",
+  "@sectionAbout": {"description": "Settings - About section title"},
+
+  "generalAutoStartTitle": "Launch at startup",
+  "@generalAutoStartTitle": {"description": "General - Auto start - title"},
+
+  "generalAutoStartSubtitle": "Automatically run when the system starts",
+  "@generalAutoStartSubtitle": {"description": "General - Auto start - subtitle"},
+
+  "generalMinimizeToTrayTitle": "Minimize to tray",
+  "@generalMinimizeToTrayTitle": {"description": "General - Minimize to tray - title"},
+
+  "generalMinimizeToTraySubtitle": "Minimize to tray when closing the window",
+  "@generalMinimizeToTraySubtitle": {"description": "General - Minimize to tray - subtitle"},
+
+  "generalGlobalHotkeyTitle": "Global hotkey",
+  "@generalGlobalHotkeyTitle": {"description": "General - Global hotkey - title"},
+
+  "generalGlobalHotkeySubtitle": "Current hotkey: {hotkey}",
+  "@generalGlobalHotkeySubtitle": {
+    "description": "General - Global hotkey - current value",
+    "placeholders": {
+      "hotkey": {"type": "String", "example": "Ctrl+Shift+V"}
+    }
+  },
+
+  "generalMaxHistoryTitle": "Max history items",
+  "@generalMaxHistoryTitle": {"description": "General - Max history - title"},
+
+  "generalMaxHistorySubtitle": "{count} items",
+  "@generalMaxHistorySubtitle": {
+    "description": "General - Max history - subtitle",
+    "placeholders": {
+      "count": {"type": "int", "example": "200"}
+    }
+  },
+
+  "securityEnableEncryptionTitle": "Enable encryption",
+  "@securityEnableEncryptionTitle": {"description": "Security - Enable encryption - title"},
+
+  "securityEnableEncryptionSubtitle": "Store sensitive data with AES-256 encryption",
+  "@securityEnableEncryptionSubtitle": {"description": "Security - Enable encryption - subtitle"},
+
+  "securityEnableOcrTitle": "Enable OCR",
+  "@securityEnableOcrTitle": {"description": "Security - Enable OCR - title"},
+
+  "securityEnableOcrSubtitle": "Automatically recognize text in images",
+  "@securityEnableOcrSubtitle": {"description": "Security - Enable OCR - subtitle"},
+
+  "appearanceThemeModeTitle": "Theme mode",
+  "@appearanceThemeModeTitle": {"description": "Appearance - Theme mode - title"},
+
+  "appearanceDefaultDisplayModeTitle": "Default display mode",
+  "@appearanceDefaultDisplayModeTitle": {"description": "Appearance - Default display mode - title"},
+
+  "appearanceLanguageTitle": "Language",
+  "@appearanceLanguageTitle": {"description": "Appearance - Language - title"},
+
+  "themeLight": "Light",
+  "@themeLight": {"description": "Theme - Light"},
+
+  "themeDark": "Dark",
+  "@themeDark": {"description": "Theme - Dark"},
+
+  "themeSystem": "System",
+  "@themeSystem": {"description": "Theme - System"},
+
+  "displayCompact": "Compact",
+  "@displayCompact": {"description": "Display mode - Compact"},
+
+  "displayNormal": "Default",
+  "@displayNormal": {"description": "Display mode - Default"},
+
+  "displayPreview": "Preview",
+  "@displayPreview": {"description": "Display mode - Preview"},
+
+  "displayCompactDesc": "Compact: denser list with single-line preview",
+  "@displayCompactDesc": {"description": "Display mode - Compact - description"},
+
+  "displayNormalDesc": "Normal: balanced density with regular preview",
+  "@displayNormalDesc": {"description": "Display mode - Normal - description"},
+
+  "displayPreviewDesc": "Preview: larger thumbnails with detailed preview",
+  "@displayPreviewDesc": {"description": "Display mode - Preview - description"},
+
+  "languageZhCN": "Simplified Chinese",
+  "@languageZhCN": {"description": "Language - Simplified Chinese"},
+
+  "languageEnUS": "English",
+  "@languageEnUS": {"description": "Language - English"},
+
+  "dialogHotkeyTitle": "Set global hotkey",
+  "@dialogHotkeyTitle": {"description": "Dialog - Set global hotkey - title"},
+
+  "dialogHotkeyContent": "Press the key combination you want",
+  "@dialogHotkeyContent": {"description": "Dialog - Hotkey - content"},
+
+  "dialogMaxHistoryTitle": "Set max history items",
+  "@dialogMaxHistoryTitle": {"description": "Dialog - Max history - title"},
+
+  "dialogMaxHistoryContent": "Choose the maximum clipboard history items",
+  "@dialogMaxHistoryContent": {"description": "Dialog - Max history - content"},
+
+  "dialogMaxHistoryFieldLabel": "History items",
+  "@dialogMaxHistoryFieldLabel": {"description": "Dialog - Max history - field label"},
+
+  "dialogThemeTitle": "Choose theme mode",
+  "@dialogThemeTitle": {"description": "Dialog - Choose theme - title"},
+
+  "dialogDisplayModeTitle": "Choose default display mode",
+  "@dialogDisplayModeTitle": {"description": "Dialog - Choose display mode - title"},
+
+  "dialogLanguageTitle": "Choose language",
+  "@dialogLanguageTitle": {"description": "Dialog - Choose language - title"},
+
+  "actionCancel": "Cancel",
+  "@actionCancel": {"description": "Action - Cancel"},
+
+  "actionOk": "OK",
+  "@actionOk": {"description": "Action - OK"},
+
+  "actionCheckUpdateTitle": "Check for updates",
+  "@actionCheckUpdateTitle": {"description": "About - Check updates - title"},
+
+  "actionCheckUpdateSubtitle": "Check the latest version",
+  "@actionCheckUpdateSubtitle": {"description": "About - Check updates - subtitle"},
+
+  "actionFeedbackTitle": "Send feedback",
+  "@actionFeedbackTitle": {"description": "About - Feedback - title"},
+
+  "actionFeedbackSubtitle": "Report bugs or suggestions",
+  "@actionFeedbackSubtitle": {"description": "About - Feedback - subtitle"},
+
+  "aboutVersionTitle": "Version",
+  "@aboutVersionTitle": {"description": "About - Version - title"},
+
+  "aboutVersionValue": "1.0.0",
+  "@aboutVersionValue": {"description": "About - Version - value"},
+
+  "homeEmptyTitle": "No clipboard history yet",
+  "@homeEmptyTitle": {"description": "Home - empty state title"},
+
+  "homeEmptySubtitle": "Copy something to get started",
+  "@homeEmptySubtitle": {"description": "Home - empty state subtitle"},
+
+  "snackCopiedPrefix": "Copied: {text}",
+  "@snackCopiedPrefix": {
+    "description": "Home - copied snackbar",
+    "placeholders": {"text": {"type": "String", "example": "Hello"}}
+  },
+
+  "dialogDeleteTitle": "Confirm delete",
+  "@dialogDeleteTitle": {"description": "Home - delete dialog - title"},
+
+  "dialogDeleteContent": "Are you sure to delete this clipboard item?\\n{text}",
+  "@dialogDeleteContent": {
+    "description": "Home - delete dialog - content",
+    "placeholders": {"text": {"type": "String", "example": "Preview"}}
+  },
+
+  "actionDelete": "Delete",
+  "@actionDelete": {"description": "Action - Delete"},
+
+  "previewImage": "Image ({width} x {height}, {format})",
+  "@previewImage": {
+    "description": "Home - preview - image",
+    "placeholders": {
+      "width": {"type": "int", "example": "640"},
+      "height": {"type": "int", "example": "480"},
+      "format": {"type": "String", "example": "PNG"}
+    }
+  },
+
+  "previewFile": "File: {fileName}",
+  "@previewFile": {
+    "description": "Home - preview - file",
+    "placeholders": {"fileName": {"type": "String", "example": "note.txt"}}
+  },
+
+  "previewColor": "Color: {hex}",
+  "@previewColor": {
+    "description": "Home - preview - color",
+    "placeholders": {"hex": {"type": "String", "example": "#FFAA00"}}
+  },
+
+  "unknownFormat": "Unknown",
+  "@unknownFormat": {"description": "Home - preview - unknown format"},
+
+  "unknownFile": "Unknown file",
+  "@unknownFile": {"description": "Home - preview - unknown file"}
 }

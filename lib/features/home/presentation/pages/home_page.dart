@@ -1,9 +1,11 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/filter_sidebar.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar_widget.dart';
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,6 +35,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = S.of(context);
     // 监听剪贴板流
     ref.listen<AsyncValue<ClipItem>>(clipboardStreamProvider, (previous, next) {
       next.whenData((clipItem) {
@@ -95,7 +98,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 // 内容区域
                 Expanded(
                   child: filteredItems.isEmpty
-                      ? _buildEmptyState()
+                      ? _buildEmptyState(l10n)
                       : _buildClipboardList(
                           filteredItems,
                           displayMode,
@@ -110,7 +113,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(S? l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -122,14 +125,14 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           const SizedBox(height: 16),
           Text(
-            '暂无剪贴板历史',
+            l10n?.homeEmptyTitle ?? I18nFallbacks.home.emptyTitle,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: Theme.of(context).colorScheme.outline,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '复制一些内容开始使用吧',
+            l10n?.homeEmptySubtitle ?? I18nFallbacks.home.emptySubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.outline,
             ),
@@ -255,7 +258,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     // 显示提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('已复制: ${_getItemPreview(item)}'),
+        content: Text(
+          S.of(context)?.snackCopiedPrefix(_getItemPreview(item)) ??
+              I18nFallbacks.common.snackCopiedPrefix(_getItemPreview(item)),
+        ),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -269,12 +275,19 @@ class _HomePageState extends ConsumerState<HomePage> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除这个剪贴板项目吗？\n${_getItemPreview(item)}'),
+        title: Text(
+          S.of(context)?.dialogDeleteTitle ?? I18nFallbacks.common.deleteTitle,
+        ),
+        content: Text(
+          S.of(context)?.dialogDeleteContent(_getItemPreview(item)) ??
+              '${I18nFallbacks.common.deleteContentPrefix}${_getItemPreview(item)}',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
+            child: Text(
+              S.of(context)?.actionCancel ?? I18nFallbacks.common.actionCancel,
+            ),
           ),
           FilledButton(
             onPressed: () {
@@ -285,7 +298,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: const Text('删除'),
+            child: Text(
+              S.of(context)?.actionDelete ?? I18nFallbacks.common.actionDelete,
+            ),
           ),
         ],
       ),
@@ -297,14 +312,16 @@ class _HomePageState extends ConsumerState<HomePage> {
       case ClipType.image:
         final width = item.metadata['width'] as int? ?? 0;
         final height = item.metadata['height'] as int? ?? 0;
-        final format = item.metadata['format'] as String? ?? '未知格式';
-        return '图片 ($width x $height, $format)';
+        final format = item.metadata['format'] as String?;
+        return '${I18nFallbacks.common.labelImage} ($width x $height, ${format ?? I18nFallbacks.common.unknown})';
       case ClipType.file:
-        final fileName = item.metadata['fileName'] as String? ?? '未知文件';
-        return '文件: $fileName';
+        final fileName =
+            item.metadata['fileName'] as String? ??
+            I18nFallbacks.common.unknown;
+        return '${I18nFallbacks.common.labelFile}: $fileName';
       case ClipType.color:
         final colorHex = item.metadata['colorHex'] as String? ?? '#000000';
-        return '颜色: $colorHex';
+        return '${I18nFallbacks.common.labelColor}: $colorHex';
       default:
         final content = String.fromCharCodes(item.content);
         if (content.length > 50) {

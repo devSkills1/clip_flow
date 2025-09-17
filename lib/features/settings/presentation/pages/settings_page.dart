@@ -1,4 +1,6 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,10 +12,13 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(userPreferencesProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final l10n = S.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('设置'),
+        title: Text(
+          S.of(context)?.settingsTitle ?? I18nFallbacks.settings.title,
+        ),
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
@@ -25,19 +30,28 @@ class SettingsPage extends ConsumerWidget {
           // 常规设置
           _buildSection(
             context,
-            title: '常规',
+            title:
+                l10n?.sectionGeneral ?? I18nFallbacks.settings.sectionGeneral,
             children: [
               _buildSwitchTile(
-                title: '开机自启动',
-                subtitle: '应用启动时自动运行',
+                title:
+                    l10n?.generalAutoStartTitle ??
+                    I18nFallbacks.settings.generalAutoStartTitle,
+                subtitle:
+                    l10n?.generalAutoStartSubtitle ??
+                    I18nFallbacks.settings.generalAutoStartSubtitle,
                 value: preferences.autoStart,
                 onChanged: (value) {
                   ref.read(userPreferencesProvider.notifier).toggleAutoStart();
                 },
               ),
               _buildSwitchTile(
-                title: '最小化到系统托盘',
-                subtitle: '关闭窗口时最小化到系统托盘',
+                title:
+                    l10n?.generalMinimizeToTrayTitle ??
+                    I18nFallbacks.settings.generalMinimizeToTrayTitle,
+                subtitle:
+                    l10n?.generalMinimizeToTraySubtitle ??
+                    I18nFallbacks.settings.generalMinimizeToTraySubtitle,
                 value: preferences.minimizeToTray,
                 onChanged: (value) {
                   ref
@@ -46,16 +60,32 @@ class SettingsPage extends ConsumerWidget {
                 },
               ),
               _buildListTile(
-                title: '全局快捷键',
-                subtitle: preferences.globalHotkey,
+                title:
+                    l10n?.generalGlobalHotkeyTitle ??
+                    I18nFallbacks.settings.generalGlobalHotkeyTitle,
+                subtitle:
+                    l10n?.generalGlobalHotkeySubtitle(
+                      preferences.globalHotkey,
+                    ) ??
+                    I18nFallbacks.settings.generalGlobalHotkeySubtitle(
+                      preferences.globalHotkey,
+                    ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showHotkeyDialog(context, ref);
                 },
               ),
               _buildListTile(
-                title: '最大历史记录数',
-                subtitle: '${preferences.maxHistoryItems} 条',
+                title:
+                    l10n?.generalMaxHistoryTitle ??
+                    I18nFallbacks.settings.generalMaxHistoryTitle,
+                subtitle:
+                    l10n?.generalMaxHistorySubtitle(
+                      preferences.maxHistoryItems,
+                    ) ??
+                    I18nFallbacks.settings.generalMaxHistorySubtitle(
+                      preferences.maxHistoryItems,
+                    ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showMaxHistoryDialog(context, ref);
@@ -69,19 +99,28 @@ class SettingsPage extends ConsumerWidget {
           // 安全设置
           _buildSection(
             context,
-            title: '安全',
+            title:
+                l10n?.sectionSecurity ?? I18nFallbacks.settings.sectionSecurity,
             children: [
               _buildSwitchTile(
-                title: '启用加密',
-                subtitle: '使用AES-256加密存储敏感数据',
+                title:
+                    l10n?.securityEnableEncryptionTitle ??
+                    I18nFallbacks.settings.securityEnableEncryptionTitle,
+                subtitle:
+                    l10n?.securityEnableEncryptionSubtitle ??
+                    I18nFallbacks.settings.securityEnableEncryptionSubtitle,
                 value: preferences.enableEncryption,
                 onChanged: (value) {
                   ref.read(userPreferencesProvider.notifier).toggleEncryption();
                 },
               ),
               _buildSwitchTile(
-                title: '启用OCR',
-                subtitle: '自动识别图片中的文字',
+                title:
+                    l10n?.securityEnableOcrTitle ??
+                    I18nFallbacks.settings.securityEnableOcrTitle,
+                subtitle:
+                    l10n?.securityEnableOcrSubtitle ??
+                    I18nFallbacks.settings.securityEnableOcrSubtitle,
                 value: preferences.enableOCR,
                 onChanged: (value) {
                   ref.read(userPreferencesProvider.notifier).toggleOCR();
@@ -95,10 +134,14 @@ class SettingsPage extends ConsumerWidget {
           // 外观设置
           _buildSection(
             context,
-            title: '外观',
+            title:
+                l10n?.sectionAppearance ??
+                I18nFallbacks.settings.sectionAppearance,
             children: [
               _buildListTile(
-                title: '主题模式',
+                title:
+                    l10n?.appearanceThemeModeTitle ??
+                    I18nFallbacks.settings.appearanceThemeModeTitle,
                 subtitle: _getThemeModeText(themeMode),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -106,7 +149,9 @@ class SettingsPage extends ConsumerWidget {
                 },
               ),
               _buildListTile(
-                title: '默认显示模式',
+                title:
+                    l10n?.appearanceDefaultDisplayModeTitle ??
+                    I18nFallbacks.settings.appearanceDefaultDisplayModeTitle,
                 subtitle: _getDisplayModeText(preferences.defaultDisplayMode),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -114,7 +159,9 @@ class SettingsPage extends ConsumerWidget {
                 },
               ),
               _buildListTile(
-                title: '语言',
+                title:
+                    l10n?.appearanceLanguageTitle ??
+                    I18nFallbacks.settings.appearanceLanguageTitle,
                 subtitle: _getLanguageText(preferences.language),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -129,20 +176,35 @@ class SettingsPage extends ConsumerWidget {
           // 关于
           _buildSection(
             context,
-            title: '关于',
+            title: l10n?.sectionAbout ?? I18nFallbacks.settings.sectionAbout,
             children: [
-              _buildListTile(title: '版本', subtitle: '1.0.0'),
               _buildListTile(
-                title: '检查更新',
-                subtitle: '检查最新版本',
+                title:
+                    l10n?.aboutVersionTitle ??
+                    I18nFallbacks.settings.aboutVersionTitle,
+                subtitle:
+                    l10n?.aboutVersionValue ??
+                    I18nFallbacks.settings.aboutVersionValue,
+              ),
+              _buildListTile(
+                title:
+                    l10n?.actionCheckUpdateTitle ??
+                    I18nFallbacks.settings.actionCheckUpdateTitle,
+                subtitle:
+                    l10n?.actionCheckUpdateSubtitle ??
+                    I18nFallbacks.settings.actionCheckUpdateSubtitle,
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   // 检查更新逻辑
                 },
               ),
               _buildListTile(
-                title: '反馈问题',
-                subtitle: '报告Bug或建议',
+                title:
+                    l10n?.actionFeedbackTitle ??
+                    I18nFallbacks.settings.actionFeedbackTitle,
+                subtitle:
+                    l10n?.actionFeedbackSubtitle ??
+                    I18nFallbacks.settings.actionFeedbackSubtitle,
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   // 反馈逻辑
@@ -208,33 +270,33 @@ class SettingsPage extends ConsumerWidget {
   String _getThemeModeText(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.light:
-        return '浅色';
+        return I18nFallbacks.settings.themeLight;
       case ThemeMode.dark:
-        return '深色';
+        return I18nFallbacks.settings.themeDark;
       case ThemeMode.system:
-        return '跟随系统';
+        return I18nFallbacks.settings.themeSystem;
     }
   }
 
   String _getDisplayModeText(DisplayMode mode) {
     switch (mode) {
       case DisplayMode.compact:
-        return '紧凑';
+        return I18nFallbacks.settings.displayCompact;
       case DisplayMode.normal:
-        return '默认';
+        return I18nFallbacks.settings.displayNormal;
       case DisplayMode.preview:
-        return '预览';
+        return I18nFallbacks.settings.displayPreview;
     }
   }
 
   String _getLanguageText(String language) {
     switch (language) {
       case 'zh_CN':
-        return '简体中文';
+        return I18nFallbacks.settings.languageZhCN;
       case 'en_US':
-        return 'English';
+        return I18nFallbacks.settings.languageEnUS;
       default:
-        return '简体中文';
+        return I18nFallbacks.settings.languageZhCN;
     }
   }
 
@@ -242,19 +304,29 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('设置全局快捷键'),
-        content: const Text('请按下您想要设置的快捷键组合'),
+        title: Text(
+          S.of(context)?.dialogHotkeyTitle ??
+              I18nFallbacks.settings.dialogHotkeyTitle,
+        ),
+        content: Text(
+          S.of(context)?.dialogHotkeyContent ??
+              I18nFallbacks.settings.dialogHotkeyContent,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
+            child: Text(
+              S.of(context)?.actionCancel ?? I18nFallbacks.common.actionCancel,
+            ),
           ),
           FilledButton(
             onPressed: () {
               // 设置快捷键逻辑
               Navigator.of(context).pop();
             },
-            child: const Text('确定'),
+            child: Text(
+              S.of(context)?.actionOk ?? I18nFallbacks.common.actionOk,
+            ),
           ),
         ],
       ),
@@ -265,11 +337,17 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('设置最大历史记录数'),
+        title: Text(
+          S.of(context)?.dialogMaxHistoryTitle ??
+              I18nFallbacks.settings.dialogMaxHistoryTitle,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('选择最大保存的剪贴板历史记录数量'),
+            Text(
+              S.of(context)?.dialogMaxHistoryContent ??
+                  I18nFallbacks.settings.dialogMaxHistoryContent,
+            ),
             const SizedBox(height: ClipConstants.defaultPadding),
             Row(
               children: [
@@ -279,7 +357,9 @@ class SettingsPage extends ConsumerWidget {
                         .read(userPreferencesProvider)
                         .maxHistoryItems,
                     decoration: InputDecoration(
-                      labelText: '历史记录数量',
+                      labelText:
+                          S.of(context)?.dialogMaxHistoryFieldLabel ??
+                          I18nFallbacks.settings.dialogMaxHistoryFieldLabel,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(
                           ClipConstants.cardBorderRadius,
@@ -312,7 +392,9 @@ class SettingsPage extends ConsumerWidget {
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
+            child: Text(
+              S.of(context)?.actionOk ?? I18nFallbacks.common.actionOk,
+            ),
           ),
         ],
       ),
@@ -323,26 +405,37 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('选择主题模式'),
+        title: Text(
+          S.of(context)?.dialogThemeTitle ??
+              I18nFallbacks.settings.dialogThemeTitle,
+        ),
         content: RadioGroup<ThemeMode>(
           groupValue: ref.read(themeModeProvider),
           onChanged: (value) {
             ref.read(themeModeProvider.notifier).state = value!;
             Navigator.of(context).pop();
           },
-          child: const Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               RadioListTile<ThemeMode>(
-                title: Text('浅色'),
+                title: Text(
+                  S.of(context)?.themeLight ??
+                      I18nFallbacks.settings.themeLight,
+                ),
                 value: ThemeMode.light,
               ),
               RadioListTile<ThemeMode>(
-                title: Text('深色'),
+                title: Text(
+                  S.of(context)?.themeDark ?? I18nFallbacks.settings.themeDark,
+                ),
                 value: ThemeMode.dark,
               ),
               RadioListTile<ThemeMode>(
-                title: Text('跟随系统'),
+                title: Text(
+                  S.of(context)?.themeSystem ??
+                      I18nFallbacks.settings.themeSystem,
+                ),
                 value: ThemeMode.system,
               ),
             ],
@@ -356,7 +449,10 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('选择默认显示模式'),
+        title: Text(
+          S.of(context)?.dialogDisplayModeTitle ??
+              I18nFallbacks.settings.dialogDisplayModeTitle,
+        ),
         content: RadioGroup<DisplayMode>(
           groupValue: ref.read(userPreferencesProvider).defaultDisplayMode,
           onChanged: (value) {
@@ -369,8 +465,14 @@ class SettingsPage extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: const Text('紧凑'),
-                subtitle: const Text('列表形式，显示更多项目'),
+                title: Text(
+                  S.of(context)?.displayCompact ??
+                      I18nFallbacks.settings.displayCompact,
+                ),
+                subtitle: Text(
+                  S.of(context)?.displayCompactDesc ??
+                      I18nFallbacks.settings.displayCompactDesc,
+                ),
                 leading: const Radio<DisplayMode>(value: DisplayMode.compact),
                 onTap: () {
                   ref
@@ -380,8 +482,14 @@ class SettingsPage extends ConsumerWidget {
                 },
               ),
               ListTile(
-                title: const Text('默认'),
-                subtitle: const Text('网格形式，平衡显示效果'),
+                title: Text(
+                  S.of(context)?.displayNormal ??
+                      I18nFallbacks.settings.displayNormal,
+                ),
+                subtitle: Text(
+                  S.of(context)?.displayNormalDesc ??
+                      I18nFallbacks.settings.displayNormalDesc,
+                ),
                 leading: const Radio<DisplayMode>(value: DisplayMode.normal),
                 onTap: () {
                   ref
@@ -391,8 +499,14 @@ class SettingsPage extends ConsumerWidget {
                 },
               ),
               ListTile(
-                title: const Text('预览'),
-                subtitle: const Text('大卡片形式，突出内容预览'),
+                title: Text(
+                  S.of(context)?.displayPreview ??
+                      I18nFallbacks.settings.displayPreview,
+                ),
+                subtitle: Text(
+                  S.of(context)?.displayPreviewDesc ??
+                      I18nFallbacks.settings.displayPreviewDesc,
+                ),
                 leading: const Radio<DisplayMode>(value: DisplayMode.preview),
                 onTap: () {
                   ref
@@ -412,7 +526,10 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('选择语言'),
+        title: Text(
+          S.of(context)?.dialogLanguageTitle ??
+              I18nFallbacks.settings.dialogLanguageTitle,
+        ),
         content: RadioGroup<String>(
           groupValue: ref.read(userPreferencesProvider).language,
           onChanged: (value) {
@@ -423,7 +540,10 @@ class SettingsPage extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: const Text('简体中文'),
+                title: Text(
+                  S.of(context)?.languageZhCN ??
+                      I18nFallbacks.settings.languageZhCN,
+                ),
                 leading: const Radio<String>(value: 'zh_CN'),
                 onTap: () {
                   ref
@@ -433,7 +553,10 @@ class SettingsPage extends ConsumerWidget {
                 },
               ),
               ListTile(
-                title: const Text('English'),
+                title: Text(
+                  S.of(context)?.languageEnUS ??
+                      I18nFallbacks.settings.languageEnUS,
+                ),
                 leading: const Radio<String>(value: 'en_US'),
                 onTap: () {
                   ref

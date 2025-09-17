@@ -114,6 +114,348 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Settings'**
   String get settingsTitle;
+
+  /// Settings - General section title
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get sectionGeneral;
+
+  /// Settings - Security section title
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get sectionSecurity;
+
+  /// Settings - Appearance section title
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get sectionAppearance;
+
+  /// Settings - About section title
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get sectionAbout;
+
+  /// General - Auto start - title
+  ///
+  /// In en, this message translates to:
+  /// **'Launch at startup'**
+  String get generalAutoStartTitle;
+
+  /// General - Auto start - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically run when the system starts'**
+  String get generalAutoStartSubtitle;
+
+  /// General - Minimize to tray - title
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize to tray'**
+  String get generalMinimizeToTrayTitle;
+
+  /// General - Minimize to tray - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize to tray when closing the window'**
+  String get generalMinimizeToTraySubtitle;
+
+  /// General - Global hotkey - title
+  ///
+  /// In en, this message translates to:
+  /// **'Global hotkey'**
+  String get generalGlobalHotkeyTitle;
+
+  /// General - Global hotkey - current value
+  ///
+  /// In en, this message translates to:
+  /// **'Current hotkey: {hotkey}'**
+  String generalGlobalHotkeySubtitle(String hotkey);
+
+  /// General - Max history - title
+  ///
+  /// In en, this message translates to:
+  /// **'Max history items'**
+  String get generalMaxHistoryTitle;
+
+  /// General - Max history - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String generalMaxHistorySubtitle(int count);
+
+  /// Security - Enable encryption - title
+  ///
+  /// In en, this message translates to:
+  /// **'Enable encryption'**
+  String get securityEnableEncryptionTitle;
+
+  /// Security - Enable encryption - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Store sensitive data with AES-256 encryption'**
+  String get securityEnableEncryptionSubtitle;
+
+  /// Security - Enable OCR - title
+  ///
+  /// In en, this message translates to:
+  /// **'Enable OCR'**
+  String get securityEnableOcrTitle;
+
+  /// Security - Enable OCR - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically recognize text in images'**
+  String get securityEnableOcrSubtitle;
+
+  /// Appearance - Theme mode - title
+  ///
+  /// In en, this message translates to:
+  /// **'Theme mode'**
+  String get appearanceThemeModeTitle;
+
+  /// Appearance - Default display mode - title
+  ///
+  /// In en, this message translates to:
+  /// **'Default display mode'**
+  String get appearanceDefaultDisplayModeTitle;
+
+  /// Appearance - Language - title
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get appearanceLanguageTitle;
+
+  /// Theme - Light
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// Theme - Dark
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// Theme - System
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// Display mode - Compact
+  ///
+  /// In en, this message translates to:
+  /// **'Compact'**
+  String get displayCompact;
+
+  /// Display mode - Default
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get displayNormal;
+
+  /// Display mode - Preview
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get displayPreview;
+
+  /// Display mode - Compact - description
+  ///
+  /// In en, this message translates to:
+  /// **'Compact: denser list with single-line preview'**
+  String get displayCompactDesc;
+
+  /// Display mode - Normal - description
+  ///
+  /// In en, this message translates to:
+  /// **'Normal: balanced density with regular preview'**
+  String get displayNormalDesc;
+
+  /// Display mode - Preview - description
+  ///
+  /// In en, this message translates to:
+  /// **'Preview: larger thumbnails with detailed preview'**
+  String get displayPreviewDesc;
+
+  /// Language - Simplified Chinese
+  ///
+  /// In en, this message translates to:
+  /// **'Simplified Chinese'**
+  String get languageZhCN;
+
+  /// Language - English
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnUS;
+
+  /// Dialog - Set global hotkey - title
+  ///
+  /// In en, this message translates to:
+  /// **'Set global hotkey'**
+  String get dialogHotkeyTitle;
+
+  /// Dialog - Hotkey - content
+  ///
+  /// In en, this message translates to:
+  /// **'Press the key combination you want'**
+  String get dialogHotkeyContent;
+
+  /// Dialog - Max history - title
+  ///
+  /// In en, this message translates to:
+  /// **'Set max history items'**
+  String get dialogMaxHistoryTitle;
+
+  /// Dialog - Max history - content
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the maximum clipboard history items'**
+  String get dialogMaxHistoryContent;
+
+  /// Dialog - Max history - field label
+  ///
+  /// In en, this message translates to:
+  /// **'History items'**
+  String get dialogMaxHistoryFieldLabel;
+
+  /// Dialog - Choose theme - title
+  ///
+  /// In en, this message translates to:
+  /// **'Choose theme mode'**
+  String get dialogThemeTitle;
+
+  /// Dialog - Choose display mode - title
+  ///
+  /// In en, this message translates to:
+  /// **'Choose default display mode'**
+  String get dialogDisplayModeTitle;
+
+  /// Dialog - Choose language - title
+  ///
+  /// In en, this message translates to:
+  /// **'Choose language'**
+  String get dialogLanguageTitle;
+
+  /// Action - Cancel
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get actionCancel;
+
+  /// Action - OK
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get actionOk;
+
+  /// About - Check updates - title
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get actionCheckUpdateTitle;
+
+  /// About - Check updates - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Check the latest version'**
+  String get actionCheckUpdateSubtitle;
+
+  /// About - Feedback - title
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get actionFeedbackTitle;
+
+  /// About - Feedback - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Report bugs or suggestions'**
+  String get actionFeedbackSubtitle;
+
+  /// About - Version - title
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get aboutVersionTitle;
+
+  /// About - Version - value
+  ///
+  /// In en, this message translates to:
+  /// **'1.0.0'**
+  String get aboutVersionValue;
+
+  /// Home - empty state title
+  ///
+  /// In en, this message translates to:
+  /// **'No clipboard history yet'**
+  String get homeEmptyTitle;
+
+  /// Home - empty state subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Copy something to get started'**
+  String get homeEmptySubtitle;
+
+  /// Home - copied snackbar
+  ///
+  /// In en, this message translates to:
+  /// **'Copied: {text}'**
+  String snackCopiedPrefix(String text);
+
+  /// Home - delete dialog - title
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm delete'**
+  String get dialogDeleteTitle;
+
+  /// Home - delete dialog - content
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure to delete this clipboard item?\\n{text}'**
+  String dialogDeleteContent(String text);
+
+  /// Action - Delete
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get actionDelete;
+
+  /// Home - preview - image
+  ///
+  /// In en, this message translates to:
+  /// **'Image ({width} x {height}, {format})'**
+  String previewImage(int width, int height, String format);
+
+  /// Home - preview - file
+  ///
+  /// In en, this message translates to:
+  /// **'File: {fileName}'**
+  String previewFile(String fileName);
+
+  /// Home - preview - color
+  ///
+  /// In en, this message translates to:
+  /// **'Color: {hex}'**
+  String previewColor(String hex);
+
+  /// Home - preview - unknown format
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknownFormat;
+
+  /// Home - preview - unknown file
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown file'**
+  String get unknownFile;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

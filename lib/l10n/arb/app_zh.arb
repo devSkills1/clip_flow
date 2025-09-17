@@ -11,5 +11,205 @@
   "settingsTitle": "设置",
   "@settingsTitle": {
     "description": "设置页面标题"
-  }
+  },
+
+  "sectionGeneral": "常规",
+  "@sectionGeneral": {"description": "设置页-常规分组标题"},
+
+  "sectionSecurity": "安全",
+  "@sectionSecurity": {"description": "设置页-安全分组标题"},
+
+  "sectionAppearance": "外观",
+  "@sectionAppearance": {"description": "设置页-外观分组标题"},
+
+  "sectionAbout": "关于",
+  "@sectionAbout": {"description": "设置页-关于分组标题"},
+
+  "generalAutoStartTitle": "开机自启动",
+  "@generalAutoStartTitle": {"description": "常规-开机自启动-标题"},
+
+  "generalAutoStartSubtitle": "应用启动时自动运行",
+  "@generalAutoStartSubtitle": {"description": "常规-开机自启动-说明"},
+
+  "generalMinimizeToTrayTitle": "最小化到系统托盘",
+  "@generalMinimizeToTrayTitle": {"description": "常规-最小化到系统托盘-标题"},
+
+  "generalMinimizeToTraySubtitle": "关闭窗口时最小化到系统托盘",
+  "@generalMinimizeToTraySubtitle": {"description": "常规-最小化到系统托盘-说明"},
+
+  "generalGlobalHotkeyTitle": "全局快捷键",
+  "@generalGlobalHotkeyTitle": {"description": "常规-全局快捷键-标题"},
+
+  "generalGlobalHotkeySubtitle": "当前快捷键：{hotkey}",
+  "@generalGlobalHotkeySubtitle": {
+    "description": "常规-全局快捷键-当前值",
+    "placeholders": {
+      "hotkey": {"type": "String", "example": "Ctrl+Shift+V"}
+    }
+  },
+
+  "generalMaxHistoryTitle": "最大历史记录数",
+  "@generalMaxHistoryTitle": {"description": "常规-最大历史记录数-标题"},
+
+  "generalMaxHistorySubtitle": "{count} 条",
+  "@generalMaxHistorySubtitle": {
+    "description": "常规-最大历史记录数-说明",
+    "placeholders": {
+      "count": {"type": "int", "example": "200"}
+    }
+  },
+
+  "securityEnableEncryptionTitle": "启用加密",
+  "@securityEnableEncryptionTitle": {"description": "安全-启用加密-标题"},
+
+  "securityEnableEncryptionSubtitle": "使用AES-256加密存储敏感数据",
+  "@securityEnableEncryptionSubtitle": {"description": "安全-启用加密-说明"},
+
+  "securityEnableOcrTitle": "启用OCR",
+  "@securityEnableOcrTitle": {"description": "安全-启用OCR-标题"},
+
+  "securityEnableOcrSubtitle": "自动识别图片中的文字",
+  "@securityEnableOcrSubtitle": {"description": "安全-启用OCR-说明"},
+
+  "appearanceThemeModeTitle": "主题模式",
+  "@appearanceThemeModeTitle": {"description": "外观-主题模式-标题"},
+
+  "appearanceDefaultDisplayModeTitle": "默认显示模式",
+  "@appearanceDefaultDisplayModeTitle": {"description": "外观-默认显示模式-标题"},
+
+  "appearanceLanguageTitle": "语言",
+  "@appearanceLanguageTitle": {"description": "外观-语言-标题"},
+
+  "themeLight": "浅色",
+  "@themeLight": {"description": "主题-浅色"},
+
+  "themeDark": "深色",
+  "@themeDark": {"description": "主题-深色"},
+
+  "themeSystem": "跟随系统",
+  "@themeSystem": {"description": "主题-系统"},
+
+  "displayCompact": "紧凑",
+  "@displayCompact": {"description": "显示模式-紧凑"},
+
+  "displayNormal": "默认",
+  "@displayNormal": {"description": "显示模式-默认"},
+
+  "displayPreview": "预览",
+  "@displayPreview": {"description": "显示模式-预览"},
+
+  "displayCompactDesc": "紧凑模式：更高信息密度，单行预览",
+  "@displayCompactDesc": {"description": "显示模式-紧凑-说明"},
+
+  "displayNormalDesc": "默认模式：信息密度适中，常规预览",
+  "@displayNormalDesc": {"description": "显示模式-默认-说明"},
+
+  "displayPreviewDesc": "预览模式：更大缩略图与更详细的预览",
+  "@displayPreviewDesc": {"description": "显示模式-预览-说明"},
+
+  "languageZhCN": "简体中文",
+  "@languageZhCN": {"description": "语言-简体中文"},
+
+  "languageEnUS": "English",
+  "@languageEnUS": {"description": "语言-English"},
+
+  "dialogHotkeyTitle": "设置全局快捷键",
+  "@dialogHotkeyTitle": {"description": "对话框-设置全局快捷键-标题"},
+
+  "dialogHotkeyContent": "请按下您想要设置的快捷键组合",
+  "@dialogHotkeyContent": {"description": "对话框-设置全局快捷键-说明"},
+
+  "dialogMaxHistoryTitle": "设置最大历史记录数",
+  "@dialogMaxHistoryTitle": {"description": "对话框-最大历史-标题"},
+
+  "dialogMaxHistoryContent": "选择最大保存的剪贴板历史记录数量",
+  "@dialogMaxHistoryContent": {"description": "对话框-最大历史-说明"},
+
+  "dialogMaxHistoryFieldLabel": "历史记录数量",
+  "@dialogMaxHistoryFieldLabel": {"description": "对话框-最大历史-字段标签"},
+
+  "dialogThemeTitle": "选择主题模式",
+  "@dialogThemeTitle": {"description": "对话框-选择主题-标题"},
+
+  "dialogDisplayModeTitle": "选择默认显示模式",
+  "@dialogDisplayModeTitle": {"description": "对话框-选择显示模式-标题"},
+
+  "dialogLanguageTitle": "选择语言",
+  "@dialogLanguageTitle": {"description": "对话框-选择语言-标题"},
+
+  "actionCancel": "取消",
+  "@actionCancel": {"description": "按钮-取消"},
+
+  "actionOk": "确定",
+  "@actionOk": {"description": "按钮-确定"},
+
+  "actionCheckUpdateTitle": "检查更新",
+  "@actionCheckUpdateTitle": {"description": "关于-检查更新-标题"},
+
+  "actionCheckUpdateSubtitle": "检查最新版本",
+  "@actionCheckUpdateSubtitle": {"description": "关于-检查更新-说明"},
+
+  "actionFeedbackTitle": "反馈问题",
+  "@actionFeedbackTitle": {"description": "关于-反馈问题-标题"},
+
+  "actionFeedbackSubtitle": "报告Bug或建议",
+  "@actionFeedbackSubtitle": {"description": "关于-反馈问题-说明"},
+
+  "aboutVersionTitle": "版本",
+  "@aboutVersionTitle": {"description": "关于-版本-标题"},
+
+  "aboutVersionValue": "1.0.0",
+  "@aboutVersionValue": {"description": "关于-版本-值"},
+
+  "homeEmptyTitle": "暂无剪贴板历史",
+  "@homeEmptyTitle": {"description": "首页-空状态标题"},
+
+  "homeEmptySubtitle": "复制一些内容开始使用吧",
+  "@homeEmptySubtitle": {"description": "首页-空状态副标题"},
+
+  "snackCopiedPrefix": "已复制: {text}",
+  "@snackCopiedPrefix": {
+    "description": "首页-已复制提示",
+    "placeholders": {"text": {"type": "String", "example": "Hello"}}
+  },
+
+  "dialogDeleteTitle": "确认删除",
+  "@dialogDeleteTitle": {"description": "首页-删除对话框-标题"},
+
+  "dialogDeleteContent": "确定要删除这个剪贴板项目吗？\\n{text}",
+  "@dialogDeleteContent": {
+    "description": "首页-删除对话框-内容",
+    "placeholders": {"text": {"type": "String", "example": "内容预览"}}
+  },
+
+  "actionDelete": "删除",
+  "@actionDelete": {"description": "按钮-删除"},
+
+  "previewImage": "图片 ({width} x {height}, {format})",
+  "@previewImage": {
+    "description": "首页-预览-图片",
+    "placeholders": {
+      "width": {"type": "int", "example": "640"},
+      "height": {"type": "int", "example": "480"},
+      "format": {"type": "String", "example": "PNG"}
+    }
+  },
+
+  "previewFile": "文件: {fileName}",
+  "@previewFile": {
+    "description": "首页-预览-文件",
+    "placeholders": {"fileName": {"type": "String", "example": "note.txt"}}
+  },
+
+  "previewColor": "颜色: {hex}",
+  "@previewColor": {
+    "description": "首页-预览-颜色",
+    "placeholders": {"hex": {"type": "String", "example": "#FFAA00"}}
+  },
+
+  "unknownFormat": "未知格式",
+  "@unknownFormat": {"description": "首页-预览-未知格式"},
+
+  "unknownFile": "未知文件",
+  "@unknownFile": {"description": "首页-预览-未知文件"}
 }

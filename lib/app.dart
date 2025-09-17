@@ -1,9 +1,10 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
-
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The root application widget of ClipFlow Pro.
@@ -23,8 +24,13 @@ class ClipFlowProApp extends ConsumerWidget {
       theme: _lightTheme,
       darkTheme: _darkTheme,
       routerConfig: router,
-      // localizationsDelegates: S.localizationsDelegates,
-      // supportedLocales: S.supportedLocales,
+      localizationsDelegates: const [
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: S.supportedLocales,
     );
   }
 }
