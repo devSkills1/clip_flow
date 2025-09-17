@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:clip_flow_pro/app.dart';
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/encryption_service.dart';
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:window_manager/window_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +14,7 @@ void main() async {
   await windowManager.ensureInitialized();
 
   // 设置窗口属性
-  WindowOptions windowOptions = const WindowOptions(
+  const windowOptions = WindowOptions(
     size: Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
     center: true,
     backgroundColor: Colors.white,

@@ -1,18 +1,16 @@
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/clip_constants.dart';
-
 class SearchBarWidget extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onSearchChanged;
-  final VoidCallback onClear;
-
   const SearchBarWidget({
-    super.key,
     required this.controller,
     required this.onSearchChanged,
     required this.onClear,
+    super.key,
   });
+  final TextEditingController controller;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {

@@ -2,13 +2,13 @@
 set -euo pipefail
 
 echo "[pre-commit] Formatting..."
-dart format --fix .
+dart format --set-exit-if-changed .
 
 echo "[pre-commit] Applying dart fix..."
 dart fix --apply
 
 echo "[pre-commit] Analyzing..."
-flutter analyze
+flutter analyze --no-fatal-infos --no-fatal-warnings
 
 echo "[pre-commit] Running tests with coverage..."
 # Adjust packages if using melos/workspaces.

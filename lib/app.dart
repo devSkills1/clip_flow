@@ -1,12 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-//// import 'package:clip_flow_pro/l10n/gen/s.dart';
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/spacing.dart';
+import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
 
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
-import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
-import 'package:clip_flow_pro/core/constants/spacing.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// The root application widget of ClipFlow Pro.
+/// Provides router configuration and light/dark themes.
 class ClipFlowProApp extends ConsumerWidget {
   const ClipFlowProApp({super.key});
 
@@ -29,11 +30,9 @@ class ClipFlowProApp extends ConsumerWidget {
 }
 
 // Cached theme instances to avoid rebuilding ThemeData on each widget rebuild.
+/// Material 3 light theme used across the app.
 final ThemeData _lightTheme = (() {
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: ThemeTokens.seedColor,
-    brightness: Brightness.light,
-  );
+  final colorScheme = ColorScheme.fromSeed(seedColor: ThemeTokens.seedColor);
 
   return ThemeData(
     useMaterial3: true,
@@ -115,6 +114,7 @@ final ThemeData _lightTheme = (() {
   );
 })();
 
+/// Material 3 dark theme used across the app.
 final ThemeData _darkTheme = (() {
   final colorScheme = ColorScheme.fromSeed(
     seedColor: ThemeTokens.seedColor,

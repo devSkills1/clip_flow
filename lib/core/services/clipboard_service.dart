@@ -2,19 +2,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/clip_item.dart';
-import '../utils/color_utils.dart';
-import '../utils/image_utils.dart';
-import '../constants/clip_constants.dart';
-
 class ClipboardService {
-  static final ClipboardService _instance = ClipboardService._internal();
   factory ClipboardService() => _instance;
   ClipboardService._internal();
+  static final ClipboardService _instance = ClipboardService._internal();
 
   static ClipboardService get instance => _instance;
 
@@ -144,7 +144,7 @@ class ClipboardService {
   }
 
   Future<void> _checkClipboard() async {
-    bool hasChange = false;
+    var hasChange = false;
 
     try {
       // 快速检测剪贴板是否有变化
@@ -298,7 +298,7 @@ class ClipboardService {
     // 检测文件路径
     if (content.startsWith('file://') ||
         content.contains('/') ||
-        content.contains('\\')) {
+        content.contains(r'\')) {
       final file = File(content.replaceFirst('file://', ''));
       if (file.existsSync()) {
         return ClipType.file;
@@ -313,7 +313,7 @@ class ClipboardService {
     }
 
     // 检测富文本
-    if (content.contains('\\rtf') || content.contains('\\fonttbl')) {
+    if (content.contains(r'\rtf') || content.contains(r'\fonttbl')) {
       return ClipType.rtf;
     }
 
@@ -336,14 +336,12 @@ class ClipboardService {
         metadata['colorHex'] = content;
         metadata['colorRgb'] = ColorUtils.hexToRgb(content);
         metadata['colorHsl'] = ColorUtils.hexToHsl(content);
-        break;
       case ClipType.file:
         final file = File(content.replaceFirst('file://', ''));
         metadata['filePath'] = file.path;
         metadata['fileName'] = file.path.split('/').last;
         metadata['fileSize'] = await file.length();
         metadata['fileExtension'] = file.path.split('.').last.toLowerCase();
-        break;
       case ClipType.image:
         // 图片处理逻辑
         break;
@@ -351,7 +349,6 @@ class ClipboardService {
         // 文本内容分析
         metadata['wordCount'] = _calculateWordCount(content);
         metadata['lineCount'] = content.split('\n').length;
-        break;
     }
 
     return metadata;
@@ -404,7 +401,7 @@ class ClipboardService {
 
     // 对于小图片（<10KB），直接比较字节
     if (newBytes.length < ClipConstants.thumbnailSize) {
-      for (int i = 0; i < newBytes.length; i++) {
+      for (var i = 0; i < newBytes.length; i++) {
         if (newBytes[i] != lastBytes[i]) return false;
       }
       return true;
@@ -523,7 +520,6 @@ class ClipboardService {
         case ClipType.image:
           // 处理图片类型
           await _setClipboardImage(item.content);
-          break;
         case ClipType.text:
         case ClipType.rtf:
         case ClipType.html:
@@ -534,7 +530,6 @@ class ClipboardService {
           final content = String.fromCharCodes(item.content);
           await Clipboard.setData(ClipboardData(text: content));
           _lastClipboardContent = content;
-          break;
       }
     } catch (e) {
       // 处理错误

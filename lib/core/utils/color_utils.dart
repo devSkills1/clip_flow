@@ -1,9 +1,11 @@
 import 'dart:math' as math; //Dart 的核心数学库dart:math导入，并为其指定了别名math。
 import 'dart:ui' show Color; //部分导入dart:ui库的语句，仅导入了该库中的Color类。
-import '../constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 
+/// Color utilities for validating and converting between HEX/RGB/HSL.
 class ColorUtils {
   // 检测是否为颜色值
+  /// Returns true if [value] matches supported color formats (HEX/RGB/HSL).
   static bool isColorValue(String value) {
     final trimmed = value.trim();
 
@@ -71,6 +73,8 @@ class ColorUtils {
   }
 
   // HEX转RGB（兼容 #RGBA/#RRGGBBAA；忽略 alpha，仅返回 RGB）
+  /// Converts HEX (supports #RGB/#RGBA/#RRGGBB/#RRGGBBAA) to RGB map.
+  /// Returns {'r':R,'g':G,'b':B}.
   static Map<String, int> hexToRgb(String hex) {
     hex = hex.replaceFirst('#', '');
     if (hex.length == 3) {
@@ -94,6 +98,7 @@ class ColorUtils {
   }
 
   // RGB转HEX
+  /// Converts RGB to hex string (#RRGGBB).
   static String rgbToHex(int r, int g, int b) {
     return '#${r.toRadixString(16).padLeft(2, '0')}'
         '${g.toRadixString(16).padLeft(2, '0')}'
@@ -101,25 +106,27 @@ class ColorUtils {
   }
 
   // HEX转HSL
+  /// Converts HEX to HSL map: {'h':0-360,'s':0-100,'l':0-100}.
   static Map<String, double> hexToHsl(String hex) {
     final rgb = hexToRgb(hex);
     return rgbToHsl(rgb['r']!, rgb['g']!, rgb['b']!);
   }
 
   // RGB转HSL（修复类型与 max/min 冲突）
+  /// Converts RGB to HSL map: {'h':0-360,'s':0-100,'l':0-100}.
   static Map<String, double> rgbToHsl(int r, int g, int b) {
-    final double rD = r / 255.0;
-    final double gD = g / 255.0;
-    final double bD = b / 255.0;
+    final rD = r / 255.0;
+    final gD = g / 255.0;
+    final bD = b / 255.0;
 
-    final double maxVal = [rD, gD, bD].reduce(math.max);
-    final double minVal = [rD, gD, bD].reduce(math.min);
+    final maxVal = [rD, gD, bD].reduce(math.max);
+    final minVal = [rD, gD, bD].reduce(math.min);
     double h = 0;
     double s = 0;
-    final double l = (maxVal + minVal) / 2.0;
+    final l = (maxVal + minVal) / 2.0;
 
     if (maxVal != minVal) {
-      final double d = maxVal - minVal;
+      final d = maxVal - minVal;
       s = l > 0.5 ? d / (2.0 - maxVal - minVal) : d / (maxVal + minVal);
       if (maxVal == rD) {
         h = (gD - bD) / d + (gD < bD ? 6.0 : 0.0);
@@ -139,12 +146,15 @@ class ColorUtils {
   }
 
   // HSL转RGB
+  /// Converts HSL (h:0-360, s/l:0-100) to RGB map.
   static Map<String, int> hslToRgb(double h, double s, double l) {
     h /= 360;
     s /= 100;
     l /= 100;
 
-    double r, g, b;
+    double r;
+    double g;
+    double b;
 
     if (s == 0) {
       r = g = b = l; // 灰色
@@ -173,6 +183,7 @@ class ColorUtils {
   }
 
   // 计算颜色相似度 (Delta E 简化)
+  /// Returns Euclidean distance of two colors in RGB space (smaller = closer).
   static double calculateColorSimilarity(String color1, String color2) {
     final rgb1 = hexToRgb(color1);
     final rgb2 = hexToRgb(color2);
@@ -193,11 +204,12 @@ class ColorUtils {
   }
 
   // 生成颜色变体
+  /// Generates [count] color variants around a base HEX color.
   static List<String> generateColorVariants(String baseColor, {int count = 5}) {
     final hsl = hexToHsl(baseColor);
     final variants = <String>[];
 
-    for (int i = 0; i < count; i++) {
+    for (var i = 0; i < count; i++) {
       final h = (hsl['h']! + i * 30) % 360;
       final s = (hsl['s']! + i * 10).clamp(0, 100).toDouble();
       final l = (hsl['l']! + i * 5).clamp(0, 100).toDouble();
@@ -211,6 +223,7 @@ class ColorUtils {
   }
 
   // 获取颜色名称
+  /// Heuristically maps a HEX color to a human-readable Chinese color name.
   static String getColorName(String hexColor) {
     final rgb = hexToRgb(hexColor);
     final r = rgb['r']!;
@@ -230,6 +243,9 @@ class ColorUtils {
   }
 
   // 颜色值转换为16进制字符串
+  /// Converts a [Color] to hex string.
+  /// If [includeAlpha] is true, format is #RRGGBBAA, otherwise #RRGGBB.
+  /// Set [withHash] to false to omit leading '#'. Uppercase when [upperCase] is true.
   static String colorToHex(
     Color color, {
     bool includeAlpha = false,
@@ -247,6 +263,7 @@ class ColorUtils {
   }
 
   // 16进制字符串转换为 Color（支持 #RGB/#RGBA/#RRGGBB/#RRGGBBAA，兼容无#）
+  /// Parses HEX string to [Color]. Supports #RGB/#RGBA/#RRGGBB/#RRGGBBAA and no-# input.
   static Color hexToColor(String hex) {
     var value = hex.trim();
     if (value.startsWith('#')) value = value.substring(1);

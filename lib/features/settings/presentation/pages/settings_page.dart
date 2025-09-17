@@ -1,8 +1,7 @@
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../../core/constants/clip_constants.dart';
-import '../../../../shared/providers/app_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -132,12 +131,7 @@ class SettingsPage extends ConsumerWidget {
             context,
             title: '关于',
             children: [
-              _buildListTile(
-                title: '版本',
-                subtitle: '1.0.0',
-                trailing: null,
-                onTap: null,
-              ),
+              _buildListTile(title: '版本', subtitle: '1.0.0'),
               _buildListTile(
                 title: '检查更新',
                 subtitle: '检查最新版本',
@@ -245,7 +239,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _showHotkeyDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('设置全局快捷键'),
@@ -268,7 +262,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _showMaxHistoryDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('设置最大历史记录数'),
@@ -326,7 +320,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _showThemeDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择主题模式'),
@@ -336,19 +330,19 @@ class SettingsPage extends ConsumerWidget {
             ref.read(themeModeProvider.notifier).state = value!;
             Navigator.of(context).pop();
           },
-          child: Column(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               RadioListTile<ThemeMode>(
-                title: const Text('浅色'),
+                title: Text('浅色'),
                 value: ThemeMode.light,
               ),
               RadioListTile<ThemeMode>(
-                title: const Text('深色'),
+                title: Text('深色'),
                 value: ThemeMode.dark,
               ),
               RadioListTile<ThemeMode>(
-                title: const Text('跟随系统'),
+                title: Text('跟随系统'),
                 value: ThemeMode.system,
               ),
             ],
@@ -359,7 +353,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _showDisplayModeDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择默认显示模式'),
@@ -377,7 +371,7 @@ class SettingsPage extends ConsumerWidget {
               ListTile(
                 title: const Text('紧凑'),
                 subtitle: const Text('列表形式，显示更多项目'),
-                leading: Radio<DisplayMode>(value: DisplayMode.compact),
+                leading: const Radio<DisplayMode>(value: DisplayMode.compact),
                 onTap: () {
                   ref
                       .read(userPreferencesProvider.notifier)
@@ -388,7 +382,7 @@ class SettingsPage extends ConsumerWidget {
               ListTile(
                 title: const Text('默认'),
                 subtitle: const Text('网格形式，平衡显示效果'),
-                leading: Radio<DisplayMode>(value: DisplayMode.normal),
+                leading: const Radio<DisplayMode>(value: DisplayMode.normal),
                 onTap: () {
                   ref
                       .read(userPreferencesProvider.notifier)
@@ -399,7 +393,7 @@ class SettingsPage extends ConsumerWidget {
               ListTile(
                 title: const Text('预览'),
                 subtitle: const Text('大卡片形式，突出内容预览'),
-                leading: Radio<DisplayMode>(value: DisplayMode.preview),
+                leading: const Radio<DisplayMode>(value: DisplayMode.preview),
                 onTap: () {
                   ref
                       .read(userPreferencesProvider.notifier)
@@ -415,7 +409,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _showLanguageDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择语言'),
@@ -430,7 +424,7 @@ class SettingsPage extends ConsumerWidget {
             children: [
               ListTile(
                 title: const Text('简体中文'),
-                leading: Radio<String>(value: 'zh_CN'),
+                leading: const Radio<String>(value: 'zh_CN'),
                 onTap: () {
                   ref
                       .read(userPreferencesProvider.notifier)
@@ -440,7 +434,7 @@ class SettingsPage extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('English'),
-                leading: Radio<String>(value: 'en_US'),
+                leading: const Radio<String>(value: 'en_US'),
                 onTap: () {
                   ref
                       .read(userPreferencesProvider.notifier)

@@ -6,7 +6,7 @@
 
 ## Checklists
 - [ ] Lint passed (flutter analyze)
-- [ ] Formatted and fixes applied (dart format --fix && dart fix --apply)
+- [ ] Formatted and fixes applied (dart format && dart fix --apply)
 - [ ] Tests passed and coverage threshold met (global ≥70%, core ≥80%)
 - [ ] No deprecated API used
 - [ ] No hard-coded secrets or magic numbers (moved to constants/tokens)

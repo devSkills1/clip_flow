@@ -1,29 +1,28 @@
 import 'dart:typed_data';
+
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/models/clip_item.dart';
-import '../../../../shared/providers/app_providers.dart';
-import '../../../../core/utils/color_utils.dart';
-import '../../../../core/constants/clip_constants.dart';
-
 class ClipItemCard extends StatelessWidget {
+  const ClipItemCard({
+    required this.item,
+    required this.displayMode,
+    required this.onTap,
+    required this.onFavorite,
+    required this.onDelete,
+    super.key,
+    this.searchQuery,
+  });
   final ClipItem item;
   final DisplayMode displayMode;
   final VoidCallback onTap;
   final VoidCallback onFavorite;
   final VoidCallback onDelete;
   final String? searchQuery;
-
-  const ClipItemCard({
-    super.key,
-    required this.item,
-    required this.displayMode,
-    required this.onTap,
-    required this.onFavorite,
-    required this.onDelete,
-    this.searchQuery,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -73,32 +72,25 @@ class ClipItemCard extends StatelessWidget {
       case ClipType.text:
         iconData = Icons.text_fields;
         iconColor = Colors.blue;
-        break;
       case ClipType.rtf:
       case ClipType.html:
         iconData = Icons.description;
         iconColor = Colors.green;
-        break;
       case ClipType.image:
         iconData = Icons.image;
         iconColor = Colors.purple;
-        break;
       case ClipType.color:
         iconData = Icons.palette;
         iconColor = Colors.orange;
-        break;
       case ClipType.file:
         iconData = Icons.insert_drive_file;
         iconColor = Colors.grey;
-        break;
       case ClipType.audio:
         iconData = Icons.audiotrack;
         iconColor = Colors.red;
-        break;
       case ClipType.video:
         iconData = Icons.videocam;
         iconColor = Colors.pink;
-        break;
     }
 
     return Icon(iconData, size: 16, color: iconColor);
@@ -110,28 +102,20 @@ class ClipItemCard extends StatelessWidget {
     switch (item.type) {
       case ClipType.text:
         label = '文本';
-        break;
       case ClipType.rtf:
         label = '富文本';
-        break;
       case ClipType.html:
         label = 'HTML';
-        break;
       case ClipType.image:
         label = '图片';
-        break;
       case ClipType.color:
         label = '颜色';
-        break;
       case ClipType.file:
         label = '文件';
-        break;
       case ClipType.audio:
         label = '音频';
-        break;
       case ClipType.video:
         label = '视频';
-        break;
     }
 
     return Text(
@@ -376,22 +360,22 @@ class ClipItemCard extends StatelessWidget {
     final lines = text.split('\n');
     final spans = <TextSpan>[];
 
-    for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       final line = lines[lineIndex];
       final lowerLine = line.toLowerCase();
 
       // 在当前行内查找匹配
       final lineSpans = <TextSpan>[];
-      int lastEnd = 0;
+      var lastEnd = 0;
 
       // 简单的字符串匹配，避免复杂的正则表达式
-      int searchIndex = 0;
+      var searchIndex = 0;
       while (searchIndex < lowerLine.length) {
         final matchIndex = lowerLine.indexOf(query, searchIndex);
         if (matchIndex == -1) break;
 
         // 检查是否是完整的词汇（简单版本）
-        bool isValidMatch = true;
+        var isValidMatch = true;
 
         // 检查前一个字符
         if (matchIndex > 0) {
@@ -480,7 +464,6 @@ class ClipItemCard extends StatelessWidget {
     return RichText(
       maxLines: maxLines,
       overflow: TextOverflow.ellipsis,
-      softWrap: true,
       text: TextSpan(children: spans),
     );
   }

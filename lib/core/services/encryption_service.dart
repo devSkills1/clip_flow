@@ -5,9 +5,9 @@ import 'package:encrypt/encrypt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class EncryptionService {
-  static final EncryptionService _instance = EncryptionService._internal();
   factory EncryptionService() => _instance;
   EncryptionService._internal();
+  static final EncryptionService _instance = EncryptionService._internal();
 
   static EncryptionService get instance => _instance;
 
@@ -19,8 +19,8 @@ class EncryptionService {
     if (_isInitialized) return;
 
     final prefs = await SharedPreferences.getInstance();
-    String? keyString = prefs.getString('encryption_key');
-    String? ivString = prefs.getString('encryption_iv');
+    var keyString = prefs.getString('encryption_key');
+    var ivString = prefs.getString('encryption_iv');
 
     if (keyString == null || ivString == null) {
       final key = Key.fromSecureRandom(32);
@@ -43,7 +43,7 @@ class EncryptionService {
     if (_encrypter == null || _iv == null) {
       throw Exception('Encryption not initialized');
     }
-    final enc = _encrypter!.encryptBytes(data, iv: _iv!);
+    final enc = _encrypter!.encryptBytes(data, iv: _iv);
     return Uint8List.fromList(enc.bytes);
   }
 
@@ -52,7 +52,7 @@ class EncryptionService {
     if (_encrypter == null || _iv == null) {
       throw Exception('Encryption not initialized');
     }
-    final dec = _encrypter!.decryptBytes(Encrypted(encryptedData), iv: _iv!);
+    final dec = _encrypter!.decryptBytes(Encrypted(encryptedData), iv: _iv);
     return Uint8List.fromList(dec);
   }
 
@@ -61,7 +61,7 @@ class EncryptionService {
     if (_encrypter == null || _iv == null) {
       throw Exception('Encryption not initialized');
     }
-    return _encrypter!.encrypt(text, iv: _iv!).base64;
+    return _encrypter!.encrypt(text, iv: _iv).base64;
   }
 
   Future<String> decryptString(String encryptedText) async {
@@ -69,7 +69,7 @@ class EncryptionService {
     if (_encrypter == null || _iv == null) {
       throw Exception('Encryption not initialized');
     }
-    return _encrypter!.decrypt(Encrypted.fromBase64(encryptedText), iv: _iv!);
+    return _encrypter!.decrypt(Encrypted.fromBase64(encryptedText), iv: _iv);
   }
 
   Future<Map<String, dynamic>> encryptMap(Map<String, dynamic> data) async {
@@ -85,10 +85,16 @@ class EncryptionService {
   Future<Map<String, dynamic>> decryptMap(
     Map<String, dynamic> encryptedData,
   ) async {
-    if (encryptedData['encrypted'] != true) return encryptedData;
-    final encryptedString = encryptedData['data'] as String;
+    if (encryptedData['encrypted'] != true) {
+      return Map<String, dynamic>.from(encryptedData);
+    }
+    final encryptedString = encryptedData['data'] as String?;
+    if (encryptedString == null) return <String, dynamic>{};
     final decryptedString = await decryptString(encryptedString);
-    return jsonDecode(decryptedString);
+    final decoded = jsonDecode(decryptedString);
+    return decoded is Map
+        ? Map<String, dynamic>.from(decoded)
+        : <String, dynamic>{};
   }
 
   Future<void> changeEncryptionKey() async {

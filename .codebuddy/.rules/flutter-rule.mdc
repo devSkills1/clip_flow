@@ -6,7 +6,7 @@
 
 ## 0. 执行与度量（必读）
 - PR 模板必须包含：依赖评审、性能影响、安全影响、迁移影响、可回滚性。
-- 提交钩子（pre-commit / pre-push）最少包含：dart format --fix、dart fix --apply、flutter analyze、测试与覆盖率阈值、license header 校验、unused imports 清理。
+- 提交钩子（pre-commit / pre-push）最少包含：dart format、dart fix --apply、flutter analyze、测试与覆盖率阈值、license header 校验、unused imports 清理。
 - CI 门禁：lint、测试（全局覆盖率≥70%，核心模块≥80%）、flutter pub outdated、依赖许可扫描、SCA（如 Snyk）、dart code_metrics（圈复杂度/函数长度阈值）、构建校验。
 - 周期性任务（每季度）：弃用 API 审计、依赖更新与瘦身、性能基线对比（TTI/掉帧/内存）、崩溃率与稳定性复盘。
 

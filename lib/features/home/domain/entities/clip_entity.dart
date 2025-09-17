@@ -1,4 +1,6 @@
+/// Domain entity representing a clipboard item.
 class ClipEntity {
+  /// Creates a clipboard item with unique [id], raw [content] and [createdAt] time.
   const ClipEntity({
     required this.id,
     required this.content,

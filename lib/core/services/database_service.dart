@@ -1,16 +1,15 @@
 import 'dart:convert';
-import 'package:sqflite/sqflite.dart';
+
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-
-import '../constants/clip_constants.dart';
-
-import '../models/clip_item.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DatabaseService {
-  static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
+  static final DatabaseService _instance = DatabaseService._internal();
 
   static DatabaseService get instance => _instance;
 
@@ -128,7 +127,7 @@ class DatabaseService {
       offset: offset,
     );
 
-    return maps.map((map) => _mapToClipItem(map)).toList();
+    return maps.map(_mapToClipItem).toList();
   }
 
   Future<List<ClipItem>> getClipItemsByType(
@@ -148,7 +147,7 @@ class DatabaseService {
       offset: offset,
     );
 
-    return maps.map((map) => _mapToClipItem(map)).toList();
+    return maps.map(_mapToClipItem).toList();
   }
 
   Future<List<ClipItem>> getFavoriteClipItems({int? limit, int? offset}) async {
@@ -164,7 +163,7 @@ class DatabaseService {
       offset: offset,
     );
 
-    return maps.map((map) => _mapToClipItem(map)).toList();
+    return maps.map(_mapToClipItem).toList();
   }
 
   Future<List<ClipItem>> searchClipItems(
@@ -184,7 +183,7 @@ class DatabaseService {
       offset: offset,
     );
 
-    return maps.map((map) => _mapToClipItem(map)).toList();
+    return maps.map(_mapToClipItem).toList();
   }
 
   Future<ClipItem?> getClipItemById(String id) async {
@@ -267,18 +266,45 @@ class DatabaseService {
   }
 
   ClipItem _mapToClipItem(Map<String, dynamic> map) {
+    final id = map['id'] as String?;
+    final typeName = map['type'] as String?;
+    final contentRaw = map['content'];
+    final thumbRaw = map['thumbnail'];
+    final metadataRaw = map['metadata'];
+    final isFavRaw = map['is_favorite'];
+    final createdAtRaw = map['created_at'];
+    final updatedAtRaw = map['updated_at'];
+
+    Map<String, dynamic> metadata;
+    if (metadataRaw is String) {
+      final decoded = jsonDecode(metadataRaw);
+      metadata = decoded is Map
+          ? Map<String, dynamic>.from(decoded)
+          : <String, dynamic>{};
+    } else if (metadataRaw is Map<String, dynamic>) {
+      metadata = metadataRaw;
+    } else if (metadataRaw is Map) {
+      metadata = Map<String, dynamic>.from(metadataRaw);
+    } else {
+      metadata = <String, dynamic>{};
+    }
+
     return ClipItem(
-      id: map['id'],
+      id: id,
       type: ClipType.values.firstWhere(
-        (e) => e.name == map['type'],
+        (e) => e.name == typeName,
         orElse: () => ClipType.text,
       ),
-      content: map['content'] as List<int>,
-      thumbnail: map['thumbnail'] as List<int>?,
-      metadata: jsonDecode(map['metadata']),
-      isFavorite: map['is_favorite'] == 1,
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
+      content: contentRaw is List ? List<int>.from(contentRaw) : <int>[],
+      thumbnail: thumbRaw is List ? List<int>.from(thumbRaw) : null,
+      metadata: metadata,
+      isFavorite: isFavRaw == 1 || isFavRaw == true,
+      createdAt: createdAtRaw is String
+          ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+          : (createdAtRaw is DateTime ? createdAtRaw : DateTime.now()),
+      updatedAt: updatedAtRaw is String
+          ? DateTime.tryParse(updatedAtRaw) ?? DateTime.now()
+          : (updatedAtRaw is DateTime ? updatedAtRaw : DateTime.now()),
     );
   }
 

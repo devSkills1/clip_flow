@@ -1,13 +1,12 @@
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/clipboard_service.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/filter_sidebar.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar_widget.dart';
+import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../../core/models/clip_item.dart';
-import '../../../../shared/providers/app_providers.dart';
-import '../../../../core/services/clipboard_service.dart';
-import '../../../../core/constants/clip_constants.dart';
-import '../widgets/clip_item_card.dart';
-import '../widgets/search_bar_widget.dart';
-import '../widgets/filter_sidebar.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -47,7 +46,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final displayMode = ref.watch(displayModeProvider);
 
     // 过滤和搜索
-    List<ClipItem> filteredItems = clipboardHistory;
+    var filteredItems = clipboardHistory;
 
     if (filterType != null) {
       filteredItems = filteredItems
@@ -166,8 +165,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       case DisplayMode.normal:
         return LayoutBuilder(
           builder: (context, constraints) {
-            int crossAxisCount = 2;
-            double childAspectRatio = 1.8;
+            var crossAxisCount = 2;
+            var childAspectRatio = 1.8;
 
             // 响应式布局：根据窗口宽度调整列数
             if (constraints.maxWidth > ClipConstants.defaultWindowWidth) {
@@ -205,8 +204,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       case DisplayMode.preview:
         return LayoutBuilder(
           builder: (context, constraints) {
-            int crossAxisCount = 3;
-            double childAspectRatio = 1.5;
+            var crossAxisCount = 3;
+            var childAspectRatio = 1.5;
 
             // 响应式布局：根据窗口宽度调整列数
             if (constraints.maxWidth > 1400) {
@@ -267,7 +266,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _onDeleteItem(ClipItem item) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('确认删除'),

@@ -1,4 +1,5 @@
 /// 剪贴板应用常量定义
+/// Global constants shared across the app (names, sizes, patterns, messages).
 class ClipConstants {
   // 应用信息
   static const String appName = 'ClipFlow Pro';
@@ -6,12 +7,12 @@ class ClipConstants {
   static const String appDescription = '强大的剪贴板管理工具';
 
   // 窗口尺寸
-  static const double minWindowWidth = 800.0;
-  static const double minWindowHeight = 600.0;
-  static const double maxWindowWidth = 1920.0;
-  static const double maxWindowHeight = 1080.0;
-  static const double defaultWindowWidth = 1200.0;
-  static const double defaultWindowHeight = 800.0;
+  static const double minWindowWidth = 800;
+  static const double minWindowHeight = 600;
+  static const double maxWindowWidth = 1920;
+  static const double maxWindowHeight = 1080;
+  static const double defaultWindowWidth = 1200;
+  static const double defaultWindowHeight = 800;
 
   // 数据库
   static const String databaseName = 'clipflow_pro.db';
@@ -35,16 +36,16 @@ class ClipConstants {
   static const int cacheCleanupInterval = 3600000; // 1小时
 
   // UI 常量
-  static const double cardBorderRadius = 8.0;
-  static const double defaultPadding = 16.0;
-  static const double smallPadding = 8.0;
-  static const double largePadding = 24.0;
+  static const double cardBorderRadius = 8;
+  static const double defaultPadding = 16;
+  static const double smallPadding = 8;
+  static const double largePadding = 24;
 
   // 字体大小
-  static const double titleFontSize = 18.0;
-  static const double bodyFontSize = 14.0;
-  static const double captionFontSize = 12.0;
-  static const double smallFontSize = 10.0;
+  static const double titleFontSize = 18;
+  static const double bodyFontSize = 14;
+  static const double captionFontSize = 12;
+  static const double smallFontSize = 10;
 
   // 颜色
   static const int primaryColorValue = 0xFF2196F3;
@@ -124,7 +125,7 @@ class ClipConstants {
   static const String settingDisplayMode = 'display_mode';
 
   // 网格间距
-  static const double gridSpacing = 16.0;
+  static const double gridSpacing = 16;
 
   // 十六进制基数
   static const int hexRadix = 16;
@@ -137,6 +138,7 @@ class ClipConstants {
 }
 
 /// 动画常量
+/// 动画相关的通用时长常量。
 class AnimationConstants {
   static const Duration fastDuration = Duration(milliseconds: 150);
   static const Duration normalDuration = Duration(milliseconds: 300);
@@ -148,11 +150,12 @@ class AnimationConstants {
 }
 
 /// 布局常量
+/// 布局与组件尺寸相关的常量。
 class LayoutConstants {
   // 网格布局
   static const int gridCrossAxisCount = 2;
   static const double gridChildAspectRatio = 1.5;
-  static const double gridSpacing = 16.0;
+  static const double gridSpacing = 16;
 
   // 十六进制基数
   static const int hexRadix = 16;
@@ -164,14 +167,14 @@ class LayoutConstants {
   static const int bytesInKB = 1024;
 
   // 列表布局
-  static const double listItemHeight = 80.0;
-  static const double listItemSpacing = 8.0;
+  static const double listItemHeight = 80;
+  static const double listItemSpacing = 8;
 
   // 卡片布局
-  static const double cardElevation = 2.0;
-  static const double cardMargin = 8.0;
+  static const double cardElevation = 2;
+  static const double cardMargin = 8;
 
   // 对话框
-  static const double dialogMaxWidth = 400.0;
-  static const double dialogMinHeight = 200.0;
+  static const double dialogMaxWidth = 400;
+  static const double dialogMinHeight = 200;
 }

@@ -1,11 +1,13 @@
-import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:image/image.dart' as img;
 
-import '../constants/clip_constants.dart';
-
+/// Image utilities for format detection, resizing/compressing and helpers.
 class ImageUtils {
   // 检测是否为图片文件
+  /// Returns true if path extension indicates a common image type.
   static bool isImageFile(String filePath) {
     final extension = filePath.split('.').last.toLowerCase();
     return [
@@ -21,6 +23,7 @@ class ImageUtils {
   }
 
   // 生成缩略图
+  /// Generates a thumbnail with max width/height. Returns null if decoding fails.
   static Future<Uint8List?> generateThumbnail(
     Uint8List imageData, {
     int maxWidth = ClipConstants.thumbnailSize,
@@ -44,6 +47,7 @@ class ImageUtils {
   }
 
   // 压缩图片
+  /// Compresses image to [quality] and resizes if exceeding [maxWidth]/[maxHeight].
   static Future<Uint8List?> compressImage(
     Uint8List imageData, {
     int quality = 80,
@@ -55,7 +59,7 @@ class ImageUtils {
       if (image == null) return null;
 
       // 如果图片尺寸超过限制，先调整尺寸
-      img.Image resizedImage = image;
+      var resizedImage = image;
       if (image.width > maxWidth || image.height > maxHeight) {
         resizedImage = img.copyResize(
           image,
@@ -72,6 +76,7 @@ class ImageUtils {
   }
 
   // 获取图片信息
+  /// Extracts width/height/format/size/basic aspectRatio from binary image data.
   static Map<String, dynamic> getImageInfo(Uint8List imageData) {
     try {
       final image = img.decodeImage(imageData);
@@ -102,6 +107,7 @@ class ImageUtils {
   }
 
   // 检测图片格式
+  /// Detects image format from magic bytes. Returns 'unknown' if not recognized.
   static String _getImageFormat(Uint8List data) {
     if (data.length < 4) return 'unknown';
 
@@ -139,6 +145,7 @@ class ImageUtils {
   }
 
   // 提取图片主色调
+  /// Returns top-[colorCount] quantized dominant colors: [{'r','g','b','count'},...].
   static List<Map<String, dynamic>> extractDominantColors(
     Uint8List imageData, {
     int colorCount = 5,
@@ -153,12 +160,12 @@ class ImageUtils {
       final colorCounts = <String, int>{};
 
       // 统计颜色（使用 image 4.x Pixel API 提取通道）
-      for (int y = 0; y < resized.height; y++) {
-        for (int x = 0; x < resized.width; x++) {
+      for (var y = 0; y < resized.height; y++) {
+        for (var x = 0; x < resized.width; x++) {
           final p = resized.getPixel(x, y); // Pixel
-          final int r = p.r.toInt();
-          final int g = p.g.toInt();
-          final int b = p.b.toInt();
+          final r = p.r.toInt();
+          final g = p.g.toInt();
+          final b = p.b.toInt();
 
           // 量化颜色以减少相似色
           final quantizedR = (r ~/ 32) * 32;
@@ -190,17 +197,20 @@ class ImageUtils {
   }
 
   // 转换为Base64
+  /// Encodes binary image data to Base64 string.
   static String toBase64(Uint8List imageData) {
     return base64Encode(imageData);
   }
 
   // 生成Markdown图片语法
+  /// Builds a Markdown image snippet for the given [imagePath].
   static String toMarkdownImage(String imagePath, {String? altText}) {
     final alt = altText ?? '图片';
     return '![$alt]($imagePath)';
   }
 
   // 生成HTML img标签
+  /// Builds an HTML img tag string for the given [imagePath] and optional size.
   static String toHtmlImage(
     String imagePath, {
     String? altText,
@@ -215,6 +225,7 @@ class ImageUtils {
   }
 
   // 格式化文件大小
+  /// Formats [bytes] to human-friendly size string (B/KB/MB/GB).
   static String formatFileSize(int bytes) {
     if (bytes < ClipConstants.bytesInKB) return '$bytes B';
     if (bytes < ClipConstants.bytesInKB * ClipConstants.bytesInKB) {

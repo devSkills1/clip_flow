@@ -1,23 +1,21 @@
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/models/clip_item.dart';
-import '../../../../core/constants/clip_constants.dart';
-import '../../../../shared/providers/app_providers.dart';
-
 class FilterSidebar extends ConsumerWidget {
-  final ClipType? selectedType;
-  final ValueChanged<ClipType?> onTypeSelected;
-  final ValueChanged<DisplayMode> onDisplayModeChanged;
-  final DisplayMode displayMode;
-
   const FilterSidebar({
-    super.key,
     required this.selectedType,
     required this.onTypeSelected,
     required this.onDisplayModeChanged,
     required this.displayMode,
+    super.key,
   });
+  final ClipType? selectedType;
+  final ValueChanged<ClipType?> onTypeSelected;
+  final ValueChanged<DisplayMode> onDisplayModeChanged;
+  final DisplayMode displayMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +26,6 @@ class FilterSidebar extends ConsumerWidget {
         border: Border(
           right: BorderSide(
             color: Theme.of(context).colorScheme.outlineVariant,
-            width: 1,
           ),
         ),
       ),
@@ -42,7 +39,6 @@ class FilterSidebar extends ConsumerWidget {
               border: Border(
                 bottom: BorderSide(
                   color: Theme.of(context).colorScheme.outlineVariant,
-                  width: 1,
                 ),
               ),
             ),
@@ -180,10 +176,7 @@ class FilterSidebar extends ConsumerWidget {
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               border: isSelected
-                  ? Border.all(
-                      color: Theme.of(context).colorScheme.secondary,
-                      width: 1,
-                    )
+                  ? Border.all(color: Theme.of(context).colorScheme.secondary)
                   : null,
             ),
             child: Row(
@@ -273,10 +266,7 @@ class FilterSidebar extends ConsumerWidget {
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               border: isSelected
-                  ? Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 1,
-                    )
+                  ? Border.all(color: Theme.of(context).colorScheme.primary)
                   : null,
             ),
             child: Row(
@@ -338,7 +328,7 @@ class FilterSidebar extends ConsumerWidget {
                 final historyNotifier = ref.read(
                   clipboardHistoryProvider.notifier,
                 );
-                showDialog(
+                showDialog<void>(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
                     title: const Text('确认清空'),
