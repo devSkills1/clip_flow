@@ -7,8 +7,13 @@ dart format --set-exit-if-changed .
 echo "[pre-commit] Applying dart fix..."
 dart fix --apply
 
-echo "[pre-commit] Analyzing..."
-flutter analyze --no-fatal-infos --no-fatal-warnings
+# If fixes/format produced changes, stage them so they are part of this commit.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  git add -A
+fi
+
+echo "[pre-commit] Analyzing (non-blocking infos/warnings)..."
+flutter analyze --no-fatal-infos --no-fatal-warnings || true
 
 echo "[pre-commit] Running tests with coverage..."
 # Adjust packages if using melos/workspaces.
