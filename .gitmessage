@@ -1,0 +1,30 @@
+# Conventional Commit (EN/ZH)
+# type(scope): subject
+# 示例 Example: feat(home): 支持筛选 | add filters in home
+
+type(scope): subject
+
+Why / 为什么
+- 简述动机与背景（为何要改）
+
+What Changed / 改动内容
+- 要点列举（模块、接口、行为变更）
+
+Tests / 测试
+- 结果（通过/失败）
+- 覆盖率（如适用）
+
+Risk & Impact / 风险与影响
+- 性能 / 安全 / 兼容性 / 迁移影响
+
+Rollback / 回滚策略
+- 如何回滚（指令或步骤）
+
+Dependency / 依赖变更（如适用）
+- 新增/升级/移除及评审结论
+
+i18n / 国际化（如适用）
+- 字符串来源（ARB/本地化）
+
+Links / 关联
+- issue/任务/讨论链接
