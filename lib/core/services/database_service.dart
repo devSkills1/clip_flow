@@ -151,7 +151,7 @@ class DatabaseService {
 
     // 尝试删除媒体文件
     if (item?.filePath != null && item!.filePath!.isNotEmpty) {
-      _deleteMediaFileSafe(item.filePath!);
+      await _deleteMediaFileSafe(item.filePath!);
     }
   }
 
@@ -364,7 +364,7 @@ class DatabaseService {
     for (final row in stale) {
       final path = row['file_path'] as String?;
       if (path != null && path.isNotEmpty) {
-        _deleteMediaFileSafe(path);
+        await _deleteMediaFileSafe(path);
       }
     }
   }
@@ -394,7 +394,7 @@ class DatabaseService {
     for (final r in rows) {
       final p = r['file_path'] as String?;
       if (p != null && p.isNotEmpty) {
-        _deleteMediaFileSafe(p);
+        await _deleteMediaFileSafe(p);
       }
     }
   }
@@ -450,10 +450,10 @@ class DatabaseService {
     try {
       final absPath = await _resolveAbsoluteMediaPath(relativePath);
       final file = File(absPath);
-      if (await file.exists()) {
+      if (file.existsSync()) {
         await file.delete();
       }
-    } catch (_) {}
+    } on FileSystemException catch (_) {}
   }
 
   Future<String> _resolveAbsoluteMediaPath(String relativePath) async {
@@ -469,7 +469,7 @@ class DatabaseService {
 
     final documentsDirectory = await getApplicationDocumentsDirectory();
     final mediaRoot = Directory(join(documentsDirectory.path, 'media'));
-    if (!await mediaRoot.exists()) return 0;
+    if (!mediaRoot.existsSync()) return 0;
 
     // 读取数据库中所有 file_path 引用
     final rows = await _database!.query(
@@ -495,14 +495,14 @@ class DatabaseService {
 
       if (path.endsWith('.tmp')) continue;
 
-      final stat = await entity.stat();
+      final stat = entity.statSync();
       if (stat.modified.isAfter(cutoff)) continue;
 
       if (!referenced.contains(path)) {
         try {
           await entity.delete();
           deleted++;
-        } catch (_) {}
+        } on FileSystemException catch (_) {}
       }
     }
     return deleted;

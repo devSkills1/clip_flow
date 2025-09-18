@@ -24,7 +24,8 @@ void main() async {
     alwaysOnTop: false,
   );
 
-  windowManager.waitUntilReadyToShow(windowOptions, () async {
+  /// 主函数
+  await windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
     await windowManager.focus();
   });

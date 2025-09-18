@@ -7,6 +7,8 @@ import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 筛选侧边栏
+/// 提供筛选条件的选择和应用
 class FilterSidebar extends ConsumerWidget {
   const FilterSidebar({
     required this.selectedType,

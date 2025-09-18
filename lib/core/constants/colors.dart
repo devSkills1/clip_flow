@@ -29,6 +29,8 @@ class AppColors {
 
   /// 灰色系列
   static const int grey300 = 0xFFE0E0E0;
+
+  /// 灰色600
   static const int grey600 = 0xFF757575;
 
   /// 蓝色系列

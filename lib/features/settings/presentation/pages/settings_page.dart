@@ -6,6 +6,8 @@ import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 应用设置页面
+/// 提供应用的配置和偏好设置
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 

@@ -51,6 +51,7 @@
 - 复杂逻辑添加注释；公共接口提供文档与使用示例。
 - README 模板：运行、构建、环境变量、故障排查。
 - 架构决策记录（ADR）：关键技术选型与取舍记录于 docs/decisions。
+- 文档注释警告处理：开发阶段允许暂时忽略 `public_member_api_docs` 警告，但发布前需补全核心公共接口文档；可通过 analysis_options.yaml 配置忽略或降级该警告。
 
 ## 3. 性能与构建
 
@@ -119,5 +120,6 @@
 - 格式化：dart format；自动修复：dart fix --apply。
 - 静态分析：flutter analyze；性能分析：Flutter DevTools。
 - 依赖：flutter pub outdated、许可扫描、未使用依赖清理。
+- 文档注释：开发阶段可配置忽略 `public_member_api_docs` 警告，发布前统一补全重要接口文档。
 
 —— 规则文档会随项目演进持续更新 ——

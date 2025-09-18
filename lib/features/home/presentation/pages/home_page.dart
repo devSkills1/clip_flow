@@ -13,7 +13,10 @@ import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 首页
+/// 展示剪贴板历史记录和筛选功能
 class HomePage extends ConsumerStatefulWidget {
+  /// 首页
   const HomePage({super.key});
 
   @override
