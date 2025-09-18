@@ -10,9 +10,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// The root application widget of ClipFlow Pro.
 /// Provides router configuration and light/dark themes.
 class ClipFlowProApp extends ConsumerWidget {
+  /// Creates the root application widget.
   const ClipFlowProApp({super.key});
 
   @override
+  /// Builds the root MaterialApp with routing, theming, and localization.
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);

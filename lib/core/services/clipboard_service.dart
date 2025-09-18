@@ -11,16 +11,29 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 剪贴板服务
+///
+/// 用于监听剪贴板变化，并将剪贴板内容转换为ClipItem对象。
+/// 通过轮询剪贴板内容，将剪贴板内容转换为ClipItem对象，并通过剪贴板变更流（广播）通知订阅者。
 class ClipboardService {
+  /// 工厂构造：返回剪贴板服务单例
   factory ClipboardService() => _instance;
+
+  /// 私有构造：单例内部初始化
   ClipboardService._internal();
+
+  /// 单例实例
   static final ClipboardService _instance = ClipboardService._internal();
 
+  /// 获取剪贴板服务单例
   static ClipboardService get instance => _instance;
 
   final StreamController<ClipItem> _clipboardController =
       StreamController<ClipItem>.broadcast();
 
+  /// 剪贴板变更流（广播）
+  ///
+  /// 订阅该流以获取新的剪贴项事件。
   Stream<ClipItem> get clipboardStream => _clipboardController.stream;
 
   Timer? _pollingTimer;
@@ -53,6 +66,7 @@ class ClipboardService {
     'clipboard_service',
   );
 
+  /// 初始化服务并启动轮询监听
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -336,6 +350,7 @@ class ClipboardService {
         metadata['colorHex'] = content;
         metadata['colorRgb'] = ColorUtils.hexToRgb(content);
         metadata['colorHsl'] = ColorUtils.hexToHsl(content);
+        break;
       case ClipType.file:
         final file = File(content.replaceFirst('file://', ''));
         metadata['filePath'] = file.path;
@@ -343,12 +358,33 @@ class ClipboardService {
         metadata['fileSize'] = await file.length();
         metadata['fileExtension'] = file.path.split('.').last.toLowerCase();
       case ClipType.image:
-        // 图片处理逻辑
+      // 图片处理逻辑（此处主要在 _extractImageMetadata 中完成）
+      case ClipType.audio:
+        // 音频元数据（当前仅基本信息，可扩展为读取音频时长/码率等）
+        final file = File(content.replaceFirst('file://', ''));
+        if (file.existsSync()) {
+          metadata['filePath'] = file.path;
+          metadata['fileName'] = file.path.split('/').last;
+          metadata['fileSize'] = await file.length();
+          metadata['fileExtension'] = file.path.split('.').last.toLowerCase();
+        }
+      case ClipType.video:
+        // 视频元数据（当前仅基本文件信息）
+        final vfile = File(content.replaceFirst('file://', ''));
+        if (vfile.existsSync()) {
+          metadata['filePath'] = vfile.path;
+          metadata['fileName'] = vfile.path.split('/').last;
+          metadata['fileSize'] = await vfile.length();
+          metadata['fileExtension'] = vfile.path.split('.').last.toLowerCase();
+        }
         break;
-      default:
+      case ClipType.text:
+      case ClipType.html:
+      case ClipType.rtf:
         // 文本内容分析
         metadata['wordCount'] = _calculateWordCount(content);
         metadata['lineCount'] = content.split('\n').length;
+        break;
     }
 
     return metadata;
@@ -514,22 +550,29 @@ class ClipboardService {
     }
   }
 
+  /// 将指定剪贴项写入系统剪贴板
+  ///
+  /// 参数：
+  /// - item：要写入的剪贴项（支持图片与文本类型）
   Future<void> setClipboardContent(ClipItem item) async {
     try {
       switch (item.type) {
         case ClipType.image:
           // 处理图片类型
           await _setClipboardImage(item.content);
+          break;
         case ClipType.text:
         case ClipType.rtf:
         case ClipType.html:
         case ClipType.color:
         case ClipType.file:
-        default:
+        case ClipType.audio:
+        case ClipType.video:
           // 处理文本类型
           final content = String.fromCharCodes(item.content);
           await Clipboard.setData(ClipboardData(text: content));
           _lastClipboardContent = content;
+          break;
       }
     } catch (e) {
       // 处理错误
@@ -546,6 +589,7 @@ class ClipboardService {
     }
   }
 
+  /// 清空系统剪贴板（文本渠道）
   Future<void> clearClipboard() async {
     try {
       await Clipboard.setData(const ClipboardData(text: ''));
@@ -555,6 +599,7 @@ class ClipboardService {
     }
   }
 
+  /// 释放资源：停止轮询、关闭流并清理缓存
   void dispose() {
     _pollingTimer?.cancel();
     _clipboardController.close();
@@ -566,10 +611,14 @@ class ClipboardService {
 }
 
 // Riverpod Provider
+//// Riverpod Provider
+
+/// 剪贴板服务 Provider（单例）
 final clipboardServiceProvider = Provider<ClipboardService>((ref) {
   return ClipboardService.instance;
 });
 
+/// 剪贴板变更流 Provider
 final clipboardStreamProvider = StreamProvider<ClipItem>((ref) {
   final service = ref.watch(clipboardServiceProvider);
   return service.clipboardStream;

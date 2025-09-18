@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// 主题模式提供者
-/// App theme mode provider (system/light/dark).
+//// 主题模式提供者
+/// 应用主题模式（系统/浅色/深色）的状态提供者。
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
-// 路由提供者
-/// Global router provider with the app route table.
+//// 路由提供者
+/// 全局路由器提供者，定义应用路由表与初始路由。
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
@@ -24,18 +24,20 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// 剪贴板历史提供者
-/// Clipboard history state provider backed by [ClipboardHistoryNotifier].
+//// 剪贴板历史提供者
+/// 基于 [ClipboardHistoryNotifier] 的剪贴板历史状态提供者。
 final clipboardHistoryProvider =
     StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
       return ClipboardHistoryNotifier();
     });
 
-/// Manages clipboard items: add/remove/favorite/search with size capping.
+//// 剪贴板历史通知器
+/// 管理剪贴项：新增/删除/收藏/搜索，并限制列表大小。
 class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
+  /// 使用空列表初始化历史记录。
   ClipboardHistoryNotifier() : super([]);
 
-  /// Adds a new item or updates timestamp if duplicated by content.
+  /// 添加新项目；若内容重复则仅更新其时间戳并前置。
   void addItem(ClipItem item) {
     // 避免重复添加相同内容
     final existingIndex = state.indexWhere(
@@ -68,12 +70,12 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     }
   }
 
-  /// Removes item by [id].
+  /// 按 [id] 移除项目。
   void removeItem(String id) {
     state = state.where((item) => item.id != id).toList();
   }
 
-  /// Toggles favorite flag by [id].
+  /// 按 [id] 切换收藏状态。
   void toggleFavorite(String id) {
     state = state.map((item) {
       if (item.id == id) {
@@ -83,22 +85,22 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     }).toList();
   }
 
-  /// Clears all history items.
+  /// 清空所有历史项目。
   void clearHistory() {
     state = [];
   }
 
-  /// Returns items marked as favorite.
+  /// 获取已收藏的项目列表。
   List<ClipItem> getFavorites() {
     return state.where((item) => item.isFavorite).toList();
   }
 
-  /// Filters items by [type].
+  /// 按 [type] 过滤项目。
   List<ClipItem> getByType(ClipType type) {
     return state.where((item) => item.type == type).toList();
   }
 
-  /// Full-text search by content and tags.
+  /// 按内容与标签进行全文搜索。
   List<ClipItem> search(String query) {
     if (query.isEmpty) return state;
 
@@ -116,31 +118,35 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   }
 }
 
-// 搜索查询提供者
-/// Current search query.
+//// 搜索查询提供者
+/// 当前搜索关键字的状态提供者。
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
-// 筛选类型提供者
-/// Current filter type.
+//// 筛选类型提供者
+/// 当前剪贴类型筛选的状态提供者。
 final filterTypeProvider = StateProvider<ClipType?>((ref) => null);
 
-// 显示模式提供者 (紧凑/默认/预览)
-/// Display density modes for UI lists/grids.
+//// 显示模式（紧凑/默认/预览）
+/// UI 列表/网格的显示密度枚举。
 enum DisplayMode { compact, normal, preview }
 
-/// Current display mode state.
+//// 显示模式提供者
+/// 当前 UI 显示模式（紧凑/默认/预览）的状态提供者。
 final displayModeProvider = StateProvider<DisplayMode>(
   (ref) => DisplayMode.normal,
 );
 
-// 用户偏好设置提供者
+//// 用户偏好设置提供者
+/// 提供用户偏好状态与更新方法的通知器提供者。
 final userPreferencesProvider =
     StateNotifierProvider<UserPreferencesNotifier, UserPreferences>((ref) {
       return UserPreferencesNotifier();
     });
 
-/// Immutable user preferences model with JSON (de)serialization helpers.
+//// 用户偏好数据模型
+/// 不可变的用户偏好设置，并提供 JSON 序列化/反序列化。
 class UserPreferences {
+  /// 构造函数：提供默认值。
   UserPreferences({
     this.autoStart = false,
     this.minimizeToTray = true,
@@ -152,7 +158,7 @@ class UserPreferences {
     this.defaultDisplayMode = DisplayMode.normal,
   });
 
-  /// Creates [UserPreferences] from JSON map.
+  /// 从 JSON Map 创建 [UserPreferences] 实例。
   factory UserPreferences.fromJson(Map<String, dynamic> json) {
     return UserPreferences(
       autoStart: (json['autoStart'] as bool?) ?? false,
@@ -168,16 +174,32 @@ class UserPreferences {
       ),
     );
   }
+
+  /// 是否开机自启动
   final bool autoStart;
+
+  /// 关闭窗口是否最小化到托盘
   final bool minimizeToTray;
+
+  /// 全局快捷键
   final String globalHotkey;
+
+  /// 历史记录最大保留条数
   final int maxHistoryItems;
+
+  /// 是否启用加密
   final bool enableEncryption;
+
+  /// 是否启用 OCR
   final bool enableOCR;
+
+  /// 显示语言代码（如 'zh_CN'）
   final String language;
+
+  /// 默认显示模式
   final DisplayMode defaultDisplayMode;
 
-  /// Returns a new instance with selected fields overridden.
+  /// 返回复制的新实例，并按需覆盖指定字段。
   UserPreferences copyWith({
     bool? autoStart,
     bool? minimizeToTray,
@@ -200,7 +222,7 @@ class UserPreferences {
     );
   }
 
-  /// Serializes preferences to a JSON map.
+  /// 序列化为 JSON Map。
   Map<String, dynamic> toJson() {
     return {
       'autoStart': autoStart,
@@ -215,51 +237,56 @@ class UserPreferences {
   }
 }
 
-/// Manages and updates [UserPreferences] state.
+//// 用户偏好通知器
+/// 管理并更新 [UserPreferences] 状态。
 class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
+  /// 使用默认偏好初始化。
   UserPreferencesNotifier() : super(UserPreferences());
 
-  /// Replaces current preferences with [preferences].
-  void updatePreferences(UserPreferences preferences) {
+  /// 当前偏好读取器。
+  UserPreferences get preferences => state;
+
+  /// 用 [preferences] 替换当前偏好。
+  set preferences(UserPreferences preferences) {
     state = preferences;
   }
 
-  /// Toggles auto start preference.
+  /// 切换“开机自启动”偏好。
   void toggleAutoStart() {
     state = state.copyWith(autoStart: !state.autoStart);
   }
 
-  /// Toggles minimize-to-tray preference.
+  /// 切换“最小化到托盘”偏好。
   void toggleMinimizeToTray() {
     state = state.copyWith(minimizeToTray: !state.minimizeToTray);
   }
 
-  /// Sets the global shortcut hotkey.
+  /// 设置全局快捷键。
   void setGlobalHotkey(String hotkey) {
     state = state.copyWith(globalHotkey: hotkey);
   }
 
-  /// Sets the maximum number of history items to retain.
+  /// 设置历史记录的最大保留条数。
   void setMaxHistoryItems(int maxItems) {
     state = state.copyWith(maxHistoryItems: maxItems);
   }
 
-  /// Toggles encryption feature.
+  /// 切换“启用加密”偏好。
   void toggleEncryption() {
     state = state.copyWith(enableEncryption: !state.enableEncryption);
   }
 
-  /// Toggles OCR feature.
+  /// 切换“启用 OCR”偏好。
   void toggleOCR() {
     state = state.copyWith(enableOCR: !state.enableOCR);
   }
 
-  /// Sets display language code (e.g. 'zh_CN').
+  /// 设置显示语言代码（例如 'zh_CN'）。
   void setLanguage(String language) {
     state = state.copyWith(language: language);
   }
 
-  /// Sets default display mode.
+  /// 设置默认显示模式。
   void setDefaultDisplayMode(DisplayMode mode) {
     state = state.copyWith(defaultDisplayMode: mode);
   }

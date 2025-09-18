@@ -1,8 +1,41 @@
 import 'package:uuid/uuid.dart';
 
-enum ClipType { text, rtf, html, image, color, file, audio, video }
+/// 剪贴内容类型：表示剪贴板条目的数据类型，用于解析与渲染。
+enum ClipType {
+  /// 纯文本（UTF-16 codeUnits）
+  text,
 
+  /// 富文本（RTF 格式）
+  rtf,
+
+  /// HTML 片段
+  html,
+
+  /// 图片（二进制）
+  image,
+
+  /// 颜色（如 #RRGGBB 或 ARGB）
+  color,
+
+  /// 文件（路径或引用元数据）
+  file,
+
+  /// 音频内容
+  audio,
+
+  /// 视频内容
+  video,
+}
+
+/**
+*/
+////
+/// 剪贴项数据模型：表示一次剪贴板历史记录（条目）。
+/// - 包含类型、内容、缩略图与元数据等；
+/// - 提供 JSON 序列化/反序列化；
+/// - 提供不可变式的 copyWith 便于局部更新。
 class ClipItem {
+  /// 构造函数：若未指定 id/时间戳，将自动生成
   ClipItem({
     required this.type,
     required this.content,
@@ -16,6 +49,7 @@ class ClipItem {
        createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
+  /// 从 JSON 构建剪贴项
   factory ClipItem.fromJson(Map<String, dynamic> json) {
     final id = json['id'] as String?;
     final typeName = json['type'] as String?;
@@ -48,15 +82,32 @@ class ClipItem {
           : (updatedAtRaw is DateTime ? updatedAtRaw : DateTime.now()),
     );
   }
+
+  /// 主键（UUID）：唯一标识该条剪贴记录
   final String id;
+
+  /// 剪贴类型：见 [ClipType]
   final ClipType type;
+
+  /// 内容字节：文本使用 UTF-16 codeUnits；图片/音频/视频为二进制
   final List<int> content;
+
+  /// 缩略图字节：用于图片/视频等的快速展示，可能为空
   final List<int>? thumbnail;
+
+  /// 附加元数据：如来源应用、文件路径、MIME 类型、颜色格式等
   final Map<String, dynamic> metadata;
+
+  /// 是否收藏：用于界面筛选与置顶等功能
   final bool isFavorite;
+
+  /// 创建时间：该条目首次创建的时间
   final DateTime createdAt;
+
+  /// 更新时间：该条目最后一次更新的时间
   final DateTime updatedAt;
 
+  /// 复制并更新指定字段：保持不可变语义，返回更新后的新实例
   ClipItem copyWith({
     String? id,
     ClipType? type,
@@ -79,6 +130,7 @@ class ClipItem {
     );
   }
 
+  /// 序列化为 JSON：用于持久化与跨进程/网络传输
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -92,15 +144,18 @@ class ClipItem {
     };
   }
 
+  /// 按 id 判断相等：用于集合判重与 Diff
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is ClipItem && other.id == id;
   }
 
+  /// 使用 id 作为哈希：与 == 一致
   @override
   int get hashCode => id.hashCode;
 
+  /// 调试输出：便于日志与调试定位
   @override
   String toString() {
     return 'ClipItem(id: $id, type: $type, isFavorite: $isFavorite)';
