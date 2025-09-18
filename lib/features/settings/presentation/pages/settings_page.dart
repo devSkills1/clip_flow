@@ -1,5 +1,6 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
+import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -94,7 +95,7 @@ class SettingsPage extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: Spacing.s24),
 
           // 安全设置
           _buildSection(

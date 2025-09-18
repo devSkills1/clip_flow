@@ -1,6 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/colors.dart';
+import 'package:clip_flow_pro/core/constants/dimensions.dart';
+import 'package:clip_flow_pro/core/constants/spacing.dart';
+import 'package:clip_flow_pro/core/constants/strings.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
@@ -32,7 +36,10 @@ class ClipItemCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 120, maxHeight: 300),
+          constraints: const BoxConstraints(
+            minHeight: Dimensions.cardMinHeight,
+            maxHeight: Dimensions.cardMaxHeight,
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -42,19 +49,19 @@ class ClipItemCard extends StatelessWidget {
                 Row(
                   children: [
                     _buildTypeIcon(),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: Spacing.s12),
                     Expanded(child: _buildTypeLabel()),
                     _buildActionButtons(context),
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: Spacing.s12),
 
                 // 内容预览
                 Expanded(child: _buildContentPreview(context)),
 
                 // 底部：时间和标签
-                const SizedBox(height: 12),
+                const SizedBox(height: Spacing.s12),
                 _buildFooter(context),
               ],
             ),
@@ -71,26 +78,26 @@ class ClipItemCard extends StatelessWidget {
     switch (item.type) {
       case ClipType.text:
         iconData = Icons.text_fields;
-        iconColor = Colors.blue;
+        iconColor = Color(AppColors.iconColors['blue']!);
       case ClipType.rtf:
       case ClipType.html:
         iconData = Icons.description;
-        iconColor = Colors.green;
+        iconColor = Color(AppColors.iconColors['green']!);
       case ClipType.image:
         iconData = Icons.image;
-        iconColor = Colors.purple;
+        iconColor = Color(AppColors.iconColors['purple']!);
       case ClipType.color:
         iconData = Icons.palette;
-        iconColor = Colors.orange;
+        iconColor = Color(AppColors.iconColors['orange']!);
       case ClipType.file:
         iconData = Icons.insert_drive_file;
-        iconColor = Colors.grey;
+        iconColor = Color(AppColors.iconColors['grey']!);
       case ClipType.audio:
         iconData = Icons.audiotrack;
-        iconColor = Colors.red;
+        iconColor = Color(AppColors.iconColors['red']!);
       case ClipType.video:
         iconData = Icons.videocam;
-        iconColor = Colors.pink;
+        iconColor = Color(AppColors.iconColors['pink']!);
     }
 
     return Icon(iconData, size: 16, color: iconColor);
@@ -151,7 +158,7 @@ class ClipItemCard extends StatelessWidget {
             padding: EdgeInsets.zero,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: Spacing.s8),
         IconButton.outlined(
           onPressed: onDelete,
           icon: const Icon(Icons.delete_outline),
@@ -183,7 +190,9 @@ class ClipItemCard extends StatelessWidget {
   }
 
   Widget _buildColorPreview() {
-    final colorHex = item.metadata['colorHex'] as String? ?? '#000000';
+    final colorHex =
+        item.metadata[AppStrings.metaColorHex] as String? ??
+        AppColors.defaultColorHex;
     final colorName = ColorUtils.getColorName(colorHex);
 
     return Column(
@@ -191,11 +200,11 @@ class ClipItemCard extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          height: 40,
+          height: Dimensions.searchBarHeight,
           decoration: BoxDecoration(
             color: Color(int.parse(colorHex.replaceFirst('#', '0xFF'))),
             borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: const Color(AppColors.grey300)),
           ),
         ),
         const SizedBox(height: ClipConstants.smallPadding),
@@ -210,9 +219,9 @@ class ClipItemCard extends StatelessWidget {
         ),
         Text(
           colorName,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: ClipConstants.captionFontSize,
-            color: Colors.grey.shade600,
+            color: Color(AppColors.grey600),
           ),
           overflow: TextOverflow.ellipsis,
           maxLines: 2,
@@ -264,7 +273,9 @@ class ClipItemCard extends StatelessWidget {
   }
 
   Widget _buildFilePreview() {
-    final fileName = item.metadata['fileName'] as String? ?? '未知文件';
+    final fileName =
+        item.metadata[AppStrings.metaFileName] as String? ??
+        AppStrings.unknownFile;
     final fileSize = item.metadata['fileSize'] as int? ?? 0;
 
     return Column(
@@ -290,7 +301,7 @@ class ClipItemCard extends StatelessWidget {
   }
 
   Widget _buildTextPreview(BuildContext context) {
-    final content = String.fromCharCodes(item.content);
+    final content = item.content ?? '';
     final wordCount = item.metadata['wordCount'] as int? ?? 0;
     final lineCount = item.metadata['lineCount'] as int? ?? 0;
 
@@ -304,23 +315,23 @@ class ClipItemCard extends StatelessWidget {
             maxLines: displayMode == DisplayMode.compact ? 3 : 5,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Spacing.s8),
         Row(
           children: [
             Text(
-              '$wordCount 字',
-              style: TextStyle(
+              '$wordCount ${AppStrings.unitWords}',
+              style: const TextStyle(
                 fontSize: ClipConstants.captionFontSize,
-                color: Colors.grey.shade600,
+                color: Color(AppColors.grey600),
               ),
             ),
             if (lineCount > 1) ...[
               const SizedBox(width: ClipConstants.smallPadding),
               Text(
-                '$lineCount 行',
-                style: TextStyle(
+                '$lineCount ${AppStrings.unitLines}',
+                style: const TextStyle(
                   fontSize: ClipConstants.captionFontSize,
-                  color: Colors.grey.shade600,
+                  color: Color(AppColors.grey600),
                 ),
               ),
             ],
@@ -380,7 +391,7 @@ class ClipItemCard extends StatelessWidget {
         // 检查前一个字符
         if (matchIndex > 0) {
           final prevChar = lowerLine[matchIndex - 1];
-          if (RegExp(r'[a-zA-Z0-9\u4e00-\u9fa5]').hasMatch(prevChar)) {
+          if (RegExp(AppStrings.regexAlphanumericChinese).hasMatch(prevChar)) {
             isValidMatch = false;
           }
         }
@@ -388,7 +399,7 @@ class ClipItemCard extends StatelessWidget {
         // 检查后一个字符
         if (isValidMatch && matchIndex + query.length < lowerLine.length) {
           final nextChar = lowerLine[matchIndex + query.length];
-          if (RegExp(r'[a-zA-Z0-9\u4e00-\u9fa5]').hasMatch(nextChar)) {
+          if (RegExp(AppStrings.regexAlphanumericChinese).hasMatch(nextChar)) {
             isValidMatch = false;
           }
         }
@@ -489,7 +500,7 @@ class ClipItemCard extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
+                  color: const Color(AppColors.blue100),
                   borderRadius: BorderRadius.circular(
                     ClipConstants.smallPadding / 2,
                   ),
@@ -497,7 +508,7 @@ class ClipItemCard extends StatelessWidget {
                 child: Text(
                   tag.toString(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: 10,
+                    fontSize: Dimensions.fontSizeXSmall,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
@@ -511,11 +522,13 @@ class ClipItemCard extends StatelessWidget {
 
   String _formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} ${AppStrings.unitKB}';
     }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} ${AppStrings.unitMB}';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} ${AppStrings.unitGB}';
   }
 
   String _getTimeAgo() {
@@ -525,13 +538,13 @@ class ClipItemCard extends StatelessWidget {
     if (difference.inMinutes < 1) {
       return '刚刚';
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}分钟前';
+      return '${difference.inMinutes}${AppStrings.timeFormatMinutes}';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}小时前';
+      return '${difference.inHours}${AppStrings.timeFormatHours}';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
+      return '${difference.inDays}${AppStrings.timeFormatDays}';
     } else {
-      return DateFormat('MM-dd HH:mm').format(item.createdAt);
+      return DateFormat(AppStrings.timeFormatDefault).format(item.createdAt);
     }
   }
 }

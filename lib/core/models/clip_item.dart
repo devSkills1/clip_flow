@@ -38,8 +38,9 @@ class ClipItem {
   /// 构造函数：若未指定 id/时间戳，将自动生成
   ClipItem({
     required this.type,
-    required this.content,
     required this.metadata,
+    this.content,
+    this.filePath,
     String? id,
     this.thumbnail,
     this.isFavorite = false,
@@ -54,6 +55,7 @@ class ClipItem {
     final id = json['id'] as String?;
     final typeName = json['type'] as String?;
     final contentRaw = json['content'];
+    final filePathRaw = json['filePath'] ?? json['file_path'];
     final thumbRaw = json['thumbnail'];
     final metadataRaw = json['metadata'];
     final isFavRaw = json['isFavorite'];
@@ -66,7 +68,8 @@ class ClipItem {
         (e) => e.name == typeName,
         orElse: () => ClipType.text,
       ),
-      content: contentRaw is List ? List<int>.from(contentRaw) : <int>[],
+      content: contentRaw is String ? contentRaw : contentRaw?.toString(),
+      filePath: filePathRaw is String ? filePathRaw : null,
       thumbnail: thumbRaw is List ? List<int>.from(thumbRaw) : null,
       metadata: metadataRaw is Map<String, dynamic>
           ? metadataRaw
@@ -89,8 +92,11 @@ class ClipItem {
   /// 剪贴类型：见 [ClipType]
   final ClipType type;
 
-  /// 内容字节：文本使用 UTF-16 codeUnits；图片/音频/视频为二进制
-  final List<int> content;
+  /// 文本内容（UTF-8），非文本类型为空；媒体路径见 [filePath]
+  final String? content;
+
+  /// 媒体相对路径：media/{type}/yyyy/MM/dd/{uuid}.{ext}
+  final String? filePath;
 
   /// 缩略图字节：用于图片/视频等的快速展示，可能为空
   final List<int>? thumbnail;
@@ -111,7 +117,8 @@ class ClipItem {
   ClipItem copyWith({
     String? id,
     ClipType? type,
-    List<int>? content,
+    String? content,
+    String? filePath,
     List<int>? thumbnail,
     Map<String, dynamic>? metadata,
     bool? isFavorite,
@@ -122,6 +129,7 @@ class ClipItem {
       id: id ?? this.id,
       type: type ?? this.type,
       content: content ?? this.content,
+      filePath: filePath ?? this.filePath,
       thumbnail: thumbnail ?? this.thumbnail,
       metadata: metadata ?? this.metadata,
       isFavorite: isFavorite ?? this.isFavorite,
@@ -136,6 +144,7 @@ class ClipItem {
       'id': id,
       'type': type.name,
       'content': content,
+      'filePath': filePath,
       'thumbnail': thumbnail,
       'metadata': metadata,
       'isFavorite': isFavorite,

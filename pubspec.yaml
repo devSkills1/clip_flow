@@ -30,60 +30,42 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  # UI组件
-  cupertino_icons: ^1.0.8
-  flutter_riverpod: ^2.5.1
-  go_router: ^14.2.7
-  
-  # 数据存储
-  sqflite: ^2.3.3+1
-  path: ^1.9.0
-  encrypt: ^5.0.3
-  crypto: ^3.0.3
-  
-  # 剪贴板操作（保留可用包）
-  clipboard: ^0.1.3
-  
-  # 图片处理
-  image: ^4.1.7
-  image_picker: ^1.1.2
-  
-  # 国际化
-  intl: ^0.20.2
-  
-  # 文件操作
-  file_picker: ^8.1.0
-  path_provider: ^2.1.4
-  
-  # 网络和API
-  http: ^1.2.2
-  dio: ^5.4.3+1
-  
-  # 工具库
-  uuid: ^4.4.2
-  shared_preferences: ^2.2.3
-  
-  # 平台特定功能
-  window_manager: ^0.5.1
-  tray_manager: ^0.5.1
-  screen_retriever: ^0.2.0
-  
-  # 本地化
   flutter_localizations:
     sdk: flutter
 
+  # 按字母顺序排列的依赖
+  clipboard: ^2.0.2
+  crypto: ^3.0.3
+  cupertino_icons: ^1.0.8
+  dio: ^5.4.3+1
+  encrypt: ^5.0.3
+  file_picker: ^10.3.3
+  flutter_riverpod: ^3.0.0
+  go_router: ^16.2.1
+  http: ^1.2.2
+  image: ^4.1.7
+  image_picker: ^1.1.2
+  intl: ^0.20.2
+  path: ^1.9.0
+  path_provider: ^2.1.4
+  screen_retriever: ^0.2.0
+  shared_preferences: ^2.2.3
+  sqflite: ^2.3.3+1
+  tray_manager: ^0.5.1
+  uuid: ^4.4.2
+  window_manager: ^0.5.1
+
 dev_dependencies:
+  flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  very_good_analysis: ^5.1.0
+  very_good_analysis: ^9.0.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

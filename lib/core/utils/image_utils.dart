@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/dimensions.dart';
 import 'package:image/image.dart' as img;
 
 /// Image utilities for format detection, resizing/compressing and helpers.
@@ -155,7 +156,11 @@ class ImageUtils {
       if (image == null) return [];
 
       // 简化图片以加快处理速度
-      final resized = img.copyResize(image, width: 100, height: 100);
+      final resized = img.copyResize(
+        image,
+        width: Dimensions.imagePreviewSize.toInt(),
+        height: Dimensions.imagePreviewSize.toInt(),
+      );
 
       final colorCounts = <String, int>{};
 

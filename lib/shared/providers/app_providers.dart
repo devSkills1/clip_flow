@@ -1,8 +1,12 @@
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/database_service.dart';
+import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
+import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
 import 'package:clip_flow_pro/features/home/presentation/pages/home_page.dart';
 import 'package:clip_flow_pro/features/settings/presentation/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 
 //// 主题模式提供者
@@ -11,6 +15,10 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 //// 路由提供者
 /// 全局路由器提供者，定义应用路由表与初始路由。
+final clipRepositoryProvider = Provider<ClipRepository>((ref) {
+  return ClipRepositoryImpl(DatabaseService.instance);
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
@@ -41,9 +49,7 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   void addItem(ClipItem item) {
     // 避免重复添加相同内容
     final existingIndex = state.indexWhere(
-      (existing) =>
-          String.fromCharCodes(existing.content) ==
-          String.fromCharCodes(item.content),
+      (existing) => (existing.content ?? '') == (item.content ?? ''),
     );
 
     if (existingIndex != -1) {
@@ -106,7 +112,7 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
 
     final lowercaseQuery = query.toLowerCase();
     return state.where((item) {
-      final content = String.fromCharCodes(item.content).toLowerCase();
+      final content = (item.content ?? '').toLowerCase();
       final tags =
           (item.metadata['tags'] as List?)
               ?.map((tag) => tag.toString().toLowerCase())

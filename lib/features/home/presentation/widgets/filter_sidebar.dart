@@ -1,4 +1,7 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/dimensions.dart';
+import 'package:clip_flow_pro/core/constants/spacing.dart';
+import 'package:clip_flow_pro/core/constants/strings.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +23,7 @@ class FilterSidebar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      width: 200,
+      width: Dimensions.sidebarWidth,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainer,
         border: Border(
@@ -49,7 +52,7 @@ class FilterSidebar extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: Spacing.s8),
                 Text(
                   '筛选',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -174,7 +177,7 @@ class FilterSidebar extends ConsumerWidget {
               color: isSelected
                   ? Theme.of(context).colorScheme.secondaryContainer
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
               border: isSelected
                   ? Border.all(color: Theme.of(context).colorScheme.secondary)
                   : null,
@@ -264,7 +267,7 @@ class FilterSidebar extends ConsumerWidget {
               color: isSelected
                   ? Theme.of(context).colorScheme.primaryContainer
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
               border: isSelected
                   ? Border.all(color: Theme.of(context).colorScheme.primary)
                   : null,
@@ -332,11 +335,11 @@ class FilterSidebar extends ConsumerWidget {
                   context: context,
                   builder: (dialogContext) => AlertDialog(
                     title: const Text('确认清空'),
-                    content: const Text('确定要清空所有剪贴板历史吗？此操作不可恢复。'),
+                    content: const Text(AppStrings.confirmClearHistory),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(dialogContext).pop(),
-                        child: const Text('取消'),
+                        child: const Text(AppStrings.cancel),
                       ),
                       FilledButton(
                         onPressed: () {
@@ -350,7 +353,7 @@ class FilterSidebar extends ConsumerWidget {
                             context,
                           ).colorScheme.onError,
                         ),
-                        child: const Text('清空'),
+                        child: const Text(AppStrings.clear),
                       ),
                     ],
                   ),

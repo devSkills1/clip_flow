@@ -118,6 +118,12 @@ flutter doctor -v
 # 检查环境配置
 ```
 
+## 版本更新
+```bash
+flutter upgrade
+# 升级 Flutter SDK
+```
+
 ## Perf & Debug 性能与调试
 ```bash
 flutter run --profile

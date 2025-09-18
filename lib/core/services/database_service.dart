@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
@@ -53,17 +54,15 @@ class DatabaseService {
       CREATE TABLE ${ClipConstants.clipItemsTable} (
         id TEXT PRIMARY KEY,
         type TEXT NOT NULL,
-        content BLOB NOT NULL,
+        content TEXT,
+        file_path TEXT,
         thumbnail BLOB,
-        metadata TEXT NOT NULL,
+        metadata TEXT NOT NULL DEFAULT '{}',
         is_favorite INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
+        updated_at TEXT NOT NULL,
+        schema_version INTEGER NOT NULL DEFAULT 1
       )
-    ''');
-
-    await db.execute('''
-      CREATE INDEX idx_clip_items_type ON ${ClipConstants.clipItemsTable}(type)
     ''');
 
     await db.execute('''
@@ -72,6 +71,10 @@ class DatabaseService {
 
     await db.execute('''
       CREATE INDEX idx_clip_items_is_favorite ON ${ClipConstants.clipItemsTable}(is_favorite)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_clip_items_type ON ${ClipConstants.clipItemsTable}(type)
     ''');
   }
 
@@ -90,12 +93,16 @@ class DatabaseService {
     await _database!.insert(ClipConstants.clipItemsTable, {
       'id': item.id,
       'type': item.type.name,
-      'content': item.content,
+      'content': item.content is String
+          ? item.content
+          : item.content?.toString(),
+      'file_path': item.filePath,
       'thumbnail': item.thumbnail,
       'metadata': jsonEncode(item.metadata),
       'is_favorite': item.isFavorite ? 1 : 0,
       'created_at': item.createdAt.toIso8601String(),
       'updated_at': item.updatedAt.toIso8601String(),
+      'schema_version': 1,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -111,11 +118,15 @@ class DatabaseService {
       ClipConstants.clipItemsTable,
       {
         'type': item.type.name,
-        'content': item.content,
+        'content': item.content is String
+            ? item.content
+            : item.content?.toString(),
+        'file_path': item.filePath,
         'thumbnail': item.thumbnail,
         'metadata': jsonEncode(item.metadata),
         'is_favorite': item.isFavorite ? 1 : 0,
         'updated_at': item.updatedAt.toIso8601String(),
+        'schema_version': 1,
       },
       where: 'id = ?',
       whereArgs: [item.id],
@@ -130,11 +141,18 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
+    // 先查询 file_path 用于删除磁盘文件
+    final item = await getClipItemById(id);
     await _database!.delete(
       ClipConstants.clipItemsTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+
+    // 尝试删除媒体文件
+    if (item?.filePath != null && item!.filePath!.isNotEmpty) {
+      _deleteMediaFileSafe(item.filePath!);
+    }
   }
 
   /// 清空所有剪贴项
@@ -329,11 +347,26 @@ class DatabaseService {
 
     final cutoffDate = DateTime.now().subtract(Duration(days: maxAgeInDays));
 
+    // 先找出要删的 id 与 file_path
+    final stale = await _database!.query(
+      ClipConstants.clipItemsTable,
+      columns: ['id', 'file_path'],
+      where: 'created_at < ?',
+      whereArgs: [cutoffDate.toIso8601String()],
+    );
+
     await _database!.delete(
       ClipConstants.clipItemsTable,
       where: 'created_at < ?',
       whereArgs: [cutoffDate.toIso8601String()],
     );
+
+    for (final row in stale) {
+      final path = row['file_path'] as String?;
+      if (path != null && path.isNotEmpty) {
+        _deleteMediaFileSafe(path);
+      }
+    }
   }
 
   /// 删除指定类型的剪贴项
@@ -344,17 +377,33 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
+    // 取出将被删除的 file_path
+    final rows = await _database!.query(
+      ClipConstants.clipItemsTable,
+      columns: ['file_path'],
+      where: 'type = ?',
+      whereArgs: [type.name],
+    );
+
     await _database!.delete(
       ClipConstants.clipItemsTable,
       where: 'type = ?',
       whereArgs: [type.name],
     );
+
+    for (final r in rows) {
+      final p = r['file_path'] as String?;
+      if (p != null && p.isNotEmpty) {
+        _deleteMediaFileSafe(p);
+      }
+    }
   }
 
   ClipItem _mapToClipItem(Map<String, dynamic> map) {
     final id = map['id'] as String?;
     final typeName = map['type'] as String?;
     final contentRaw = map['content'];
+    final filePathRaw = map['file_path'];
     final thumbRaw = map['thumbnail'];
     final metadataRaw = map['metadata'];
     final isFavRaw = map['is_favorite'];
@@ -381,7 +430,10 @@ class DatabaseService {
         (e) => e.name == typeName,
         orElse: () => ClipType.text,
       ),
-      content: contentRaw is List ? List<int>.from(contentRaw) : <int>[],
+      content: contentRaw is String
+          ? contentRaw
+          : (contentRaw?.toString() ?? ''),
+      filePath: filePathRaw is String ? filePathRaw : null,
       thumbnail: thumbRaw is List ? List<int>.from(thumbRaw) : null,
       metadata: metadata,
       isFavorite: isFavRaw == 1 || isFavRaw == true,
@@ -392,6 +444,68 @@ class DatabaseService {
           ? DateTime.tryParse(updatedAtRaw) ?? DateTime.now()
           : (updatedAtRaw is DateTime ? updatedAtRaw : DateTime.now()),
     );
+  }
+
+  Future<void> _deleteMediaFileSafe(String relativePath) async {
+    try {
+      final absPath = await _resolveAbsoluteMediaPath(relativePath);
+      final file = File(absPath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
+
+  Future<String> _resolveAbsoluteMediaPath(String relativePath) async {
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    return join(documentsDirectory.path, relativePath);
+  }
+
+  /// 扫描媒体目录，删除未在 DB 引用的“孤儿文件”
+  /// retainDays: 保留最近 N 天内的文件，避免误删
+  Future<int> cleanOrphanMediaFiles({int retainDays = 3}) async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final mediaRoot = Directory(join(documentsDirectory.path, 'media'));
+    if (!await mediaRoot.exists()) return 0;
+
+    // 读取数据库中所有 file_path 引用
+    final rows = await _database!.query(
+      ClipConstants.clipItemsTable,
+      columns: ['file_path'],
+      where: 'file_path IS NOT NULL AND file_path != ""',
+    );
+    final referenced = rows
+        .map((r) => r['file_path'] as String?)
+        .where((p) => p != null && p.isNotEmpty)
+        .map((p) => join(documentsDirectory.path, p))
+        .toSet();
+
+    final cutoff = DateTime.now().subtract(Duration(days: retainDays));
+    var deleted = 0;
+
+    await for (final entity in mediaRoot.list(
+      recursive: true,
+      followLinks: false,
+    )) {
+      if (entity is! File) continue;
+      final path = entity.path;
+
+      if (path.endsWith('.tmp')) continue;
+
+      final stat = await entity.stat();
+      if (stat.modified.isAfter(cutoff)) continue;
+
+      if (!referenced.contains(path)) {
+        try {
+          await entity.delete();
+          deleted++;
+        } catch (_) {}
+      }
+    }
+    return deleted;
   }
 
   /// 关闭数据库连接并重置初始化状态

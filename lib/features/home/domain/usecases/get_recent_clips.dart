@@ -1,5 +1,7 @@
 import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
+import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Use case to fetch recent clipboard items from repository.
 class GetRecentClips {
@@ -14,3 +16,9 @@ class GetRecentClips {
     return _repo.fetchRecent(limit: limit);
   }
 }
+
+/// Riverpod provider for use case
+final getRecentClipsProvider = Provider<GetRecentClips>((ref) {
+  final repo = ref.read(clipRepositoryProvider);
+  return GetRecentClips(repo);
+});

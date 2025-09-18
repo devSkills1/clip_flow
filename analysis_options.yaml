@@ -1,27 +1,68 @@
-include: package:flutter_lints/flutter.yaml
+include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
   language:
-    strict-casts: false
-    strict-raw-types: false
-    strict-inference: false
+    strict-casts: true
+    strict-raw-types: true
+    strict-inference: true
   errors:
-    # 降低噪音/团队约定类
-    public_member_api_docs: info
-    avoid_field_initializers_in_const_classes: info
-    unnecessary_breaks: info
+    # 强制执行代码质量规则
+    dead_code: error
+    unused_import: error
+    unused_local_variable: error
+    unused_element: error
+    
+    # API 文档要求（降级为警告以减少噪音）
+    public_member_api_docs: warning
+    
+    # 安全和最佳实践
+    avoid_print: error
+    avoid_web_libraries_in_flutter: error
+    no_logic_in_create_state: error
+    
+    # 性能相关
+    avoid_function_literals_in_foreach_calls: warning
+    prefer_const_constructors: warning
+    prefer_const_literals_to_create_immutables: warning
+    
+    # 代码风格和一致性
+    sort_pub_dependencies: error
+    sort_constructors_first: warning
+    always_declare_return_types: warning
+    
+    # 降低噪音但保持提醒
     flutter_style_todos: info
-    sort_pub_dependencies: info
     parameter_assignments: info
-    no_default_cases: info
-
-    # 保持关键问题级别（使用 flutter_lints 默认）
-    dead_code: warning
-    unused_import: warning
-    unused_local_variable: warning
+    avoid_field_initializers_in_const_classes: info
 
 linter:
   rules:
-    # 可按需覆盖或关闭个别 lint（默认继承 flutter_lints）
-    # - prefer_const_constructors
-    # - avoid_equals_and_hash_code_on_mutable_classes
+    # 强制执行项目规则（移除不存在的规则）
+    - prefer_const_constructors
+    - prefer_const_constructors_in_immutables
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    - prefer_final_fields
+    - prefer_final_in_for_each
+    - prefer_final_locals
+    
+    # 安全和最佳实践
+    - avoid_print
+    - avoid_web_libraries_in_flutter
+    - no_logic_in_create_state
+    - use_build_context_synchronously
+    
+    # 代码组织
+    - sort_constructors_first
+    - sort_pub_dependencies
+    - always_declare_return_types
+    - always_put_required_named_parameters_first
+    
+    # 性能优化
+    - avoid_function_literals_in_foreach_calls
+    - avoid_unnecessary_containers
+    - sized_box_for_whitespace
+    
+    # 可读性和维护性
+    - prefer_single_quotes
+    - require_trailing_commas

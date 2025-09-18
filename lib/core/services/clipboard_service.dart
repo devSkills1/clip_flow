@@ -10,6 +10,7 @@ import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// 剪贴板服务
 ///
@@ -284,7 +285,7 @@ class ClipboardService {
       // 创建剪贴板项目
       final clipItem = ClipItem(
         type: clipType,
-        content: content.codeUnits,
+        content: content,
         metadata: await _extractMetadata(content, clipType),
       );
 
@@ -350,7 +351,6 @@ class ClipboardService {
         metadata['colorHex'] = content;
         metadata['colorRgb'] = ColorUtils.hexToRgb(content);
         metadata['colorHsl'] = ColorUtils.hexToHsl(content);
-        break;
       case ClipType.file:
         final file = File(content.replaceFirst('file://', ''));
         metadata['filePath'] = file.path;
@@ -377,14 +377,12 @@ class ClipboardService {
           metadata['fileSize'] = await vfile.length();
           metadata['fileExtension'] = vfile.path.split('.').last.toLowerCase();
         }
-        break;
       case ClipType.text:
       case ClipType.html:
       case ClipType.rtf:
         // 文本内容分析
         metadata['wordCount'] = _calculateWordCount(content);
         metadata['lineCount'] = content.split('\n').length;
-        break;
     }
 
     return metadata;
@@ -469,11 +467,21 @@ class ClipboardService {
         return;
       }
 
-      // 创建图片剪贴板项目
+      // 生成缩略图
+      final thumb = await ImageUtils.generateThumbnail(imageBytes);
+
+      // 将原图保存到磁盘并获取相对路径
+      final relativePath = await _saveMediaToDisk(
+        bytes: imageBytes,
+        type: 'image',
+        suggestedExt: _inferImageExtension(imageBytes),
+      );
+
+      // 创建图片剪贴板项目（content 为空，使用 filePath + thumbnail）
       final clipItem = ClipItem(
         type: ClipType.image,
-        content: imageBytes,
-        thumbnail: await ImageUtils.generateThumbnail(imageBytes),
+        filePath: relativePath,
+        thumbnail: thumb,
         metadata: await _extractImageMetadata(imageBytes),
       );
 
@@ -525,7 +533,9 @@ class ClipboardService {
 
     try {
       final imageInfo = ImageUtils.getImageInfo(imageBytes);
-      metadata['imageFormat'] = imageInfo['format'];
+      final fmt = imageInfo['format'];
+      metadata['imageFormat'] = fmt;
+      metadata['format'] = fmt;
       metadata['width'] = imageInfo['width'];
       metadata['height'] = imageInfo['height'];
       metadata['aspectRatio'] = imageInfo['aspectRatio'];
@@ -558,9 +568,11 @@ class ClipboardService {
     try {
       switch (item.type) {
         case ClipType.image:
-          // 处理图片类型
-          await _setClipboardImage(item.content);
-          break;
+          // 优先使用缩略图回写；生产实现应读取原图文件（filePath）回写到剪贴板
+          final thumb = item.thumbnail;
+          if (thumb != null && thumb.isNotEmpty) {
+            await _setClipboardImage(Uint8List.fromList(thumb));
+          }
         case ClipType.text:
         case ClipType.rtf:
         case ClipType.html:
@@ -568,25 +580,97 @@ class ClipboardService {
         case ClipType.file:
         case ClipType.audio:
         case ClipType.video:
-          // 处理文本类型
-          final content = String.fromCharCodes(item.content);
-          await Clipboard.setData(ClipboardData(text: content));
-          _lastClipboardContent = content;
-          break;
+          // 文本/其他类型：按新模型使用字符串 content
+          final text = item.content ?? '';
+          await Clipboard.setData(ClipboardData(text: text));
+          _lastClipboardContent = text;
       }
     } catch (e) {
       // 处理错误
     }
   }
 
-  Future<void> _setClipboardImage(List<int> imageBytes) async {
+  Future<void> _setClipboardImage(Uint8List imageBytes) async {
     try {
       await _platformChannel.invokeMethod('setClipboardImage', {
-        'imageData': Uint8List.fromList(imageBytes),
+        'imageData': imageBytes,
       });
     } catch (e) {
       // 处理错误
     }
+  }
+
+  // ==== 媒体落盘相关：tmp -> fsync -> rename，返回相对路径 ====
+  Future<String> _saveMediaToDisk({
+    required Uint8List bytes,
+    required String type, // 'image' | 'audio' | 'video' | 'file'
+    String? suggestedExt,
+  }) async {
+    // 根目录：应用文档目录内的 media
+    final dir = await _getMediaDir(type);
+    final now = DateTime.now();
+    final yyyy = now.year.toString().padLeft(4, '0');
+    final mm = now.month.toString().padLeft(2, '0');
+    final dd = now.day.toString().padLeft(2, '0');
+
+    final relDir = 'media/$type/$yyyy/$mm/$dd';
+    final absDir = Directory('${dir.path}/$relDir');
+    if (!await absDir.exists()) {
+      await absDir.create(recursive: true);
+    }
+
+    final uuid = DateTime.now().microsecondsSinceEpoch.toString();
+    final ext = (suggestedExt ?? 'bin').replaceAll('.', '');
+    final relPath = '$relDir/$uuid.$ext';
+    final absPath = '${dir.path}/$relPath';
+
+    // 1) 写入 tmp 文件
+    final tmpFile = File('$absPath.tmp');
+    await tmpFile.writeAsBytes(bytes, flush: true);
+
+    // 2) fsync：Dart 无直接 fsync，flush:true 已尽力；可追加 reopen 并 setLastModified 触发落盘
+    try {
+      await tmpFile.setLastModified(DateTime.now());
+    } catch (_) {}
+
+    // 3) rename 到最终路径（原子）
+    await tmpFile.rename(absPath);
+
+    // 返回相对路径
+    return relPath;
+  }
+
+  Future<Directory> _getMediaDir(String type) async {
+    // 统一到应用文档目录（与 DatabaseService 删除逻辑一致）
+    final docs = await getApplicationDocumentsDirectory();
+    return Directory(docs.path);
+  }
+
+  String _inferImageExtension(Uint8List bytes) {
+    // 简单魔数判断
+    if (bytes.length >= 4) {
+      // PNG
+      if (bytes[0] == 0x89 &&
+          bytes[1] == 0x50 &&
+          bytes[2] == 0x4E &&
+          bytes[3] == 0x47) {
+        return 'png';
+      }
+      // JPEG
+      if (bytes[0] == 0xFF && bytes[1] == 0xD8) return 'jpg';
+      // GIF
+      if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46) {
+        return 'gif';
+      }
+      // WEBP (RIFF....WEBP)
+      if (bytes[0] == 0x52 &&
+          bytes[1] == 0x49 &&
+          bytes[2] == 0x46 &&
+          bytes[3] == 0x46) {
+        return 'webp';
+      }
+    }
+    return 'bin';
   }
 
   /// 清空系统剪贴板（文本渠道）

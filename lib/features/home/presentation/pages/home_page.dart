@@ -1,7 +1,10 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
+import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
+import 'package:clip_flow_pro/features/home/domain/usecases/get_recent_clips.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/filter_sidebar.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar_widget.dart';
@@ -24,6 +27,28 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
+    // 首次进入页面时加载数据库中的历史记录并填充到状态
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final recent = await ref.read(getRecentClipsProvider).call(limit: 100);
+        if (recent.isEmpty) return;
+        final notifier = ref.read(clipboardHistoryProvider.notifier);
+        for (final e in recent) {
+          // 从用例返回的是 String，UI 状态中保持 UTF-8 字节，展示时再 decode
+          final item = ClipItem(
+            id: e.id,
+            type: ClipType.text,
+            content: e.content,
+            metadata: const {},
+            createdAt: e.createdAt,
+            updatedAt: e.createdAt,
+          );
+          notifier.addItem(item);
+        }
+      } catch (_) {
+        // 静默失败，避免阻塞 UI
+      }
+    });
   }
 
   @override
@@ -38,8 +63,23 @@ class _HomePageState extends ConsumerState<HomePage> {
     final l10n = S.of(context);
     // 监听剪贴板流
     ref.listen<AsyncValue<ClipItem>>(clipboardStreamProvider, (previous, next) {
-      next.whenData((clipItem) {
+      next.whenData((clipItem) async {
+        // 1) 内存添加（UI 状态统一存 UTF-8 字节，不做双重转换）
         ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
+        // 2) 持久化保存（仅文本先支持，其它类型后续扩展）
+        try {
+          final repo = ref.read(clipRepositoryProvider);
+          final contentText = clipItem.content ?? '';
+          await repo.save(
+            ClipEntity(
+              id: clipItem.id,
+              content: contentText,
+              createdAt: clipItem.createdAt,
+            ),
+          );
+        } catch (_) {
+          // 忽略存储异常，避免阻塞UI
+        }
       });
     });
 
@@ -64,7 +104,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(AppColors.transparent),
       body: Row(
         children: [
           // 左侧筛选栏
@@ -291,7 +331,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           FilledButton(
             onPressed: () {
+              // 先移除内存
               ref.read(clipboardHistoryProvider.notifier).removeItem(item.id);
+              // 再尝试删除数据库记录
+              try {
+                final repo = ref.read(clipRepositoryProvider);
+                repo.delete(item.id);
+              } catch (_) {}
               Navigator.of(context).pop();
             },
             style: FilledButton.styleFrom(
@@ -323,7 +369,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         final colorHex = item.metadata['colorHex'] as String? ?? '#000000';
         return '${I18nFallbacks.common.labelColor}: $colorHex';
       default:
-        final content = String.fromCharCodes(item.content);
+        final content = item.content ?? '';
         if (content.length > 50) {
           return '${content.substring(0, 50)}...';
         }

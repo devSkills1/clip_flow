@@ -1,5 +1,6 @@
 import 'package:clip_flow_pro/app.dart';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/encryption_service.dart';
@@ -17,7 +18,7 @@ void main() async {
   const windowOptions = WindowOptions(
     size: Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
     center: true,
-    backgroundColor: Colors.white,
+    backgroundColor: Color(AppColors.white),
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.normal,
     alwaysOnTop: false,
