@@ -4,9 +4,6 @@ class AppStrings {
   /// 私有构造：禁止实例化
   AppStrings._();
 
-  /// 搜索相关
-  static const String searchHint = '搜索剪贴板历史...';
-
   /// 确认对话框
   static const String confirmClearHistory = '确定要清空所有剪贴板历史吗？此操作不可恢复。';
   static const String cancel = '取消';

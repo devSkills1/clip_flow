@@ -15,6 +15,9 @@ class I18nFallbacks {
 
   /// 首页文案回退
   static const home = _HomeFallback();
+
+  /// 筛选侧边栏文案回退
+  static const filter = _FilterFallback();
 }
 
 class _CommonFallback {
@@ -61,6 +64,9 @@ class _HomeFallback {
 
   /// 空状态副标题
   final String emptySubtitle = '复制一些内容开始使用吧';
+
+  /// 搜索提示
+  final String searchHint = '搜索剪贴板历史...';
 }
 
 class _SettingsFallback {
@@ -201,4 +207,60 @@ class _SettingsFallback {
 
   /// 显示模式说明：预览
   final String displayPreviewDesc = '大卡片形式，突出内容预览';
+}
+
+class _FilterFallback {
+  /// 筛选侧边栏文案
+  const _FilterFallback();
+
+  /// 筛选标题
+  final String title = '筛选';
+
+  /// 类型分组标题
+  final String typeSection = '类型';
+
+  /// 显示模式分组标题
+  final String displayModeSection = '显示模式';
+
+  /// 类型选项：全部
+  final String typeAll = '全部';
+
+  /// 类型选项：文本
+  final String typeText = '文本';
+
+  /// 类型选项：富文本
+  final String typeRichText = '富文本';
+
+  /// 类型选项：图片
+  final String typeImage = '图片';
+
+  /// 类型选项：颜色
+  final String typeColor = '颜色';
+
+  /// 类型选项：文件
+  final String typeFile = '文件';
+
+  /// 类型选项：音频
+  final String typeAudio = '音频';
+
+  /// 类型选项：视频
+  final String typeVideo = '视频';
+
+  /// 显示模式：紧凑
+  final String displayCompact = '紧凑';
+
+  /// 显示模式：默认
+  final String displayNormal = '默认';
+
+  /// 显示模式：预览
+  final String displayPreview = '预览';
+
+  /// 设置按钮
+  final String settingsButton = '设置';
+
+  /// 清空历史按钮
+  final String clearHistoryButton = '清空历史';
+
+  /// 确认清空对话框标题
+  final String confirmClearTitle = '确认清空';
 }

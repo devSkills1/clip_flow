@@ -1,3 +1,4 @@
+import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
@@ -21,11 +22,14 @@ final clipRepositoryProvider = Provider<ClipRepository>((ref) {
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: AppRoutes.home,
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const HomePage()),
       GoRoute(
-        path: '/settings',
+        path: AppRoutes.home,
+        builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
         builder: (context, state) => const SettingsPage(),
       ),
     ],

@@ -1,11 +1,14 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/dimensions.dart';
+import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
+import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/strings.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// 筛选侧边栏
 /// 提供筛选条件的选择和应用
@@ -56,7 +59,7 @@ class FilterSidebar extends ConsumerWidget {
                 ),
                 const SizedBox(width: Spacing.s8),
                 Text(
-                  '筛选',
+                  I18nFallbacks.filter.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -100,7 +103,7 @@ class FilterSidebar extends ConsumerWidget {
             vertical: ClipConstants.smallPadding,
           ),
           child: Text(
-            '类型',
+            I18nFallbacks.filter.typeSection,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w500,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -109,50 +112,50 @@ class FilterSidebar extends ConsumerWidget {
         ),
         _buildFilterItem(
           icon: Icons.text_fields,
-          label: '全部',
+          label: I18nFallbacks.filter.typeAll,
           isSelected: selectedType == null,
           onTap: () => onTypeSelected(null),
         ),
         _buildFilterItem(
           icon: Icons.text_fields,
-          label: '文本',
+          label: I18nFallbacks.filter.typeText,
           isSelected: selectedType == ClipType.text,
           onTap: () => onTypeSelected(ClipType.text),
         ),
         _buildFilterItem(
           icon: Icons.description,
-          label: '富文本',
+          label: I18nFallbacks.filter.typeRichText,
           isSelected:
               selectedType == ClipType.rtf || selectedType == ClipType.html,
           onTap: () => onTypeSelected(ClipType.rtf),
         ),
         _buildFilterItem(
           icon: Icons.image,
-          label: '图片',
+          label: I18nFallbacks.filter.typeImage,
           isSelected: selectedType == ClipType.image,
           onTap: () => onTypeSelected(ClipType.image),
         ),
         _buildFilterItem(
           icon: Icons.palette,
-          label: '颜色',
+          label: I18nFallbacks.filter.typeColor,
           isSelected: selectedType == ClipType.color,
           onTap: () => onTypeSelected(ClipType.color),
         ),
         _buildFilterItem(
           icon: Icons.insert_drive_file,
-          label: '文件',
+          label: I18nFallbacks.filter.typeFile,
           isSelected: selectedType == ClipType.file,
           onTap: () => onTypeSelected(ClipType.file),
         ),
         _buildFilterItem(
           icon: Icons.audiotrack,
-          label: '音频',
+          label: I18nFallbacks.filter.typeAudio,
           isSelected: selectedType == ClipType.audio,
           onTap: () => onTypeSelected(ClipType.audio),
         ),
         _buildFilterItem(
           icon: Icons.videocam,
-          label: '视频',
+          label: I18nFallbacks.filter.typeVideo,
           isSelected: selectedType == ClipType.video,
           onTap: () => onTypeSelected(ClipType.video),
         ),
@@ -223,7 +226,7 @@ class FilterSidebar extends ConsumerWidget {
             vertical: ClipConstants.smallPadding,
           ),
           child: Text(
-            '显示模式',
+            I18nFallbacks.filter.displayModeSection,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w500,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -232,17 +235,17 @@ class FilterSidebar extends ConsumerWidget {
         ),
         _buildDisplayModeItem(
           icon: Icons.view_list,
-          label: '紧凑',
+          label: I18nFallbacks.filter.displayCompact,
           mode: DisplayMode.compact,
         ),
         _buildDisplayModeItem(
           icon: Icons.view_module,
-          label: '默认',
+          label: I18nFallbacks.filter.displayNormal,
           mode: DisplayMode.normal,
         ),
         _buildDisplayModeItem(
           icon: Icons.view_agenda,
-          label: '预览',
+          label: I18nFallbacks.filter.displayPreview,
           mode: DisplayMode.preview,
         ),
       ],
@@ -312,10 +315,10 @@ class FilterSidebar extends ConsumerWidget {
             width: double.infinity,
             child: FilledButton.tonalIcon(
               onPressed: () {
-                // 导航到设置页面
+                context.go(AppRoutes.settings);
               },
               icon: const Icon(Icons.settings, size: 18),
-              label: const Text('设置'),
+              label: Text(I18nFallbacks.filter.settingsButton),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,
@@ -336,7 +339,7 @@ class FilterSidebar extends ConsumerWidget {
                 showDialog<void>(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
-                    title: const Text('确认清空'),
+                    title: Text(I18nFallbacks.filter.confirmClearTitle),
                     content: const Text(AppStrings.confirmClearHistory),
                     actions: [
                       TextButton(
@@ -362,7 +365,7 @@ class FilterSidebar extends ConsumerWidget {
                 );
               },
               icon: const Icon(Icons.clear_all, size: 18),
-              label: const Text('清空历史'),
+              label: Text(I18nFallbacks.filter.clearHistoryButton),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,
