@@ -18,6 +18,17 @@ class ClipFlowProApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final userPreferences = ref.watch(userPreferencesProvider);
+
+    // 根据用户偏好设置确定locale
+    Locale locale;
+    switch (userPreferences.language) {
+      case 'en_US':
+        locale = const Locale('en');
+      case 'zh_CN':
+      default:
+        locale = const Locale('zh');
+    }
 
     return MaterialApp.router(
       title: ClipConstants.appName,
@@ -26,6 +37,7 @@ class ClipFlowProApp extends ConsumerWidget {
       theme: _lightTheme,
       darkTheme: _darkTheme,
       routerConfig: router,
+      locale: locale,
       localizationsDelegates: const [
         S.delegate,
         GlobalMaterialLocalizations.delegate,

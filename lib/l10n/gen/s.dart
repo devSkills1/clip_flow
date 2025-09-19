@@ -456,6 +456,96 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Unknown file'**
   String get unknownFile;
+
+  /// Sidebar - filter title
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filterTitle;
+
+  /// Sidebar - type section title
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get filterTypeSection;
+
+  /// Sidebar - display mode section title
+  ///
+  /// In en, this message translates to:
+  /// **'Display Mode'**
+  String get filterDisplayModeSection;
+
+  /// Sidebar - type - all
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterTypeAll;
+
+  /// Sidebar - type - text
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get filterTypeText;
+
+  /// Sidebar - type - rich text
+  ///
+  /// In en, this message translates to:
+  /// **'Rich Text'**
+  String get filterTypeRichText;
+
+  /// Sidebar - type - image
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get filterTypeImage;
+
+  /// Sidebar - type - color
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get filterTypeColor;
+
+  /// Sidebar - type - file
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get filterTypeFile;
+
+  /// Sidebar - type - audio
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get filterTypeAudio;
+
+  /// Sidebar - type - video
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get filterTypeVideo;
+
+  /// Sidebar - settings button
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get filterSettingsButton;
+
+  /// Sidebar - clear history button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear History'**
+  String get filterClearHistoryButton;
+
+  /// Sidebar - confirm clear dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Clear'**
+  String get filterConfirmClearTitle;
+
+  /// Search box hint text
+  ///
+  /// In en, this message translates to:
+  /// **'Search clipboard history...'**
+  String get searchHint;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

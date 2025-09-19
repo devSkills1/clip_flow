@@ -5,6 +5,7 @@ import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/strings.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -59,7 +60,7 @@ class FilterSidebar extends ConsumerWidget {
                 ),
                 const SizedBox(width: Spacing.s8),
                 Text(
-                  I18nFallbacks.filter.title,
+                  S.of(context)?.filterTitle ?? I18nFallbacks.filter.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -103,7 +104,8 @@ class FilterSidebar extends ConsumerWidget {
             vertical: ClipConstants.smallPadding,
           ),
           child: Text(
-            I18nFallbacks.filter.typeSection,
+            S.of(context)?.filterTypeSection ??
+                I18nFallbacks.filter.typeSection,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w500,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -112,50 +114,56 @@ class FilterSidebar extends ConsumerWidget {
         ),
         _buildFilterItem(
           icon: Icons.text_fields,
-          label: I18nFallbacks.filter.typeAll,
+          label: S.of(context)?.filterTypeAll ?? I18nFallbacks.filter.typeAll,
           isSelected: selectedType == null,
           onTap: () => onTypeSelected(null),
         ),
         _buildFilterItem(
           icon: Icons.text_fields,
-          label: I18nFallbacks.filter.typeText,
+          label: S.of(context)?.filterTypeText ?? I18nFallbacks.filter.typeText,
           isSelected: selectedType == ClipType.text,
           onTap: () => onTypeSelected(ClipType.text),
         ),
         _buildFilterItem(
           icon: Icons.description,
-          label: I18nFallbacks.filter.typeRichText,
+          label:
+              S.of(context)?.filterTypeRichText ??
+              I18nFallbacks.filter.typeRichText,
           isSelected:
               selectedType == ClipType.rtf || selectedType == ClipType.html,
           onTap: () => onTypeSelected(ClipType.rtf),
         ),
         _buildFilterItem(
           icon: Icons.image,
-          label: I18nFallbacks.filter.typeImage,
+          label:
+              S.of(context)?.filterTypeImage ?? I18nFallbacks.filter.typeImage,
           isSelected: selectedType == ClipType.image,
           onTap: () => onTypeSelected(ClipType.image),
         ),
         _buildFilterItem(
           icon: Icons.palette,
-          label: I18nFallbacks.filter.typeColor,
+          label:
+              S.of(context)?.filterTypeColor ?? I18nFallbacks.filter.typeColor,
           isSelected: selectedType == ClipType.color,
           onTap: () => onTypeSelected(ClipType.color),
         ),
         _buildFilterItem(
           icon: Icons.insert_drive_file,
-          label: I18nFallbacks.filter.typeFile,
+          label: S.of(context)?.filterTypeFile ?? I18nFallbacks.filter.typeFile,
           isSelected: selectedType == ClipType.file,
           onTap: () => onTypeSelected(ClipType.file),
         ),
         _buildFilterItem(
           icon: Icons.audiotrack,
-          label: I18nFallbacks.filter.typeAudio,
+          label:
+              S.of(context)?.filterTypeAudio ?? I18nFallbacks.filter.typeAudio,
           isSelected: selectedType == ClipType.audio,
           onTap: () => onTypeSelected(ClipType.audio),
         ),
         _buildFilterItem(
           icon: Icons.videocam,
-          label: I18nFallbacks.filter.typeVideo,
+          label:
+              S.of(context)?.filterTypeVideo ?? I18nFallbacks.filter.typeVideo,
           isSelected: selectedType == ClipType.video,
           onTap: () => onTypeSelected(ClipType.video),
         ),
@@ -226,7 +234,8 @@ class FilterSidebar extends ConsumerWidget {
             vertical: ClipConstants.smallPadding,
           ),
           child: Text(
-            I18nFallbacks.filter.displayModeSection,
+            S.of(context)?.filterDisplayModeSection ??
+                I18nFallbacks.filter.displayModeSection,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w500,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -235,17 +244,23 @@ class FilterSidebar extends ConsumerWidget {
         ),
         _buildDisplayModeItem(
           icon: Icons.view_list,
-          label: I18nFallbacks.filter.displayCompact,
+          label:
+              S.of(context)?.displayCompact ??
+              I18nFallbacks.filter.displayCompact,
           mode: DisplayMode.compact,
         ),
         _buildDisplayModeItem(
           icon: Icons.view_module,
-          label: I18nFallbacks.filter.displayNormal,
+          label:
+              S.of(context)?.displayNormal ??
+              I18nFallbacks.filter.displayNormal,
           mode: DisplayMode.normal,
         ),
         _buildDisplayModeItem(
           icon: Icons.view_agenda,
-          label: I18nFallbacks.filter.displayPreview,
+          label:
+              S.of(context)?.displayPreview ??
+              I18nFallbacks.filter.displayPreview,
           mode: DisplayMode.preview,
         ),
       ],
@@ -315,10 +330,13 @@ class FilterSidebar extends ConsumerWidget {
             width: double.infinity,
             child: FilledButton.tonalIcon(
               onPressed: () {
-                context.go(AppRoutes.settings);
+                context.push(AppRoutes.settings);
               },
               icon: const Icon(Icons.settings, size: 18),
-              label: Text(I18nFallbacks.filter.settingsButton),
+              label: Text(
+                S.of(context)?.filterSettingsButton ??
+                    I18nFallbacks.filter.settingsButton,
+              ),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,
@@ -339,7 +357,10 @@ class FilterSidebar extends ConsumerWidget {
                 showDialog<void>(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
-                    title: Text(I18nFallbacks.filter.confirmClearTitle),
+                    title: Text(
+                      S.of(context)?.filterConfirmClearTitle ??
+                          I18nFallbacks.filter.confirmClearTitle,
+                    ),
                     content: const Text(AppStrings.confirmClearHistory),
                     actions: [
                       TextButton(
@@ -365,7 +386,10 @@ class FilterSidebar extends ConsumerWidget {
                 );
               },
               icon: const Icon(Icons.clear_all, size: 18),
-              label: Text(I18nFallbacks.filter.clearHistoryButton),
+              label: Text(
+                S.of(context)?.filterClearHistoryButton ??
+                    I18nFallbacks.filter.clearHistoryButton,
+              ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,

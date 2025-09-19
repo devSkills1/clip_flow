@@ -211,5 +211,50 @@
   "@unknownFormat": {"description": "首页-预览-未知格式"},
 
   "unknownFile": "未知文件",
-  "@unknownFile": {"description": "首页-预览-未知文件"}
+  "@unknownFile": {"description": "首页-预览-未知文件"},
+
+  "filterTitle": "筛选",
+  "@filterTitle": {"description": "侧边栏-筛选标题"},
+
+  "filterTypeSection": "类型",
+  "@filterTypeSection": {"description": "侧边栏-类型分组标题"},
+
+  "filterDisplayModeSection": "显示模式",
+  "@filterDisplayModeSection": {"description": "侧边栏-显示模式分组标题"},
+
+  "filterTypeAll": "全部",
+  "@filterTypeAll": {"description": "侧边栏-类型-全部"},
+
+  "filterTypeText": "文本",
+  "@filterTypeText": {"description": "侧边栏-类型-文本"},
+
+  "filterTypeRichText": "富文本",
+  "@filterTypeRichText": {"description": "侧边栏-类型-富文本"},
+
+  "filterTypeImage": "图片",
+  "@filterTypeImage": {"description": "侧边栏-类型-图片"},
+
+  "filterTypeColor": "颜色",
+  "@filterTypeColor": {"description": "侧边栏-类型-颜色"},
+
+  "filterTypeFile": "文件",
+  "@filterTypeFile": {"description": "侧边栏-类型-文件"},
+
+  "filterTypeAudio": "音频",
+  "@filterTypeAudio": {"description": "侧边栏-类型-音频"},
+
+  "filterTypeVideo": "视频",
+  "@filterTypeVideo": {"description": "侧边栏-类型-视频"},
+
+  "filterSettingsButton": "设置",
+  "@filterSettingsButton": {"description": "侧边栏-设置按钮"},
+
+  "filterClearHistoryButton": "清空历史",
+  "@filterClearHistoryButton": {"description": "侧边栏-清空历史按钮"},
+
+  "filterConfirmClearTitle": "确认清空",
+  "@filterConfirmClearTitle": {"description": "侧边栏-确认清空对话框标题"},
+
+  "searchHint": "搜索剪贴板历史...",
+  "@searchHint": {"description": "搜索框提示文本"}
 }

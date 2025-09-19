@@ -201,4 +201,49 @@ class SZh extends S {
 
   @override
   String get unknownFile => '未知文件';
+
+  @override
+  String get filterTitle => '筛选';
+
+  @override
+  String get filterTypeSection => '类型';
+
+  @override
+  String get filterDisplayModeSection => '显示模式';
+
+  @override
+  String get filterTypeAll => '全部';
+
+  @override
+  String get filterTypeText => '文本';
+
+  @override
+  String get filterTypeRichText => '富文本';
+
+  @override
+  String get filterTypeImage => '图片';
+
+  @override
+  String get filterTypeColor => '颜色';
+
+  @override
+  String get filterTypeFile => '文件';
+
+  @override
+  String get filterTypeAudio => '音频';
+
+  @override
+  String get filterTypeVideo => '视频';
+
+  @override
+  String get filterSettingsButton => '设置';
+
+  @override
+  String get filterClearHistoryButton => '清空历史';
+
+  @override
+  String get filterConfirmClearTitle => '确认清空';
+
+  @override
+  String get searchHint => '搜索剪贴板历史...';
 }

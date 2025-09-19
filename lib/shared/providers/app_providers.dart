@@ -1,6 +1,7 @@
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
+import 'package:clip_flow_pro/core/services/preferences_service.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
 import 'package:clip_flow_pro/features/home/presentation/pages/home_page.dart';
@@ -262,7 +263,12 @@ class UserPreferences {
 /// 管理并更新 [UserPreferences] 状态。
 class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 使用默认偏好初始化。
-  UserPreferencesNotifier() : super(UserPreferences());
+  UserPreferencesNotifier() : super(UserPreferences()) {
+    _loadPreferences();
+  }
+
+  /// 偏好设置持久化服务
+  final PreferencesService _preferencesService = PreferencesService();
 
   /// 当前偏好读取器。
   UserPreferences get preferences => state;
@@ -270,45 +276,74 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 用 [preferences] 替换当前偏好。
   set preferences(UserPreferences preferences) {
     state = preferences;
+    _savePreferences();
   }
 
-  /// 切换“开机自启动”偏好。
+  /// 加载保存的偏好设置
+  Future<void> _loadPreferences() async {
+    try {
+      final loadedPreferences = await _preferencesService.loadPreferences();
+      state = loadedPreferences;
+    } catch (e) {
+      // 如果加载失败，保持默认设置
+      // TODO: 使用日志框架记录错误
+    }
+  }
+
+  /// 保存当前偏好设置
+  Future<void> _savePreferences() async {
+    try {
+      await _preferencesService.savePreferences(state);
+    } catch (e) {
+      // TODO: 使用日志框架记录错误
+    }
+  }
+
+  /// 切换"开机自启动"偏好。
   void toggleAutoStart() {
     state = state.copyWith(autoStart: !state.autoStart);
+    _savePreferences();
   }
 
-  /// 切换“最小化到托盘”偏好。
+  /// 切换"最小化到托盘"偏好。
   void toggleMinimizeToTray() {
     state = state.copyWith(minimizeToTray: !state.minimizeToTray);
+    _savePreferences();
   }
 
   /// 设置全局快捷键。
   void setGlobalHotkey(String hotkey) {
     state = state.copyWith(globalHotkey: hotkey);
+    _savePreferences();
   }
 
   /// 设置历史记录的最大保留条数。
   void setMaxHistoryItems(int maxItems) {
     state = state.copyWith(maxHistoryItems: maxItems);
+    _savePreferences();
   }
 
-  /// 切换“启用加密”偏好。
+  /// 切换"启用加密"偏好。
   void toggleEncryption() {
     state = state.copyWith(enableEncryption: !state.enableEncryption);
+    _savePreferences();
   }
 
-  /// 切换“启用 OCR”偏好。
+  /// 切换"启用 OCR"偏好。
   void toggleOCR() {
     state = state.copyWith(enableOCR: !state.enableOCR);
+    _savePreferences();
   }
 
   /// 设置显示语言代码（例如 'zh_CN'）。
   void setLanguage(String language) {
     state = state.copyWith(language: language);
+    _savePreferences();
   }
 
   /// 设置默认显示模式。
   void setDefaultDisplayMode(DisplayMode mode) {
     state = state.copyWith(defaultDisplayMode: mode);
+    _savePreferences();
   }
 }

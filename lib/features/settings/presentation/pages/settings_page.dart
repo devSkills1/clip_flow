@@ -5,10 +5,12 @@ import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// 应用设置页面
 /// 提供应用的配置和偏好设置
 class SettingsPage extends ConsumerWidget {
+  /// 创建一个设置页面组件
   const SettingsPage({super.key});
 
   @override
@@ -23,7 +25,7 @@ class SettingsPage extends ConsumerWidget {
           S.of(context)?.settingsTitle ?? I18nFallbacks.settings.title,
         ),
         leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back),
         ),
       ),
@@ -145,7 +147,7 @@ class SettingsPage extends ConsumerWidget {
                 title:
                     l10n?.appearanceThemeModeTitle ??
                     I18nFallbacks.settings.appearanceThemeModeTitle,
-                subtitle: _getThemeModeText(themeMode),
+                subtitle: _getThemeModeText(context, themeMode),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showThemeDialog(context, ref);
@@ -155,7 +157,10 @@ class SettingsPage extends ConsumerWidget {
                 title:
                     l10n?.appearanceDefaultDisplayModeTitle ??
                     I18nFallbacks.settings.appearanceDefaultDisplayModeTitle,
-                subtitle: _getDisplayModeText(preferences.defaultDisplayMode),
+                subtitle: _getDisplayModeText(
+                  context,
+                  preferences.defaultDisplayMode,
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showDisplayModeDialog(context, ref);
@@ -165,7 +170,7 @@ class SettingsPage extends ConsumerWidget {
                 title:
                     l10n?.appearanceLanguageTitle ??
                     I18nFallbacks.settings.appearanceLanguageTitle,
-                subtitle: _getLanguageText(preferences.language),
+                subtitle: _getLanguageText(context, preferences.language),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showLanguageDialog(context, ref);
@@ -270,36 +275,39 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  String _getThemeModeText(ThemeMode mode) {
+  String _getThemeModeText(BuildContext context, ThemeMode mode) {
+    final l10n = S.of(context);
     switch (mode) {
       case ThemeMode.light:
-        return I18nFallbacks.settings.themeLight;
+        return l10n?.themeLight ?? I18nFallbacks.settings.themeLight;
       case ThemeMode.dark:
-        return I18nFallbacks.settings.themeDark;
+        return l10n?.themeDark ?? I18nFallbacks.settings.themeDark;
       case ThemeMode.system:
-        return I18nFallbacks.settings.themeSystem;
+        return l10n?.themeSystem ?? I18nFallbacks.settings.themeSystem;
     }
   }
 
-  String _getDisplayModeText(DisplayMode mode) {
+  String _getDisplayModeText(BuildContext context, DisplayMode mode) {
+    final l10n = S.of(context);
     switch (mode) {
       case DisplayMode.compact:
-        return I18nFallbacks.settings.displayCompact;
+        return l10n?.displayCompact ?? I18nFallbacks.settings.displayCompact;
       case DisplayMode.normal:
-        return I18nFallbacks.settings.displayNormal;
+        return l10n?.displayNormal ?? I18nFallbacks.settings.displayNormal;
       case DisplayMode.preview:
-        return I18nFallbacks.settings.displayPreview;
+        return l10n?.displayPreview ?? I18nFallbacks.settings.displayPreview;
     }
   }
 
-  String _getLanguageText(String language) {
+  String _getLanguageText(BuildContext context, String language) {
+    final l10n = S.of(context);
     switch (language) {
       case 'zh_CN':
-        return I18nFallbacks.settings.languageZhCN;
+        return l10n?.languageZhCN ?? I18nFallbacks.settings.languageZhCN;
       case 'en_US':
-        return I18nFallbacks.settings.languageEnUS;
+        return l10n?.languageEnUS ?? I18nFallbacks.settings.languageEnUS;
       default:
-        return I18nFallbacks.settings.languageZhCN;
+        return l10n?.languageZhCN ?? I18nFallbacks.settings.languageZhCN;
     }
   }
 

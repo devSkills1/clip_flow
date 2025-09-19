@@ -211,5 +211,50 @@
   "@unknownFormat": {"description": "Home - preview - unknown format"},
 
   "unknownFile": "Unknown file",
-  "@unknownFile": {"description": "Home - preview - unknown file"}
+  "@unknownFile": {"description": "Home - preview - unknown file"},
+
+  "filterTitle": "Filter",
+  "@filterTitle": {"description": "Sidebar - filter title"},
+
+  "filterTypeSection": "Type",
+  "@filterTypeSection": {"description": "Sidebar - type section title"},
+
+  "filterDisplayModeSection": "Display Mode",
+  "@filterDisplayModeSection": {"description": "Sidebar - display mode section title"},
+
+  "filterTypeAll": "All",
+  "@filterTypeAll": {"description": "Sidebar - type - all"},
+
+  "filterTypeText": "Text",
+  "@filterTypeText": {"description": "Sidebar - type - text"},
+
+  "filterTypeRichText": "Rich Text",
+  "@filterTypeRichText": {"description": "Sidebar - type - rich text"},
+
+  "filterTypeImage": "Image",
+  "@filterTypeImage": {"description": "Sidebar - type - image"},
+
+  "filterTypeColor": "Color",
+  "@filterTypeColor": {"description": "Sidebar - type - color"},
+
+  "filterTypeFile": "File",
+  "@filterTypeFile": {"description": "Sidebar - type - file"},
+
+  "filterTypeAudio": "Audio",
+  "@filterTypeAudio": {"description": "Sidebar - type - audio"},
+
+  "filterTypeVideo": "Video",
+  "@filterTypeVideo": {"description": "Sidebar - type - video"},
+
+  "filterSettingsButton": "Settings",
+  "@filterSettingsButton": {"description": "Sidebar - settings button"},
+
+  "filterClearHistoryButton": "Clear History",
+  "@filterClearHistoryButton": {"description": "Sidebar - clear history button"},
+
+  "filterConfirmClearTitle": "Confirm Clear",
+  "@filterConfirmClearTitle": {"description": "Sidebar - confirm clear dialog title"},
+
+  "searchHint": "Search clipboard history...",
+  "@searchHint": {"description": "Search box hint text"}
 }

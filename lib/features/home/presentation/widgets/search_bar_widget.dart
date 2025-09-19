@@ -1,4 +1,5 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:flutter/material.dart';
 
 class SearchBarWidget extends StatelessWidget {
@@ -20,7 +21,7 @@ class SearchBarWidget extends StatelessWidget {
         controller: controller,
         onChanged: onSearchChanged,
         decoration: InputDecoration(
-          hintText: '搜索剪贴板历史...',
+          hintText: S.of(context)?.searchHint ?? '搜索剪贴板历史...',
           prefixIcon: const Icon(Icons.search),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(onPressed: onClear, icon: const Icon(Icons.clear))

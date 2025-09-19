@@ -209,4 +209,49 @@ class SEn extends S {
 
   @override
   String get unknownFile => 'Unknown file';
+
+  @override
+  String get filterTitle => 'Filter';
+
+  @override
+  String get filterTypeSection => 'Type';
+
+  @override
+  String get filterDisplayModeSection => 'Display Mode';
+
+  @override
+  String get filterTypeAll => 'All';
+
+  @override
+  String get filterTypeText => 'Text';
+
+  @override
+  String get filterTypeRichText => 'Rich Text';
+
+  @override
+  String get filterTypeImage => 'Image';
+
+  @override
+  String get filterTypeColor => 'Color';
+
+  @override
+  String get filterTypeFile => 'File';
+
+  @override
+  String get filterTypeAudio => 'Audio';
+
+  @override
+  String get filterTypeVideo => 'Video';
+
+  @override
+  String get filterSettingsButton => 'Settings';
+
+  @override
+  String get filterClearHistoryButton => 'Clear History';
+
+  @override
+  String get filterConfirmClearTitle => 'Confirm Clear';
+
+  @override
+  String get searchHint => 'Search clipboard history...';
 }
