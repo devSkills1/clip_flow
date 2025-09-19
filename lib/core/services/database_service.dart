@@ -160,7 +160,11 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
+    // 清空数据库
     await _database!.delete(ClipConstants.clipItemsTable);
+
+    // 直接删除整个媒体目录（更高效）
+    await _deleteMediaDirectorySafe();
   }
 
   /// 获取所有剪贴项（按创建时间倒序）
@@ -446,6 +450,10 @@ class DatabaseService {
     );
   }
 
+  /// 安全删除指定的媒体文件
+  ///
+  /// 参数：
+  /// - relativePath：相对路径，如 'media/image.jpg'
   Future<void> _deleteMediaFileSafe(String relativePath) async {
     try {
       final absPath = await _resolveAbsoluteMediaPath(relativePath);
@@ -456,9 +464,26 @@ class DatabaseService {
     } on FileSystemException catch (_) {}
   }
 
+  /// 解析相对媒体路径为绝对路径
+  ///
+  /// 参数：
+  /// - relativePath：相对路径，如 'media/image.jpg'
   Future<String> _resolveAbsoluteMediaPath(String relativePath) async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
     return join(documentsDirectory.path, relativePath);
+  }
+
+  /// 安全删除整个媒体目录
+  Future<void> _deleteMediaDirectorySafe() async {
+    try {
+      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final mediaDirectory = Directory(join(documentsDirectory.path, 'media'));
+      if (mediaDirectory.existsSync()) {
+        await mediaDirectory.delete(recursive: true);
+      }
+    } on FileSystemException catch (_) {
+      // 忽略文件系统异常，避免阻塞清空操作
+    }
   }
 
   /// 扫描媒体目录，删除未在 DB 引用的“孤儿文件”

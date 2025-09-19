@@ -344,9 +344,9 @@ class FilterSidebar extends ConsumerWidget {
                         child: const Text(AppStrings.cancel),
                       ),
                       FilledButton(
-                        onPressed: () {
+                        onPressed: () async {
                           // 清空历史记录
-                          historyNotifier.clearHistory();
+                          await historyNotifier.clearHistory();
                           Navigator.of(dialogContext).pop();
                         },
                         style: FilledButton.styleFrom(

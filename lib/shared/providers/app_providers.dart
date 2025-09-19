@@ -36,14 +36,16 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// 基于 [ClipboardHistoryNotifier] 的剪贴板历史状态提供者。
 final clipboardHistoryProvider =
     StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
-      return ClipboardHistoryNotifier();
+      return ClipboardHistoryNotifier(DatabaseService.instance);
     });
 
 //// 剪贴板历史通知器
 /// 管理剪贴项：新增/删除/收藏/搜索，并限制列表大小。
 class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   /// 使用空列表初始化历史记录。
-  ClipboardHistoryNotifier() : super([]);
+  ClipboardHistoryNotifier(this._databaseService) : super([]);
+
+  final DatabaseService _databaseService;
 
   /// 添加新项目；若内容重复则仅更新其时间戳并前置。
   void addItem(ClipItem item) {
@@ -92,8 +94,17 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   }
 
   /// 清空所有历史项目。
-  void clearHistory() {
-    state = [];
+  Future<void> clearHistory() async {
+    try {
+      // 清空数据库
+      await _databaseService.clearAllClipItems();
+      // 清空内存状态
+      state = [];
+    } catch (e) {
+      // 即使数据库清空失败，也清空内存状态
+      state = [];
+      // 可以在这里添加错误日志
+    }
   }
 
   /// 获取已收藏的项目列表。
