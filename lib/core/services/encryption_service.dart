@@ -135,6 +135,9 @@ class EncryptionService {
     };
   }
 
+  /// 解密 Map 数据
+  ///
+  /// 若传入的数据未标记为加密（encrypted != true），将原样返回副本。
   Future<Map<String, dynamic>> decryptMap(
     Map<String, dynamic> encryptedData,
   ) async {

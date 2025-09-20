@@ -3,12 +3,11 @@ import 'dart:typed_data';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/dimensions.dart';
-import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/strings.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
-import 'package:clip_flow_pro/l10n/gen/s.dart';
+import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -108,27 +107,25 @@ class ClipItemCard extends StatelessWidget {
   Widget _buildTypeLabel() {
     return Builder(
       builder: (context) {
-        final l10n = S.of(context);
-        const fallback = I18nFallbacks.common;
         String label;
 
         switch (item.type) {
           case ClipType.text:
-            label = l10n?.clipTypeText ?? fallback.clipTypeText;
+            label = I18nCommonUtil.getClipTypeText(context);
           case ClipType.rtf:
-            label = l10n?.clipTypeRichText ?? fallback.clipTypeRichText;
+            label = I18nCommonUtil.getClipTypeRichText(context);
           case ClipType.html:
-            label = l10n?.clipTypeHtml ?? fallback.clipTypeHtml;
+            label = I18nCommonUtil.getClipTypeHtml(context);
           case ClipType.image:
-            label = l10n?.clipTypeImage ?? fallback.clipTypeImage;
+            label = I18nCommonUtil.getClipTypeImage(context);
           case ClipType.color:
-            label = l10n?.clipTypeColor ?? fallback.clipTypeColor;
+            label = I18nCommonUtil.getClipTypeColor(context);
           case ClipType.file:
-            label = l10n?.clipTypeFile ?? fallback.clipTypeFile;
+            label = I18nCommonUtil.getClipTypeFile(context);
           case ClipType.audio:
-            label = l10n?.clipTypeAudio ?? fallback.clipTypeAudio;
+            label = I18nCommonUtil.getClipTypeAudio(context);
           case ClipType.video:
-            label = l10n?.clipTypeVideo ?? fallback.clipTypeVideo;
+            label = I18nCommonUtil.getClipTypeVideo(context);
         }
 
         return Text(
@@ -540,22 +537,17 @@ class ClipItemCard extends StatelessWidget {
   }
 
   String _getTimeAgo(BuildContext context) {
-    final l10n = S.of(context);
-    const fallback = I18nFallbacks.common;
     final now = DateTime.now();
     final difference = now.difference(item.createdAt);
 
     if (difference.inMinutes < 1) {
-      return l10n?.timeJustNow ?? fallback.timeJustNow;
+      return I18nCommonUtil.getTimeJustNow(context);
     } else if (difference.inMinutes < 60) {
-      return l10n?.timeMinutesAgo(difference.inMinutes) ??
-          fallback.timeMinutesAgo(difference.inMinutes);
+      return I18nCommonUtil.getTimeMinutesAgo(context, difference.inMinutes);
     } else if (difference.inHours < 24) {
-      return l10n?.timeHoursAgo(difference.inHours) ??
-          fallback.timeHoursAgo(difference.inHours);
+      return I18nCommonUtil.getTimeHoursAgo(context, difference.inHours);
     } else if (difference.inDays < 7) {
-      return l10n?.timeDaysAgo(difference.inDays) ??
-          fallback.timeDaysAgo(difference.inDays);
+      return I18nCommonUtil.getTimeDaysAgo(context, difference.inDays);
     } else {
       return DateFormat(AppStrings.timeFormatDefault).format(item.createdAt);
     }
