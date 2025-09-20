@@ -546,6 +546,78 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Search clipboard history...'**
   String get searchHint;
+
+  /// Time display - just now
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get timeJustNow;
+
+  /// Time display - minutes ago
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min ago'**
+  String timeMinutesAgo(int minutes);
+
+  /// Time display - hours ago
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hr ago'**
+  String timeHoursAgo(int hours);
+
+  /// Time display - days ago
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days ago'**
+  String timeDaysAgo(int days);
+
+  /// Clipboard type - text
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get clipTypeText;
+
+  /// Clipboard type - rich text
+  ///
+  /// In en, this message translates to:
+  /// **'Rich Text'**
+  String get clipTypeRichText;
+
+  /// Clipboard type - HTML
+  ///
+  /// In en, this message translates to:
+  /// **'HTML'**
+  String get clipTypeHtml;
+
+  /// Clipboard type - image
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get clipTypeImage;
+
+  /// Clipboard type - color
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get clipTypeColor;
+
+  /// Clipboard type - file
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get clipTypeFile;
+
+  /// Clipboard type - audio
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get clipTypeAudio;
+
+  /// Clipboard type - video
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get clipTypeVideo;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

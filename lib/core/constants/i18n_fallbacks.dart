@@ -53,6 +53,51 @@ class _CommonFallback {
 
   /// 实体标签：颜色
   final String labelColor = '颜色';
+
+  /// 时间显示：刚刚
+  final String timeJustNow = '刚刚';
+
+  /// 时间显示：分钟前
+  String timeMinutesAgo(int minutes) => '$minutes分钟前';
+
+  /// 时间显示：小时前
+  String timeHoursAgo(int hours) => '$hours小时前';
+
+  /// 时间显示：天前
+  String timeDaysAgo(int days) => '$days天前';
+
+  /// 时间显示：月前
+  String timeMonthsAgo(int months) => '$months个月前';
+
+  /// 时间显示：年前
+  String timeYearsAgo(int years) => '$years年前';
+
+  /// 剪贴板类型：文本
+  final String clipTypeText = '文本';
+
+  /// 剪贴板类型：图片
+  final String clipTypeImage = '图片';
+
+  /// 剪贴板类型：文件
+  final String clipTypeFile = '文件';
+
+  /// 剪贴板类型：链接
+  final String clipTypeUrl = '链接';
+
+  /// 剪贴板类型：颜色
+  final String clipTypeColor = '颜色';
+
+  /// 剪贴板类型：富文本
+  final String clipTypeRichText = '富文本';
+
+  /// 剪贴板类型：音频
+  final String clipTypeAudio = '音频';
+
+  /// 剪贴板类型：视频
+  final String clipTypeVideo = '视频';
+
+  /// 剪贴板类型：HTML
+  final String clipTypeHtml = 'HTML';
 }
 
 class _HomeFallback {

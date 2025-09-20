@@ -246,4 +246,46 @@ class SZh extends S {
 
   @override
   String get searchHint => '搜索剪贴板历史...';
+
+  @override
+  String get timeJustNow => '刚刚';
+
+  @override
+  String timeMinutesAgo(int minutes) {
+    return '$minutes分钟前';
+  }
+
+  @override
+  String timeHoursAgo(int hours) {
+    return '$hours小时前';
+  }
+
+  @override
+  String timeDaysAgo(int days) {
+    return '$days天前';
+  }
+
+  @override
+  String get clipTypeText => '文本';
+
+  @override
+  String get clipTypeRichText => '富文本';
+
+  @override
+  String get clipTypeHtml => 'HTML';
+
+  @override
+  String get clipTypeImage => '图片';
+
+  @override
+  String get clipTypeColor => '颜色';
+
+  @override
+  String get clipTypeFile => '文件';
+
+  @override
+  String get clipTypeAudio => '音频';
+
+  @override
+  String get clipTypeVideo => '视频';
 }

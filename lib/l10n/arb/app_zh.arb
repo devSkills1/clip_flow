@@ -256,5 +256,50 @@
   "@filterConfirmClearTitle": {"description": "侧边栏-确认清空对话框标题"},
 
   "searchHint": "搜索剪贴板历史...",
-  "@searchHint": {"description": "搜索框提示文本"}
+  "@searchHint": {"description": "搜索框提示文本"},
+
+  "timeJustNow": "刚刚",
+  "@timeJustNow": {"description": "时间显示-刚刚"},
+
+  "timeMinutesAgo": "{minutes}分钟前",
+  "@timeMinutesAgo": {
+    "description": "时间显示-分钟前",
+    "placeholders": {"minutes": {"type": "int", "example": "5"}}
+  },
+
+  "timeHoursAgo": "{hours}小时前",
+  "@timeHoursAgo": {
+    "description": "时间显示-小时前",
+    "placeholders": {"hours": {"type": "int", "example": "2"}}
+  },
+
+  "timeDaysAgo": "{days}天前",
+  "@timeDaysAgo": {
+    "description": "时间显示-天前",
+    "placeholders": {"days": {"type": "int", "example": "3"}}
+  },
+
+  "clipTypeText": "文本",
+  "@clipTypeText": {"description": "剪贴板类型-文本"},
+
+  "clipTypeRichText": "富文本",
+  "@clipTypeRichText": {"description": "剪贴板类型-富文本"},
+
+  "clipTypeHtml": "HTML",
+  "@clipTypeHtml": {"description": "剪贴板类型-HTML"},
+
+  "clipTypeImage": "图片",
+  "@clipTypeImage": {"description": "剪贴板类型-图片"},
+
+  "clipTypeColor": "颜色",
+  "@clipTypeColor": {"description": "剪贴板类型-颜色"},
+
+  "clipTypeFile": "文件",
+  "@clipTypeFile": {"description": "剪贴板类型-文件"},
+
+  "clipTypeAudio": "音频",
+  "@clipTypeAudio": {"description": "剪贴板类型-音频"},
+
+  "clipTypeVideo": "视频",
+  "@clipTypeVideo": {"description": "剪贴板类型-视频"}
 }

@@ -256,5 +256,50 @@
   "@filterConfirmClearTitle": {"description": "Sidebar - confirm clear dialog title"},
 
   "searchHint": "Search clipboard history...",
-  "@searchHint": {"description": "Search box hint text"}
+  "@searchHint": {"description": "Search box hint text"},
+
+  "timeJustNow": "Just now",
+  "@timeJustNow": {"description": "Time display - just now"},
+
+  "timeMinutesAgo": "{minutes} min ago",
+  "@timeMinutesAgo": {
+    "description": "Time display - minutes ago",
+    "placeholders": {"minutes": {"type": "int", "example": "5"}}
+  },
+
+  "timeHoursAgo": "{hours} hr ago",
+  "@timeHoursAgo": {
+    "description": "Time display - hours ago",
+    "placeholders": {"hours": {"type": "int", "example": "2"}}
+  },
+
+  "timeDaysAgo": "{days} days ago",
+  "@timeDaysAgo": {
+    "description": "Time display - days ago",
+    "placeholders": {"days": {"type": "int", "example": "3"}}
+  },
+
+  "clipTypeText": "Text",
+  "@clipTypeText": {"description": "Clipboard type - text"},
+
+  "clipTypeRichText": "Rich Text",
+  "@clipTypeRichText": {"description": "Clipboard type - rich text"},
+
+  "clipTypeHtml": "HTML",
+  "@clipTypeHtml": {"description": "Clipboard type - HTML"},
+
+  "clipTypeImage": "Image",
+  "@clipTypeImage": {"description": "Clipboard type - image"},
+
+  "clipTypeColor": "Color",
+  "@clipTypeColor": {"description": "Clipboard type - color"},
+
+  "clipTypeFile": "File",
+  "@clipTypeFile": {"description": "Clipboard type - file"},
+
+  "clipTypeAudio": "Audio",
+  "@clipTypeAudio": {"description": "Clipboard type - audio"},
+
+  "clipTypeVideo": "Video",
+  "@clipTypeVideo": {"description": "Clipboard type - video"}
 }

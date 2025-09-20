@@ -3,10 +3,12 @@ import 'dart:typed_data';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/dimensions.dart';
+import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/strings.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -104,33 +106,39 @@ class ClipItemCard extends StatelessWidget {
   }
 
   Widget _buildTypeLabel() {
-    String label;
+    return Builder(
+      builder: (context) {
+        final l10n = S.of(context);
+        const fallback = I18nFallbacks.common;
+        String label;
 
-    switch (item.type) {
-      case ClipType.text:
-        label = '文本';
-      case ClipType.rtf:
-        label = '富文本';
-      case ClipType.html:
-        label = 'HTML';
-      case ClipType.image:
-        label = '图片';
-      case ClipType.color:
-        label = '颜色';
-      case ClipType.file:
-        label = '文件';
-      case ClipType.audio:
-        label = '音频';
-      case ClipType.video:
-        label = '视频';
-    }
+        switch (item.type) {
+          case ClipType.text:
+            label = l10n?.clipTypeText ?? fallback.clipTypeText;
+          case ClipType.rtf:
+            label = l10n?.clipTypeRichText ?? fallback.clipTypeRichText;
+          case ClipType.html:
+            label = l10n?.clipTypeHtml ?? fallback.clipTypeHtml;
+          case ClipType.image:
+            label = l10n?.clipTypeImage ?? fallback.clipTypeImage;
+          case ClipType.color:
+            label = l10n?.clipTypeColor ?? fallback.clipTypeColor;
+          case ClipType.file:
+            label = l10n?.clipTypeFile ?? fallback.clipTypeFile;
+          case ClipType.audio:
+            label = l10n?.clipTypeAudio ?? fallback.clipTypeAudio;
+          case ClipType.video:
+            label = l10n?.clipTypeVideo ?? fallback.clipTypeVideo;
+        }
 
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: ClipConstants.captionFontSize,
-        fontWeight: FontWeight.w500,
-      ),
+        return Text(
+          label,
+          style: const TextStyle(
+            fontSize: ClipConstants.captionFontSize,
+            fontWeight: FontWeight.w500,
+          ),
+        );
+      },
     );
   }
 
@@ -481,7 +489,7 @@ class ClipItemCard extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context) {
     final tags = item.metadata['tags'] as List<dynamic>? ?? [];
-    final timeAgo = _getTimeAgo();
+    final timeAgo = _getTimeAgo(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,18 +539,23 @@ class ClipItemCard extends StatelessWidget {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} ${AppStrings.unitGB}';
   }
 
-  String _getTimeAgo() {
+  String _getTimeAgo(BuildContext context) {
+    final l10n = S.of(context);
+    const fallback = I18nFallbacks.common;
     final now = DateTime.now();
     final difference = now.difference(item.createdAt);
 
     if (difference.inMinutes < 1) {
-      return '刚刚';
+      return l10n?.timeJustNow ?? fallback.timeJustNow;
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}${AppStrings.timeFormatMinutes}';
+      return l10n?.timeMinutesAgo(difference.inMinutes) ??
+          fallback.timeMinutesAgo(difference.inMinutes);
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}${AppStrings.timeFormatHours}';
+      return l10n?.timeHoursAgo(difference.inHours) ??
+          fallback.timeHoursAgo(difference.inHours);
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}${AppStrings.timeFormatDays}';
+      return l10n?.timeDaysAgo(difference.inDays) ??
+          fallback.timeDaysAgo(difference.inDays);
     } else {
       return DateFormat(AppStrings.timeFormatDefault).format(item.createdAt);
     }

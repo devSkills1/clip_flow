@@ -254,4 +254,46 @@ class SEn extends S {
 
   @override
   String get searchHint => 'Search clipboard history...';
+
+  @override
+  String get timeJustNow => 'Just now';
+
+  @override
+  String timeMinutesAgo(int minutes) {
+    return '$minutes min ago';
+  }
+
+  @override
+  String timeHoursAgo(int hours) {
+    return '$hours hr ago';
+  }
+
+  @override
+  String timeDaysAgo(int days) {
+    return '$days days ago';
+  }
+
+  @override
+  String get clipTypeText => 'Text';
+
+  @override
+  String get clipTypeRichText => 'Rich Text';
+
+  @override
+  String get clipTypeHtml => 'HTML';
+
+  @override
+  String get clipTypeImage => 'Image';
+
+  @override
+  String get clipTypeColor => 'Color';
+
+  @override
+  String get clipTypeFile => 'File';
+
+  @override
+  String get clipTypeAudio => 'Audio';
+
+  @override
+  String get clipTypeVideo => 'Video';
 }
