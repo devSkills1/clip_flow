@@ -288,4 +288,118 @@ class SZh extends S {
 
   @override
   String get clipTypeVideo => '视频';
+
+  @override
+  String get performanceMonitor => '性能监控';
+
+  @override
+  String get performanceMetricsReset => '性能指标已重置';
+
+  @override
+  String get performanceResetFailed => '重置性能指标失败';
+
+  @override
+  String get performanceFps => '帧率 (FPS)';
+
+  @override
+  String get performanceMemory => '内存使用';
+
+  @override
+  String get performanceCpu => 'CPU 使用率';
+
+  @override
+  String get performanceJank => '卡顿次数';
+
+  @override
+  String get performanceDbQuery => '数据库查询';
+
+  @override
+  String get performanceClipboard => '剪贴板捕获';
+
+  @override
+  String get performanceScore => '性能评分';
+
+  @override
+  String get performanceGood => '性能良好';
+
+  @override
+  String get performanceWarning => '性能警告';
+
+  @override
+  String get performanceMemoryLeak => '检测到内存泄漏';
+
+  @override
+  String get performanceOptimizationTitle => '性能优化建议';
+
+  @override
+  String get performanceOptimizationClose => '关闭';
+
+  @override
+  String performanceOptimizationCount(int count) {
+    return '优化建议 ($count)';
+  }
+
+  @override
+  String get performanceRecommendationReduceAnimations => '建议: 减少复杂动画和重绘操作';
+
+  @override
+  String get performanceRecommendationRepaintBoundary =>
+      '建议: 使用RepaintBoundary优化渲染';
+
+  @override
+  String get performanceRecommendationMemoryLeak => '建议: 检查是否存在内存泄漏';
+
+  @override
+  String get performanceRecommendationReleaseResources => '建议: 及时释放不再使用的资源';
+
+  @override
+  String get performanceRecommendationOptimizeCpu => '建议: 优化计算密集型操作';
+
+  @override
+  String get performanceRecommendationUseIsolate => '建议: 使用Isolate处理耗时任务';
+
+  @override
+  String get performanceRecommendationCheckMainThread => '建议: 检查主线程阻塞操作';
+
+  @override
+  String get performanceRecommendationAsyncIO => '建议: 使用异步操作处理IO任务';
+
+  @override
+  String performanceAlertCriticalFps(String fps) {
+    return '严重: FPS过低 ($fps)';
+  }
+
+  @override
+  String performanceAlertWarningFps(String fps) {
+    return '警告: FPS偏低 ($fps)';
+  }
+
+  @override
+  String performanceAlertCriticalMemory(String memory) {
+    return '严重: 内存使用过高 (${memory}MB)';
+  }
+
+  @override
+  String performanceAlertWarningMemory(String memory) {
+    return '警告: 内存使用偏高 (${memory}MB)';
+  }
+
+  @override
+  String performanceAlertCriticalCpu(String cpu) {
+    return '严重: CPU使用率过高 ($cpu%)';
+  }
+
+  @override
+  String performanceAlertWarningCpu(String cpu) {
+    return '警告: CPU使用率偏高 ($cpu%)';
+  }
+
+  @override
+  String get performanceStreamError => '性能监控流错误';
+
+  @override
+  String get performanceStartFailed => '启动性能监控失败';
+
+  @override
+  String get performanceAlert => '性能告警';
 }

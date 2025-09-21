@@ -18,6 +18,9 @@ class I18nFallbacks {
 
   /// 筛选侧边栏文案回退
   static const filter = _FilterFallback();
+
+  /// 性能监控文案回退
+  static const performance = _PerformanceFallback();
 }
 
 class _CommonFallback {
@@ -303,9 +306,113 @@ class _FilterFallback {
   /// 设置按钮
   final String settingsButton = '设置';
 
-  /// 清空历史按钮
-  final String clearHistoryButton = '清空历史';
-
   /// 确认清空对话框标题
   final String confirmClearTitle = '确认清空';
+
+  /// 清空历史按钮
+  final String clearHistoryButton = '清空历史';
+}
+
+class _PerformanceFallback {
+  /// 性能监控文案回退
+  const _PerformanceFallback();
+
+  /// 性能监控标题
+  final String monitor = '性能监控';
+
+  /// 性能指标重置消息
+  final String metricsReset = '性能指标已重置';
+
+  /// 性能重置失败消息
+  final String resetFailed = '重置性能指标失败';
+
+  /// FPS标签
+  final String fps = '帧率 (FPS)';
+
+  /// 内存使用标签
+  final String memory = '内存使用';
+
+  /// CPU使用率标签
+  final String cpu = 'CPU 使用率';
+
+  /// 卡顿次数标签
+  final String jank = '卡顿次数';
+
+  /// 数据库查询标签
+  final String dbQuery = '数据库查询';
+
+  /// 剪贴板捕获标签
+  final String clipboard = '剪贴板捕获';
+
+  /// 性能评分标签
+  final String score = '性能评分';
+
+  /// 性能良好状态
+  final String good = '性能良好';
+
+  /// 性能警告状态
+  final String warning = '性能警告';
+
+  /// 内存泄漏警告
+  final String memoryLeak = '检测到内存泄漏';
+
+  /// 优化建议对话框标题
+  final String optimizationTitle = '性能优化建议';
+
+  /// 关闭按钮
+  final String close = '关闭';
+
+  /// 优化建议数量
+  String optimizationCount(int count) => '优化建议 ($count)';
+
+  /// 性能建议：减少动画
+  final String recommendationReduceAnimations = '建议: 减少复杂动画和重绘操作';
+
+  /// 性能建议：重绘边界
+  final String recommendationRepaintBoundary = '建议: 使用RepaintBoundary优化渲染';
+
+  /// 性能建议：内存泄漏
+  final String recommendationMemoryLeak = '建议: 检查是否存在内存泄漏';
+
+  /// 性能建议：释放资源
+  final String recommendationReleaseResources = '建议: 及时释放不再使用的资源';
+
+  /// 性能建议：优化CPU
+  final String recommendationOptimizeCpu = '建议: 优化计算密集型操作';
+
+  /// 性能建议：使用Isolate
+  final String recommendationUseIsolate = '建议: 使用Isolate处理耗时任务';
+
+  /// 性能建议：检查主线程
+  final String recommendationCheckMainThread = '建议: 检查主线程阻塞操作';
+
+  /// 性能建议：异步IO
+  final String recommendationAsyncIO = '建议: 使用异步操作处理IO任务';
+
+  /// 严重FPS警报
+  String alertCriticalFps(String fps) => '严重: FPS过低 ($fps)';
+
+  /// 警告FPS警报
+  String alertWarningFps(String fps) => '警告: FPS偏低 ($fps)';
+
+  /// 严重内存警报
+  String alertCriticalMemory(String memory) => '严重: 内存使用过高 (${memory}MB)';
+
+  /// 警告内存警报
+  String alertWarningMemory(String memory) => '警告: 内存使用偏高 (${memory}MB)';
+
+  /// 严重CPU警报
+  String alertCriticalCpu(String cpu) => '严重: CPU使用率过高 ($cpu%)';
+
+  /// 警告CPU警报
+  String alertWarningCpu(String cpu) => '警告: CPU使用率偏高 ($cpu%)';
+
+  /// 性能监控流错误
+  final String streamError = '性能监控流错误';
+
+  /// 启动性能监控失败
+  final String startFailed = '启动性能监控失败';
+
+  /// 性能告警前缀
+  final String alert = '性能告警';
 }

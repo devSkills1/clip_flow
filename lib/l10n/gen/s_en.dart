@@ -296,4 +296,126 @@ class SEn extends S {
 
   @override
   String get clipTypeVideo => 'Video';
+
+  @override
+  String get performanceMonitor => 'Performance Monitor';
+
+  @override
+  String get performanceMetricsReset => 'Performance metrics reset';
+
+  @override
+  String get performanceResetFailed => 'Failed to reset performance metrics';
+
+  @override
+  String get performanceFps => 'Frame Rate (FPS)';
+
+  @override
+  String get performanceMemory => 'Memory Usage';
+
+  @override
+  String get performanceCpu => 'CPU Usage';
+
+  @override
+  String get performanceJank => 'Jank Count';
+
+  @override
+  String get performanceDbQuery => 'Database Query';
+
+  @override
+  String get performanceClipboard => 'Clipboard Capture';
+
+  @override
+  String get performanceScore => 'Performance Score';
+
+  @override
+  String get performanceGood => 'Performance Good';
+
+  @override
+  String get performanceWarning => 'Performance Warning';
+
+  @override
+  String get performanceMemoryLeak => 'Memory leak detected';
+
+  @override
+  String get performanceOptimizationTitle =>
+      'Performance Optimization Suggestions';
+
+  @override
+  String get performanceOptimizationClose => 'Close';
+
+  @override
+  String performanceOptimizationCount(int count) {
+    return 'Optimization Suggestions ($count)';
+  }
+
+  @override
+  String get performanceRecommendationReduceAnimations =>
+      'Suggestion: Reduce complex animations and redraws';
+
+  @override
+  String get performanceRecommendationRepaintBoundary =>
+      'Suggestion: Use RepaintBoundary to optimize rendering';
+
+  @override
+  String get performanceRecommendationMemoryLeak =>
+      'Suggestion: Check for memory leaks';
+
+  @override
+  String get performanceRecommendationReleaseResources =>
+      'Suggestion: Release unused resources promptly';
+
+  @override
+  String get performanceRecommendationOptimizeCpu =>
+      'Suggestion: Optimize CPU-intensive operations';
+
+  @override
+  String get performanceRecommendationUseIsolate =>
+      'Suggestion: Use Isolate for time-consuming tasks';
+
+  @override
+  String get performanceRecommendationCheckMainThread =>
+      'Suggestion: Check for main thread blocking operations';
+
+  @override
+  String get performanceRecommendationAsyncIO =>
+      'Suggestion: Use async operations for IO tasks';
+
+  @override
+  String performanceAlertCriticalFps(String fps) {
+    return 'Critical: FPS too low ($fps)';
+  }
+
+  @override
+  String performanceAlertWarningFps(String fps) {
+    return 'Warning: FPS low ($fps)';
+  }
+
+  @override
+  String performanceAlertCriticalMemory(String memory) {
+    return 'Critical: Memory usage too high (${memory}MB)';
+  }
+
+  @override
+  String performanceAlertWarningMemory(String memory) {
+    return 'Warning: Memory usage high (${memory}MB)';
+  }
+
+  @override
+  String performanceAlertCriticalCpu(String cpu) {
+    return 'Critical: CPU usage too high ($cpu%)';
+  }
+
+  @override
+  String performanceAlertWarningCpu(String cpu) {
+    return 'Warning: CPU usage high ($cpu%)';
+  }
+
+  @override
+  String get performanceStreamError => 'Performance monitoring stream error';
+
+  @override
+  String get performanceStartFailed => 'Failed to start performance monitoring';
+
+  @override
+  String get performanceAlert => 'Performance Alert';
 }

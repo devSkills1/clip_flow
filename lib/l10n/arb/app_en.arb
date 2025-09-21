@@ -301,5 +301,139 @@
   "@clipTypeAudio": {"description": "Clipboard type - audio"},
 
   "clipTypeVideo": "Video",
-  "@clipTypeVideo": {"description": "Clipboard type - video"}
+  "@clipTypeVideo": {"description": "Clipboard type - video"},
+
+  "performanceMonitor": "Performance Monitor",
+  "@performanceMonitor": {"description": "Performance monitor title"},
+
+  "performanceMetricsReset": "Performance metrics reset",
+  "@performanceMetricsReset": {"description": "Performance metrics reset message"},
+
+  "performanceResetFailed": "Failed to reset performance metrics",
+  "@performanceResetFailed": {"description": "Performance reset failed message"},
+
+  "performanceFps": "Frame Rate (FPS)",
+  "@performanceFps": {"description": "Performance FPS label"},
+
+  "performanceMemory": "Memory Usage",
+  "@performanceMemory": {"description": "Performance memory usage label"},
+
+  "performanceCpu": "CPU Usage",
+  "@performanceCpu": {"description": "Performance CPU usage label"},
+
+  "performanceJank": "Jank Count",
+  "@performanceJank": {"description": "Performance jank count label"},
+
+  "performanceDbQuery": "Database Query",
+  "@performanceDbQuery": {"description": "Performance database query label"},
+
+  "performanceClipboard": "Clipboard Capture",
+  "@performanceClipboard": {"description": "Performance clipboard capture label"},
+
+  "performanceScore": "Performance Score",
+  "@performanceScore": {"description": "Performance score label"},
+
+  "performanceGood": "Performance Good",
+  "@performanceGood": {"description": "Performance good status"},
+
+  "performanceWarning": "Performance Warning",
+  "@performanceWarning": {"description": "Performance warning status"},
+
+  "performanceMemoryLeak": "Memory leak detected",
+  "@performanceMemoryLeak": {"description": "Memory leak warning message"},
+
+  "performanceOptimizationTitle": "Performance Optimization Suggestions",
+  "@performanceOptimizationTitle": {"description": "Performance optimization dialog title"},
+
+  "performanceOptimizationClose": "Close",
+  "@performanceOptimizationClose": {"description": "Performance optimization dialog close button"},
+
+  "performanceOptimizationCount": "Optimization Suggestions ({count})",
+  "@performanceOptimizationCount": {
+    "description": "Performance optimization suggestions count",
+    "placeholders": {
+      "count": {"type": "int", "example": "3"}
+    }
+  },
+
+  "performanceRecommendationReduceAnimations": "Suggestion: Reduce complex animations and redraws",
+  "@performanceRecommendationReduceAnimations": {"description": "Performance recommendation - reduce animations"},
+
+  "performanceRecommendationRepaintBoundary": "Suggestion: Use RepaintBoundary to optimize rendering",
+  "@performanceRecommendationRepaintBoundary": {"description": "Performance recommendation - repaint boundary"},
+
+  "performanceRecommendationMemoryLeak": "Suggestion: Check for memory leaks",
+  "@performanceRecommendationMemoryLeak": {"description": "Performance recommendation - memory leak"},
+
+  "performanceRecommendationReleaseResources": "Suggestion: Release unused resources promptly",
+  "@performanceRecommendationReleaseResources": {"description": "Performance recommendation - release resources"},
+
+  "performanceRecommendationOptimizeCpu": "Suggestion: Optimize CPU-intensive operations",
+  "@performanceRecommendationOptimizeCpu": {"description": "Performance recommendation - optimize CPU"},
+
+  "performanceRecommendationUseIsolate": "Suggestion: Use Isolate for time-consuming tasks",
+  "@performanceRecommendationUseIsolate": {"description": "Performance recommendation - use isolate"},
+
+  "performanceRecommendationCheckMainThread": "Suggestion: Check for main thread blocking operations",
+  "@performanceRecommendationCheckMainThread": {"description": "Performance recommendation - check main thread"},
+
+  "performanceRecommendationAsyncIO": "Suggestion: Use async operations for IO tasks",
+  "@performanceRecommendationAsyncIO": {"description": "Performance recommendation - async IO"},
+
+  "performanceAlertCriticalFps": "Critical: FPS too low ({fps})",
+  "@performanceAlertCriticalFps": {
+    "description": "Performance alert - critical FPS",
+    "placeholders": {
+      "fps": {"type": "String", "example": "25.5"}
+    }
+  },
+
+  "performanceAlertWarningFps": "Warning: FPS low ({fps})",
+  "@performanceAlertWarningFps": {
+    "description": "Performance alert - warning FPS",
+    "placeholders": {
+      "fps": {"type": "String", "example": "40.2"}
+    }
+  },
+
+  "performanceAlertCriticalMemory": "Critical: Memory usage too high ({memory}MB)",
+  "@performanceAlertCriticalMemory": {
+    "description": "Performance alert - critical memory",
+    "placeholders": {
+      "memory": {"type": "String", "example": "250"}
+    }
+  },
+
+  "performanceAlertWarningMemory": "Warning: Memory usage high ({memory}MB)",
+  "@performanceAlertWarningMemory": {
+    "description": "Performance alert - warning memory",
+    "placeholders": {
+      "memory": {"type": "String", "example": "180"}
+    }
+  },
+
+  "performanceAlertCriticalCpu": "Critical: CPU usage too high ({cpu}%)",
+  "@performanceAlertCriticalCpu": {
+    "description": "Performance alert - critical CPU",
+    "placeholders": {
+      "cpu": {"type": "String", "example": "85.5"}
+    }
+  },
+
+  "performanceAlertWarningCpu": "Warning: CPU usage high ({cpu}%)",
+  "@performanceAlertWarningCpu": {
+    "description": "Performance alert - warning CPU",
+    "placeholders": {
+      "cpu": {"type": "String", "example": "20.3"}
+    }
+  },
+
+  "performanceStreamError": "Performance monitoring stream error",
+  "@performanceStreamError": {"description": "Performance monitoring stream error message"},
+
+  "performanceStartFailed": "Failed to start performance monitoring",
+  "@performanceStartFailed": {"description": "Performance monitoring start failed message"},
+
+  "performanceAlert": "Performance Alert",
+  "@performanceAlert": {"description": "Performance alert prefix"}
 }

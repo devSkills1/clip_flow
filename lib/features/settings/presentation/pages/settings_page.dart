@@ -28,7 +28,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (_versionTapCount >= 7) {
       // 激活开发者模式
       ref.read(userPreferencesProvider.notifier).toggleDeveloperMode();
-      
+
       // 显示提示
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -40,7 +40,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           duration: const Duration(seconds: 2),
         ),
       );
-      
+
       // 重置计数
       _versionTapCount = 0;
     }
@@ -225,7 +225,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   subtitle: '显示实时性能指标覆盖层',
                   value: preferences.showPerformanceOverlay,
                   onChanged: (value) {
-                    ref.read(userPreferencesProvider.notifier).togglePerformanceOverlay();
+                    ref
+                        .read(userPreferencesProvider.notifier)
+                        .togglePerformanceOverlay();
                   },
                 ),
               ],

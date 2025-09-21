@@ -618,6 +618,204 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Video'**
   String get clipTypeVideo;
+
+  /// Performance monitor title
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Monitor'**
+  String get performanceMonitor;
+
+  /// Performance metrics reset message
+  ///
+  /// In en, this message translates to:
+  /// **'Performance metrics reset'**
+  String get performanceMetricsReset;
+
+  /// Performance reset failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reset performance metrics'**
+  String get performanceResetFailed;
+
+  /// Performance FPS label
+  ///
+  /// In en, this message translates to:
+  /// **'Frame Rate (FPS)'**
+  String get performanceFps;
+
+  /// Performance memory usage label
+  ///
+  /// In en, this message translates to:
+  /// **'Memory Usage'**
+  String get performanceMemory;
+
+  /// Performance CPU usage label
+  ///
+  /// In en, this message translates to:
+  /// **'CPU Usage'**
+  String get performanceCpu;
+
+  /// Performance jank count label
+  ///
+  /// In en, this message translates to:
+  /// **'Jank Count'**
+  String get performanceJank;
+
+  /// Performance database query label
+  ///
+  /// In en, this message translates to:
+  /// **'Database Query'**
+  String get performanceDbQuery;
+
+  /// Performance clipboard capture label
+  ///
+  /// In en, this message translates to:
+  /// **'Clipboard Capture'**
+  String get performanceClipboard;
+
+  /// Performance score label
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Score'**
+  String get performanceScore;
+
+  /// Performance good status
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Good'**
+  String get performanceGood;
+
+  /// Performance warning status
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Warning'**
+  String get performanceWarning;
+
+  /// Memory leak warning message
+  ///
+  /// In en, this message translates to:
+  /// **'Memory leak detected'**
+  String get performanceMemoryLeak;
+
+  /// Performance optimization dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Optimization Suggestions'**
+  String get performanceOptimizationTitle;
+
+  /// Performance optimization dialog close button
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get performanceOptimizationClose;
+
+  /// Performance optimization suggestions count
+  ///
+  /// In en, this message translates to:
+  /// **'Optimization Suggestions ({count})'**
+  String performanceOptimizationCount(int count);
+
+  /// Performance recommendation - reduce animations
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: Reduce complex animations and redraws'**
+  String get performanceRecommendationReduceAnimations;
+
+  /// Performance recommendation - repaint boundary
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: Use RepaintBoundary to optimize rendering'**
+  String get performanceRecommendationRepaintBoundary;
+
+  /// Performance recommendation - memory leak
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: Check for memory leaks'**
+  String get performanceRecommendationMemoryLeak;
+
+  /// Performance recommendation - release resources
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: Release unused resources promptly'**
+  String get performanceRecommendationReleaseResources;
+
+  /// Performance recommendation - optimize CPU
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: Optimize CPU-intensive operations'**
+  String get performanceRecommendationOptimizeCpu;
+
+  /// Performance recommendation - use isolate
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: Use Isolate for time-consuming tasks'**
+  String get performanceRecommendationUseIsolate;
+
+  /// Performance recommendation - check main thread
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: Check for main thread blocking operations'**
+  String get performanceRecommendationCheckMainThread;
+
+  /// Performance recommendation - async IO
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: Use async operations for IO tasks'**
+  String get performanceRecommendationAsyncIO;
+
+  /// Performance alert - critical FPS
+  ///
+  /// In en, this message translates to:
+  /// **'Critical: FPS too low ({fps})'**
+  String performanceAlertCriticalFps(String fps);
+
+  /// Performance alert - warning FPS
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: FPS low ({fps})'**
+  String performanceAlertWarningFps(String fps);
+
+  /// Performance alert - critical memory
+  ///
+  /// In en, this message translates to:
+  /// **'Critical: Memory usage too high ({memory}MB)'**
+  String performanceAlertCriticalMemory(String memory);
+
+  /// Performance alert - warning memory
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: Memory usage high ({memory}MB)'**
+  String performanceAlertWarningMemory(String memory);
+
+  /// Performance alert - critical CPU
+  ///
+  /// In en, this message translates to:
+  /// **'Critical: CPU usage too high ({cpu}%)'**
+  String performanceAlertCriticalCpu(String cpu);
+
+  /// Performance alert - warning CPU
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: CPU usage high ({cpu}%)'**
+  String performanceAlertWarningCpu(String cpu);
+
+  /// Performance monitoring stream error message
+  ///
+  /// In en, this message translates to:
+  /// **'Performance monitoring stream error'**
+  String get performanceStreamError;
+
+  /// Performance monitoring start failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start performance monitoring'**
+  String get performanceStartFailed;
+
+  /// Performance alert prefix
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Alert'**
+  String get performanceAlert;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

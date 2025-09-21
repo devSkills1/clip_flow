@@ -1,7 +1,9 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:clip_flow_pro/core/services/performance_service.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Performance Monitoring Tests', () {
     late PerformanceService performanceService;
 
@@ -15,7 +17,7 @@ void main() {
 
     test('should initialize with default values', () {
       final metrics = performanceService.getCurrentMetrics();
-      
+
       expect(metrics.fps, equals(60.0));
       expect(metrics.memoryUsage, greaterThanOrEqualTo(0.0));
       expect(metrics.cpuUsage, greaterThanOrEqualTo(0.0));
@@ -24,17 +26,17 @@ void main() {
 
     test('should start and stop monitoring correctly', () {
       expect(performanceService.isMonitoring, isFalse);
-      
+
       performanceService.startMonitoring();
       expect(performanceService.isMonitoring, isTrue);
-      
+
       performanceService.stopMonitoring();
       expect(performanceService.isMonitoring, isFalse);
     });
 
     test('should provide monitoring overhead information', () {
       final overhead = performanceService.getMonitoringOverhead();
-      
+
       expect(overhead, isA<Map<String, dynamic>>());
       expect(overhead.containsKey('isActive'), isTrue);
       expect(overhead.containsKey('frameTimesCount'), isTrue);
@@ -46,10 +48,10 @@ void main() {
 
     test('should reset jank count', () {
       performanceService.startMonitoring();
-      
+
       // 模拟一些卡顿
       performanceService.resetJankCount();
-      
+
       final metrics = performanceService.getCurrentMetrics();
       expect(metrics.jankCount, equals(0));
     });
@@ -57,7 +59,7 @@ void main() {
     test('should record database query time', () {
       const testQueryTime = 25.5;
       performanceService.recordDbQueryTime(testQueryTime);
-      
+
       final metrics = performanceService.getCurrentMetrics();
       expect(metrics.dbQueryTime, equals(testQueryTime));
     });
@@ -65,16 +67,16 @@ void main() {
     test('should record clipboard capture time', () {
       const testCaptureTime = 15.2;
       performanceService.recordClipboardCaptureTime(testCaptureTime);
-      
+
       final metrics = performanceService.getCurrentMetrics();
       expect(metrics.clipboardCaptureTime, equals(testCaptureTime));
     });
 
     test('should handle multiple start/stop cycles', () {
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         performanceService.startMonitoring();
         expect(performanceService.isMonitoring, isTrue);
-        
+
         performanceService.stopMonitoring();
         expect(performanceService.isMonitoring, isFalse);
       }
@@ -82,14 +84,14 @@ void main() {
 
     test('should maintain reasonable memory usage', () {
       performanceService.startMonitoring();
-      
+
       // 等待一些指标收集
       Future.delayed(const Duration(milliseconds: 100));
-      
+
       final overhead = performanceService.getMonitoringOverhead();
       final frameTimesCount = overhead['frameTimesCount'] as int;
       final maxFrameTimesCount = overhead['maxFrameTimesCount'] as int;
-      
+
       expect(frameTimesCount, lessThanOrEqualTo(maxFrameTimesCount));
     });
   });

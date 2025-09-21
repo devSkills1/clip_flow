@@ -1,21 +1,23 @@
 import 'dart:async';
+
+import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
 /// 性能监控服务
 /// 提供实时性能指标收集，包括FPS、内存、CPU等
 class PerformanceService {
+  PerformanceService._internal();
   static final PerformanceService _instance = PerformanceService._internal();
   static PerformanceService get instance => _instance;
-  PerformanceService._internal();
 
   // 性能指标
-  double _currentFps = 60.0;
-  double _memoryUsage = 0.0;
-  double _cpuUsage = 0.0;
+  double _currentFps = 60;
+  double _memoryUsage = 0;
+  double _cpuUsage = 0;
   int _jankCount = 0;
-  double _lastDbQueryTime = 0.0;
-  double _lastClipboardCaptureTime = 0.0;
+  double _lastDbQueryTime = 0;
+  double _lastClipboardCaptureTime = 0;
 
   // FPS 监控 - 优化内存使用
   final List<Duration> _frameTimes = <Duration>[];
@@ -27,23 +29,25 @@ class PerformanceService {
   bool _isMonitoring = false;
   Timer? _metricsTimer;
   StreamController<PerformanceMetrics>? _metricsController;
-  
+
   // 性能优化配置
-  static const Duration _metricsUpdateInterval = Duration(milliseconds: 500); // 提高更新频率
+  static const Duration _metricsUpdateInterval = Duration(
+    milliseconds: 500,
+  ); // 提高更新频率
   static const Duration _fpsCalculationInterval = Duration(milliseconds: 1000);
-  
+
   // 平滑算法配置
   static const double _smoothingFactor = 0.1; // 指数移动平均平滑因子
   static const int _minSamplesForAccuracy = 30; // 最小样本数以确保准确性
-  
+
   // 性能阈值配置
-  static const double _fpsWarningThreshold = 45.0;
-  static const double _fpsCriticalThreshold = 30.0;
-  static const double _memoryWarningThreshold = 150.0; // MB
-  static const double _memoryCriticalThreshold = 200.0; // MB
-  static const double _cpuWarningThreshold = 15.0; // %
-  static const double _cpuCriticalThreshold = 25.0; // %
-  
+  static const double _fpsWarningThreshold = 45;
+  static const double _fpsCriticalThreshold = 30;
+  static const double _memoryWarningThreshold = 150; // MB
+  static const double _memoryCriticalThreshold = 200; // MB
+  static const double _cpuWarningThreshold = 15; // %
+  static const double _cpuCriticalThreshold = 25; // %
+
   // 告警状态
   DateTime? _lastWarningTime;
   static const Duration _warningCooldown = Duration(minutes: 1);
@@ -57,23 +61,23 @@ class PerformanceService {
   /// 开始性能监控
   void startMonitoring() {
     if (_isMonitoring) return;
-    
+
     // 生产环境使用轻量级监控模式
     if (kReleaseMode) {
       _startLightweightMonitoring();
     } else {
       _startFullMonitoring();
     }
-    
+
     _isMonitoring = true;
   }
-  
+
   /// 启动完整监控模式（开发环境）
   void _startFullMonitoring() {
     _setupFpsMonitoring();
     _startMetricsCollection();
   }
-  
+
   /// 启动轻量级监控模式（生产环境）
   void _startLightweightMonitoring() {
     // 降低监控频率，减少性能开销
@@ -86,7 +90,7 @@ class PerformanceService {
   /// 停止性能监控
   void stopMonitoring() {
     if (!_isMonitoring) return;
-    
+
     _isMonitoring = false;
     _metricsTimer?.cancel();
     SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings);
@@ -102,16 +106,16 @@ class PerformanceService {
     if (!_isMonitoring) return;
 
     final now = DateTime.now();
-    
+
     // 批量处理帧时间，减少循环开销
     for (final timing in timings) {
       final frameDuration = timing.totalSpan;
-      
+
       // 限制存储的帧时间数量，防止内存泄漏
       if (_frameTimes.length >= _maxFrameTimesCount) {
         _frameTimes.removeAt(0); // 移除最旧的数据
       }
-      
+
       _frameTimes.add(frameDuration);
       _frameCount++;
 
@@ -136,7 +140,7 @@ class PerformanceService {
     }
 
     // 使用加权平均和异常值过滤提高准确性
-    final recentFrames = _frameTimes.length > _minSamplesForAccuracy 
+    final recentFrames = _frameTimes.length > _minSamplesForAccuracy
         ? _frameTimes.sublist(_frameTimes.length - _minSamplesForAccuracy)
         : _frameTimes;
 
@@ -148,18 +152,20 @@ class PerformanceService {
     // 计算中位数帧时间以减少异常值影响
     final sortedFrameTimes = List<Duration>.from(recentFrames)
       ..sort((a, b) => a.inMicroseconds.compareTo(b.inMicroseconds));
-    
+
     final medianIndex = sortedFrameTimes.length ~/ 2;
     final medianFrameTime = sortedFrameTimes.length.isOdd
         ? sortedFrameTimes[medianIndex].inMicroseconds
-        : (sortedFrameTimes[medianIndex - 1].inMicroseconds + 
-           sortedFrameTimes[medianIndex].inMicroseconds) / 2;
+        : (sortedFrameTimes[medianIndex - 1].inMicroseconds +
+                  sortedFrameTimes[medianIndex].inMicroseconds) /
+              2;
 
     // 计算新的FPS值
     final newFps = (1000000 / medianFrameTime).clamp(0.0, 120.0);
-    
+
     // 使用指数移动平均进行平滑
-    _currentFps = _currentFps * (1 - _smoothingFactor) + newFps * _smoothingFactor;
+    _currentFps =
+        _currentFps * (1 - _smoothingFactor) + newFps * _smoothingFactor;
 
     // 保留部分数据用于平滑计算，而不是完全清空
     if (_frameTimes.length > _maxFrameTimesCount ~/ 2) {
@@ -181,7 +187,7 @@ class PerformanceService {
     _updateMemoryUsage();
     _updateCpuUsage();
     _checkPerformanceThresholds();
-    
+
     final metrics = PerformanceMetrics(
       fps: _currentFps,
       memoryUsage: _memoryUsage,
@@ -194,52 +200,74 @@ class PerformanceService {
 
     _metricsController?.add(metrics);
   }
-  
+
   /// 检查性能阈值并触发告警
   void _checkPerformanceThresholds() {
     final now = DateTime.now();
-    
+
     // 防止频繁告警
-    if (_lastWarningTime != null && 
+    if (_lastWarningTime != null &&
         now.difference(_lastWarningTime!) < _warningCooldown) {
       return;
     }
-    
+
     final issues = <String>[];
-    
+
     // 检查FPS
     if (_currentFps < _fpsCriticalThreshold) {
-      issues.add('严重: FPS过低 (${_currentFps.toStringAsFixed(1)})');
+      issues.add(
+        I18nFallbacks.performance.alertCriticalFps(
+          _currentFps.toStringAsFixed(1),
+        ),
+      );
     } else if (_currentFps < _fpsWarningThreshold) {
-      issues.add('警告: FPS偏低 (${_currentFps.toStringAsFixed(1)})');
+      issues.add(
+        I18nFallbacks.performance.alertWarningFps(
+          _currentFps.toStringAsFixed(1),
+        ),
+      );
     }
-    
+
     // 检查内存
     if (_memoryUsage > _memoryCriticalThreshold) {
-      issues.add('严重: 内存使用过高 (${_memoryUsage.toStringAsFixed(0)}MB)');
+      issues.add(
+        I18nFallbacks.performance.alertCriticalMemory(
+          _memoryUsage.toStringAsFixed(0),
+        ),
+      );
     } else if (_memoryUsage > _memoryWarningThreshold) {
-      issues.add('警告: 内存使用偏高 (${_memoryUsage.toStringAsFixed(0)}MB)');
+      issues.add(
+        I18nFallbacks.performance.alertWarningMemory(
+          _memoryUsage.toStringAsFixed(0),
+        ),
+      );
     }
-    
+
     // 检查CPU
     if (_cpuUsage > _cpuCriticalThreshold) {
-      issues.add('严重: CPU使用率过高 (${_cpuUsage.toStringAsFixed(1)}%)');
+      issues.add(
+        I18nFallbacks.performance.alertCriticalCpu(
+          _cpuUsage.toStringAsFixed(1),
+        ),
+      );
     } else if (_cpuUsage > _cpuWarningThreshold) {
-      issues.add('警告: CPU使用率偏高 (${_cpuUsage.toStringAsFixed(1)}%)');
+      issues.add(
+        I18nFallbacks.performance.alertWarningCpu(_cpuUsage.toStringAsFixed(1)),
+      );
     }
-    
+
     // 如果有性能问题，记录日志
-     if (issues.isNotEmpty && kDebugMode) {
-       debugPrint('性能告警: ${issues.join(', ')}');
-       _lastWarningTime = now;
-     }
+    if (issues.isNotEmpty && kDebugMode) {
+      debugPrint('${I18nFallbacks.performance.alert}: ${issues.join(', ')}');
+      _lastWarningTime = now;
+    }
   }
-  
+
   /// 收集轻量级性能指标（生产环境）
   void _collectLightweightMetrics() {
     // 只收集关键指标，减少开销
     _updateMemoryUsage();
-    
+
     final metrics = PerformanceMetrics(
       fps: _currentFps,
       memoryUsage: _memoryUsage,
@@ -257,16 +285,17 @@ class PerformanceService {
   void _updateMemoryUsage() {
     try {
       // 获取真实内存使用情况
-       final memoryInfo = _getMemoryInfo();
-      
+      final memoryInfo = _getMemoryInfo();
+
       // 使用指数移动平均平滑内存使用数据
-      _memoryUsage = _memoryUsage * (1 - _smoothingFactor) + memoryInfo * _smoothingFactor;
+      _memoryUsage =
+          _memoryUsage * (1 - _smoothingFactor) + memoryInfo * _smoothingFactor;
     } catch (e) {
       // 降级到基础内存估算
       _memoryUsage = _estimateMemoryUsage();
     }
   }
-  
+
   /// 获取内存信息
   double _getMemoryInfo() {
     // 在实际应用中，可以使用平台特定的方法获取真实内存使用
@@ -276,7 +305,7 @@ class PerformanceService {
     final variation = (now.millisecondsSinceEpoch % 2000) / 20;
     return (baseMemory + variation).clamp(50.0, 500.0);
   }
-  
+
   /// 估算内存使用
   double _estimateMemoryUsage() {
     return 100.0 + (_frameCount * 0.01); // 基于帧计数的简单估算
@@ -286,32 +315,33 @@ class PerformanceService {
   void _updateCpuUsage() {
     try {
       final cpuInfo = _getCpuUsage();
-      
+
       // 使用指数移动平均平滑CPU使用数据
-      _cpuUsage = _cpuUsage * (1 - _smoothingFactor) + cpuInfo * _smoothingFactor;
+      _cpuUsage =
+          _cpuUsage * (1 - _smoothingFactor) + cpuInfo * _smoothingFactor;
     } catch (e) {
       _cpuUsage = _estimateCpuUsage();
     }
   }
-  
+
   /// 获取CPU使用率
   double _getCpuUsage() {
     // 基于帧时间变化估算CPU使用率
-    if (_frameTimes.length < 2) return 5.0;
-    
-    final recentFrames = _frameTimes.length > 10 
+    if (_frameTimes.length < 2) return 5;
+
+    final recentFrames = _frameTimes.length > 10
         ? _frameTimes.sublist(_frameTimes.length - 10)
         : _frameTimes;
-    
-    final avgFrameTime = recentFrames
-        .map((d) => d.inMicroseconds)
-        .reduce((a, b) => a + b) / recentFrames.length;
-    
+
+    final avgFrameTime =
+        recentFrames.map((d) => d.inMicroseconds).reduce((a, b) => a + b) /
+        recentFrames.length;
+
     // 基于帧时间计算CPU负载估算
     final cpuLoad = ((avgFrameTime - 16670) / 16670 * 20).clamp(0.0, 30.0);
     return 3.0 + cpuLoad;
   }
-  
+
   /// 估算CPU使用率
   double _estimateCpuUsage() {
     return 5.0 + (_jankCount * 0.5); // 基于卡顿次数估算
@@ -376,15 +406,19 @@ class PerformanceService {
       };
     }
 
-    final frameTimes = _frameTimes.map((d) => d.inMicroseconds.toDouble()).toList();
+    final frameTimes = _frameTimes
+        .map((d) => d.inMicroseconds.toDouble())
+        .toList();
     final avgFrameTime = frameTimes.reduce((a, b) => a + b) / frameTimes.length;
     final minFrameTime = frameTimes.reduce((a, b) => a < b ? a : b);
     final maxFrameTime = frameTimes.reduce((a, b) => a > b ? a : b);
-    
+
     // 计算方差
-    final variance = frameTimes
-        .map((time) => (time - avgFrameTime) * (time - avgFrameTime))
-        .reduce((a, b) => a + b) / frameTimes.length;
+    final variance =
+        frameTimes
+            .map((time) => (time - avgFrameTime) * (time - avgFrameTime))
+            .reduce((a, b) => a + b) /
+        frameTimes.length;
 
     // 计算卡顿百分比
     final jankFrames = frameTimes.where((time) => time > 16670).length;
@@ -405,13 +439,13 @@ class PerformanceService {
     final fps = _currentFps;
     final jankCount = _jankCount;
     final totalFrames = _frameCount;
-    
+
     if (totalFrames < 30) {
       return 'warming_up'; // 数据不足
     }
-    
+
     final jankRate = totalFrames > 0 ? (jankCount / totalFrames) : 0.0;
-    
+
     if (fps >= 55 && jankRate < 0.05) {
       return 'excellent';
     } else if (fps >= 45 && jankRate < 0.1) {
@@ -426,73 +460,79 @@ class PerformanceService {
   /// 获取性能优化建议
   List<String> getPerformanceRecommendations() {
     final recommendations = <String>[];
-    
+
     // FPS优化建议
     if (_currentFps < _fpsWarningThreshold) {
-      recommendations.add('建议: 减少复杂动画和重绘操作');
-      recommendations.add('建议: 使用RepaintBoundary优化渲染');
+      recommendations.add(
+        I18nFallbacks.performance.recommendationReduceAnimations,
+      );
+      recommendations.add(
+        I18nFallbacks.performance.recommendationRepaintBoundary,
+      );
     }
-    
+
     // 内存优化建议
     if (_memoryUsage > _memoryWarningThreshold) {
-      recommendations.add('建议: 检查是否存在内存泄漏');
-      recommendations.add('建议: 及时释放不再使用的资源');
+      recommendations.add(I18nFallbacks.performance.recommendationMemoryLeak);
+      recommendations.add(
+        I18nFallbacks.performance.recommendationReleaseResources,
+      );
     }
-    
+
     // CPU优化建议
     if (_cpuUsage > _cpuWarningThreshold) {
-      recommendations.add('建议: 优化计算密集型操作');
-      recommendations.add('建议: 使用Isolate处理耗时任务');
+      recommendations.add(I18nFallbacks.performance.recommendationOptimizeCpu);
+      recommendations.add(I18nFallbacks.performance.recommendationUseIsolate);
     }
-    
+
     // 卡顿优化建议
     if (_jankCount > 10) {
-      recommendations.add('建议: 检查主线程阻塞操作');
-      recommendations.add('建议: 使用异步操作处理IO任务');
+      recommendations.add(
+        I18nFallbacks.performance.recommendationCheckMainThread,
+      );
+      recommendations.add(I18nFallbacks.performance.recommendationAsyncIO);
     }
-    
+
     return recommendations;
   }
-  
+
   /// 检测潜在的内存泄漏
   bool detectMemoryLeak() {
     if (_frameTimes.length < 100) return false;
-    
+
     // 检查内存使用趋势
     final recentMemory = _memoryUsage;
-    final threshold = _memoryWarningThreshold * 1.5;
-    
+    const threshold = _memoryWarningThreshold * 1.5;
+
     return recentMemory > threshold;
   }
-  
+
   /// 获取性能评分 (0-100)
   int getPerformanceScore() {
-    double score = 100.0;
-    
     // FPS评分 (40%权重)
     final fpsScore = (_currentFps / 60.0).clamp(0.0, 1.0) * 40;
-    
+
     // 内存评分 (30%权重)
     final memoryScore = (1.0 - (_memoryUsage / 300.0).clamp(0.0, 1.0)) * 30;
-    
+
     // CPU评分 (20%权重)
     final cpuScore = (1.0 - (_cpuUsage / 50.0).clamp(0.0, 1.0)) * 20;
-    
+
     // 卡顿评分 (10%权重)
     final jankScore = (1.0 - (_jankCount / 20.0).clamp(0.0, 1.0)) * 10;
-    
-    score = fpsScore + memoryScore + cpuScore + jankScore;
-    
-    return score.round().clamp(0, 100);
+
+    final score = fpsScore + memoryScore + cpuScore + jankScore;
+
+    return score.clamp(0.0, 100.0).round();
   }
-  
+
   /// 释放资源
   void dispose() {
     stopMonitoring();
     _metricsController?.close();
     _metricsController = null;
     _frameTimes.clear();
-    
+
     // 清理所有状态
     _currentFps = 60.0;
     _memoryUsage = 0.0;
@@ -505,14 +545,6 @@ class PerformanceService {
 
 /// 性能指标数据类
 class PerformanceMetrics {
-  final double fps;
-  final double memoryUsage; // MB
-  final double cpuUsage; // 百分比
-  final int jankCount;
-  final double dbQueryTime; // ms
-  final double clipboardCaptureTime; // ms
-  final DateTime timestamp;
-
   const PerformanceMetrics({
     required this.fps,
     required this.memoryUsage,
@@ -522,11 +554,18 @@ class PerformanceMetrics {
     required this.clipboardCaptureTime,
     required this.timestamp,
   });
+  final double fps;
+  final double memoryUsage; // MB
+  final double cpuUsage; // 百分比
+  final int jankCount;
+  final double dbQueryTime; // ms
+  final double clipboardCaptureTime; // ms
+  final DateTime timestamp;
 
   @override
   String toString() {
     return 'PerformanceMetrics(fps: $fps, memory: ${memoryUsage}MB, '
-           'cpu: $cpuUsage%, jank: $jankCount, db: ${dbQueryTime}ms, '
-           'clipboard: ${clipboardCaptureTime}ms)';
+        'cpu: $cpuUsage%, jank: $jankCount, db: ${dbQueryTime}ms, '
+        'clipboard: ${clipboardCaptureTime}ms)';
   }
 }

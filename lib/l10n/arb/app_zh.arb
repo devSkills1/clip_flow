@@ -301,5 +301,139 @@
   "@clipTypeAudio": {"description": "剪贴板类型-音频"},
 
   "clipTypeVideo": "视频",
-  "@clipTypeVideo": {"description": "剪贴板类型-视频"}
+  "@clipTypeVideo": {"description": "剪贴板类型-视频"},
+
+  "performanceMonitor": "性能监控",
+  "@performanceMonitor": {"description": "性能监控标题"},
+
+  "performanceMetricsReset": "性能指标已重置",
+  "@performanceMetricsReset": {"description": "性能指标重置消息"},
+
+  "performanceResetFailed": "重置性能指标失败",
+  "@performanceResetFailed": {"description": "性能重置失败消息"},
+
+  "performanceFps": "帧率 (FPS)",
+  "@performanceFps": {"description": "性能FPS标签"},
+
+  "performanceMemory": "内存使用",
+  "@performanceMemory": {"description": "性能内存使用标签"},
+
+  "performanceCpu": "CPU 使用率",
+  "@performanceCpu": {"description": "性能CPU使用率标签"},
+
+  "performanceJank": "卡顿次数",
+  "@performanceJank": {"description": "性能卡顿次数标签"},
+
+  "performanceDbQuery": "数据库查询",
+  "@performanceDbQuery": {"description": "性能数据库查询标签"},
+
+  "performanceClipboard": "剪贴板捕获",
+  "@performanceClipboard": {"description": "性能剪贴板捕获标签"},
+
+  "performanceScore": "性能评分",
+  "@performanceScore": {"description": "性能评分标签"},
+
+  "performanceGood": "性能良好",
+  "@performanceGood": {"description": "性能良好状态"},
+
+  "performanceWarning": "性能警告",
+  "@performanceWarning": {"description": "性能警告状态"},
+
+  "performanceMemoryLeak": "检测到内存泄漏",
+  "@performanceMemoryLeak": {"description": "内存泄漏警告消息"},
+
+  "performanceOptimizationTitle": "性能优化建议",
+  "@performanceOptimizationTitle": {"description": "性能优化对话框标题"},
+
+  "performanceOptimizationClose": "关闭",
+  "@performanceOptimizationClose": {"description": "性能优化对话框关闭按钮"},
+
+  "performanceOptimizationCount": "优化建议 ({count})",
+  "@performanceOptimizationCount": {
+    "description": "性能优化建议数量",
+    "placeholders": {
+      "count": {"type": "int", "example": "3"}
+    }
+  },
+
+  "performanceRecommendationReduceAnimations": "建议: 减少复杂动画和重绘操作",
+  "@performanceRecommendationReduceAnimations": {"description": "性能建议-减少动画"},
+
+  "performanceRecommendationRepaintBoundary": "建议: 使用RepaintBoundary优化渲染",
+  "@performanceRecommendationRepaintBoundary": {"description": "性能建议-重绘边界"},
+
+  "performanceRecommendationMemoryLeak": "建议: 检查是否存在内存泄漏",
+  "@performanceRecommendationMemoryLeak": {"description": "性能建议-内存泄漏"},
+
+  "performanceRecommendationReleaseResources": "建议: 及时释放不再使用的资源",
+  "@performanceRecommendationReleaseResources": {"description": "性能建议-释放资源"},
+
+  "performanceRecommendationOptimizeCpu": "建议: 优化计算密集型操作",
+  "@performanceRecommendationOptimizeCpu": {"description": "性能建议-优化CPU"},
+
+  "performanceRecommendationUseIsolate": "建议: 使用Isolate处理耗时任务",
+  "@performanceRecommendationUseIsolate": {"description": "性能建议-使用Isolate"},
+
+  "performanceRecommendationCheckMainThread": "建议: 检查主线程阻塞操作",
+  "@performanceRecommendationCheckMainThread": {"description": "性能建议-检查主线程"},
+
+  "performanceRecommendationAsyncIO": "建议: 使用异步操作处理IO任务",
+  "@performanceRecommendationAsyncIO": {"description": "性能建议-异步IO"},
+
+  "performanceAlertCriticalFps": "严重: FPS过低 ({fps})",
+  "@performanceAlertCriticalFps": {
+    "description": "性能警报-严重FPS",
+    "placeholders": {
+      "fps": {"type": "String", "example": "25.5"}
+    }
+  },
+
+  "performanceAlertWarningFps": "警告: FPS偏低 ({fps})",
+  "@performanceAlertWarningFps": {
+    "description": "性能警报-警告FPS",
+    "placeholders": {
+      "fps": {"type": "String", "example": "40.2"}
+    }
+  },
+
+  "performanceAlertCriticalMemory": "严重: 内存使用过高 ({memory}MB)",
+  "@performanceAlertCriticalMemory": {
+    "description": "性能警报-严重内存",
+    "placeholders": {
+      "memory": {"type": "String", "example": "250"}
+    }
+  },
+
+  "performanceAlertWarningMemory": "警告: 内存使用偏高 ({memory}MB)",
+  "@performanceAlertWarningMemory": {
+    "description": "性能警报-警告内存",
+    "placeholders": {
+      "memory": {"type": "String", "example": "180"}
+    }
+  },
+
+  "performanceAlertCriticalCpu": "严重: CPU使用率过高 ({cpu}%)",
+  "@performanceAlertCriticalCpu": {
+    "description": "性能警报-严重CPU",
+    "placeholders": {
+      "cpu": {"type": "String", "example": "85.5"}
+    }
+  },
+
+  "performanceAlertWarningCpu": "警告: CPU使用率偏高 ({cpu}%)",
+  "@performanceAlertWarningCpu": {
+    "description": "性能警报-警告CPU",
+    "placeholders": {
+      "cpu": {"type": "String", "example": "20.3"}
+    }
+  },
+
+  "performanceStreamError": "性能监控流错误",
+  "@performanceStreamError": {"description": "性能监控流错误消息"},
+
+  "performanceStartFailed": "启动性能监控失败",
+  "@performanceStartFailed": {"description": "性能监控启动失败消息"},
+
+  "performanceAlert": "性能告警",
+  "@performanceAlert": {"description": "性能告警前缀"}
 }

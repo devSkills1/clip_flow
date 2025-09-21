@@ -197,7 +197,8 @@ class UserPreferences {
         orElse: () => DisplayMode.normal,
       ),
       isDeveloperMode: (json['isDeveloperMode'] as bool?) ?? false,
-      showPerformanceOverlay: (json['showPerformanceOverlay'] as bool?) ?? false,
+      showPerformanceOverlay:
+          (json['showPerformanceOverlay'] as bool?) ?? false,
     );
   }
 
@@ -254,7 +255,8 @@ class UserPreferences {
       language: language ?? this.language,
       defaultDisplayMode: defaultDisplayMode ?? this.defaultDisplayMode,
       isDeveloperMode: isDeveloperMode ?? this.isDeveloperMode,
-      showPerformanceOverlay: showPerformanceOverlay ?? this.showPerformanceOverlay,
+      showPerformanceOverlay:
+          showPerformanceOverlay ?? this.showPerformanceOverlay,
     );
   }
 
@@ -371,7 +373,9 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
 
   /// 切换性能监控覆盖层。
   void togglePerformanceOverlay() {
-    state = state.copyWith(showPerformanceOverlay: !state.showPerformanceOverlay);
+    state = state.copyWith(
+      showPerformanceOverlay: !state.showPerformanceOverlay,
+    );
     _savePreferences();
   }
 }
