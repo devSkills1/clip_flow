@@ -9,12 +9,45 @@ import 'package:go_router/go_router.dart';
 
 /// 应用设置页面
 /// 提供应用的配置和偏好设置
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   /// 创建一个设置页面组件
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<SettingsPage> {
+  int _versionTapCount = 0;
+
+  void _handleVersionTap() {
+    setState(() {
+      _versionTapCount++;
+    });
+
+    if (_versionTapCount >= 7) {
+      // 激活开发者模式
+      ref.read(userPreferencesProvider.notifier).toggleDeveloperMode();
+      
+      // 显示提示
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.read(userPreferencesProvider).isDeveloperMode
+                ? '开发者模式已激活'
+                : '开发者模式已关闭',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      
+      // 重置计数
+      _versionTapCount = 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final preferences = ref.watch(userPreferencesProvider);
     final themeMode = ref.watch(themeModeProvider);
     final l10n = S.of(context);
@@ -181,6 +214,25 @@ class SettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
+          // 开发者选项（仅在开发者模式下显示）
+          if (preferences.isDeveloperMode) ...[
+            _buildSection(
+              context,
+              title: '开发者选项',
+              children: [
+                _buildSwitchTile(
+                  title: '性能监控覆盖层',
+                  subtitle: '显示实时性能指标覆盖层',
+                  value: preferences.showPerformanceOverlay,
+                  onChanged: (value) {
+                    ref.read(userPreferencesProvider.notifier).togglePerformanceOverlay();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+
           // 关于
           _buildSection(
             context,
@@ -193,6 +245,7 @@ class SettingsPage extends ConsumerWidget {
                 subtitle:
                     l10n?.aboutVersionValue ??
                     I18nFallbacks.settings.aboutVersionValue,
+                onTap: _handleVersionTap,
               ),
               _buildListTile(
                 title:

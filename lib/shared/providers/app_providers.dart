@@ -178,6 +178,8 @@ class UserPreferences {
     this.enableOCR = true,
     this.language = 'zh_CN',
     this.defaultDisplayMode = DisplayMode.normal,
+    this.isDeveloperMode = false,
+    this.showPerformanceOverlay = false,
   });
 
   /// 从 JSON Map 创建 [UserPreferences] 实例。
@@ -194,6 +196,8 @@ class UserPreferences {
         (e) => e.name == (json['defaultDisplayMode'] as String?),
         orElse: () => DisplayMode.normal,
       ),
+      isDeveloperMode: (json['isDeveloperMode'] as bool?) ?? false,
+      showPerformanceOverlay: (json['showPerformanceOverlay'] as bool?) ?? false,
     );
   }
 
@@ -221,6 +225,12 @@ class UserPreferences {
   /// 默认显示模式
   final DisplayMode defaultDisplayMode;
 
+  /// 是否启用开发者模式
+  final bool isDeveloperMode;
+
+  /// 是否显示性能监控覆盖层
+  final bool showPerformanceOverlay;
+
   /// 返回复制的新实例，并按需覆盖指定字段。
   UserPreferences copyWith({
     bool? autoStart,
@@ -231,6 +241,8 @@ class UserPreferences {
     bool? enableOCR,
     String? language,
     DisplayMode? defaultDisplayMode,
+    bool? isDeveloperMode,
+    bool? showPerformanceOverlay,
   }) {
     return UserPreferences(
       autoStart: autoStart ?? this.autoStart,
@@ -241,6 +253,8 @@ class UserPreferences {
       enableOCR: enableOCR ?? this.enableOCR,
       language: language ?? this.language,
       defaultDisplayMode: defaultDisplayMode ?? this.defaultDisplayMode,
+      isDeveloperMode: isDeveloperMode ?? this.isDeveloperMode,
+      showPerformanceOverlay: showPerformanceOverlay ?? this.showPerformanceOverlay,
     );
   }
 
@@ -255,6 +269,8 @@ class UserPreferences {
       'enableOCR': enableOCR,
       'language': language,
       'defaultDisplayMode': defaultDisplayMode.name,
+      'isDeveloperMode': isDeveloperMode,
+      'showPerformanceOverlay': showPerformanceOverlay,
     };
   }
 }
@@ -344,6 +360,18 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 设置默认显示模式。
   void setDefaultDisplayMode(DisplayMode mode) {
     state = state.copyWith(defaultDisplayMode: mode);
+    _savePreferences();
+  }
+
+  /// 切换开发者模式。
+  void toggleDeveloperMode() {
+    state = state.copyWith(isDeveloperMode: !state.isDeveloperMode);
+    _savePreferences();
+  }
+
+  /// 切换性能监控覆盖层。
+  void togglePerformanceOverlay() {
+    state = state.copyWith(showPerformanceOverlay: !state.showPerformanceOverlay);
     _savePreferences();
   }
 }

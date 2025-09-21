@@ -3,6 +3,7 @@ import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow_pro/shared/widgets/performance_overlay.dart' as custom;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,21 +31,28 @@ class ClipFlowProApp extends ConsumerWidget {
         locale = const Locale('zh');
     }
 
-    return MaterialApp.router(
-      title: ClipConstants.appName,
-      debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
-      theme: _lightTheme,
-      darkTheme: _darkTheme,
-      routerConfig: router,
-      locale: locale,
-      localizationsDelegates: const [
-        S.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
+    return Stack(
+      children: [
+        MaterialApp.router(
+          title: ClipConstants.appName,
+          debugShowCheckedModeBanner: false,
+          themeMode: themeMode,
+          theme: _lightTheme,
+          darkTheme: _darkTheme,
+          routerConfig: router,
+          locale: locale,
+          localizationsDelegates: const [
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: S.supportedLocales,
+        ),
+        // 性能监控覆盖层（仅在开发者模式且启用时显示）
+         if (userPreferences.isDeveloperMode && userPreferences.showPerformanceOverlay)
+           const custom.PerformanceOverlay(),
       ],
-      supportedLocales: S.supportedLocales,
     );
   }
 }
