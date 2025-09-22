@@ -169,34 +169,73 @@ class ClipboardService {
         return;
       }
 
-      // 首先检查图片数据
-      final imageBytes = await _getClipboardImage();
-      if (imageBytes != null && imageBytes.isNotEmpty) {
-        if (_lastImageContent == null ||
-            !(await _areImageBytesEqual(imageBytes, _lastImageContent))) {
-          _lastImageContent = imageBytes;
-          // 重置哈希缓存，因为图片已更新
-          _lastImageHash = null;
-          await _processImageContent(imageBytes);
-          hasChange = true;
+      // 1) 先取文本，若是“存在的文件路径且扩展名非图片”，优先当作文件处理
+      final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+      final currentContent = clipboardData?.text ?? '';
+
+      // 规范化候选路径：取第一条非空行并去除左右尖括号
+      String firstNonEmptyLine(String s) {
+        for (final line in s.split(RegExp(r'[\r\n]+'))) {
+          final t = line.trim();
+          if (t.isNotEmpty) return t;
         }
-      } else if (_lastImageContent != null) {
-        // 剪贴板中没有图片了，清除缓存
-        _lastImageContent = null;
-        _lastImageHash = null;
+        return s.trim();
       }
 
-      // 检查文本数据（只有在没有图片变化时才检查）
-      if (!hasChange) {
-        final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-        final currentContent = clipboardData?.text ?? '';
+      var candidate = firstNonEmptyLine(currentContent);
+      if (candidate.startsWith('<') && candidate.endsWith('>')) {
+        candidate = candidate.substring(1, candidate.length - 1).trim();
+      }
 
-        if (currentContent.isNotEmpty &&
-            currentContent != _lastClipboardContent) {
+      // 将 file:// URI 解析为本地路径；否则保持原样
+      String possibleFilePath;
+      if (candidate.startsWith('file://')) {
+        try {
+          possibleFilePath = Uri.parse(candidate).toFilePath();
+        } catch (_) {
+          // 回退方案
+          possibleFilePath = candidate.replaceFirst('file://', '');
+        }
+      } else {
+        possibleFilePath = candidate;
+      }
+
+      if (candidate.isNotEmpty && _isLikelyFilePath(possibleFilePath)) {
+        final file = File(possibleFilePath);
+        if (file.existsSync()) {
+          // 发现有效文件路径：无论扩展名，统一按“文件”类型处理
           _lastClipboardContent = currentContent;
           await _processClipboardContent(currentContent);
           hasChange = true;
         }
+      }
+
+      // 2) 若上述未触发（不是“非图片文件”情形），再检查剪贴板图片
+      if (!hasChange) {
+        final imageBytes = await _getClipboardImage();
+        if (imageBytes != null && imageBytes.isNotEmpty) {
+          if (_lastImageContent == null ||
+              !(await _areImageBytesEqual(imageBytes, _lastImageContent))) {
+            _lastImageContent = imageBytes;
+            // 重置哈希缓存，因为图片已更新
+            _lastImageHash = null;
+            await _processImageContent(imageBytes);
+            hasChange = true;
+          }
+        } else if (_lastImageContent != null) {
+          // 剪贴板中没有图片了，清除缓存
+          _lastImageContent = null;
+          _lastImageHash = null;
+        }
+      }
+
+      // 3) 若还没有变化，则按普通文本处理
+      if (!hasChange &&
+          currentContent.isNotEmpty &&
+          currentContent != _lastClipboardContent) {
+        _lastClipboardContent = currentContent;
+        await _processClipboardContent(currentContent);
+        hasChange = true;
       }
     } catch (e) {
       // 忽略剪贴板访问错误
@@ -204,6 +243,32 @@ class ClipboardService {
 
     // 调整轮询间隔
     _adjustPollingInterval(hasChange);
+  }
+
+  // 辅助：判断是否看起来像文件路径（存在分隔符或以 file:// 开头）
+  bool _isLikelyFilePath(String path) {
+    // 兼容 Windows 路径与 URI
+    return path.startsWith('file://') ||
+        path.contains('/') ||
+        path.contains(r'\');
+  }
+
+  // 辅助：图片扩展名判断（必要时可扩充）
+  bool _isImageExtension(String ext) {
+    const imageExts = {
+      'png',
+      'jpg',
+      'jpeg',
+      'gif',
+      'webp',
+      'bmp',
+      'tif',
+      'tiff',
+      'heic',
+      'heif',
+      'svg',
+    };
+    return imageExts.contains(ext);
   }
 
   /// 在 Isolate 中计算内容哈希值

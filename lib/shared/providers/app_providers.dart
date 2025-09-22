@@ -55,8 +55,9 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   /// 添加新项目；若内容重复则仅更新其时间戳并前置。
   void addItem(ClipItem item) {
     // 避免重复添加相同内容
+    // 以唯一的 id 作为去重键，避免不同类型/相同文本被误判为重复
     final existingIndex = state.indexWhere(
-      (existing) => (existing.content ?? '') == (item.content ?? ''),
+      (existing) => existing.id == item.id,
     );
 
     if (existingIndex != -1) {

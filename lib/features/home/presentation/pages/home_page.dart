@@ -3,6 +3,7 @@ import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
+import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
 import 'package:clip_flow_pro/features/home/domain/usecases/get_recent_clips.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
@@ -69,17 +70,20 @@ class _HomePageState extends ConsumerState<HomePage> {
       next.whenData((clipItem) async {
         // 1) 内存添加（UI 状态统一存 UTF-8 字节，不做双重转换）
         ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
-        // 2) 持久化保存（仅文本先支持，其它类型后续扩展）
+        // 2) 持久化保存：文本走仓库，其它类型直接写数据库
         try {
-          final repo = ref.read(clipRepositoryProvider);
-          final contentText = clipItem.content ?? '';
-          await repo.save(
-            ClipEntity(
-              id: clipItem.id,
-              content: contentText,
-              createdAt: clipItem.createdAt,
-            ),
-          );
+          if (clipItem.type == ClipType.text) {
+            final repo = ref.read(clipRepositoryProvider);
+            await repo.save(
+              ClipEntity(
+                id: clipItem.id,
+                content: clipItem.content ?? '',
+                createdAt: clipItem.createdAt,
+              ),
+            );
+          } else {
+            await DatabaseService.instance.insertClipItem(clipItem);
+          }
         } catch (_) {
           // 忽略存储异常，避免阻塞UI
         }

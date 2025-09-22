@@ -46,6 +46,9 @@ class DatabaseService {
       onUpgrade: _onUpgrade,
     );
 
+    // 在线迁移：确保历史库补齐新列（不清库、不中断）
+    await _ensureColumnsExist(_database!);
+
     _isInitialized = true;
   }
 
@@ -79,7 +82,8 @@ class DatabaseService {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // 处理数据库升级
+    // 处理数据库升级（版本迁移），并兜底在线检查列
+    await _ensureColumnsExist(db);
   }
 
   /// 新增或替换一条剪贴项记录
@@ -95,7 +99,7 @@ class DatabaseService {
       'type': item.type.name,
       'content': item.content is String
           ? item.content
-          : item.content?.toString(),
+          : (item.content?.toString() ?? ''),
       'file_path': item.filePath,
       'thumbnail': item.thumbnail,
       'metadata': jsonEncode(item.metadata),
@@ -120,7 +124,7 @@ class DatabaseService {
         'type': item.type.name,
         'content': item.content is String
             ? item.content
-            : item.content?.toString(),
+            : (item.content?.toString() ?? ''),
         'file_path': item.filePath,
         'thumbnail': item.thumbnail,
         'metadata': jsonEncode(item.metadata),
@@ -537,5 +541,55 @@ class DatabaseService {
   Future<void> close() async {
     await _database?.close();
     _isInitialized = false;
+  }
+
+  // === 在线迁移辅助：确保缺失列被补齐（安全、幂等） ===
+  Future<void> _ensureColumnsExist(Database db) async {
+    // clip_items: file_path TEXT
+    final hasFilePath = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'file_path',
+    );
+    if (!hasFilePath) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN file_path TEXT',
+      );
+    }
+
+    // clip_items: thumbnail BLOB
+    final hasThumbnail = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'thumbnail',
+    );
+    if (!hasThumbnail) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN thumbnail BLOB',
+      );
+    }
+
+    // clip_items: schema_version INTEGER NOT NULL DEFAULT 1
+    final hasSchemaVersion = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'schema_version',
+    );
+    if (!hasSchemaVersion) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+
+    // 预留：如未来新增列，可在此继续检测并 ALTER
+  }
+
+  Future<bool> _columnExists(Database db, String table, String column) async {
+    final rows = await db.rawQuery("PRAGMA table_info('$table')");
+    for (final row in rows) {
+      final name = row['name'];
+      if (name == column) return true;
+    }
+    return false;
   }
 }
