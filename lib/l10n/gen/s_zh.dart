@@ -402,4 +402,31 @@ class SZh extends S {
 
   @override
   String get performanceAlert => '性能告警';
+
+  @override
+  String get performanceAvgFrameTime => '平均帧时间';
+
+  @override
+  String get performanceJankPercentage => '卡顿百分比';
+
+  @override
+  String get performanceFrameTimeVariance => '帧时间方差';
+
+  @override
+  String get performanceHealthExcellent => '优秀';
+
+  @override
+  String get performanceHealthGood => '良好';
+
+  @override
+  String get performanceHealthFair => '一般';
+
+  @override
+  String get performanceHealthPoor => '较差';
+
+  @override
+  String get performanceHealthWarmingUp => '预热';
+
+  @override
+  String get performanceHealthUnknown => '未知';
 }

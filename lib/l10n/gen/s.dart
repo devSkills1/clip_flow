@@ -816,6 +816,60 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Performance Alert'**
   String get performanceAlert;
+
+  /// Performance detailed stats - average frame time
+  ///
+  /// In en, this message translates to:
+  /// **'Average Frame Time'**
+  String get performanceAvgFrameTime;
+
+  /// Performance detailed stats - jank percentage
+  ///
+  /// In en, this message translates to:
+  /// **'Jank Percentage'**
+  String get performanceJankPercentage;
+
+  /// Performance detailed stats - frame time variance
+  ///
+  /// In en, this message translates to:
+  /// **'Frame Time Variance'**
+  String get performanceFrameTimeVariance;
+
+  /// Performance health status - excellent
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent'**
+  String get performanceHealthExcellent;
+
+  /// Performance health status - good
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get performanceHealthGood;
+
+  /// Performance health status - fair
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get performanceHealthFair;
+
+  /// Performance health status - poor
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get performanceHealthPoor;
+
+  /// Performance health status - warming up
+  ///
+  /// In en, this message translates to:
+  /// **'Warming Up'**
+  String get performanceHealthWarmingUp;
+
+  /// Performance health status - unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get performanceHealthUnknown;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

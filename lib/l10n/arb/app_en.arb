@@ -435,5 +435,32 @@
   "@performanceStartFailed": {"description": "Performance monitoring start failed message"},
 
   "performanceAlert": "Performance Alert",
-  "@performanceAlert": {"description": "Performance alert prefix"}
+  "@performanceAlert": {"description": "Performance alert prefix"},
+
+  "performanceAvgFrameTime": "Average Frame Time",
+  "@performanceAvgFrameTime": {"description": "Performance detailed stats - average frame time"},
+
+  "performanceJankPercentage": "Jank Percentage",
+  "@performanceJankPercentage": {"description": "Performance detailed stats - jank percentage"},
+
+  "performanceFrameTimeVariance": "Frame Time Variance",
+  "@performanceFrameTimeVariance": {"description": "Performance detailed stats - frame time variance"},
+
+  "performanceHealthExcellent": "Excellent",
+  "@performanceHealthExcellent": {"description": "Performance health status - excellent"},
+
+  "performanceHealthGood": "Good",
+  "@performanceHealthGood": {"description": "Performance health status - good"},
+
+  "performanceHealthFair": "Fair",
+  "@performanceHealthFair": {"description": "Performance health status - fair"},
+
+  "performanceHealthPoor": "Poor",
+  "@performanceHealthPoor": {"description": "Performance health status - poor"},
+
+  "performanceHealthWarmingUp": "Warming Up",
+  "@performanceHealthWarmingUp": {"description": "Performance health status - warming up"},
+
+  "performanceHealthUnknown": "Unknown",
+  "@performanceHealthUnknown": {"description": "Performance health status - unknown"}
 }

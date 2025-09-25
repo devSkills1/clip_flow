@@ -415,4 +415,31 @@ class _PerformanceFallback {
 
   /// 性能告警前缀
   String get alert => '性能告警';
+
+  /// 平均帧时间标签
+  String get avgFrameTime => '平均帧时间';
+
+  /// 卡顿百分比标签
+  String get jankPercentage => '卡顿百分比';
+
+  /// 帧时间方差标签
+  String get frameTimeVariance => '帧时间方差';
+
+  /// 性能健康状态：优秀
+  String get healthExcellent => '优秀';
+
+  /// 性能健康状态：良好
+  String get healthGood => '良好';
+
+  /// 性能健康状态：一般
+  String get healthFair => '一般';
+
+  /// 性能健康状态：较差
+  String get healthPoor => '较差';
+
+  /// 性能健康状态：预热
+  String get healthWarmingUp => '预热';
+
+  /// 性能健康状态：未知
+  String get healthUnknown => '未知';
 }

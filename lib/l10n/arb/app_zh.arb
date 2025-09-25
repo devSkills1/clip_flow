@@ -435,5 +435,32 @@
   "@performanceStartFailed": {"description": "性能监控启动失败消息"},
 
   "performanceAlert": "性能告警",
-  "@performanceAlert": {"description": "性能告警前缀"}
+  "@performanceAlert": {"description": "性能告警前缀"},
+
+  "performanceAvgFrameTime": "平均帧时间",
+  "@performanceAvgFrameTime": {"description": "性能详细统计-平均帧时间"},
+
+  "performanceJankPercentage": "卡顿百分比",
+  "@performanceJankPercentage": {"description": "性能详细统计-卡顿百分比"},
+
+  "performanceFrameTimeVariance": "帧时间方差",
+  "@performanceFrameTimeVariance": {"description": "性能详细统计-帧时间方差"},
+
+  "performanceHealthExcellent": "优秀",
+  "@performanceHealthExcellent": {"description": "性能健康状态-优秀"},
+
+  "performanceHealthGood": "良好",
+  "@performanceHealthGood": {"description": "性能健康状态-良好"},
+
+  "performanceHealthFair": "一般",
+  "@performanceHealthFair": {"description": "性能健康状态-一般"},
+
+  "performanceHealthPoor": "较差",
+  "@performanceHealthPoor": {"description": "性能健康状态-较差"},
+
+  "performanceHealthWarmingUp": "预热",
+  "@performanceHealthWarmingUp": {"description": "性能健康状态-预热"},
+
+  "performanceHealthUnknown": "未知",
+  "@performanceHealthUnknown": {"description": "性能健康状态-未知"}
 }

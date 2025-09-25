@@ -418,4 +418,31 @@ class SEn extends S {
 
   @override
   String get performanceAlert => 'Performance Alert';
+
+  @override
+  String get performanceAvgFrameTime => 'Average Frame Time';
+
+  @override
+  String get performanceJankPercentage => 'Jank Percentage';
+
+  @override
+  String get performanceFrameTimeVariance => 'Frame Time Variance';
+
+  @override
+  String get performanceHealthExcellent => 'Excellent';
+
+  @override
+  String get performanceHealthGood => 'Good';
+
+  @override
+  String get performanceHealthFair => 'Fair';
+
+  @override
+  String get performanceHealthPoor => 'Poor';
+
+  @override
+  String get performanceHealthWarmingUp => 'Warming Up';
+
+  @override
+  String get performanceHealthUnknown => 'Unknown';
 }

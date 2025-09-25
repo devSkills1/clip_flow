@@ -120,14 +120,14 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
         },
         onError: (error) {
           if (mounted) {
-            debugPrint('性能监控流错误: $error');
+            debugPrint('${I18nFallbacks.performance.streamError}: $error');
             // 降级到基础监控模式
             _fallbackToBasicMonitoring();
           }
         },
       );
     } on Exception catch (e) {
-      debugPrint('启动性能监控失败: $e');
+      debugPrint('${I18nFallbacks.performance.startFailed}: $e');
       _fallbackToBasicMonitoring();
     }
   }
@@ -428,7 +428,8 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
           const Divider(color: Colors.white24, height: 1),
           const SizedBox(height: 8),
           _buildMetricRow(
-            '平均帧时间',
+            S.of(context)?.performanceAvgFrameTime ??
+                I18nFallbacks.performance.avgFrameTime,
             '${((_detailedStats['avgFrameTime'] as double?) ?? 0.0).toStringAsFixed(2)} ms',
             _getPerformanceColor(
               ((_detailedStats['avgFrameTime'] as double?) ?? 0.0) - 16.67,
@@ -437,7 +438,8 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
             ),
           ),
           _buildMetricRow(
-            '卡顿百分比',
+            S.of(context)?.performanceJankPercentage ??
+                I18nFallbacks.performance.jankPercentage,
             '${((_detailedStats['jankPercentage'] as double?) ?? 0.0).toStringAsFixed(1)}%',
             _getPerformanceColor(
               (_detailedStats['jankPercentage'] as double?) ?? 0.0,
@@ -446,7 +448,8 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
             ),
           ),
           _buildMetricRow(
-            '帧时间方差',
+            S.of(context)?.performanceFrameTimeVariance ??
+                I18nFallbacks.performance.frameTimeVariance,
             '${((_detailedStats['frameTimeVariance'] as double?) ?? 0.0).toStringAsFixed(2)} ms²',
             _getPerformanceColor(
               (_detailedStats['frameTimeVariance'] as double?) ?? 0.0,
@@ -853,17 +856,23 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
   String _getHealthText(String health) {
     switch (health) {
       case 'excellent':
-        return '优秀';
+        return S.of(context)?.performanceHealthExcellent ??
+            I18nFallbacks.performance.healthExcellent;
       case 'good':
-        return '良好';
+        return S.of(context)?.performanceHealthGood ??
+            I18nFallbacks.performance.healthGood;
       case 'fair':
-        return '一般';
+        return S.of(context)?.performanceHealthFair ??
+            I18nFallbacks.performance.healthFair;
       case 'poor':
-        return '较差';
+        return S.of(context)?.performanceHealthPoor ??
+            I18nFallbacks.performance.healthPoor;
       case 'warming_up':
-        return '预热';
+        return S.of(context)?.performanceHealthWarmingUp ??
+            I18nFallbacks.performance.healthWarmingUp;
       default:
-        return '未知';
+        return S.of(context)?.performanceHealthUnknown ??
+            I18nFallbacks.performance.healthUnknown;
     }
   }
 }
