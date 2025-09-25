@@ -42,7 +42,7 @@ class ImageUtils {
       );
 
       return Uint8List.fromList(img.encodeJpg(thumbnail, quality: 80));
-    } catch (e) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -71,7 +71,7 @@ class ImageUtils {
       }
 
       return Uint8List.fromList(img.encodeJpg(resizedImage, quality: quality));
-    } catch (e) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -97,7 +97,7 @@ class ImageUtils {
         'size': imageData.length,
         'aspectRatio': image.width / image.height,
       };
-    } catch (e) {
+    } on Exception catch (_) {
       return {
         'width': 0,
         'height': 0,
@@ -196,7 +196,7 @@ class ImageUtils {
           'count': entry.value,
         };
       }).toList();
-    } catch (e) {
+    } on Exception catch (_) {
       return [];
     }
   }

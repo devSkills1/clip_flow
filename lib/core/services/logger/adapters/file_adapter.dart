@@ -17,6 +17,7 @@ class FileLogAdapter implements LogAdapter {
   String? _currentDateKey;
   bool _creating = false;
 
+  /// 创建文件日志适配器，Web 环境自动返回 null
   static Future<FileLogAdapter?> create({String? customDir}) async {
     if (kIsWeb) return null;
     try {
@@ -26,7 +27,7 @@ class FileLogAdapter implements LogAdapter {
         await d.create(recursive: true);
       }
       return FileLogAdapter._(d.path);
-    } catch (_) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -47,7 +48,7 @@ class FileLogAdapter implements LogAdapter {
         mode: io.FileMode.append,
         flush: true,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       // 忽略文件写入错误（例如权限问题）
     }
   }

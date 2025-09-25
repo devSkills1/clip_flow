@@ -141,7 +141,7 @@ class ClipboardService {
 
       // 每次都检查，但可以通过其他优化减少实际内容获取
       return true;
-    } catch (e) {
+    } on Exception catch (_) {
       return true; // 出错时假设有变化
     }
   }
@@ -153,7 +153,7 @@ class ClipboardService {
         'getClipboardSequence',
       );
       return result;
-    } catch (e) {
+    } on Exception catch (_) {
       return null; // 平台不支持时返回null
     }
   }
@@ -192,7 +192,7 @@ class ClipboardService {
       if (candidate.startsWith('file://')) {
         try {
           possibleFilePath = Uri.parse(candidate).toFilePath();
-        } catch (_) {
+        } on Exception catch (_) {
           // 回退方案
           possibleFilePath = candidate.replaceFirst('file://', '');
         }
@@ -237,7 +237,7 @@ class ClipboardService {
         await _processClipboardContent(currentContent);
         hasChange = true;
       }
-    } catch (e) {
+    } on Exception catch (_) {
       // 忽略剪贴板访问错误
     }
 
@@ -251,24 +251,6 @@ class ClipboardService {
     return path.startsWith('file://') ||
         path.contains('/') ||
         path.contains(r'\');
-  }
-
-  // 辅助：图片扩展名判断（必要时可扩充）
-  bool _isImageExtension(String ext) {
-    const imageExts = {
-      'png',
-      'jpg',
-      'jpeg',
-      'gif',
-      'webp',
-      'bmp',
-      'tif',
-      'tiff',
-      'heic',
-      'heif',
-      'svg',
-    };
-    return imageExts.contains(ext);
   }
 
   /// 在 Isolate 中计算内容哈希值
@@ -291,7 +273,7 @@ class ClipboardService {
         () => _calculateContentHashInIsolate(content),
       );
       return result;
-    } catch (e) {
+    } on Exception catch (_) {
       // Isolate 失败时回退到主线程
       return _calculateContentHashInIsolate(content);
     }
@@ -364,7 +346,7 @@ class ClipboardService {
 
       // 发送到流
       _clipboardController.add(clipItem);
-    } catch (e) {
+    } on Exception catch (_) {
       // 处理错误
     }
   }
@@ -459,7 +441,7 @@ class ClipboardService {
         'getClipboardImage',
       );
       return result;
-    } catch (e) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -483,7 +465,7 @@ class ClipboardService {
         () => _calculateImageHashInIsolate(imageBytes),
       );
       return result;
-    } catch (e) {
+    } on Exception catch (_) {
       // Isolate 失败时回退到主线程
       return _calculateImageHashInIsolate(imageBytes);
     }
@@ -560,7 +542,7 @@ class ClipboardService {
 
       // 发送到流
       _clipboardController.add(clipItem);
-    } catch (e) {
+    } on Exception catch (_) {
       // 处理错误
     }
   }
@@ -604,7 +586,7 @@ class ClipboardService {
       metadata['width'] = imageInfo['width'];
       metadata['height'] = imageInfo['height'];
       metadata['aspectRatio'] = imageInfo['aspectRatio'];
-    } catch (e) {
+    } on Exception catch (_) {
       // 无法获取图片信息
       metadata['imageFormat'] = 'unknown';
       metadata['width'] = 0;
@@ -620,7 +602,7 @@ class ClipboardService {
       const platform = MethodChannel('clipboard_service');
       final result = await platform.invokeMethod<String>('getSourceApp');
       return result;
-    } catch (e) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -650,7 +632,7 @@ class ClipboardService {
           await Clipboard.setData(ClipboardData(text: text));
           _lastClipboardContent = text;
       }
-    } catch (e) {
+    } on Exception catch (_) {
       // 处理错误
     }
   }
@@ -660,7 +642,7 @@ class ClipboardService {
       await _platformChannel.invokeMethod('setClipboardImage', {
         'imageData': imageBytes,
       });
-    } catch (e) {
+    } on Exception catch (_) {
       // 处理错误
     }
   }
@@ -696,7 +678,7 @@ class ClipboardService {
     // 2) fsync：Dart 无直接 fsync，flush:true 已尽力；可追加 reopen 并 setLastModified 触发落盘
     try {
       await tmpFile.setLastModified(DateTime.now());
-    } catch (_) {}
+    } on Exception catch (_) {}
 
     // 3) rename 到最终路径（原子）
     await tmpFile.rename(absPath);
@@ -743,7 +725,7 @@ class ClipboardService {
     try {
       await Clipboard.setData(const ClipboardData(text: ''));
       _lastClipboardContent = '';
-    } catch (e) {
+    } on Exception catch (_) {
       // 处理错误
     }
   }

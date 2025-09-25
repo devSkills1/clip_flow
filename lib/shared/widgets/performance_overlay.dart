@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 import 'dart:async';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/services/performance_service.dart';
@@ -125,7 +126,7 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
           }
         },
       );
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('启动性能监控失败: $e');
       _fallbackToBasicMonitoring();
     }
@@ -355,7 +356,7 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
                           ),
                         );
                       }
-                    } catch (e) {
+                    } on Exception catch (e) {
                       debugPrint('重置性能指标失败: $e');
                     }
                   },

@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 /// Domain entity representing a clipboard item.
 class ClipEntity {
   /// Creates a clipboard item with unique [id], raw [content] and [createdAt] time.

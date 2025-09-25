@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:clip_flow_pro/core/services/logger/adapters/console_adapter.dart';
 import 'package:clip_flow_pro/core/services/logger/adapters/file_adapter.dart';
 
+// ignore_for_file: public_member_api_docs
+// 日志系统内部使用，不需要为每个方法添加文档注释
+
 /// 日志级别
 enum LogLevel {
   trace,
@@ -116,8 +119,11 @@ class Log {
   }
 
   // 过滤器与开关
-  static void setEnabled(bool enabled) => _config.enabled = enabled;
-  static void setLevel(LogLevel level) => _config.minLevel = level;
+  static bool get enabled => _config.enabled;
+  static set enabled(bool value) => _config.enabled = value;
+
+  static LogLevel get minLevel => _config.minLevel;
+  static set minLevel(LogLevel value) => _config.minLevel = value;
 
   static void setTagFilter(Set<String>? tags) {
     _config.includeTags
@@ -131,12 +137,15 @@ class Log {
       ..addAll(ids ?? const {});
   }
 
-  static Future<void> enableConsole(bool enabled) async {
+  static Future<void> enableConsole({required bool enabled}) async {
     _config.enableConsole = enabled;
     await init(_config);
   }
 
-  static Future<void> enableFile(bool enabled, {String? directory}) async {
+  static Future<void> enableFile({
+    required bool enabled,
+    String? directory,
+  }) async {
     _config.enableFile = enabled;
     _config.fileDirectory = directory ?? _config.fileDirectory;
     await init(_config);
@@ -170,7 +179,7 @@ class Log {
       futures.map((f) async {
         try {
           await f;
-        } catch (_) {
+        } on Exception catch (_) {
           // 单个适配器失败不影响其他
         }
       }),

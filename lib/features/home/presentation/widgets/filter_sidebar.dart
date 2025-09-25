@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/dimensions.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';

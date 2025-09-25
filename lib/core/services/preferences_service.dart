@@ -43,9 +43,9 @@ class PreferencesService {
     try {
       final jsonString = jsonEncode(preferences.toJson());
       return await _prefs!.setString(_userPreferencesKey, jsonString);
-    } catch (e) {
+    } on Exception catch (_) {
       // 记录错误但不抛出异常
-      // TODO: 使用日志框架替代 print
+      // TODO(dev): 使用日志框架替代 print
       return false;
     }
   }
@@ -65,9 +65,9 @@ class PreferencesService {
 
       final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
       return UserPreferences.fromJson(jsonMap);
-    } catch (e) {
+    } on Exception catch (_) {
       // 如果解析失败，返回默认设置
-      // TODO: 使用日志框架替代 print
+      // TODO(dev): 使用日志框架替代 print
       return UserPreferences();
     }
   }
@@ -82,7 +82,7 @@ class PreferencesService {
     try {
       return await _prefs!.remove(_userPreferencesKey);
     } on Exception catch (_) {
-      // TODO: 使用日志框架替代 print
+      // TODO(dev): 使用日志框架替代 print
       return false;
     }
   }

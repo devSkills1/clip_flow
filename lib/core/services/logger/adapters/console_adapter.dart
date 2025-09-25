@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 
+/// 控制台日志适配器
 class ConsoleLogAdapter implements LogAdapter {
   @override
   void log(LogRecord record) {

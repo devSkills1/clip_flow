@@ -12,6 +12,7 @@ import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+/// 剪贴项卡片组件
 class ClipItemCard extends StatelessWidget {
   const ClipItemCard({
     required this.item,

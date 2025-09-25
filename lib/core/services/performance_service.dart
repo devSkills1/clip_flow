@@ -4,6 +4,8 @@ import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
+// ignore_for_file: public_member_api_docs
+
 /// 性能监控服务
 /// 提供实时性能指标收集，包括FPS、内存、CPU等
 class PerformanceService {
@@ -290,7 +292,7 @@ class PerformanceService {
       // 使用指数移动平均平滑内存使用数据
       _memoryUsage =
           _memoryUsage * (1 - _smoothingFactor) + memoryInfo * _smoothingFactor;
-    } catch (e) {
+    } on Exception catch (_) {
       // 降级到基础内存估算
       _memoryUsage = _estimateMemoryUsage();
     }
@@ -319,7 +321,7 @@ class PerformanceService {
       // 使用指数移动平均平滑CPU使用数据
       _cpuUsage =
           _cpuUsage * (1 - _smoothingFactor) + cpuInfo * _smoothingFactor;
-    } catch (e) {
+    } on Exception catch (_) {
       _cpuUsage = _estimateCpuUsage();
     }
   }
@@ -348,11 +350,21 @@ class PerformanceService {
   }
 
   /// 记录数据库查询时间
+  set dbQueryTime(double timeMs) {
+    _lastDbQueryTime = timeMs;
+  }
+
+  /// 记录数据库查询时间（兼容测试调用）
   void recordDbQueryTime(double timeMs) {
     _lastDbQueryTime = timeMs;
   }
 
   /// 记录剪贴板捕获时间
+  set clipboardCaptureTime(double timeMs) {
+    _lastClipboardCaptureTime = timeMs;
+  }
+
+  /// 记录剪贴板捕获时间（兼容测试调用）
   void recordClipboardCaptureTime(double timeMs) {
     _lastClipboardCaptureTime = timeMs;
   }
@@ -463,34 +475,34 @@ class PerformanceService {
 
     // FPS优化建议
     if (_currentFps < _fpsWarningThreshold) {
-      recommendations.add(
-        I18nFallbacks.performance.recommendationReduceAnimations,
-      );
-      recommendations.add(
-        I18nFallbacks.performance.recommendationRepaintBoundary,
-      );
+      recommendations
+        ..add(
+          I18nFallbacks.performance.recommendationReduceAnimations,
+        )
+        ..add(
+          I18nFallbacks.performance.recommendationRepaintBoundary,
+        );
     }
 
     // 内存优化建议
     if (_memoryUsage > _memoryWarningThreshold) {
-      recommendations.add(I18nFallbacks.performance.recommendationMemoryLeak);
-      recommendations.add(
-        I18nFallbacks.performance.recommendationReleaseResources,
-      );
+      recommendations
+        ..add(I18nFallbacks.performance.recommendationMemoryLeak)
+        ..add(I18nFallbacks.performance.recommendationReleaseResources);
     }
 
     // CPU优化建议
     if (_cpuUsage > _cpuWarningThreshold) {
-      recommendations.add(I18nFallbacks.performance.recommendationOptimizeCpu);
-      recommendations.add(I18nFallbacks.performance.recommendationUseIsolate);
+      recommendations
+        ..add(I18nFallbacks.performance.recommendationOptimizeCpu)
+        ..add(I18nFallbacks.performance.recommendationUseIsolate);
     }
 
     // 卡顿优化建议
     if (_jankCount > 10) {
-      recommendations.add(
-        I18nFallbacks.performance.recommendationCheckMainThread,
-      );
-      recommendations.add(I18nFallbacks.performance.recommendationAsyncIO);
+      recommendations
+        ..add(I18nFallbacks.performance.recommendationCheckMainThread)
+        ..add(I18nFallbacks.performance.recommendationAsyncIO);
     }
 
     return recommendations;

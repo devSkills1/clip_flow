@@ -49,7 +49,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           );
           notifier.addItem(item);
         }
-      } catch (_) {
+      } on Exception catch (_) {
         // 静默失败，避免阻塞 UI
       }
     });
@@ -84,7 +84,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           } else {
             await DatabaseService.instance.insertClipItem(clipItem);
           }
-        } catch (_) {
+        } on Exception catch (_) {
           // 忽略存储异常，避免阻塞UI
         }
       });
@@ -327,7 +327,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         content: Text(
           S.of(context)?.dialogDeleteContent(_getItemPreview(item)) ??
-              '${I18nFallbacks.common.deleteContentPrefix}${_getItemPreview(item)}',
+              '${I18nFallbacks.common.deleteContentPrefix}'
+                  '${_getItemPreview(item)}',
         ),
         actions: [
           TextButton(
@@ -342,9 +343,10 @@ class _HomePageState extends ConsumerState<HomePage> {
               ref.read(clipboardHistoryProvider.notifier).removeItem(item.id);
               // 再尝试删除数据库记录
               try {
-                final repo = ref.read(clipRepositoryProvider);
-                repo.delete(item.id);
-              } catch (_) {}
+                ref.read(clipRepositoryProvider).delete(item.id);
+              } on Exception catch (_) {
+                // 忽略删除异常
+              }
               Navigator.of(context).pop();
             },
             style: FilledButton.styleFrom(
@@ -366,7 +368,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         final width = item.metadata['width'] as int? ?? 0;
         final height = item.metadata['height'] as int? ?? 0;
         final format = item.metadata['format'] as String?;
-        return '${I18nFallbacks.common.labelImage} ($width x $height, ${format ?? I18nFallbacks.common.unknown})';
+        return '${I18nFallbacks.common.labelImage} '
+            '($width x $height, ${format ?? I18nFallbacks.common.unknown})';
       case ClipType.file:
         final fileName =
             item.metadata['fileName'] as String? ??
@@ -375,7 +378,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       case ClipType.color:
         final colorHex = item.metadata['colorHex'] as String? ?? '#000000';
         return '${I18nFallbacks.common.labelColor}: $colorHex';
-      default:
+      case ClipType.text:
+      case ClipType.rtf:
+      case ClipType.html:
+      case ClipType.audio:
+      case ClipType.video:
         final content = item.content ?? '';
         if (content.length > 50) {
           return '${content.substring(0, 50)}...';

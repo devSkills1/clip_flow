@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
@@ -20,7 +21,8 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 final clipRepositoryProvider = Provider<ClipRepository>((ref) {
   return ClipRepositoryImpl(DatabaseService.instance);
 });
-
+//// 路由提供者
+/// 全局路由器提供者，定义应用路由表与初始路由。
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
@@ -106,7 +108,7 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
       await _databaseService.clearAllClipItems();
       // 清空内存状态
       state = [];
-    } catch (e) {
+    } on Exception catch (_) {
       // 即使数据库清空失败，也清空内存状态
       state = [];
       // 可以在这里添加错误日志
@@ -303,7 +305,7 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     try {
       final loadedPreferences = await _preferencesService.loadPreferences();
       state = loadedPreferences;
-    } catch (e) {
+    } on Exception catch (_) {
       // 如果加载失败，保持默认设置
       // TODO: 使用日志框架记录错误
     }
@@ -313,7 +315,7 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   Future<void> _savePreferences() async {
     try {
       await _preferencesService.savePreferences(state);
-    } catch (e) {
+    } on Exception catch (_) {
       // TODO: 使用日志框架记录错误
     }
   }

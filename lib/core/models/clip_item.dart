@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
 
 /// 剪贴内容类型：表示剪贴板条目的数据类型，用于解析与渲染。
@@ -34,6 +35,7 @@ enum ClipType {
 /// - 包含类型、内容、缩略图与元数据等；
 /// - 提供 JSON 序列化/反序列化；
 /// - 提供不可变式的 copyWith 便于局部更新。
+@immutable
 class ClipItem {
   /// 构造函数：若未指定 id/时间戳，将自动生成
   ClipItem({

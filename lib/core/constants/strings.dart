@@ -1,24 +1,45 @@
 /// 字符串常量
 /// 定义应用中使用的所有字符串，避免硬编码
+// ignore_for_file: public_member_api_docs
 class AppStrings {
   /// 私有构造：禁止实例化
   AppStrings._();
 
   /// 确认对话框
   static const String confirmClearHistory = '确定要清空所有剪贴板历史吗？此操作不可恢复。';
+
+  /// 取消按钮文本
   static const String cancel = '取消';
+
+  /// 确定按钮文本
   static const String confirm = '确定';
+
+  /// 清空按钮文本
   static const String clear = '清空';
+
+  /// 删除项目确认提示
   static const String confirmDeleteItem = '确定要删除这个剪贴板项目吗？\n';
 
   /// 文件相关
+
+  /// 未知文件标签
   static const String unknownFile = '未知文件';
+
+  /// 未知标签
   static const String unknown = '未知';
 
   /// 时间格式
+
+  /// 分钟前时间格式
   static const String timeFormatMinutes = '分钟前';
+
+  /// 小时前时间格式
   static const String timeFormatHours = '小时前';
+
+  /// 天前时间格式
   static const String timeFormatDays = '天前';
+
+  /// 默认时间格式
   static const String timeFormatDefault = 'MM-dd HH:mm';
 
   /// 单位

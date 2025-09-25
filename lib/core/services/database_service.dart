@@ -326,7 +326,8 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     final result = await _database!.rawQuery(
-      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable} WHERE type = ?',
+      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable} '
+      'WHERE type = ?',
       [type.name],
     );
     return Sqflite.firstIntValue(result) ?? 0;
@@ -340,7 +341,8 @@ class DatabaseService {
     if (_database == null) throw Exception('Database not initialized');
 
     final result = await _database!.rawQuery(
-      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable} WHERE is_favorite = 1',
+      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable} '
+      'WHERE is_favorite = 1',
     );
     return Sqflite.firstIntValue(result) ?? 0;
   }
@@ -577,7 +579,8 @@ class DatabaseService {
     );
     if (!hasSchemaVersion) {
       await db.execute(
-        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1',
+        'ALTER TABLE ${ClipConstants.clipItemsTable} '
+        'ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1',
       );
     }
 
