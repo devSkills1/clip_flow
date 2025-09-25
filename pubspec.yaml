@@ -45,6 +45,7 @@ dependencies:
   image: ^4.1.7
   image_picker: ^1.1.2
   intl: ^0.20.2
+  meta: any
   path: ^1.9.0
   path_provider: ^2.1.4
   screen_retriever: ^0.2.0
@@ -54,7 +55,6 @@ dependencies:
   uuid: ^4.4.2
   window_manager: ^0.5.1
 
-  meta: any
 dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:

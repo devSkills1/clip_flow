@@ -371,8 +371,11 @@ class FilterSidebar extends ConsumerWidget {
                       FilledButton(
                         onPressed: () async {
                           // 清空历史记录
+                          final navigator = Navigator.of(dialogContext);
                           await historyNotifier.clearHistory();
-                          Navigator.of(dialogContext).pop();
+                          if (navigator.mounted) {
+                            navigator.pop();
+                          }
                         },
                         style: FilledButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.error,

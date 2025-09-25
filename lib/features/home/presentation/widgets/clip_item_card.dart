@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 
 /// 剪贴项卡片组件
 class ClipItemCard extends StatelessWidget {
+  /// 剪贴项卡片组件
   const ClipItemCard({
     required this.item,
     required this.displayMode,

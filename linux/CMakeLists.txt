@@ -54,6 +54,16 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
 
+# Clipboard plugin
+add_library(clipboard_plugin STATIC
+  "clipboard_plugin.cc"
+  "clipboard_plugin.h"
+)
+target_link_libraries(clipboard_plugin PRIVATE PkgConfig::GTK)
+target_link_libraries(clipboard_plugin PRIVATE flutter)
+target_include_directories(clipboard_plugin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+apply_standard_settings(clipboard_plugin)
+
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 

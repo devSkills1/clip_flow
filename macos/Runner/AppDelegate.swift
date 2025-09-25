@@ -12,22 +12,13 @@ class AppDelegate: FlutterAppDelegate {
   }
   
   override func applicationDidFinishLaunching(_ notification: Notification) {
-    let controller: FlutterViewController = mainFlutterWindow?.contentViewController as! FlutterViewController
-    let clipboardChannel = FlutterMethodChannel(name: "clipboard_service",
-                                               binaryMessenger: controller.engine.binaryMessenger)
+    super.applicationDidFinishLaunching(notification)
     
-    clipboardChannel.setMethodCallHandler({ [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
-      switch call.method {
-      case "getClipboardImage":
-        self?.getClipboardImage(result: result)
-      case "setClipboardImage":
-        self?.setClipboardImage(call: call, result: result)
-      case "getSourceApp":
-        self?.getSourceApp(result: result)
-      default:
-        result(FlutterMethodNotImplemented)
-      }
-    })
+    // 手动注册 ClipboardPlugin
+    if let controller = mainFlutterWindow?.contentViewController as? FlutterViewController {
+      let registrar = controller.registrar(forPlugin: "ClipboardPlugin")
+      ClipboardPlugin.register(with: registrar)
+    }
   }
   
   private func getClipboardImage(result: @escaping FlutterResult) {

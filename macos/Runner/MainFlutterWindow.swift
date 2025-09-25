@@ -28,6 +28,9 @@ class MainFlutterWindow: NSWindow {
     self.styleMask.insert(.resizable)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
+    
+    // 手动注册 ClipboardPlugin
+    ClipboardPlugin.register(with: flutterViewController.registrar(forPlugin: "ClipboardPlugin"))
 
     super.awakeFromNib()
   }

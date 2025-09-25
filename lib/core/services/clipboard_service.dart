@@ -357,16 +357,6 @@ class ClipboardService {
       return ClipType.color;
     }
 
-    // 检测文件路径
-    if (content.startsWith('file://') ||
-        content.contains('/') ||
-        content.contains(r'\')) {
-      final file = File(content.replaceFirst('file://', ''));
-      if (file.existsSync()) {
-        return ClipType.file;
-      }
-    }
-
     // 检测HTML
     if (content.contains('<html>') ||
         content.contains('<div>') ||
