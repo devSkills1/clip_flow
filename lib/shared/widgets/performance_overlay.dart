@@ -420,10 +420,49 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
           S.of(context)?.performanceClipboard ??
               I18nFallbacks.performance.clipboard,
           '${_currentMetrics.clipboardCaptureTime.toStringAsFixed(0)} ms',
-          _getPerformanceColor(_currentMetrics.clipboardCaptureTime, 100, 200),
+          _getPerformanceColor(_currentMetrics.clipboardCaptureTime, 20, 50),
         ),
+        // 添加详细统计信息
+        if (_detailedStats.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          const Divider(color: Colors.white24, height: 1),
+          const SizedBox(height: 8),
+          _buildMetricRow(
+            '平均帧时间',
+            '${((_detailedStats['avgFrameTime'] as double?) ?? 0.0).toStringAsFixed(2)} ms',
+            _getPerformanceColor(
+              ((_detailedStats['avgFrameTime'] as double?) ?? 0.0) - 16.67,
+              5,
+              10,
+            ),
+          ),
+          _buildMetricRow(
+            '卡顿百分比',
+            '${((_detailedStats['jankPercentage'] as double?) ?? 0.0).toStringAsFixed(1)}%',
+            _getPerformanceColor(
+              (_detailedStats['jankPercentage'] as double?) ?? 0.0,
+              5,
+              15,
+            ),
+          ),
+          _buildMetricRow(
+            '帧时间方差',
+            '${((_detailedStats['frameTimeVariance'] as double?) ?? 0.0).toStringAsFixed(2)} ms²',
+            _getPerformanceColor(
+              (_detailedStats['frameTimeVariance'] as double?) ?? 0.0,
+              10,
+              25,
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
-        _buildPerformanceScore(),
+        Row(
+          children: [
+            Expanded(child: _buildPerformanceScore()),
+            const SizedBox(width: 8),
+            _buildHealthIndicator(),
+          ],
+        ),
         const SizedBox(height: 4),
         _buildStatusIndicator(),
         if (_memoryLeakDetected) ...[
@@ -741,5 +780,90 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
         ],
       ),
     );
+  }
+
+  Widget _buildHealthIndicator() {
+    final healthColor = _getHealthColor(_performanceHealth);
+    final healthIcon = _getHealthIcon(_performanceHealth);
+    final healthText = _getHealthText(_performanceHealth);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: healthColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: healthColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            healthIcon,
+            size: 12,
+            color: healthColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            healthText,
+            style: TextStyle(
+              color: healthColor,
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getHealthColor(String health) {
+    switch (health) {
+      case 'excellent':
+        return Colors.green;
+      case 'good':
+        return Colors.lightGreen;
+      case 'fair':
+        return Colors.orange;
+      case 'poor':
+        return Colors.red;
+      case 'warming_up':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getHealthIcon(String health) {
+    switch (health) {
+      case 'excellent':
+        return Icons.sentiment_very_satisfied;
+      case 'good':
+        return Icons.sentiment_satisfied;
+      case 'fair':
+        return Icons.sentiment_neutral;
+      case 'poor':
+        return Icons.sentiment_dissatisfied;
+      case 'warming_up':
+        return Icons.hourglass_empty;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  String _getHealthText(String health) {
+    switch (health) {
+      case 'excellent':
+        return '优秀';
+      case 'good':
+        return '良好';
+      case 'fair':
+        return '一般';
+      case 'poor':
+        return '较差';
+      case 'warming_up':
+        return '预热';
+      default:
+        return '未知';
+    }
   }
 }
