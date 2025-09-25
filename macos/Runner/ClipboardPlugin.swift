@@ -20,6 +20,10 @@ import UniformTypeIdentifiers
             getClipboardFilePaths(result: result)
         case "getClipboardImageData":
             getClipboardImageData(result: result)
+        case "setClipboardImage":
+            setClipboardImage(call: call, result: result)
+        case "setClipboardFile":
+            setClipboardFile(call: call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -277,5 +281,59 @@ import UniformTypeIdentifiers
     private func isXMLOrHTML(text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.hasPrefix("<") && trimmed.hasSuffix(">")
+    }
+    
+    private func setClipboardImage(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let imageData = args["imageData"] as? FlutterStandardTypedData else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid image data", details: nil))
+            return
+        }
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        
+        let data = imageData.data
+        pasteboard.setData(data, forType: .png)
+        
+        result(true)
+    }
+    
+    private func setClipboardFile(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let filePath = args["filePath"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid file path", details: nil))
+            return
+        }
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        
+        // 创建文件URL
+        let fileURL = URL(fileURLWithPath: filePath)
+        
+        // 检查文件是否存在
+        guard FileManager.default.fileExists(atPath: filePath) else {
+            result(FlutterError(code: "FILE_NOT_FOUND", message: "File does not exist: \(filePath)", details: nil))
+            return
+        }
+        
+        // 使用正确的方式将文件写入剪贴板
+        // 方法1: 使用 NSFilenamesPboardType (传统方法)
+        pasteboard.setPropertyList([filePath], forType: NSPasteboard.PasteboardType(rawValue: "NSFilenamesPboardType"))
+        
+        // 方法2: 同时使用现代的 fileURL 类型
+        pasteboard.setPropertyList([fileURL.absoluteString], forType: .fileURL)
+        
+        // 方法3: 对于图片文件，同时设置图片数据
+        let fileExtension = fileURL.pathExtension.lowercased()
+        let imageExtensions = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "svg", "ico", "heic", "heif"]
+        if imageExtensions.contains(fileExtension) {
+            if let imageData = try? Data(contentsOf: fileURL) {
+                pasteboard.setData(imageData, forType: .png)
+            }
+        }
+        
+        result(true)
     }
 }

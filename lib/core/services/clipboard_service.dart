@@ -203,10 +203,30 @@ class ClipboardService {
       if (candidate.isNotEmpty && _isLikelyFilePath(possibleFilePath)) {
         final file = File(possibleFilePath);
         if (file.existsSync()) {
-          // 发现有效文件路径：无论扩展名，统一按“文件”类型处理
-          _lastClipboardContent = currentContent;
-          await _processClipboardContent(currentContent);
-          hasChange = true;
+          // 检查是否为图片文件
+          if (_isImageFile(possibleFilePath)) {
+            // 图片文件：读取文件内容并按图片处理
+            try {
+              final imageBytes = await file.readAsBytes();
+              if (_lastImageContent == null ||
+                  !(await _areImageBytesEqual(imageBytes, _lastImageContent))) {
+                _lastImageContent = imageBytes;
+                _lastImageHash = null;
+                await _processImageContent(imageBytes);
+                hasChange = true;
+              }
+            } on Exception catch (_) {
+              // 读取失败时按文件处理
+              _lastClipboardContent = currentContent;
+              await _processClipboardContent(currentContent);
+              hasChange = true;
+            }
+          } else {
+            // 非图片文件：按文件类型处理
+            _lastClipboardContent = currentContent;
+            await _processClipboardContent(currentContent);
+            hasChange = true;
+          }
         }
       }
 
@@ -605,16 +625,31 @@ class ClipboardService {
     try {
       switch (item.type) {
         case ClipType.image:
-          // 优先使用缩略图回写；生产实现应读取原图文件（filePath）回写到剪贴板
-          final thumb = item.thumbnail;
-          if (thumb != null && thumb.isNotEmpty) {
-            await _setClipboardImage(Uint8List.fromList(thumb));
+          // 对于图片类型，如果有文件路径，优先复制文件；否则使用缩略图
+          final imageFilePath = item.filePath;
+          if (imageFilePath?.isNotEmpty ?? false) {
+            await _setClipboardFile(imageFilePath!);
+          } else {
+            final thumb = item.thumbnail;
+            if (thumb != null && thumb.isNotEmpty) {
+              await _setClipboardImage(Uint8List.fromList(thumb));
+            }
+          }
+        case ClipType.file:
+          // 文件类型：使用原生文件复制
+          final fileFilePath = item.filePath;
+          if (fileFilePath?.isNotEmpty ?? false) {
+            await _setClipboardFile(fileFilePath!);
+          } else {
+            // 回退到文本复制
+            final text = item.content ?? '';
+            await Clipboard.setData(ClipboardData(text: text));
+            _lastClipboardContent = text;
           }
         case ClipType.text:
         case ClipType.rtf:
         case ClipType.html:
         case ClipType.color:
-        case ClipType.file:
         case ClipType.audio:
         case ClipType.video:
           // 文本/其他类型：按新模型使用字符串 content
@@ -635,6 +670,34 @@ class ClipboardService {
     } on Exception catch (_) {
       // 处理错误
     }
+  }
+
+  Future<void> _setClipboardFile(String filePath) async {
+    try {
+      await _platformChannel.invokeMethod('setClipboardFile', {
+        'filePath': filePath,
+      });
+    } on Exception catch (_) {
+      // 处理错误
+    }
+  }
+
+  /// 检查文件路径是否为图片文件
+  bool _isImageFile(String filePath) {
+    final extension = filePath.toLowerCase().split('.').last;
+    const imageExtensions = {
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'bmp',
+      'webp',
+      'svg',
+      'tiff',
+      'tif',
+      'ico',
+    };
+    return imageExtensions.contains(extension);
   }
 
   // ==== 媒体落盘相关：tmp -> fsync -> rename，返回相对路径 ====
