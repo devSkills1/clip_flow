@@ -38,11 +38,8 @@ class ClipItemCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
-        child: Container(
-          constraints: const BoxConstraints(
-            minHeight: Dimensions.cardMinHeight,
-            maxHeight: Dimensions.cardMaxHeight,
-          ),
+        child: SizedBox(
+          height: _getFixedCardHeight(),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -60,11 +57,15 @@ class ClipItemCard extends StatelessWidget {
 
                 const SizedBox(height: Spacing.s12),
 
-                // 内容预览
-                Expanded(child: _buildContentPreview(context)),
+                // 内容预览 - 可滑动区域
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: _buildContentPreview(context),
+                  ),
+                ),
 
                 // 底部：时间和标签
-                const SizedBox(height: Spacing.s12),
+                const SizedBox(height: Spacing.s8),
                 _buildFooter(context),
               ],
             ),
@@ -72,6 +73,18 @@ class ClipItemCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 获取固定的卡片高度
+  double _getFixedCardHeight() {
+    switch (displayMode) {
+      case DisplayMode.compact:
+        return 140; // 紧凑模式固定高度
+      case DisplayMode.normal:
+        return 180; // 正常模式固定高度
+      case DisplayMode.preview:
+        return 160; // 预览模式固定高度
+    }
   }
 
   Widget _buildTypeIcon() {
@@ -314,14 +327,12 @@ class ClipItemCard extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(
-          child: ExpandableTextWidget(
-            text: content,
-            maxLines: displayMode == DisplayMode.compact ? 3 : 5,
-            searchQuery: searchQuery,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+        // 文本内容 - 移除展开功能，直接显示
+        Text(
+          content,
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: Spacing.s8),
         Row(
@@ -423,7 +434,9 @@ class ClipItemCard extends StatelessWidget {
 class ExpandableTextWidget extends StatefulWidget {
   /// 构造函数
   const ExpandableTextWidget({
-    required this.text, required this.maxLines, super.key,
+    required this.text,
+    required this.maxLines,
+    super.key,
     this.searchQuery,
     this.style,
   });
@@ -445,60 +458,34 @@ class ExpandableTextWidget extends StatefulWidget {
 }
 
 class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
-  bool _isExpanded = false;
+  final bool _isExpanded = false;
   bool _hasOverflow = false;
 
   @override
   Widget build(BuildContext context) {
-    // 计算文本是否会溢出
-    final textPainter = TextPainter(
-      text: TextSpan(text: widget.text, style: widget.style),
-      maxLines: widget.maxLines,
-      textDirection: Directionality.of(context),
-    )..layout(maxWidth: MediaQuery.of(context).size.width - 32);
-    _hasOverflow = textPainter.didExceedMaxLines;
-    textPainter.dispose();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 使用实际可用宽度进行溢出计算
+        final availableWidth = constraints.maxWidth > 0
+            ? constraints.maxWidth
+            : MediaQuery.of(context).size.width - 64;
 
-    if (!_hasOverflow) {
-      // 文本不会溢出，直接显示
-      return _buildText(widget.maxLines);
-    }
+        final textPainter = TextPainter(
+          text: TextSpan(text: widget.text, style: widget.style),
+          maxLines: widget.maxLines,
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: availableWidth);
+        _hasOverflow = textPainter.didExceedMaxLines;
+        textPainter.dispose();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          constraints: BoxConstraints(
-            maxHeight: _isExpanded ? 200 : double.infinity,
-          ),
-          child: _isExpanded
-              ? SingleChildScrollView(
-                  child: _buildText(null), // 展开时不限制行数
-                )
-              : _buildText(widget.maxLines), // 折叠时限制行数
-        ),
-        if (_hasOverflow)
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                _isExpanded ? '收起' : '展开',
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-      ],
+        return _buildContent();
+      },
     );
+  }
+
+  Widget _buildContent() {
+    // 简化为直接显示文本，依赖外部的 SingleChildScrollView 来处理滑动
+    return _buildText(null);
   }
 
   Widget _buildText(int? maxLines) {
@@ -506,7 +493,9 @@ class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
       return Text(
         widget.text,
         maxLines: maxLines,
-        overflow: maxLines != null ? TextOverflow.ellipsis : null,
+        overflow: maxLines != null
+            ? TextOverflow.ellipsis
+            : TextOverflow.visible,
         style: widget.style,
         softWrap: true,
       );
@@ -517,7 +506,9 @@ class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
       return Text(
         widget.text,
         maxLines: maxLines,
-        overflow: maxLines != null ? TextOverflow.ellipsis : null,
+        overflow: maxLines != null
+            ? TextOverflow.ellipsis
+            : TextOverflow.visible,
         style: widget.style,
         softWrap: true,
       );

@@ -15,9 +15,14 @@ class ColorUtils {
     // RGB格式检测
     if (_isRgbColor(trimmed)) return true;
 
+    // RGBA格式检测
+    if (_isRgbaColor(trimmed)) return true;
+
     // HSL格式检测
     if (_isHslColor(trimmed)) return true;
 
+    // HSLA格式检测
+    if (_isHslaColor(trimmed)) return true;
     return false;
   }
 
@@ -28,36 +33,48 @@ class ColorUtils {
     return hexPattern.hasMatch(value);
   }
 
-  // RGB颜色检测（支持 rgb(...) 以及 rgba(..., a) 且 a ∈ [0,1]）
+  // RGB颜色检测（仅检测 rgb(r,g,b) 格式）
   static bool _isRgbColor(String value) {
     final rgbPattern = RegExp(ClipConstants.rgbColorPattern);
-    final rgbaPattern = RegExp(ClipConstants.rgbaColorPattern);
 
-    if (!rgbPattern.hasMatch(value) && !rgbaPattern.hasMatch(value)) {
+    if (!rgbPattern.hasMatch(value)) {
       return false;
     }
 
-    final match = rgbPattern.firstMatch(value) ?? rgbaPattern.firstMatch(value);
+    final match = rgbPattern.firstMatch(value);
     if (match == null) return false;
 
     final r = int.parse(match.group(1)!);
     final g = int.parse(match.group(2)!);
     final b = int.parse(match.group(3)!);
 
-    final rgbInRange =
-        r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
-    if (!rgbInRange) return false;
-
-    // 如为 rgba，校验 alpha
-    if (rgbaPattern.hasMatch(value)) {
-      final a = double.parse(match.group(4)!);
-      if (a < 0 || a > 1) return false;
-    }
-
-    return true;
+    return r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
   }
 
-  // HSL颜色检测
+  // RGBA颜色检测（专门检测 rgba(r,g,b,a) 格式）
+  static bool _isRgbaColor(String value) {
+    final rgbaPattern = RegExp(ClipConstants.rgbaColorPattern);
+
+    if (!rgbaPattern.hasMatch(value)) {
+      return false;
+    }
+
+    final match = rgbaPattern.firstMatch(value);
+    if (match == null) return false;
+
+    final r = int.parse(match.group(1)!);
+    final g = int.parse(match.group(2)!);
+    final b = int.parse(match.group(3)!);
+    final a = double.parse(match.group(4)!);
+
+    final rgbInRange =
+        r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
+    final alphaInRange = a >= 0 && a <= 1;
+
+    return rgbInRange && alphaInRange;
+  }
+
+  // HSL颜色检测（仅检测 hsl(h,s%,l%) 格式）
   static bool _isHslColor(String value) {
     final hslPattern = RegExp(ClipConstants.hslColorPattern);
     if (!hslPattern.hasMatch(value)) return false;
@@ -70,6 +87,26 @@ class ColorUtils {
     final l = int.parse(match.group(3)!);
 
     return h >= 0 && h <= 360 && s >= 0 && s <= 100 && l >= 0 && l <= 100;
+  }
+
+  // HSLA颜色检测（专门检测 hsla(h,s%,l%,a) 格式）
+  static bool _isHslaColor(String value) {
+    final hslaPattern = RegExp(ClipConstants.hslaColorPattern);
+    if (!hslaPattern.hasMatch(value)) return false;
+
+    final match = hslaPattern.firstMatch(value);
+    if (match == null) return false;
+
+    final h = int.parse(match.group(1)!);
+    final s = int.parse(match.group(2)!);
+    final l = int.parse(match.group(3)!);
+    final a = double.parse(match.group(4)!);
+
+    final hslInRange =
+        h >= 0 && h <= 360 && s >= 0 && s <= 100 && l >= 0 && l <= 100;
+    final alphaInRange = a >= 0 && a <= 1;
+
+    return hslInRange && alphaInRange;
   }
 
   // HEX转RGB（兼容 #RGBA/#RRGGBBAA；忽略 alpha，仅返回 RGB）

@@ -405,27 +405,37 @@ class ClipboardService {
   }
 
   ClipType _detectContentType(String content) {
-    // 检测颜色值
+    Log.d(
+      'Detecting content type for: ${content.length > 50 ? "${content.substring(0, 50)}..." : content}',
+      tag: 'clipboard',
+    );
+
+    // 检测颜色值 - 提高优先级
     if (ColorUtils.isColorValue(content)) {
+      Log.d('Detected as color: $content', tag: 'clipboard');
       return ClipType.color;
     }
 
     // 检测HTML（更全面的检测）
     if (_isHtmlContent(content)) {
+      Log.d('Detected as HTML content', tag: 'clipboard');
       return ClipType.html;
     }
 
     // 检测富文本（RTF）
     if (_isRtfContent(content)) {
+      Log.d('Detected as RTF content', tag: 'clipboard');
       return ClipType.rtf;
     }
 
     // 检测视频文件路径
     if (_isVideoFilePath(content)) {
+      Log.d('Detected as video file path', tag: 'clipboard');
       return ClipType.video;
     }
 
     // 默认为纯文本
+    Log.d('Detected as plain text', tag: 'clipboard');
     return ClipType.text;
   }
 
@@ -545,8 +555,20 @@ class ClipboardService {
       case ClipType.html:
       case ClipType.rtf:
         // 文本内容分析
-        metadata['wordCount'] = _calculateWordCount(content);
-        metadata['lineCount'] = content.split('\n').length;
+        try {
+          final wordCount = _calculateWordCount(content);
+          final lineCount = content.split('\n').length;
+          metadata['wordCount'] = wordCount;
+          metadata['lineCount'] = lineCount;
+          Log.d(
+            'Text metadata: wordCount=$wordCount, lineCount=$lineCount',
+            tag: 'clipboard',
+          );
+        } catch (e) {
+          Log.e('Error extracting text metadata', tag: 'clipboard', error: e);
+          metadata['wordCount'] = 0;
+          metadata['lineCount'] = 1;
+        }
     }
 
     return metadata;
@@ -586,8 +608,13 @@ class ClipboardService {
       );
       if (result != null) {
         // 将Map<Object?, Object?>转换为Map<String, dynamic>
-        return result.map((key, value) => MapEntry(key.toString(), value));
+        final converted = result.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
+        Log.d('Native clipboard type result: $converted', tag: 'clipboard');
+        return converted;
       }
+      Log.d('No clipboard type data from native', tag: 'clipboard');
       return null;
     } on Exception catch (e) {
       unawaited(
@@ -934,24 +961,52 @@ class ClipboardService {
   }
 
   int _calculateWordCount(String content) {
-    if (content.isEmpty) return 0;
+    try {
+      if (content.isEmpty) {
+        Log.d('Empty content for word count', tag: 'clipboard');
+        return 0;
+      }
 
-    // 移除首尾空白字符
-    final trimmed = content.trim();
-    if (trimmed.isEmpty) return 0;
+      // 移除首尾空白字符
+      final trimmed = content.trim();
+      if (trimmed.isEmpty) {
+        Log.d('Content is empty after trim', tag: 'clipboard');
+        return 0;
+      }
 
-    // 统计中文字符数
-    final chineseChars = RegExp(r'[\u4e00-\u9fa5]').allMatches(trimmed).length;
+      Log.d(
+        'Calculating word count for content length: ${trimmed.length}',
+        tag: 'clipboard',
+      );
 
-    // 统计英文单词数（按空格分割）
-    final englishText = trimmed.replaceAll(RegExp(r'[\u4e00-\u9fa5]'), ' ');
-    final englishWords = englishText
-        .split(RegExp(r'\s+'))
-        .where((word) => word.isNotEmpty)
-        .length;
+      // 统计中文字符数
+      final chineseRegex = RegExp(r'[\u4e00-\u9fa5]');
+      final chineseChars = chineseRegex.allMatches(trimmed).length;
 
-    // 返回中文字符数 + 英文单词数
-    return chineseChars + englishWords;
+      // 统计英文单词数（按空格分割）
+      final englishText = trimmed.replaceAll(chineseRegex, ' ');
+      final englishWords = englishText
+          .split(RegExp(r'\s+'))
+          .where((word) => word.isNotEmpty && word.isNotEmpty)
+          .length;
+
+      final totalCount = chineseChars + englishWords;
+      Log.d(
+        'Word count result: $totalCount (Chinese: $chineseChars, English: $englishWords)',
+        tag: 'clipboard',
+      );
+
+      // 返回中文字符数 + 英文单词数
+      return totalCount;
+    } catch (e, stackTrace) {
+      Log.e(
+        'Error calculating word count',
+        tag: 'clipboard',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return 0; // 返回默认值而不是失败
+    }
   }
 
   Future<Map<String, dynamic>> _extractImageMetadata(

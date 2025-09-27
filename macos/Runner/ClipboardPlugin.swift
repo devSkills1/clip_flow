@@ -393,23 +393,37 @@ import UniformTypeIdentifiers
     }
 
     private func isColorValue(text: String) -> Bool {
-        // 十六进制颜色
-        let hexPattern = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3}|[A-Fa-f0-9]{8})$"
+        // 十六进制颜色（与Dart端保持一致，支持可选的#号和4位颜色）
+        let hexPattern = "^#?(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$"
         if text.range(of: hexPattern, options: .regularExpression) != nil {
             return true
         }
 
-        // RGB/RGBA
+        // RGB颜色（严格匹配0-255范围）
         let rgbPattern =
-            "^rgba?\\s*\\(\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*(,\\s*[0-9.]+)?\\s*\\)$"
+            "^rgb\\s*\\(\\s*(0|255|25[0-4]|2[0-4]\\d|[01]?\\d\\d?)\\s*,\\s*(0|255|25[0-4]|2[0-4]\\d|[01]?\\d\\d?)\\s*,\\s*(0|255|25[0-4]|2[0-4]\\d|[01]?\\d\\d?)\\s*\\)$"
         if text.range(of: rgbPattern, options: .regularExpression) != nil {
             return true
         }
 
-        // HSL/HSLA
+        // RGBA颜色（alpha值0-1）
+        let rgbaPattern =
+            "^rgba\\s*\\(\\s*(0|255|25[0-4]|2[0-4]\\d|[01]?\\d\\d?)\\s*,\\s*(0|255|25[0-4]|2[0-4]\\d|[01]?\\d\\d?)\\s*,\\s*(0|255|25[0-4]|2[0-4]\\d|[01]?\\d\\d?)\\s*,\\s*(0|1|0\\.[0-9]+|1\\.0)\\s*\\)$"
+        if text.range(of: rgbaPattern, options: .regularExpression) != nil {
+            return true
+        }
+
+        // HSL颜色（角度0-360，百分比0-100%）
         let hslPattern =
-            "^hsla?\\s*\\(\\s*\\d+\\s*,\\s*\\d+%\\s*,\\s*\\d+%\\s*(,\\s*[0-9.]+)?\\s*\\)$"
+            "^hsl\\s*\\(\\s*(360|3[0-5]\\d|[0-2]?\\d\\d?)\\s*,\\s*(100%|\\d{1,2}%)\\s*,\\s*(100%|\\d{1,2}%)\\s*\\)$"
         if text.range(of: hslPattern, options: .regularExpression) != nil {
+            return true
+        }
+
+        // HSLA颜色（含透明度）
+        let hslaPattern =
+            "^hsla\\s*\\(\\s*(360|3[0-5]\\d|[0-2]?\\d\\d?)\\s*,\\s*(100%|\\d{1,2}%)\\s*,\\s*(100%|\\d{1,2}%)\\s*,\\s*(0|1|0\\.[0-9]+|1\\.0)\\s*\\)$"
+        if text.range(of: hslaPattern, options: .regularExpression) != nil {
             return true
         }
 

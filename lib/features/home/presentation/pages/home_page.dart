@@ -1,11 +1,14 @@
+import 'dart:io';
+
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
+
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
+
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
-import 'package:clip_flow_pro/features/home/domain/usecases/get_recent_clips.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/filter_sidebar.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar_widget.dart';
@@ -34,25 +37,58 @@ class _HomePageState extends ConsumerState<HomePage> {
     // 首次进入页面时加载数据库中的历史记录并填充到状态
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        final recent = await ref.read(getRecentClipsProvider).call(limit: 100);
-        if (recent.isEmpty) return;
+        // 直接从数据库加载所有类型的历史记录
+        final recentItems = await DatabaseService.instance.getAllClipItems(
+          limit: 100,
+        );
+        if (recentItems.isEmpty) return;
+
         final notifier = ref.read(clipboardHistoryProvider.notifier);
-        for (final e in recent) {
-          // 从用例返回的是 String，UI 状态中保持 UTF-8 字节，展示时再 decode
-          final item = ClipItem(
-            id: e.id,
-            type: ClipType.text,
-            content: e.content,
-            metadata: const {},
-            createdAt: e.createdAt,
-            updatedAt: e.createdAt,
-          );
-          notifier.addItem(item);
+
+        for (final dbItem in recentItems) {
+          ClipItem? validItem;
+
+          switch (dbItem.type) {
+            case ClipType.text:
+            case ClipType.html:
+            case ClipType.rtf:
+            case ClipType.color:
+              // 文本类型直接加载
+              validItem = dbItem;
+
+            case ClipType.image:
+            case ClipType.file:
+            case ClipType.audio:
+            case ClipType.video:
+              // 文件类型需要验证路径有效性
+              final filePath = dbItem.filePath ?? dbItem.content;
+              if (filePath != null && await _isFileValid(filePath)) {
+                validItem = dbItem;
+              } else {
+                // 文件已失效，从数据库删除
+                await DatabaseService.instance.deleteClipItem(dbItem.id);
+              }
+          }
+
+          if (validItem != null) {
+            notifier.addItem(validItem);
+          }
         }
       } on Exception catch (_) {
         // 静默失败，避免阻塞 UI
       }
     });
+  }
+
+  /// 检查文件路径是否有效
+  Future<bool> _isFileValid(String filePath) async {
+    if (filePath.isEmpty) return false;
+    try {
+      final file = File(filePath);
+      return file.existsSync();
+    } on FileSystemException {
+      return false;
+    }
   }
 
   @override
@@ -216,15 +252,15 @@ class _HomePageState extends ConsumerState<HomePage> {
         return LayoutBuilder(
           builder: (context, constraints) {
             var crossAxisCount = 2;
-            var childAspectRatio = 1.8;
+            var childAspectRatio = 1.6; // 恢复合理的卡片比例
 
             // 响应式布局：根据窗口宽度调整列数
             if (constraints.maxWidth > ClipConstants.defaultWindowWidth) {
               crossAxisCount = 3;
-              childAspectRatio = 1.6;
+              childAspectRatio = 1.4; // 保持合理比例
             } else if (constraints.maxWidth < ClipConstants.minWindowWidth) {
               crossAxisCount = 1;
-              childAspectRatio = 2.5;
+              childAspectRatio = 2.2; // 单列时稍微宽一些
             }
 
             return GridView.builder(
@@ -255,21 +291,21 @@ class _HomePageState extends ConsumerState<HomePage> {
         return LayoutBuilder(
           builder: (context, constraints) {
             var crossAxisCount = 3;
-            var childAspectRatio = 1.5;
+            var childAspectRatio = 1.3; // 预览模式保持紧凑但合理
 
             // 响应式布局：根据窗口宽度调整列数
             if (constraints.maxWidth > 1400) {
               crossAxisCount = 4;
-              childAspectRatio = 1.4;
+              childAspectRatio = 1.2;
             } else if (constraints.maxWidth > 900) {
               crossAxisCount = 3;
-              childAspectRatio = 1.5;
+              childAspectRatio = 1.3;
             } else if (constraints.maxWidth > 600) {
               crossAxisCount = 2;
-              childAspectRatio = 1.6;
+              childAspectRatio = 1.4;
             } else {
               crossAxisCount = 1;
-              childAspectRatio = 2.0;
+              childAspectRatio = 1.8;
             }
 
             return GridView.builder(
