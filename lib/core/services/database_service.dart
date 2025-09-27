@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -594,5 +595,65 @@ class DatabaseService {
       if (name == column) return true;
     }
     return false;
+  }
+
+  /// 清理空内容的文本类型数据
+  ///
+  /// 删除 type 为 'text' 但 content 为空或只包含空白字符的记录
+  /// 返回删除的记录数量
+  Future<int> cleanEmptyTextItems() async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    final deletedCount = await _database!.delete(
+      ClipConstants.clipItemsTable,
+      where: "type = 'text' AND (content IS NULL OR TRIM(content) = '')",
+    );
+
+    Log.i('Cleaned $deletedCount empty text items from database');
+    return deletedCount;
+  }
+
+  /// 获取空内容的文本数据统计
+  ///
+  /// 返回 type 为 'text' 但 content 为空的记录数量
+  Future<int> countEmptyTextItems() async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    final result = await _database!.rawQuery(
+      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable} '
+      "WHERE type = 'text' AND (content IS NULL OR TRIM(content) = '')",
+    );
+
+    return (result.first['count'] as int?) ?? 0;
+  }
+
+  /// 验证并修复数据完整性
+  ///
+  /// 执行多项数据完整性检查和修复：
+  /// - 清理空内容的文本数据
+  /// - 清理孤儿媒体文件
+  /// 返回修复统计信息
+  Future<Map<String, int>> validateAndRepairData() async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    final stats = <String, int>{};
+
+    // 清理空文本内容
+    stats['emptyTextItemsDeleted'] = await cleanEmptyTextItems();
+
+    // 清理孤儿媒体文件
+    stats['orphanFilesDeleted'] = await cleanOrphanMediaFiles();
+
+    // 统计当前数据
+    final totalItems = await _database!.rawQuery(
+      'SELECT COUNT(*) as count FROM ${ClipConstants.clipItemsTable}',
+    );
+    stats['totalItemsRemaining'] = (totalItems.first['count'] as int?) ?? 0;
+
+    Log.i('Database validation completed: $stats');
+    return stats;
   }
 }

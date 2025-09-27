@@ -1,6 +1,7 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
+import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/finder_service.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
@@ -270,6 +271,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         .read(userPreferencesProvider.notifier)
                         .togglePerformanceOverlay();
                   },
+                ),
+                _buildListTile(
+                  title: '清理空数据',
+                  subtitle: '清理数据库中的空内容记录',
+                  trailing: const Icon(Icons.cleaning_services),
+                  onTap: _cleanEmptyData,
+                ),
+                _buildListTile(
+                  title: '验证数据完整性',
+                  subtitle: '检查并修复数据库完整性问题',
+                  trailing: const Icon(Icons.verified),
+                  onTap: _validateAndRepairData,
                 ),
               ],
             ),
@@ -753,5 +766,112 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         duration: const Duration(seconds: 3),
       ),
     );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _cleanEmptyData() async {
+    try {
+      // 显示确认对话框
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('清理空数据'),
+          content: const Text('确定要清理数据库中的空内容记录吗？此操作不可撤销。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                S.of(context)?.actionCancel ??
+                    I18nFallbacks.common.actionCancel,
+              ),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                S.of(context)?.actionOk ?? I18nFallbacks.common.actionOk,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      // 执行清理
+      final count = await DatabaseService.instance.cleanEmptyTextItems();
+      if (mounted) {
+        _showSuccessSnackBar('已清理 $count 条空数据记录');
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('清理失败: $e');
+      }
+    }
+  }
+
+  Future<void> _validateAndRepairData() async {
+    try {
+      // 显示加载对话框
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('正在验证数据完整性...'),
+            ],
+          ),
+        ),
+      );
+
+      // 执行验证和修复
+      final stats = await DatabaseService.instance.validateAndRepairData();
+
+      if (mounted) {
+        Navigator.of(context).pop(); // 关闭加载对话框
+
+        // 显示结果对话框
+        showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('数据验证完成'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('清理空文本记录: ${stats['emptyTextItemsDeleted']} 条'),
+                Text('清理孤儿文件: ${stats['orphanFilesDeleted']} 个'),
+                Text('剩余记录总数: ${stats['totalItemsRemaining']} 条'),
+              ],
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  S.of(context)?.actionOk ?? I18nFallbacks.common.actionOk,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // 关闭加载对话框
+        _showErrorSnackBar('验证失败: $e');
+      }
+    }
   }
 }

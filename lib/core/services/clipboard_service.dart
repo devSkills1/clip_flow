@@ -285,6 +285,7 @@ class ClipboardService {
       // 3) 若还没有变化，则按普通文本处理
       if (!hasChange &&
           currentContent.isNotEmpty &&
+          currentContent.trim().isNotEmpty &&
           currentContent != _lastClipboardContent) {
         _lastClipboardContent = currentContent;
         await _processClipboardContent(currentContent);
@@ -366,6 +367,12 @@ class ClipboardService {
 
   Future<void> _processClipboardContent(String content) async {
     try {
+      // 验证内容是否有效（非空且不只是空白字符）
+      if (content.trim().isEmpty) {
+        Log.d('Skipping empty content', tag: 'clipboard');
+        return;
+      }
+
       // 计算内容哈希
       final contentHash = await _calculateContentHash(content);
 

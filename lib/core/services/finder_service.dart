@@ -72,7 +72,7 @@ class FinderService {
 
       // 检查数据库文件是否存在
       final databaseFile = File(databasePath);
-      if (await databaseFile.exists()) {
+      if (databaseFile.existsSync()) {
         return await showInFinder(databasePath);
       } else {
         // 如果数据库文件不存在，显示文档目录
