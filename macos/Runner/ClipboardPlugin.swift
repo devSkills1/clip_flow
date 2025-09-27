@@ -5,7 +5,8 @@ import UniformTypeIdentifiers
 @objc class ClipboardPlugin: NSObject, FlutterPlugin {
 
     static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "clipboard_service", binaryMessenger: registrar.messenger)
+        let channel = FlutterMethodChannel(
+            name: "clipboard_service", binaryMessenger: registrar.messenger)
         let instance = ClipboardPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
@@ -22,6 +23,8 @@ import UniformTypeIdentifiers
             getClipboardImageData(result: result)
         case "getClipboardImage":
             getClipboardImageData(result: result)
+        case "getRichTextData":
+            getRichTextData(call: call, result: result)
         case "setClipboardImage":
             setClipboardImage(call: call, result: result)
         case "setClipboardFile":
@@ -42,7 +45,9 @@ import UniformTypeIdentifiers
         // 按优先级检查类型
         if types.contains(.fileURL) {
             // 文件类型
-            if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [NSURL] {
+            if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)
+                as? [NSURL]
+            {
                 let filePaths = fileURLs.compactMap { $0.path }
                 if !filePaths.isEmpty {
                     let firstPath = filePaths[0]
@@ -51,19 +56,40 @@ import UniformTypeIdentifiers
                         "type": "file",
                         "subType": fileType,
                         "content": filePaths,
-                        "primaryPath": firstPath
+                        "primaryPath": firstPath,
                     ]
                 }
             }
-        } else if types.contains(.tiff) || types.contains(.png) ||
-                  types.contains(NSPasteboard.PasteboardType("public.jpeg")) ||
-                  types.contains(NSPasteboard.PasteboardType("public.image")) ||
-                  types.contains(NSPasteboard.PasteboardType("com.compuserve.gif")) ||
-                  types.contains(NSPasteboard.PasteboardType("com.microsoft.bmp")) ||
-                  types.contains(NSPasteboard.PasteboardType("org.webmproject.webp")) ||
-                  types.contains(NSPasteboard.PasteboardType("public.heic")) ||
-                  types.contains(NSPasteboard.PasteboardType("public.heif")) ||
-                  _hasAnyImageType(types: types) {
+        } else if types.contains(.rtf) {
+            // RTF 富文本类型
+            if let rtfData = pasteboard.data(forType: .rtf) {
+                clipboardInfo = [
+                    "type": "rtf",
+                    "subType": "rich_text",
+                    "size": rtfData.count,
+                    "hasData": true,
+                ]
+            }
+        } else if types.contains(.html) {
+            // HTML 类型
+            if let htmlData = pasteboard.data(forType: .html) {
+                clipboardInfo = [
+                    "type": "html",
+                    "subType": "markup",
+                    "size": htmlData.count,
+                    "hasData": true,
+                ]
+            }
+        } else if types.contains(.tiff) || types.contains(.png)
+            || types.contains(NSPasteboard.PasteboardType("public.jpeg"))
+            || types.contains(NSPasteboard.PasteboardType("public.image"))
+            || types.contains(NSPasteboard.PasteboardType("com.compuserve.gif"))
+            || types.contains(NSPasteboard.PasteboardType("com.microsoft.bmp"))
+            || types.contains(NSPasteboard.PasteboardType("org.webmproject.webp"))
+            || types.contains(NSPasteboard.PasteboardType("public.heic"))
+            || types.contains(NSPasteboard.PasteboardType("public.heif"))
+            || _hasAnyImageType(types: types)
+        {
             // 图片类型
             var imageData: Data?
             var imageFormat = "unknown"
@@ -74,22 +100,34 @@ import UniformTypeIdentifiers
             } else if let tiffData = pasteboard.data(forType: .tiff) {
                 imageData = tiffData
                 imageFormat = "tiff"
-            } else if let jpegData = pasteboard.data(forType: NSPasteboard.PasteboardType("public.jpeg")) {
+            } else if let jpegData = pasteboard.data(
+                forType: NSPasteboard.PasteboardType("public.jpeg"))
+            {
                 imageData = jpegData
                 imageFormat = "jpeg"
-            } else if let gifData = pasteboard.data(forType: NSPasteboard.PasteboardType("com.compuserve.gif")) {
+            } else if let gifData = pasteboard.data(
+                forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+            {
                 imageData = gifData
                 imageFormat = "gif"
-            } else if let bmpData = pasteboard.data(forType: NSPasteboard.PasteboardType("com.microsoft.bmp")) {
+            } else if let bmpData = pasteboard.data(
+                forType: NSPasteboard.PasteboardType("com.microsoft.bmp"))
+            {
                 imageData = bmpData
                 imageFormat = "bmp"
-            } else if let webpData = pasteboard.data(forType: NSPasteboard.PasteboardType("org.webmproject.webp")) {
+            } else if let webpData = pasteboard.data(
+                forType: NSPasteboard.PasteboardType("org.webmproject.webp"))
+            {
                 imageData = webpData
                 imageFormat = "webp"
-            } else if let heicData = pasteboard.data(forType: NSPasteboard.PasteboardType("public.heic")) {
+            } else if let heicData = pasteboard.data(
+                forType: NSPasteboard.PasteboardType("public.heic"))
+            {
                 imageData = heicData
                 imageFormat = "heic"
-            } else if let heifData = pasteboard.data(forType: NSPasteboard.PasteboardType("public.heif")) {
+            } else if let heifData = pasteboard.data(
+                forType: NSPasteboard.PasteboardType("public.heif"))
+            {
                 imageData = heifData
                 imageFormat = "heif"
             }
@@ -99,7 +137,7 @@ import UniformTypeIdentifiers
                     "type": "image",
                     "subType": imageFormat,
                     "size": data.count,
-                    "hasData": true
+                    "hasData": true,
                 ]
             }
         } else if types.contains(.string) {
@@ -110,7 +148,7 @@ import UniformTypeIdentifiers
                     "type": "text",
                     "subType": textType,
                     "content": string,
-                    "length": string.count
+                    "length": string.count,
                 ]
             }
         } else if types.contains(.rtf) {
@@ -120,24 +158,14 @@ import UniformTypeIdentifiers
                     "type": "text",
                     "subType": "rtf",
                     "size": rtfData.count,
-                    "hasData": true
-                ]
-            }
-        } else if types.contains(.html) {
-            // HTML 类型
-            if let htmlData = pasteboard.data(forType: .html) {
-                clipboardInfo = [
-                    "type": "text",
-                    "subType": "html",
-                    "size": htmlData.count,
-                    "hasData": true
+                    "hasData": true,
                 ]
             }
         } else {
             // 未知类型
             clipboardInfo = [
                 "type": "unknown",
-                "availableTypes": types.map { $0.rawValue }
+                "availableTypes": types.map { $0.rawValue },
             ]
         }
 
@@ -152,7 +180,8 @@ import UniformTypeIdentifiers
     private func getClipboardFilePaths(result: @escaping FlutterResult) {
         let pasteboard = NSPasteboard.general
 
-        if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [NSURL] {
+        if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [NSURL]
+        {
             let filePaths = fileURLs.compactMap { $0.path }
             result(filePaths)
         } else {
@@ -176,25 +205,39 @@ import UniformTypeIdentifiers
         } else if let tiffData = pasteboard.data(forType: .tiff) {
             imageData = tiffData
             foundType = "tiff"
-        } else if let jpegData = pasteboard.data(forType: NSPasteboard.PasteboardType("public.jpeg")) {
+        } else if let jpegData = pasteboard.data(
+            forType: NSPasteboard.PasteboardType("public.jpeg"))
+        {
             imageData = jpegData
             foundType = "jpeg"
-        } else if let genericImage = pasteboard.data(forType: NSPasteboard.PasteboardType("public.image")) {
+        } else if let genericImage = pasteboard.data(
+            forType: NSPasteboard.PasteboardType("public.image"))
+        {
             imageData = genericImage
             foundType = "public.image"
-        } else if let gifData = pasteboard.data(forType: NSPasteboard.PasteboardType("com.compuserve.gif")) {
+        } else if let gifData = pasteboard.data(
+            forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+        {
             imageData = gifData
             foundType = "gif"
-        } else if let bmpData = pasteboard.data(forType: NSPasteboard.PasteboardType("com.microsoft.bmp")) {
+        } else if let bmpData = pasteboard.data(
+            forType: NSPasteboard.PasteboardType("com.microsoft.bmp"))
+        {
             imageData = bmpData
             foundType = "bmp"
-        } else if let webpData = pasteboard.data(forType: NSPasteboard.PasteboardType("org.webmproject.webp")) {
+        } else if let webpData = pasteboard.data(
+            forType: NSPasteboard.PasteboardType("org.webmproject.webp"))
+        {
             imageData = webpData
             foundType = "webp"
-        } else if let heicData = pasteboard.data(forType: NSPasteboard.PasteboardType("public.heic")) {
+        } else if let heicData = pasteboard.data(
+            forType: NSPasteboard.PasteboardType("public.heic"))
+        {
             imageData = heicData
             foundType = "heic"
-        } else if let heifData = pasteboard.data(forType: NSPasteboard.PasteboardType("public.heif")) {
+        } else if let heifData = pasteboard.data(
+            forType: NSPasteboard.PasteboardType("public.heif"))
+        {
             imageData = heifData
             foundType = "heif"
         } else {
@@ -206,11 +249,57 @@ import UniformTypeIdentifiers
         }
 
         if let data = imageData, let type = foundType {
-            NSLog("ClipboardPlugin: Found image data of type %@ with size %d bytes", type, data.count)
+            NSLog(
+                "ClipboardPlugin: Found image data of type %@ with size %d bytes", type, data.count)
             result(FlutterStandardTypedData(bytes: data))
         } else {
             NSLog("ClipboardPlugin: No image data found")
             result(nil)
+        }
+    }
+
+    private func getRichTextData(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+            let type = args["type"] as? String
+        else {
+            result(
+                FlutterError(
+                    code: "INVALID_ARGUMENT", message: "Invalid type parameter", details: nil))
+            return
+        }
+
+        let pasteboard = NSPasteboard.general
+
+        switch type.lowercased() {
+        case "rtf":
+            if let rtfData = pasteboard.data(forType: .rtf) {
+                if let rtfString = String(data: rtfData, encoding: .utf8) {
+                    NSLog("ClipboardPlugin: Found RTF data (%d bytes)", rtfData.count)
+                    result(rtfString)
+                } else {
+                    NSLog("ClipboardPlugin: Failed to decode RTF data")
+                    result(nil)
+                }
+            } else {
+                result(nil)
+            }
+        case "html":
+            if let htmlData = pasteboard.data(forType: .html) {
+                if let htmlString = String(data: htmlData, encoding: .utf8) {
+                    NSLog("ClipboardPlugin: Found HTML data (%d bytes)", htmlData.count)
+                    result(htmlString)
+                } else {
+                    NSLog("ClipboardPlugin: Failed to decode HTML data")
+                    result(nil)
+                }
+            } else {
+                result(nil)
+            }
+        default:
+            result(
+                FlutterError(
+                    code: "UNSUPPORTED_TYPE", message: "Unsupported rich text type: \(type)",
+                    details: nil))
         }
     }
 
@@ -219,7 +308,9 @@ import UniformTypeIdentifiers
         let pathExtension = url.pathExtension.lowercased()
 
         // 图片文件
-        let imageExtensions = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "svg", "ico", "heic", "heif"]
+        let imageExtensions = [
+            "png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "svg", "ico", "heic", "heif",
+        ]
         if imageExtensions.contains(pathExtension) {
             return "image"
         }
@@ -231,13 +322,18 @@ import UniformTypeIdentifiers
         }
 
         // 视频文件
-        let videoExtensions = ["mp4", "avi", "mov", "wmv", "flv", "webm", "mkv", "m4v", "3gp", "ts"]
+        let videoExtensions = [
+            "mp4", "avi", "mov", "wmv", "flv", "webm", "mkv", "m4v", "3gp", "ts",
+        ]
         if videoExtensions.contains(pathExtension) {
             return "video"
         }
 
         // 文档文件
-        let documentExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "pages", "numbers", "keynote"]
+        let documentExtensions = [
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "pages", "numbers",
+            "keynote",
+        ]
         if documentExtensions.contains(pathExtension) {
             return "document"
         }
@@ -249,7 +345,10 @@ import UniformTypeIdentifiers
         }
 
         // 代码文件
-        let codeExtensions = ["swift", "dart", "js", "ts", "py", "java", "cpp", "c", "h", "m", "mm", "go", "rs", "php", "rb", "kt"]
+        let codeExtensions = [
+            "swift", "dart", "js", "ts", "py", "java", "cpp", "c", "h", "m", "mm", "go", "rs",
+            "php", "rb", "kt",
+        ]
         if codeExtensions.contains(pathExtension) {
             return "code"
         }
@@ -301,13 +400,15 @@ import UniformTypeIdentifiers
         }
 
         // RGB/RGBA
-        let rgbPattern = "^rgba?\\s*\\(\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*(,\\s*[0-9.]+)?\\s*\\)$"
+        let rgbPattern =
+            "^rgba?\\s*\\(\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*(,\\s*[0-9.]+)?\\s*\\)$"
         if text.range(of: rgbPattern, options: .regularExpression) != nil {
             return true
         }
 
         // HSL/HSLA
-        let hslPattern = "^hsla?\\s*\\(\\s*\\d+\\s*,\\s*\\d+%\\s*,\\s*\\d+%\\s*(,\\s*[0-9.]+)?\\s*\\)$"
+        let hslPattern =
+            "^hsla?\\s*\\(\\s*\\d+\\s*,\\s*\\d+%\\s*,\\s*\\d+%\\s*(,\\s*[0-9.]+)?\\s*\\)$"
         if text.range(of: hslPattern, options: .regularExpression) != nil {
             return true
         }
@@ -348,8 +449,10 @@ import UniformTypeIdentifiers
 
     private func setClipboardImage(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let imageData = args["imageData"] as? FlutterStandardTypedData else {
-            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid image data", details: nil))
+            let imageData = args["imageData"] as? FlutterStandardTypedData
+        else {
+            result(
+                FlutterError(code: "INVALID_ARGUMENT", message: "Invalid image data", details: nil))
             return
         }
 
@@ -364,8 +467,10 @@ import UniformTypeIdentifiers
 
     private func setClipboardFile(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let filePath = args["filePath"] as? String else {
-            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid file path", details: nil))
+            let filePath = args["filePath"] as? String
+        else {
+            result(
+                FlutterError(code: "INVALID_ARGUMENT", message: "Invalid file path", details: nil))
             return
         }
 
@@ -377,20 +482,26 @@ import UniformTypeIdentifiers
 
         // 检查文件是否存在
         guard FileManager.default.fileExists(atPath: filePath) else {
-            result(FlutterError(code: "FILE_NOT_FOUND", message: "File does not exist: \(filePath)", details: nil))
+            result(
+                FlutterError(
+                    code: "FILE_NOT_FOUND", message: "File does not exist: \(filePath)",
+                    details: nil))
             return
         }
 
         // 使用正确的方式将文件写入剪贴板
         // 方法1: 使用 NSFilenamesPboardType (传统方法)
-        pasteboard.setPropertyList([filePath], forType: NSPasteboard.PasteboardType(rawValue: "NSFilenamesPboardType"))
+        pasteboard.setPropertyList(
+            [filePath], forType: NSPasteboard.PasteboardType(rawValue: "NSFilenamesPboardType"))
 
         // 方法2: 同时使用现代的 fileURL 类型
         pasteboard.setPropertyList([fileURL.absoluteString], forType: .fileURL)
 
         // 方法3: 对于图片文件，同时设置图片数据
         let fileExtension = fileURL.pathExtension.lowercased()
-        let imageExtensions = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "svg", "ico", "heic", "heif"]
+        let imageExtensions = [
+            "png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "svg", "ico", "heic", "heif",
+        ]
         if imageExtensions.contains(fileExtension) {
             if let imageData = try? Data(contentsOf: fileURL) {
                 pasteboard.setData(imageData, forType: .png)
@@ -411,7 +522,7 @@ import UniformTypeIdentifiers
             "public.radiance",
             "public.pbm",
             "public.pvr",
-            "com.ilm.openexr-image"
+            "com.ilm.openexr-image",
         ]
 
         for typeName in imageTypes {
@@ -435,13 +546,15 @@ import UniformTypeIdentifiers
             "public.radiance",
             "public.pbm",
             "public.pvr",
-            "com.ilm.openexr-image"
+            "com.ilm.openexr-image",
         ]
 
         for typeName in additionalImageTypes {
             let type = NSPasteboard.PasteboardType(typeName)
             if let data = pasteboard.data(forType: type), !data.isEmpty {
-                NSLog("ClipboardPlugin: Found image data in additional type: %@ (%d bytes)", typeName, data.count)
+                NSLog(
+                    "ClipboardPlugin: Found image data in additional type: %@ (%d bytes)", typeName,
+                    data.count)
                 return data
             }
         }

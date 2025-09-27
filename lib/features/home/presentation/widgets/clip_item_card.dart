@@ -316,10 +316,11 @@ class ClipItemCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Flexible(
-          child: _buildHighlightedText(
-            context,
-            content,
+          child: ExpandableTextWidget(
+            text: content,
             maxLines: displayMode == DisplayMode.compact ? 3 : 5,
+            searchQuery: searchQuery,
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
         const SizedBox(height: Spacing.s8),
@@ -345,144 +346,6 @@ class ClipItemCard extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildHighlightedText(
-    BuildContext context,
-    String text, {
-    required int maxLines,
-  }) {
-    if (searchQuery == null || searchQuery!.isEmpty) {
-      return Text(
-        text,
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyMedium,
-        softWrap: true,
-      );
-    }
-
-    final query = searchQuery!.toLowerCase().trim();
-    if (query.isEmpty) {
-      return Text(
-        text,
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyMedium,
-        softWrap: true,
-      );
-    }
-
-    // 按行分割文本，在每行内进行匹配，避免跨行高亮
-    final lines = text.split('\n');
-    final spans = <TextSpan>[];
-
-    for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      final line = lines[lineIndex];
-      final lowerLine = line.toLowerCase();
-
-      // 在当前行内查找匹配
-      final lineSpans = <TextSpan>[];
-      var lastEnd = 0;
-
-      // 简单的字符串匹配，避免复杂的正则表达式
-      var searchIndex = 0;
-      while (searchIndex < lowerLine.length) {
-        final matchIndex = lowerLine.indexOf(query, searchIndex);
-        if (matchIndex == -1) break;
-
-        // 检查是否是完整的词汇（简单版本）
-        var isValidMatch = true;
-
-        // 检查前一个字符
-        if (matchIndex > 0) {
-          final prevChar = lowerLine[matchIndex - 1];
-          if (RegExp(AppStrings.regexAlphanumericChinese).hasMatch(prevChar)) {
-            isValidMatch = false;
-          }
-        }
-
-        // 检查后一个字符
-        if (isValidMatch && matchIndex + query.length < lowerLine.length) {
-          final nextChar = lowerLine[matchIndex + query.length];
-          if (RegExp(AppStrings.regexAlphanumericChinese).hasMatch(nextChar)) {
-            isValidMatch = false;
-          }
-        }
-
-        if (isValidMatch) {
-          // 添加匹配前的文本
-          if (matchIndex > lastEnd) {
-            lineSpans.add(
-              TextSpan(
-                text: line.substring(lastEnd, matchIndex),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            );
-          }
-
-          // 添加高亮文本
-          lineSpans.add(
-            TextSpan(
-              text: line.substring(matchIndex, matchIndex + query.length),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            ),
-          );
-
-          lastEnd = matchIndex + query.length;
-          searchIndex = lastEnd;
-        } else {
-          searchIndex = matchIndex + 1;
-        }
-      }
-
-      // 添加行内剩余文本
-      if (lastEnd < line.length) {
-        lineSpans.add(
-          TextSpan(
-            text: line.substring(lastEnd),
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        );
-      }
-
-      // 如果没有匹配，添加整行
-      if (lineSpans.isEmpty) {
-        lineSpans.add(
-          TextSpan(text: line, style: Theme.of(context).textTheme.bodyMedium),
-        );
-      }
-
-      // 添加当前行的所有spans
-      spans.addAll(lineSpans);
-
-      // 如果不是最后一行，添加换行符
-      if (lineIndex < lines.length - 1) {
-        spans.add(
-          TextSpan(text: '\n', style: Theme.of(context).textTheme.bodyMedium),
-        );
-      }
-    }
-
-    // 如果没有匹配项，返回原始文本
-    if (spans.isEmpty) {
-      return Text(
-        text,
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyMedium,
-        softWrap: true,
-      );
-    }
-
-    return RichText(
-      maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
-      text: TextSpan(children: spans),
     );
   }
 
@@ -553,5 +416,185 @@ class ClipItemCard extends StatelessWidget {
     } else {
       return DateFormat(AppStrings.timeFormatDefault).format(item.createdAt);
     }
+  }
+}
+
+/// 可展开的文本组件，支持长文本滚动展示
+class ExpandableTextWidget extends StatefulWidget {
+  /// 构造函数
+  const ExpandableTextWidget({
+    required this.text, required this.maxLines, super.key,
+    this.searchQuery,
+    this.style,
+  });
+
+  /// 文本内容
+  final String text;
+
+  /// 最大行数
+  final int maxLines;
+
+  /// 搜索关键词
+  final String? searchQuery;
+
+  /// 文本样式
+  final TextStyle? style;
+
+  @override
+  State<ExpandableTextWidget> createState() => _ExpandableTextWidgetState();
+}
+
+class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
+  bool _isExpanded = false;
+  bool _hasOverflow = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // 计算文本是否会溢出
+    final textPainter = TextPainter(
+      text: TextSpan(text: widget.text, style: widget.style),
+      maxLines: widget.maxLines,
+      textDirection: Directionality.of(context),
+    )..layout(maxWidth: MediaQuery.of(context).size.width - 32);
+    _hasOverflow = textPainter.didExceedMaxLines;
+    textPainter.dispose();
+
+    if (!_hasOverflow) {
+      // 文本不会溢出，直接显示
+      return _buildText(widget.maxLines);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          constraints: BoxConstraints(
+            maxHeight: _isExpanded ? 200 : double.infinity,
+          ),
+          child: _isExpanded
+              ? SingleChildScrollView(
+                  child: _buildText(null), // 展开时不限制行数
+                )
+              : _buildText(widget.maxLines), // 折叠时限制行数
+        ),
+        if (_hasOverflow)
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                _isExpanded ? '收起' : '展开',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildText(int? maxLines) {
+    if (widget.searchQuery == null || widget.searchQuery!.isEmpty) {
+      return Text(
+        widget.text,
+        maxLines: maxLines,
+        overflow: maxLines != null ? TextOverflow.ellipsis : null,
+        style: widget.style,
+        softWrap: true,
+      );
+    }
+
+    // 执行搜索高亮
+    if (!_isQueryMatch(widget.text, widget.searchQuery!)) {
+      return Text(
+        widget.text,
+        maxLines: maxLines,
+        overflow: maxLines != null ? TextOverflow.ellipsis : null,
+        style: widget.style,
+        softWrap: true,
+      );
+    }
+
+    final spans = _buildHighlightedSpans(
+      context,
+      widget.text,
+      widget.searchQuery!,
+    );
+
+    return RichText(
+      maxLines: maxLines,
+      overflow: maxLines != null ? TextOverflow.ellipsis : TextOverflow.visible,
+      text: TextSpan(children: spans),
+    );
+  }
+
+  /// 检查查询是否匹配文本
+  bool _isQueryMatch(String text, String query) {
+    return text.toLowerCase().contains(query.toLowerCase());
+  }
+
+  /// 构建高亮文本片段
+  List<TextSpan> _buildHighlightedSpans(
+    BuildContext context,
+    String text,
+    String query,
+  ) {
+    final spans = <TextSpan>[];
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+
+    var start = 0;
+    var index = lowerText.indexOf(lowerQuery);
+
+    while (index != -1) {
+      // 添加匹配前的普通文本
+      if (index > start) {
+        spans.add(
+          TextSpan(
+            text: text.substring(start, index),
+            style: widget.style,
+          ),
+        );
+      }
+
+      // 添加高亮的匹配文本
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style:
+              widget.style?.copyWith(
+                backgroundColor: Colors.yellow.withAlpha(100),
+                fontWeight: FontWeight.bold,
+              ) ??
+              TextStyle(
+                backgroundColor: Colors.yellow.withOpacity(0.3),
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+      );
+
+      start = index + query.length;
+      index = lowerText.indexOf(lowerQuery, start);
+    }
+
+    // 添加剩余的普通文本
+    if (start < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(start),
+          style: widget.style,
+        ),
+      );
+    }
+
+    return spans;
   }
 }

@@ -177,7 +177,15 @@ class ClipboardService {
           'Detected file type from platform: ${clipboardInfo['subType']}',
           tag: 'clipboard',
         );
-        unawaited(_processFileClipboard(clipboardInfo));
+        await _processFileClipboard(clipboardInfo);
+        hasChange = true;
+        _adjustPollingInterval(hasChange);
+        return;
+      }
+
+      // 检查RTF和HTML剪贴板内容
+      final richTextResult = await _checkRichTextClipboard();
+      if (richTextResult) {
         hasChange = true;
         _adjustPollingInterval(hasChange);
         return;
@@ -402,20 +410,94 @@ class ClipboardService {
       return ClipType.color;
     }
 
-    // 检测HTML
-    if (content.contains('<html>') ||
-        content.contains('<div>') ||
-        content.contains('<p>')) {
+    // 检测HTML（更全面的检测）
+    if (_isHtmlContent(content)) {
       return ClipType.html;
     }
 
-    // 检测富文本
-    if (content.contains(r'\rtf') || content.contains(r'\fonttbl')) {
+    // 检测富文本（RTF）
+    if (_isRtfContent(content)) {
       return ClipType.rtf;
+    }
+
+    // 检测视频文件路径
+    if (_isVideoFilePath(content)) {
+      return ClipType.video;
     }
 
     // 默认为纯文本
     return ClipType.text;
+  }
+
+  /// 检测是否为HTML内容
+  bool _isHtmlContent(String content) {
+    final trimmed = content.trim().toLowerCase();
+
+    // 检查HTML标签
+    if (trimmed.startsWith('<!doctype html') ||
+        trimmed.startsWith('<html') ||
+        trimmed.contains('<head>') ||
+        trimmed.contains('<body>') ||
+        trimmed.contains('<div') ||
+        trimmed.contains('<p>') ||
+        trimmed.contains('<span') ||
+        trimmed.contains('<a href') ||
+        trimmed.contains('<img')) {
+      return true;
+    }
+
+    // 检查HTML实体
+    if (content.contains('&lt;') ||
+        content.contains('&gt;') ||
+        content.contains('&amp;') ||
+        content.contains('&quot;') ||
+        content.contains('&#')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// 检测是否为RTF内容
+  bool _isRtfContent(String content) {
+    final trimmed = content.trim();
+
+    // 检查RTF标识符
+    if (trimmed.startsWith(r'{\rtf') ||
+        content.contains(r'\fonttbl') ||
+        content.contains(r'\colortbl') ||
+        content.contains(r'\viewkind') ||
+        content.contains(r'\uc1\pard')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// 检测是否为视频文件路径
+  bool _isVideoFilePath(String content) {
+    final trimmed = content.trim();
+    if (!trimmed.contains('/') && !trimmed.contains(r'\')) {
+      return false;
+    }
+
+    final videoExtensions = [
+      '.mp4',
+      '.avi',
+      '.mov',
+      '.wmv',
+      '.flv',
+      '.webm',
+      '.mkv',
+      '.m4v',
+      '.3gp',
+      '.ts',
+      '.mts',
+      '.m2ts',
+    ];
+
+    final lowerContent = trimmed.toLowerCase();
+    return videoExtensions.any(lowerContent.endsWith);
   }
 
   Future<Map<String, dynamic>> _extractMetadata(
@@ -563,11 +645,13 @@ class ClipboardService {
         switch (subType) {
           case 'image':
             clipType = ClipType.image;
-          case 'document':
-            clipType = ClipType.file;
           case 'video':
+            clipType = ClipType.video;
           case 'audio':
-            clipType = ClipType.file;
+            clipType = ClipType.audio;
+          case 'document':
+          case 'code':
+          case 'archive':
           default:
             clipType = ClipType.file;
         }
@@ -623,6 +707,107 @@ class ClipboardService {
     } on Exception catch (e) {
       unawaited(
         Log.e('Error processing file clipboard', tag: 'clipboard', error: e),
+      );
+    }
+  }
+
+  /// 检查富文本剪贴板内容（RTF、HTML）
+  Future<bool> _checkRichTextClipboard() async {
+    try {
+      // 检查RTF剪贴板
+      final rtfData = await _getRichTextData('rtf');
+      if (rtfData != null && rtfData.isNotEmpty) {
+        unawaited(
+          Log.d(
+            'Found RTF content: ${rtfData.length} chars',
+            tag: 'clipboard',
+          ),
+        );
+        await _processRichTextContent(rtfData, ClipType.rtf);
+        return true;
+      }
+
+      // 检查HTML剪贴板
+      final htmlData = await _getRichTextData('html');
+      if (htmlData != null && htmlData.isNotEmpty) {
+        unawaited(
+          Log.d(
+            'Found HTML content: ${htmlData.length} chars',
+            tag: 'clipboard',
+          ),
+        );
+        await _processRichTextContent(htmlData, ClipType.html);
+        return true;
+      }
+
+      return false;
+    } on Exception catch (e) {
+      unawaited(
+        Log.w(
+          'Error checking rich text clipboard',
+          tag: 'clipboard',
+          error: e,
+        ),
+      );
+      return false;
+    }
+  }
+
+  /// 获取富文本数据
+  Future<String?> _getRichTextData(String type) async {
+    try {
+      final result = await _platformChannel.invokeMethod<String>(
+        'getRichTextData',
+        {'type': type},
+      );
+      return result;
+    } on Exception {
+      unawaited(Log.d('No $type data available', tag: 'clipboard'));
+      return null;
+    }
+  }
+
+  /// 处理富文本内容
+  Future<void> _processRichTextContent(String content, ClipType type) async {
+    try {
+      // 计算内容哈希
+      final contentHash = await _calculateContentHash(content);
+
+      // 检查缓存
+      if (_contentCache.containsKey(contentHash)) {
+        final cachedItem = _contentCache[contentHash]!;
+        final updatedItem = cachedItem.copyWith(updatedAt: DateTime.now());
+        _clipboardController.add(updatedItem);
+        _cacheTimestamps[contentHash] = DateTime.now();
+        return;
+      }
+
+      // 创建剪贴板项目
+      final clipItem = ClipItem(
+        type: type,
+        content: content,
+        metadata: await _extractMetadata(content, type),
+      );
+
+      // 添加到缓存
+      _contentCache[contentHash] = clipItem;
+      _cacheTimestamps[contentHash] = DateTime.now();
+
+      // 清理过期缓存
+      _cleanExpiredCache();
+      _limitCacheSize();
+
+      // 发送到流
+      _clipboardController.add(clipItem);
+      unawaited(
+        Log.d(
+          'Rich text clip item created: $type',
+          tag: 'clipboard',
+        ),
+      );
+    } on Exception catch (e) {
+      unawaited(
+        Log.e('Error processing rich text content', tag: 'clipboard', error: e),
       );
     }
   }
