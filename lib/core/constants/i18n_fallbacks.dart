@@ -21,6 +21,9 @@ class I18nFallbacks {
 
   /// 性能监控文案回退
   static const performance = _PerformanceFallback();
+
+  /// 存储管理文案回退
+  static const storage = _StorageFallback();
 }
 
 class _CommonFallback {
@@ -255,6 +258,119 @@ class _SettingsFallback {
 
   /// 显示模式说明：预览
   String get displayPreviewDesc => '大卡片形式，突出内容预览';
+
+  /// 分组：存储管理
+  String get sectionStorage => '存储管理';
+
+  /// 存储：数据库文件 标题
+  String get storageDataBaseTitle => '数据库文件';
+
+  /// 存储：数据库文件 副标题
+  String get storageDataBaseSubtitle => '在Finder中显示剪贴板数据库文件';
+
+  /// 存储：图片文件 标题
+  String get storageImageTitle => '图片文件';
+
+  /// 存储：图片文件 副标题
+  String get storageImageSubtitle => '在Finder中显示保存的图片文件夹';
+
+  /// 存储：文件存储 标题
+  String get storageFileTitle => '文件存储';
+
+  /// 存储：文件存储 副标题
+  String get storageFileSubtitle => '在Finder中显示保存的文件夹';
+
+  /// 存储：应用数据 标题
+  String get storageAppDataTitle => '应用数据';
+
+  /// 存储：应用数据 副标题
+  String get storageAppDataSubtitle => '在Finder中显示应用数据目录';
+
+  /// 存储：日志文件 标题
+  String get storageLogTitle => '日志文件';
+
+  /// 存储：日志文件 副标题
+  String get storageLogSubtitle => '在Finder中显示应用日志文件夹';
+
+  /// 存储管理错误消息
+  String get storageErrorCannotShow => '无法在Finder中显示';
+
+  /// 存储管理错误消息：打开Finder时出错
+  String storageErrorOpenFinder(String error) => '打开Finder时出错: $error';
+
+  /// 存储管理错误消息：数据库文件
+  String get storageErrorDatabase => '无法在Finder中显示数据库文件';
+
+  /// 存储管理错误消息：图片文件夹
+  String get storageErrorImage => '无法在Finder中显示图片文件夹';
+
+  /// 存储管理错误消息：文件夹
+  String get storageErrorFile => '无法在Finder中显示文件夹';
+
+  /// 存储管理错误消息：应用数据目录
+  String get storageErrorAppData => '无法在Finder中显示应用数据目录';
+
+  /// 存储管理错误消息：日志文件夹
+  String get storageErrorLog => '无法在Finder中显示日志文件夹';
+}
+
+class _StorageFallback {
+  /// 存储管理文案
+  const _StorageFallback();
+
+  /// 分组标题：存储管理
+  String get sectionTitle => '存储管理';
+
+  /// 数据库文件
+  String get database => '数据库文件';
+
+  /// 数据库文件描述
+  String get databaseDesc => '在Finder中显示剪贴板数据库文件';
+
+  /// 图片文件
+  String get images => '图片文件';
+
+  /// 图片文件描述
+  String get imagesDesc => '在Finder中显示保存的图片文件夹';
+
+  /// 文件存储
+  String get files => '文件存储';
+
+  /// 文件存储描述
+  String get filesDesc => '在Finder中显示保存的文件夹';
+
+  /// 应用数据
+  String get appData => '应用数据';
+
+  /// 应用数据描述
+  String get appDataDesc => '在Finder中显示应用数据目录';
+
+  /// 日志文件
+  String get logs => '日志文件';
+
+  /// 日志文件描述
+  String get logsDesc => '在Finder中显示应用日志文件夹';
+
+  /// 错误消息：无法显示
+  String get errorCannotShow => '无法在Finder中显示';
+
+  /// 错误消息：打开Finder出错
+  String errorOpenFinder(String error) => '打开Finder时出错: $error';
+
+  /// 错误消息：数据库文件
+  String get errorDatabase => '无法在Finder中显示数据库文件';
+
+  /// 错误消息：图片文件夹
+  String get errorImage => '无法在Finder中显示图片文件夹';
+
+  /// 错误消息：文件夹
+  String get errorFile => '无法在Finder中显示文件夹';
+
+  /// 错误消息：应用数据目录
+  String get errorAppData => '无法在Finder中显示应用数据目录';
+
+  /// 错误消息：日志文件夹
+  String get errorLog => '无法在Finder中显示日志文件夹';
 }
 
 class _FilterFallback {
