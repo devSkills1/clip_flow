@@ -4,6 +4,7 @@ import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/encryption_service.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
@@ -32,6 +33,13 @@ void main() async {
 
   // 初始化系统托盘 (暂时注释，需要添加图标文件)
   // await trayManager.setIcon('assets/icons/tray_icon.png');
+
+  // 初始化日志系统
+  await Log.init(
+    LoggerConfig(
+      enableFile: true,
+    ),
+  );
 
   // 初始化服务
   await DatabaseService.instance.initialize();

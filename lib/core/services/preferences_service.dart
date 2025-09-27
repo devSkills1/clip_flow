@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,9 +45,11 @@ class PreferencesService {
     try {
       final jsonString = jsonEncode(preferences.toJson());
       return await _prefs!.setString(_userPreferencesKey, jsonString);
-    } on Exception catch (_) {
+    } on Exception catch (e) {
       // 记录错误但不抛出异常
-      // TODO(dev): 使用日志框架替代 print
+      unawaited(
+        Log.e('Failed to save preferences', tag: 'preferences', error: e),
+      );
       return false;
     }
   }
@@ -65,9 +69,11 @@ class PreferencesService {
 
       final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
       return UserPreferences.fromJson(jsonMap);
-    } on Exception catch (_) {
+    } on Exception catch (e) {
       // 如果解析失败，返回默认设置
-      // TODO(dev): 使用日志框架替代 print
+      unawaited(
+        Log.e('Failed to load preferences', tag: 'preferences', error: e),
+      );
       return UserPreferences();
     }
   }
@@ -81,8 +87,11 @@ class PreferencesService {
 
     try {
       return await _prefs!.remove(_userPreferencesKey);
-    } on Exception catch (_) {
-      // TODO(dev): 使用日志框架替代 print
+    } on Exception catch (e) {
+      // 记录错误但不抛出异常
+      unawaited(
+        Log.e('Failed to clear preferences', tag: 'preferences', error: e),
+      );
       return false;
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -259,8 +260,13 @@ class PerformanceService {
     }
 
     // 如果有性能问题，记录日志
-    if (issues.isNotEmpty && kDebugMode) {
-      debugPrint('${I18nFallbacks.performance.alert}: ${issues.join(', ')}');
+    if (issues.isNotEmpty) {
+      unawaited(
+        Log.w(
+          '${I18nFallbacks.performance.alert}: ${issues.join(', ')}',
+          tag: 'performance',
+        ),
+      );
       _lastWarningTime = now;
     }
   }

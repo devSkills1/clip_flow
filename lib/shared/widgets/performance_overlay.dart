@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs
 import 'dart:async';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/performance_service.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:flutter/material.dart';
@@ -118,16 +119,28 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
             });
           }
         },
-        onError: (error) {
+        onError: (Object error) {
           if (mounted) {
-            debugPrint('${I18nFallbacks.performance.streamError}: $error');
+            unawaited(
+              Log.e(
+                I18nFallbacks.performance.streamError,
+                tag: 'performance',
+                error: error,
+              ),
+            );
             // 降级到基础监控模式
             _fallbackToBasicMonitoring();
           }
         },
       );
     } on Exception catch (e) {
-      debugPrint('${I18nFallbacks.performance.startFailed}: $e');
+      unawaited(
+        Log.e(
+          I18nFallbacks.performance.startFailed,
+          tag: 'performance',
+          error: e,
+        ),
+      );
       _fallbackToBasicMonitoring();
     }
   }
@@ -357,7 +370,9 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
                         );
                       }
                     } on Exception catch (e) {
-                      debugPrint('重置性能指标失败: $e');
+                      unawaited(
+                        Log.e('重置性能指标失败', tag: 'performance', error: e),
+                      );
                     }
                   },
                   child: Container(

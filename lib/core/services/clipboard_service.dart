@@ -5,6 +5,7 @@ import 'dart:isolate';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
@@ -169,7 +170,20 @@ class ClipboardService {
         return;
       }
 
-      // 1) 先取文本，若是“存在的文件路径且扩展名非图片”，优先当作文件处理
+      // 首先检查平台剪贴板类型
+      final clipboardInfo = await _getClipboardType();
+      if (clipboardInfo != null && clipboardInfo['type'] == 'file') {
+        Log.d(
+          'Detected file type from platform: ${clipboardInfo['subType']}',
+          tag: 'clipboard',
+        );
+        unawaited(_processFileClipboard(clipboardInfo));
+        hasChange = true;
+        _adjustPollingInterval(hasChange);
+        return;
+      }
+
+      // 1) 先取文本，若是"存在的文件路径且扩展名非图片"，优先当作文件处理
       final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
       final currentContent = clipboardData?.text ?? '';
 
@@ -230,20 +244,31 @@ class ClipboardService {
         }
       }
 
-      // 2) 若上述未触发（不是“非图片文件”情形），再检查剪贴板图片
+      // 2) 若上述未触发（不是"非图片文件"情形），再检查剪贴板图片
       if (!hasChange) {
+        unawaited(Log.d('Checking for clipboard image...', tag: 'clipboard'));
         final imageBytes = await _getClipboardImage();
+        unawaited(
+          Log.d(
+            'Image bytes received: ${imageBytes?.length ?? 0} bytes',
+            tag: 'clipboard',
+          ),
+        );
         if (imageBytes != null && imageBytes.isNotEmpty) {
           if (_lastImageContent == null ||
               !(await _areImageBytesEqual(imageBytes, _lastImageContent))) {
+            unawaited(Log.d('Processing new image content', tag: 'clipboard'));
             _lastImageContent = imageBytes;
             // 重置哈希缓存，因为图片已更新
             _lastImageHash = null;
             await _processImageContent(imageBytes);
             hasChange = true;
+          } else {
+            unawaited(Log.d('Image content unchanged', tag: 'clipboard'));
           }
         } else if (_lastImageContent != null) {
           // 剪贴板中没有图片了，清除缓存
+          unawaited(Log.d('Clearing image cache', tag: 'clipboard'));
           _lastImageContent = null;
           _lastImageHash = null;
         }
@@ -447,12 +472,158 @@ class ClipboardService {
 
   Future<Uint8List?> _getClipboardImage() async {
     try {
+      unawaited(
+        Log.d(
+          'Calling platform method getClipboardImage',
+          tag: 'clipboard',
+        ),
+      );
       final result = await _platformChannel.invokeMethod<Uint8List>(
         'getClipboardImage',
       );
+      unawaited(
+        Log.d(
+          'Platform method returned: ${result?.length ?? 0} bytes',
+          tag: 'clipboard',
+        ),
+      );
       return result;
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      unawaited(
+        Log.e('Error getting clipboard image', tag: 'clipboard', error: e),
+      );
       return null;
+    }
+  }
+
+  /// 获取剪贴板类型信息
+  Future<Map<String, dynamic>?> _getClipboardType() async {
+    try {
+      final result = await _platformChannel.invokeMethod<Map<Object?, Object?>>(
+        'getClipboardType',
+      );
+      if (result != null) {
+        // 将Map<Object?, Object?>转换为Map<String, dynamic>
+        return result.map((key, value) => MapEntry(key.toString(), value));
+      }
+      return null;
+    } on Exception catch (e) {
+      unawaited(
+        Log.e('Error getting clipboard type', tag: 'clipboard', error: e),
+      );
+      return null;
+    }
+  }
+
+  /// 处理文件类型剪贴板
+  Future<void> _processFileClipboard(Map<String, dynamic> clipboardInfo) async {
+    try {
+      final content = clipboardInfo['content'];
+      final primaryPath = clipboardInfo['primaryPath'];
+      final subType = clipboardInfo['subType'] ?? 'file';
+
+      unawaited(
+        Log.d(
+          'Processing file clipboard: type=$subType, path=$primaryPath',
+          tag: 'clipboard',
+        ),
+      );
+
+      if (content is List && content.isNotEmpty) {
+        final filePaths = content.cast<String>();
+        final firstPath = filePaths.first;
+
+        // 验证文件是否存在
+        final file = File(firstPath);
+        if (!file.existsSync()) {
+          unawaited(Log.w('File does not exist: $firstPath', tag: 'clipboard'));
+          return;
+        }
+
+        // 计算内容哈希（使用文件路径和修改时间）
+        final stat = file.statSync();
+        final contentKey =
+            '$firstPath:${stat.modified.millisecondsSinceEpoch}:${stat.size}';
+        final contentHash = await _calculateContentHash(contentKey);
+
+        // 检查缓存
+        if (_contentCache.containsKey(contentHash)) {
+          unawaited(Log.d('Found cached file item', tag: 'clipboard'));
+          final cachedItem = _contentCache[contentHash]!;
+          final updatedItem = cachedItem.copyWith(updatedAt: DateTime.now());
+          _clipboardController.add(updatedItem);
+          _cacheTimestamps[contentHash] = DateTime.now();
+          return;
+        }
+
+        unawaited(Log.d('Creating new file item', tag: 'clipboard'));
+
+        // 确定剪贴板项目类型
+        final ClipType clipType;
+        switch (subType) {
+          case 'image':
+            clipType = ClipType.image;
+          case 'document':
+            clipType = ClipType.file;
+          case 'video':
+          case 'audio':
+            clipType = ClipType.file;
+          default:
+            clipType = ClipType.file;
+        }
+
+        // 生成缩略图（仅对图片）
+        Uint8List? thumbnail;
+        if (subType == 'image') {
+          try {
+            final imageBytes = await file.readAsBytes();
+            thumbnail = await ImageUtils.generateThumbnail(imageBytes);
+          } on Exception catch (e) {
+            unawaited(
+              Log.w(
+                'Failed to generate thumbnail for image file',
+                tag: 'clipboard',
+                error: e,
+              ),
+            );
+          }
+        }
+
+        // 创建剪贴板项目
+        final clipItem = ClipItem(
+          type: clipType,
+          content: firstPath,
+          filePath: firstPath,
+          thumbnail: thumbnail,
+          metadata: <String, dynamic>{
+            'fileType': subType,
+            'fileName': file.uri.pathSegments.last,
+            'fileSize': stat.size,
+            'fileCount': filePaths.length,
+            if (filePaths.length > 1) 'allPaths': filePaths,
+          },
+        );
+
+        // 添加到缓存
+        _contentCache[contentHash] = clipItem;
+        _cacheTimestamps[contentHash] = DateTime.now();
+
+        // 清理过期缓存
+        _cleanExpiredCache();
+        _limitCacheSize();
+
+        // 发送到流
+        _clipboardController.add(clipItem);
+        unawaited(
+          Log.d('File clip item created and sent to stream', tag: 'clipboard'),
+        );
+      } else {
+        unawaited(Log.w('Invalid file clipboard content', tag: 'clipboard'));
+      }
+    } on Exception catch (e) {
+      unawaited(
+        Log.e('Error processing file clipboard', tag: 'clipboard', error: e),
+      );
     }
   }
 
@@ -511,11 +682,20 @@ class ClipboardService {
 
   Future<void> _processImageContent(Uint8List imageBytes) async {
     try {
+      unawaited(
+        Log.d(
+          'Processing image content, size: ${imageBytes.length} bytes',
+          tag: 'clipboard',
+        ),
+      );
+
       // 对于图片，使用已计算的哈希值作为缓存键
       final imageHash = _lastImageHash ?? await _calculateImageHash(imageBytes);
+      unawaited(Log.d('Image hash: $imageHash', tag: 'clipboard'));
 
       // 检查缓存
       if (_contentCache.containsKey(imageHash)) {
+        unawaited(Log.d('Found cached image item', tag: 'clipboard'));
         final cachedItem = _contentCache[imageHash]!;
         // 更新时间戳并发送缓存的项目
         final updatedItem = cachedItem.copyWith(updatedAt: DateTime.now());
@@ -523,6 +703,8 @@ class ClipboardService {
         _cacheTimestamps[imageHash] = DateTime.now();
         return;
       }
+
+      unawaited(Log.d('Creating new image item', tag: 'clipboard'));
 
       // 生成缩略图
       final thumb = await ImageUtils.generateThumbnail(imageBytes);
@@ -533,6 +715,8 @@ class ClipboardService {
         type: 'image',
         suggestedExt: _inferImageExtension(imageBytes),
       );
+
+      unawaited(Log.d('Image saved to: $relativePath', tag: 'clipboard'));
 
       // 创建图片剪贴板项目（content 为空，使用 filePath + thumbnail）
       final clipItem = ClipItem(
@@ -552,7 +736,14 @@ class ClipboardService {
 
       // 发送到流
       _clipboardController.add(clipItem);
-    } on Exception catch (_) {
+
+      unawaited(
+        Log.d('Image clip item created and sent to stream', tag: 'clipboard'),
+      );
+    } on Exception catch (e) {
+      unawaited(
+        Log.e('Error processing image content', tag: 'clipboard', error: e),
+      );
       // 处理错误
     }
   }

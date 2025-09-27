@@ -1,7 +1,10 @@
 // ignore_for_file: public_member_api_docs
+import 'dart:async';
+
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/preferences_service.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
@@ -305,9 +308,11 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     try {
       final loadedPreferences = await _preferencesService.loadPreferences();
       state = loadedPreferences;
-    } on Exception catch (_) {
+    } on Exception catch (e) {
       // 如果加载失败，保持默认设置
-      // TODO: 使用日志框架记录错误
+      unawaited(
+        Log.e('Failed to load user preferences', tag: 'providers', error: e),
+      );
     }
   }
 
@@ -315,8 +320,10 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   Future<void> _savePreferences() async {
     try {
       await _preferencesService.savePreferences(state);
-    } on Exception catch (_) {
-      // TODO: 使用日志框架记录错误
+    } on Exception catch (e) {
+      unawaited(
+        Log.e('Failed to save user preferences', tag: 'providers', error: e),
+      );
     }
   }
 
