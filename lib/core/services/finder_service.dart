@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -64,9 +65,19 @@ class FinderService {
   Future<bool> showDatabaseInFinder() async {
     try {
       final documentsDirectory = await getApplicationDocumentsDirectory();
-      final databasePath = join(documentsDirectory.path, 'clipboard.db');
+      final databasePath = join(
+        documentsDirectory.path,
+        ClipConstants.databaseName,
+      );
 
-      return await showInFinder(databasePath);
+      // 检查数据库文件是否存在
+      final databaseFile = File(databasePath);
+      if (await databaseFile.exists()) {
+        return await showInFinder(databasePath);
+      } else {
+        // 如果数据库文件不存在，显示文档目录
+        return await showInFinder(documentsDirectory.path);
+      }
     } on Exception catch (e) {
       Log.e('Failed to show database in Finder: $e');
       return false;
@@ -96,7 +107,7 @@ class FinderService {
 
       // 如果媒体目录不存在，显示应用文档目录
       final mediaDirectory = Directory(mediaPath);
-      if (!mediaDirectory.existsSync()) {
+      if (!await mediaDirectory.exists()) {
         return await showAppDocumentsInFinder();
       }
 
@@ -117,7 +128,7 @@ class FinderService {
 
       // 如果图片目录不存在，显示媒体目录
       final imageDirectory = Directory(imagePath);
-      if (!imageDirectory.existsSync()) {
+      if (!await imageDirectory.exists()) {
         return await showMediaDirectoryInFinder();
       }
 
@@ -138,7 +149,7 @@ class FinderService {
 
       // 如果文件目录不存在，显示媒体目录
       final fileDirectory = Directory(filePath);
-      if (!fileDirectory.existsSync()) {
+      if (!await fileDirectory.exists()) {
         return await showMediaDirectoryInFinder();
       }
 
@@ -159,7 +170,7 @@ class FinderService {
 
       // 如果日志目录不存在，显示应用文档目录
       final logDirectory = Directory(logPath);
-      if (!logDirectory.existsSync()) {
+      if (!await logDirectory.exists()) {
         return await showAppDocumentsInFinder();
       }
 
@@ -175,7 +186,7 @@ class FinderService {
   /// 返回数据库文件的完整路径
   Future<String> getDatabasePath() async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
-    return join(documentsDirectory.path, 'clipboard.db');
+    return join(documentsDirectory.path, ClipConstants.databaseName);
   }
 
   /// 获取应用文档目录路径
