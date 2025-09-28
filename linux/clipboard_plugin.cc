@@ -207,8 +207,22 @@ static void get_clipboard_type(FlMethodCall* method_call) {
   
   g_autoptr(FlValue) result_map = fl_value_new_map();
   
-  // 检查文件类型 (text/uri-list)
-  if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/uri-list", FALSE))) {
+  // 优先检查 RTF 格式 (最高优先级)
+  if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/rtf", FALSE))) {
+    fl_value_set_string_take(result_map, "type", fl_value_new_string("text"));
+    fl_value_set_string_take(result_map, "subType", fl_value_new_string("rtf"));
+    fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
+    fl_value_set_string_take(result_map, "priority", fl_value_new_int(1));
+  }
+  // 检查 HTML 格式 (第二优先级)
+  else if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/html", FALSE))) {
+    fl_value_set_string_take(result_map, "type", fl_value_new_string("text"));
+    fl_value_set_string_take(result_map, "subType", fl_value_new_string("html"));
+    fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
+    fl_value_set_string_take(result_map, "priority", fl_value_new_int(2));
+  }
+  // 检查文件类型 (第三优先级) (text/uri-list)
+  else if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/uri-list", FALSE))) {
     gchar* uris_text = gtk_clipboard_wait_for_text(clipboard);
     if (uris_text != nullptr) {
       std::string uris_str(uris_text);
@@ -236,23 +250,25 @@ static void get_clipboard_type(FlMethodCall* method_call) {
         fl_value_set_string_take(result_map, "subType", fl_value_new_string(file_type.c_str()));
         fl_value_set_string_take(result_map, "content", paths_list);
         fl_value_set_string_take(result_map, "primaryPath", fl_value_new_string(first_path.c_str()));
+        fl_value_set_string_take(result_map, "priority", fl_value_new_int(3));
       }
       
       g_free(uris_text);
     }
   }
-  // 检查图片类型
+  // 检查图片类型 (第四优先级)
   else if (gtk_clipboard_wait_is_image_available(clipboard)) {
     GdkPixbuf* pixbuf = gtk_clipboard_wait_for_image(clipboard);
     if (pixbuf != nullptr) {
       fl_value_set_string_take(result_map, "type", fl_value_new_string("image"));
       fl_value_set_string_take(result_map, "subType", fl_value_new_string("pixbuf"));
       fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
+      fl_value_set_string_take(result_map, "priority", fl_value_new_int(4));
       
       g_object_unref(pixbuf);
     }
   }
-  // 检查文本类型
+  // 检查文本类型 (最低优先级)
   else if (gtk_clipboard_wait_is_text_available(clipboard)) {
     gchar* text = gtk_clipboard_wait_for_text(clipboard);
     if (text != nullptr) {
@@ -263,25 +279,15 @@ static void get_clipboard_type(FlMethodCall* method_call) {
       fl_value_set_string_take(result_map, "subType", fl_value_new_string(text_type.c_str()));
       fl_value_set_string_take(result_map, "content", fl_value_new_string(text));
       fl_value_set_string_take(result_map, "length", fl_value_new_int(text_str.length()));
+      fl_value_set_string_take(result_map, "priority", fl_value_new_int(5));
       
       g_free(text);
     }
   }
-  // 检查 RTF 格式
-  else if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/rtf", FALSE))) {
-    fl_value_set_string_take(result_map, "type", fl_value_new_string("text"));
-    fl_value_set_string_take(result_map, "subType", fl_value_new_string("rtf"));
-    fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
-  }
-  // 检查 HTML 格式
-  else if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/html", FALSE))) {
-    fl_value_set_string_take(result_map, "type", fl_value_new_string("text"));
-    fl_value_set_string_take(result_map, "subType", fl_value_new_string("html"));
-    fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
-  }
   else {
     // 未知类型
     fl_value_set_string_take(result_map, "type", fl_value_new_string("unknown"));
+    fl_value_set_string_take(result_map, "priority", fl_value_new_int(99));
   }
   
   fl_method_call_respond_success(method_call, result_map, nullptr);

@@ -167,9 +167,9 @@ class ClipConstants {
   static const String hslaColorPattern =
       r'^hsla\(\s*(360|3[0-5]\d|[0-2]?\d\d?)\s*,\s*(100%|\d{1,2}%)\s*,\s*(100%|\d{1,2}%)\s*,\s*(0|1|0\.\d+|1\.0)\s*\)$';
 
-  /// URL 格式（http/https，支持端口）
+  /// URL 格式（http/https，支持端口、localhost和IP地址）
   static const String urlPattern =
-      r'https?:\/\/(www\.)?[-\w@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{2,}\b([-\w()@:%_\+.~#?&//=]*(:\d{1,5})?)';
+      r'https?:\/\/(www\.)?[-\w@:%._\+~#=]{1,256}(\.[a-zA-Z0-9()]{2,}|:\d{1,5})\b([-\w()@:%_\+.~#?&//=]*)?';
 
   /// 邮箱地址格式
   static const String emailPattern =

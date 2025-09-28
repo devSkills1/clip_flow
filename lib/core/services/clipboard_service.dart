@@ -173,9 +173,11 @@ class ClipboardService {
       // 首先检查平台剪贴板类型
       final clipboardInfo = await _getClipboardType();
       if (clipboardInfo != null && clipboardInfo['type'] == 'file') {
-        Log.d(
-          'Detected file type from platform: ${clipboardInfo['subType']}',
-          tag: 'clipboard',
+        unawaited(
+          Log.d(
+            'Detected file type from platform: ${clipboardInfo['subType']}',
+            tag: 'clipboard',
+          ),
         );
         await _processFileClipboard(clipboardInfo);
         hasChange = true;
@@ -367,9 +369,9 @@ class ClipboardService {
 
   Future<void> _processClipboardContent(String content) async {
     try {
-      // 验证内容是否有效（非空且不只是空白字符）
+      // 验证内容是否有效（非空且不只白字符）
       if (content.trim().isEmpty) {
-        Log.d('Skipping empty content', tag: 'clipboard');
+        unawaited(Log.d('Skipping empty content', tag: 'clipboard'));
         return;
       }
 
@@ -389,7 +391,7 @@ class ClipboardService {
       // 检测内容类型
       final clipType = _detectContentType(content);
 
-      // 创建剪贴板项目
+      // 创建剪贴板项目（保持内容为原始纯文本）
       final clipItem = ClipItem(
         type: clipType,
         content: content,
@@ -412,33 +414,75 @@ class ClipboardService {
   }
 
   ClipType _detectContentType(String content) {
-    Log.d(
-      'Detecting content type for: ${content.length > 50 ? "${content.substring(0, 50)}..." : content}',
-      tag: 'clipboard',
+    unawaited(
+      Log.d(
+        'Detecting content type for: '
+        '${content.length > 50 ? "${content.substring(0, 50)}..." : content}',
+        tag: 'clipboard',
+      ),
     );
 
-    // 检测颜色值 - 提高优先级
-    if (ColorUtils.isColorValue(content)) {
+    final trimmed = content.trim();
+
+    // 空内容检查
+    if (trimmed.isEmpty) {
+      Log.d('Detected as empty text', tag: 'clipboard');
+      return ClipType.text;
+    }
+
+    // 1. 检测颜色值 - 最高优先级（精确匹配）
+    if (_isColorValue(trimmed)) {
       Log.d('Detected as color: $content', tag: 'clipboard');
       return ClipType.color;
     }
 
-    // 检测HTML（更全面的检测）
-    if (_isHtmlContent(content)) {
-      Log.d('Detected as HTML content', tag: 'clipboard');
-      return ClipType.html;
-    }
-
-    // 检测富文本（RTF）
-    if (_isRtfContent(content)) {
+    // 2. 检测富文本（RTF）- 第二优先级
+    if (_isRtfContent(trimmed)) {
       Log.d('Detected as RTF content', tag: 'clipboard');
       return ClipType.rtf;
     }
 
-    // 检测视频文件路径
-    if (_isVideoFilePath(content)) {
-      Log.d('Detected as video file path', tag: 'clipboard');
-      return ClipType.video;
+    // 3. 检测代码 - 第三优先级（在HTML之前检测，避免代码被误识别为HTML）
+    if (_isCodeContent(trimmed)) {
+      Log.d('Detected as code content', tag: 'clipboard');
+      return ClipType.code;
+    }
+
+    // 4. 检测HTML - 第四优先级（更严格的检测）
+    if (_isHtmlContent(trimmed)) {
+      Log.d('Detected as HTML content', tag: 'clipboard');
+      return ClipType.html;
+    }
+
+    // 5. 检测文件路径 - 第五优先级
+    if (_isFilePath(trimmed)) {
+      final fileType = _detectFileTypeFromPath(trimmed);
+      Log.d('Detected as $fileType file path: $trimmed', tag: 'clipboard');
+      return fileType;
+    }
+
+    // 6. 检测URL - 第六优先级
+    if (_isUrl(trimmed)) {
+      Log.d('Detected as URL: $trimmed', tag: 'clipboard');
+      return ClipType.url;
+    }
+
+    // 7. 检测邮箱 - 第七优先级
+    if (_isEmail(trimmed)) {
+      Log.d('Detected as email: $trimmed', tag: 'clipboard');
+      return ClipType.email;
+    }
+
+    // 8. 检测JSON - 第八优先级
+    if (_isJsonContent(trimmed)) {
+      Log.d('Detected as JSON content', tag: 'clipboard');
+      return ClipType.json;
+    }
+
+    // 9. 检测XML - 第九优先级
+    if (_isXmlContent(trimmed)) {
+      Log.d('Detected as XML content', tag: 'clipboard');
+      return ClipType.xml;
     }
 
     // 默认为纯文本
@@ -450,20 +494,14 @@ class ClipboardService {
   bool _isHtmlContent(String content) {
     final trimmed = content.trim().toLowerCase();
 
-    // 检查HTML标签
+    // 首先检查是否为完整的HTML文档
     if (trimmed.startsWith('<!doctype html') ||
         trimmed.startsWith('<html') ||
-        trimmed.contains('<head>') ||
-        trimmed.contains('<body>') ||
-        trimmed.contains('<div') ||
-        trimmed.contains('<p>') ||
-        trimmed.contains('<span') ||
-        trimmed.contains('<a href') ||
-        trimmed.contains('<img')) {
+        (trimmed.contains('<head>') && trimmed.contains('<body>'))) {
       return true;
     }
 
-    // 检查HTML实体
+    // 检查HTML实体（强烈表明是HTML内容）
     if (content.contains('&lt;') ||
         content.contains('&gt;') ||
         content.contains('&amp;') ||
@@ -472,7 +510,68 @@ class ClipboardService {
       return true;
     }
 
-    return false;
+    // 检查是否为HTML片段，但需要更严格的条件
+    final htmlTagCount = _countHtmlTags(trimmed);
+    final codeIndicators = _countCodeIndicators(content);
+
+    // 如果HTML标签数量多且代码特征少，才认为是HTML
+    return htmlTagCount >= 3 && codeIndicators < 2;
+  }
+
+  /// 计算HTML标签数量
+  int _countHtmlTags(String content) {
+    final htmlTags = [
+      '<div',
+      '<p>',
+      '<span',
+      '<a href',
+      '<img',
+      '<h1',
+      '<h2',
+      '<h3',
+      '<ul>',
+      '<li>',
+      '<table',
+      '<tr>',
+      '<td>',
+      '<form',
+      '<input',
+      '<button',
+      '<script',
+      '<style',
+      '<link',
+      '<meta',
+    ];
+
+    var count = 0;
+    for (final tag in htmlTags) {
+      if (content.contains(tag)) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /// 计算代码特征数量
+  int _countCodeIndicators(String content) {
+    final codeIndicators = [
+      RegExp(r'(function|def|func|fn)\s+\w+\s*\('),
+      RegExp(r'(class|struct|interface)\s+\w+'),
+      RegExp(r'(import|include|require|use)\s+'),
+      RegExp(r'(var|let|const|final|int|String|double|bool)\s+\w+'),
+      RegExp(r'(if|for|while|switch|try|catch)\s*\('),
+      RegExp(r'//.*$', multiLine: true),
+      RegExp(r'/\*.*?\*/', dotAll: true),
+      RegExp(r';\s*$', multiLine: true),
+    ];
+
+    var count = 0;
+    for (final indicator in codeIndicators) {
+      if (indicator.hasMatch(content)) {
+        count++;
+      }
+    }
+    return count;
   }
 
   /// 检测是否为RTF内容
@@ -491,30 +590,384 @@ class ClipboardService {
     return false;
   }
 
-  /// 检测是否为视频文件路径
-  bool _isVideoFilePath(String content) {
+  /// 检测是否为颜色值
+  bool _isColorValue(String content) {
+    return ColorUtils.isColorValue(content);
+  }
+
+  /// 检测是否为文件路径
+  bool _isFilePath(String content) {
     final trimmed = content.trim();
+
+    // 基本路径检查
     if (!trimmed.contains('/') && !trimmed.contains(r'\')) {
       return false;
     }
 
-    final videoExtensions = [
-      '.mp4',
-      '.avi',
-      '.mov',
-      '.wmv',
-      '.flv',
-      '.webm',
-      '.mkv',
-      '.m4v',
-      '.3gp',
-      '.ts',
-      '.mts',
-      '.m2ts',
+    // 检查是否以file://开头
+    if (trimmed.startsWith('file://')) {
+      return true;
+    }
+
+    // 检查是否包含文件扩展名
+    final lastDot = trimmed.lastIndexOf('.');
+    if (lastDot == -1 || lastDot == trimmed.length - 1) {
+      return false;
+    }
+
+    final extension = trimmed.substring(lastDot + 1).toLowerCase();
+
+    // 检查是否为常见文件扩展名
+    const commonExtensions = [
+      // 图片
+      'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif',
+      // 音频
+      'mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a', 'wma', 'aiff', 'au',
+      // 视频
+      'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', 'm4v', '3gp', 'ts',
+      // 文档
+      'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf',
+      // 代码
+      'dart', 'js', 'ts', 'html', 'css', 'json', 'xml', 'yaml', 'yml',
+      'py', 'java', 'cpp', 'c', 'h', 'swift', 'kt', 'go', 'rs', 'php',
+      // 压缩
+      'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz',
     ];
 
-    final lowerContent = trimmed.toLowerCase();
-    return videoExtensions.any(lowerContent.endsWith);
+    return commonExtensions.contains(extension);
+  }
+
+  /// 根据文件路径检测文件类型
+  ClipType _detectFileTypeFromPath(String path) {
+    final trimmed = path.trim().toLowerCase();
+    final lastDot = trimmed.lastIndexOf('.');
+
+    if (lastDot == -1) {
+      return ClipType.file;
+    }
+
+    final extension = trimmed.substring(lastDot + 1);
+
+    // 图片文件
+    const imageExtensions = [
+      'png',
+      'jpg',
+      'jpeg',
+      'gif',
+      'bmp',
+      'webp',
+      'svg',
+      'ico',
+      'tiff',
+      'tif',
+      'heic',
+      'heif',
+    ];
+    if (imageExtensions.contains(extension)) {
+      return ClipType.image;
+    }
+
+    // 音频文件
+    const audioExtensions = [
+      'mp3',
+      'wav',
+      'aac',
+      'flac',
+      'ogg',
+      'm4a',
+      'wma',
+      'aiff',
+      'au',
+    ];
+    if (audioExtensions.contains(extension)) {
+      return ClipType.audio;
+    }
+
+    // 视频文件
+    const videoExtensions = [
+      'mp4',
+      'avi',
+      'mov',
+      'wmv',
+      'flv',
+      'webm',
+      'mkv',
+      'm4v',
+      '3gp',
+      'ts',
+      'mts',
+      'm2ts',
+    ];
+    if (videoExtensions.contains(extension)) {
+      return ClipType.video;
+    }
+
+    // 默认为文件
+    return ClipType.file;
+  }
+
+  /// 检测是否为URL
+  bool _isUrl(String content) {
+    final urlRegex = RegExp(ClipConstants.urlPattern, caseSensitive: false);
+    return urlRegex.hasMatch(content.trim());
+  }
+
+  /// 检测是否为邮箱
+  bool _isEmail(String content) {
+    final emailRegex = RegExp(ClipConstants.emailPattern, caseSensitive: false);
+    return emailRegex.hasMatch(content.trim());
+  }
+
+  /// 检测是否为JSON内容
+  bool _isJsonContent(String content) {
+    final trimmed = content.trim();
+
+    // 基本格式检查
+    if ((!trimmed.startsWith('{') || !trimmed.endsWith('}')) &&
+        (!trimmed.startsWith('[') || !trimmed.endsWith(']'))) {
+      return false;
+    }
+
+    // 尝试解析JSON
+    try {
+      json.decode(trimmed);
+      return true;
+    } on FormatException {
+      return false;
+    }
+  }
+
+  /// 检测是否为XML内容
+  bool _isXmlContent(String content) {
+    final trimmed = content.trim().toLowerCase();
+
+    // 检查XML声明
+    if (trimmed.startsWith('<?xml')) {
+      return true;
+    }
+
+    // 检查基本XML标签结构，但要更严格
+    if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
+      // 检查是否包含XML命名空间或多个嵌套标签
+      final hasNamespace = RegExp(r'<\w+:\w+').hasMatch(trimmed);
+      final hasMultipleTags = RegExp(
+        r'<\w+[^>]*>.*<\w+[^>]*>',
+      ).hasMatch(trimmed);
+      final hasXmlAttributes = RegExp(r'xmlns\s*=').hasMatch(trimmed);
+
+      // 只有当内容具有明显的XML特征时才识别为XML
+      if (hasNamespace ||
+          hasXmlAttributes ||
+          (hasMultipleTags && trimmed.length > 100)) {
+        final tagPattern = RegExp(
+          r'<\s*([a-zA-Z][a-zA-Z0-9]*)\s*[^>]*>.*</\s*\1\s*>',
+          dotAll: true,
+        );
+        return tagPattern.hasMatch(trimmed);
+      }
+    }
+
+    return false;
+  }
+
+  /// 检测是否为代码内容
+  bool _isCodeContent(String content) {
+    final trimmed = content.trim();
+
+    // 检查代码特征
+    final codePatterns = [
+      // 函数定义
+      RegExp(r'(function|def|func|fn)\s+\w+\s*\('),
+      // 类定义
+      RegExp(r'(class|struct|interface)\s+\w+'),
+      // 导入语句
+      RegExp(r'(import|include|require|use)\s+'),
+      // 变量声明
+      RegExp(r'(var|let|const|final|int|String|double|bool)\s+\w+'),
+      // 控制结构
+      RegExp(r'(if|for|while|switch|try|catch)\s*\('),
+      // 注释
+      RegExp(r'(//|/\*|\*|#|<!--)'),
+      // 分号结尾
+      RegExp(r';\s*$', multiLine: true),
+      // 大括号结构
+      RegExp(r'\{\s*\n.*\n\s*\}', dotAll: true),
+    ];
+
+    var matches = 0;
+    for (final pattern in codePatterns) {
+      if (pattern.hasMatch(trimmed)) {
+        matches++;
+      }
+    }
+
+    // 如果匹配多个代码特征，认为是代码
+    return matches >= 2;
+  }
+
+  /// 估算代码语言（基于启发式规则）
+  String _estimateLanguage(String content) {
+    final text = content.trim();
+
+    // 已有 Markdown 代码块语言标记
+    final fenceLang = RegExp(r'^```\s*([a-zA-Z0-9_+#.-]+)', multiLine: true);
+    final fenceMatch = fenceLang.firstMatch(text);
+    if (fenceMatch != null) {
+      final lang = fenceMatch.group(1)?.toLowerCase() ?? 'unknown';
+      if (lang.isNotEmpty) return lang;
+    }
+
+    // Shebang 检测
+    if (text.startsWith('#!')) {
+      if (text.contains('python')) return 'python';
+      if (text.contains('bash') || text.contains('sh')) return 'shell';
+      if (text.contains('node')) return 'javascript';
+    }
+
+    // Dart
+    if (RegExp(r'void\s+main\s*\(').hasMatch(text) ||
+        RegExp(r'class\s+\w+\s+extends\s+\w+').hasMatch(text) ||
+        text.contains("import 'package:") ||
+        text.contains('@override')) {
+      return 'dart';
+    }
+
+    // TypeScript
+    if (text.contains('interface ') ||
+        RegExp(r'\benum\b').hasMatch(text) ||
+        RegExp(r'\btype\s+\w+\s*=').hasMatch(text) ||
+        RegExp(r'\bexport\s+(class|function|const|type)').hasMatch(text) &&
+            text.contains(':')) {
+      return 'typescript';
+    }
+
+    // JavaScript
+    if (text.contains('console.log') ||
+        text.contains('export default') ||
+        text.contains('import React from') ||
+        RegExp(r'function\s+\w+\s*\(').hasMatch(text) ||
+        RegExp(r'=>\s*\{?').hasMatch(text)) {
+      return 'javascript';
+    }
+
+    // Python
+    if (RegExp(r'^def\s+\w+\s*\(', multiLine: true).hasMatch(text) ||
+        RegExp(r'^class\s+\w+:', multiLine: true).hasMatch(text) ||
+        text.contains('if __name__ == "__main__"') ||
+        RegExp(r'^import\s+\w+', multiLine: true).hasMatch(text)) {
+      return 'python';
+    }
+
+    // Java
+    if (text.contains('public static void main') ||
+        text.contains('System.out.println') ||
+        RegExp(r'^package\s+\w+(\.\w+)*;').hasMatch(text) ||
+        RegExp(r'^import\s+\w+(\.\w+)*;').hasMatch(text)) {
+      return 'java';
+    }
+
+    // Kotlin
+    if (RegExp(r'^fun\s+\w+\s*\(', multiLine: true).hasMatch(text) ||
+        text.contains('data class ') ||
+        RegExp(r'\bval\b').hasMatch(text) ||
+        RegExp(r'\bvar\b').hasMatch(text)) {
+      return 'kotlin';
+    }
+
+    // Swift
+    if (text.contains('import SwiftUI') ||
+        RegExp(r'^func\s+\w+\s*\(', multiLine: true).hasMatch(text) ||
+        RegExp(r'\blet\b').hasMatch(text) ||
+        text.contains('@UIApplicationMain')) {
+      return 'swift';
+    }
+
+    // C
+    if (text.contains('#include <stdio.h>') ||
+        RegExp(r'int\s+main\s*\(').hasMatch(text) && !text.contains('std::')) {
+      return 'c';
+    }
+
+    // C++
+    if (text.contains('#include <iostream>') ||
+        text.contains('std::') ||
+        RegExp('template<').hasMatch(text)) {
+      return 'cpp';
+    }
+
+    // C#
+    if (text.contains('using System;') ||
+        text.contains('namespace ') ||
+        text.contains('Console.WriteLine')) {
+      return 'csharp';
+    }
+
+    // Go
+    if (text.contains('package main') ||
+        RegExp(r'^func\s+\w+\s*\(', multiLine: true).hasMatch(text) ||
+        text.contains('fmt.')) {
+      return 'go';
+    }
+
+    // Rust
+    if (text.contains('fn main()') ||
+        text.contains('println!') ||
+        text.contains('let mut ') ||
+        text.contains('pub ') ||
+        text.contains('use ')) {
+      return 'rust';
+    }
+
+    // PHP
+    if (text.contains('<?php') ||
+        RegExp(r'\$\w+\s*=').hasMatch(text) ||
+        text.contains('echo ')) {
+      return 'php';
+    }
+
+    // Ruby
+    if (RegExp(r'^def\s+\w+', multiLine: true).hasMatch(text) ||
+        RegExp(r'^class\s+\w+', multiLine: true).hasMatch(text) ||
+        RegExp(r'^end\s*$', multiLine: true).hasMatch(text) ||
+        text.contains('puts ')) {
+      return 'ruby';
+    }
+
+    // Shell
+    if (RegExp('^#!/bin/(bash|sh|zsh)', multiLine: true).hasMatch(text) ||
+        RegExp(r'\bif\s+\[.*\]\s*;?\s*then').hasMatch(text) ||
+        RegExp(r'\becho\b').hasMatch(text)) {
+      return 'shell';
+    }
+
+    // SQL
+    if (RegExp(
+      r'\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bCREATE\b',
+      caseSensitive: false,
+    ).hasMatch(text)) {
+      return 'sql';
+    }
+
+    // CSS
+    if (RegExp(r'\.[a-zA-Z0-9_-]+\s*\{').hasMatch(text) ||
+        RegExp(r'[a-zA-Z-]+\s*:\s*[^;]+;').hasMatch(text)) {
+      return 'css';
+    }
+
+    // HTML（若被识别为代码片段而非完整 HTML 文档）
+    if (RegExp(r'<\w+[^>]*>').hasMatch(text) &&
+        RegExp(r'</\w+>').hasMatch(text)) {
+      return 'html';
+    }
+
+    // YAML
+    if (RegExp(r'^\w[\w-]*:\s+.+', multiLine: true).hasMatch(text) ||
+        RegExp(r'^-\s+\w', multiLine: true).hasMatch(text)) {
+      return 'yaml';
+    }
+
+    // 默认
+    return 'plain';
   }
 
   Future<Map<String, dynamic>> _extractMetadata(
@@ -561,21 +1014,66 @@ class ClipboardService {
       case ClipType.text:
       case ClipType.html:
       case ClipType.rtf:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
         // 文本内容分析
         try {
           final wordCount = _calculateWordCount(content);
           final lineCount = content.split('\n').length;
           metadata['wordCount'] = wordCount;
           metadata['lineCount'] = lineCount;
-          Log.d(
-            'Text metadata: wordCount=$wordCount, lineCount=$lineCount',
-            tag: 'clipboard',
+
+          // 为特定类型添加额外元数据
+          switch (type) {
+            case ClipType.url:
+              metadata['domain'] = Uri.tryParse(content)?.host ?? '';
+              metadata['scheme'] = Uri.tryParse(content)?.scheme ?? '';
+            case ClipType.email:
+              final parts = content.split('@');
+              if (parts.length == 2) {
+                metadata['username'] = parts[0];
+                metadata['domain'] = parts[1];
+              }
+            case ClipType.json:
+              metadata['isValidJson'] = true;
+            case ClipType.xml:
+              metadata['isValidXml'] = true;
+            case ClipType.code:
+              final lang = _estimateLanguage(content);
+              metadata['estimatedLanguage'] = lang;
+              // 生成 Markdown 代码块（不用于 UI 高亮，仅用于导出/记录）
+              final trimmed = content.trim();
+              final hasFence =
+                  trimmed.startsWith('```') && trimmed.endsWith('```');
+              metadata['markdownContent'] = hasFence
+                  ? content
+                  : '```${lang == 'plain' ? '' : lang}\n$content\n```';
+            default:
+              break;
+          }
+
+          unawaited(
+            Log.d(
+              'Text metadata: wordCount=$wordCount, lineCount=$lineCount',
+              tag: 'clipboard',
+            ),
           );
-        } catch (e) {
-          Log.e('Error extracting text metadata', tag: 'clipboard', error: e);
+        } on Exception catch (e) {
+          unawaited(
+            Log.e(
+              'Error extracting text metadata',
+              tag: 'clipboard',
+              error: e,
+            ),
+          );
           metadata['wordCount'] = 0;
           metadata['lineCount'] = 1;
         }
+      default:
+        break;
     }
 
     return metadata;
@@ -618,10 +1116,15 @@ class ClipboardService {
         final converted = result.map(
           (key, value) => MapEntry(key.toString(), value),
         );
-        Log.d('Native clipboard type result: $converted', tag: 'clipboard');
+        unawaited(
+          Log.d(
+            'Native clipboard type result: $converted',
+            tag: 'clipboard',
+          ),
+        );
         return converted;
       }
-      Log.d('No clipboard type data from native', tag: 'clipboard');
+      unawaited(Log.d('No clipboard type data from native', tag: 'clipboard'));
       return null;
     } on Exception catch (e) {
       unawaited(
@@ -748,6 +1251,20 @@ class ClipboardService {
   /// 检查富文本剪贴板内容（RTF、HTML）
   Future<bool> _checkRichTextClipboard() async {
     try {
+      // 当存在富文本时，优先尝试获取纯文本并判断是否为代码
+      // 这样可以避免把 IDE/网页复制的带高亮 RTF/HTML 当作富文本存储
+      final plainData = await Clipboard.getData(Clipboard.kTextPlain);
+      final plainText = plainData?.text?.trim() ?? '';
+      if (plainText.isNotEmpty && _isCodeContent(plainText)) {
+        unawaited(
+          Log.d(
+            'Plain text looks like code, prefer text/code over RTF/HTML',
+            tag: 'clipboard',
+          ),
+        );
+        await _processClipboardContent(plainText);
+        return true;
+      }
       // 检查RTF剪贴板
       final rtfData = await _getRichTextData('rtf');
       if (rtfData != null && rtfData.isNotEmpty) {
@@ -761,9 +1278,21 @@ class ClipboardService {
         return true;
       }
 
-      // 检查HTML剪贴板
+      // 检查HTML剪贴板（增强：若HTML看起来是代码，按 Code 处理）
       final htmlData = await _getRichTextData('html');
       if (htmlData != null && htmlData.isNotEmpty) {
+        // 从 HTML 中提取可能的代码文本（如 <pre><code>…</code></pre>），并做实体解码
+        final htmlCandidate = _extractHtmlCodeCandidate(htmlData);
+        if (htmlCandidate.isNotEmpty && _isCodeContent(htmlCandidate)) {
+          unawaited(
+            Log.d(
+              'HTML rich text looks like code, store as Code (plain text)',
+              tag: 'clipboard',
+            ),
+          );
+          await _processClipboardContent(htmlCandidate);
+          return true;
+        }
         unawaited(
           Log.d(
             'Found HTML content: ${htmlData.length} chars',
@@ -784,6 +1313,58 @@ class ClipboardService {
         ),
       );
       return false;
+    }
+  }
+
+  /// 从HTML提取可能的代码候选文本：
+  /// - 优先抓取 <pre><code>…</code></pre> 或 <code>…</code> 的内容
+  /// - 其次尝试 <pre>…</pre>
+  /// - 去除标签、解码常见实体（&lt; &gt; &amp; &quot; &#39;）
+  String _extractHtmlCodeCandidate(String html) {
+    try {
+      var candidate = html;
+
+      // 匹配 <pre><code>…</code></pre>
+      final preCode = RegExp(
+        r'<pre[^>]*>\s*<code[^>]*>([\s\S]*?)</code>\s*</pre>',
+        caseSensitive: false,
+      );
+      final codeOnly = RegExp(
+        r'<code[^>]*>([\s\S]*?)</code>',
+        caseSensitive: false,
+      );
+      final preOnly = RegExp(
+        r'<pre[^>]*>([\s\S]*?)</pre>',
+        caseSensitive: false,
+      );
+
+      final m = preCode.firstMatch(html) ?? codeOnly.firstMatch(html);
+      if (m != null) {
+        candidate = m.group(1) ?? '';
+      } else {
+        final m2 = preOnly.firstMatch(html);
+        if (m2 != null) candidate = m2.group(1) ?? candidate;
+      }
+
+      // 处理换行标签，统一换行符；移除其它 HTML 标签但不插入额外空格
+      candidate = candidate.replaceAll(RegExp(r'(?i)<br\s*/?>'), '\n');
+      candidate = candidate.replaceAll(RegExp(r'\r\n?|\f'), '\n');
+      candidate = candidate.replaceAll(RegExp('<[^>]+>'), '');
+
+      // 实体解码（保留缩进与多空格/Tab，不进行全局空白折叠）
+      candidate = candidate
+          .replaceAll('&nbsp;', ' ')
+          .replaceAll('&lt;', '<')
+          .replaceAll('&gt;', '>')
+          .replaceAll('&amp;', '&')
+          .replaceAll('&quot;', '"')
+          .replaceAll('&#39;', "'");
+
+      // 不进行 trim()，以免丢失首行缩进；统一换行符后直接返回
+      return candidate;
+    } catch (_) {
+      // 解析失败则直接返回原始内容
+      return html.replaceAll(RegExp(r'\r\n?'), '\n');
     }
   }
 
@@ -998,14 +1579,17 @@ class ClipboardService {
           .length;
 
       final totalCount = chineseChars + englishWords;
-      Log.d(
-        'Word count result: $totalCount (Chinese: $chineseChars, English: $englishWords)',
-        tag: 'clipboard',
+      unawaited(
+        Log.d(
+          'Word count result: $totalCount '
+          '(Chinese: $chineseChars, English: $englishWords)',
+          tag: 'clipboard',
+        ),
       );
 
       // 返回中文字符数 + 英文单词数
       return totalCount;
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       Log.e(
         'Error calculating word count',
         tag: 'clipboard',
@@ -1090,6 +1674,11 @@ class ClipboardService {
         case ClipType.color:
         case ClipType.audio:
         case ClipType.video:
+        case ClipType.url:
+        case ClipType.email:
+        case ClipType.json:
+        case ClipType.xml:
+        case ClipType.code:
           // 文本/其他类型：按新模型使用字符串 content
           final text = item.content ?? '';
           await Clipboard.setData(ClipboardData(text: text));
@@ -1229,6 +1818,12 @@ class ClipboardService {
     // 清理缓存
     _contentCache.clear();
     _cacheTimestamps.clear();
+  }
+
+  /// 公共测试方法：检测内容类型
+  /// 用于单元测试，暴露私有的 _detectContentType 方法
+  ClipType detectContentTypeForTesting(String content) {
+    return _detectContentType(content);
   }
 }
 

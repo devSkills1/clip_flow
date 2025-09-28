@@ -104,6 +104,18 @@ class _CommonFallback {
 
   /// 剪贴板类型：HTML
   String get clipTypeHtml => 'HTML';
+
+  /// 剪贴板类型：邮箱
+  String get clipTypeEmail => '邮箱';
+
+  /// 剪贴板类型：JSON
+  String get clipTypeJson => 'JSON';
+
+  /// 剪贴板类型：XML
+  String get clipTypeXml => 'XML';
+
+  /// 剪贴板类型：代码
+  String get clipTypeCode => '代码';
 }
 
 class _HomeFallback {
@@ -394,6 +406,12 @@ class _FilterFallback {
 
   /// 类型选项：富文本
   String get typeRichText => '富文本';
+
+  /// 类型选项：RTF
+  String get typeRtf => 'RTF';
+
+  /// 类型选项：HTML
+  String get typeHtml => 'HTML';
 
   /// 类型选项：图片
   String get typeImage => '图片';

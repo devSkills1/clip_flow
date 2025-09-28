@@ -61,8 +61,22 @@ void ClipboardPlugin::GetClipboardType(
 
   flutter::EncodableMap clipboard_info;
   
-  // 检查文件类型
-  if (IsClipboardFormatAvailable(CF_HDROP)) {
+  // 优先检查 RTF 格式 (最高优先级)
+  if (IsClipboardFormatAvailable(RegisterClipboardFormatW(L"Rich Text Format"))) {
+    clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("text");
+    clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue("rtf");
+    clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
+    clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(1);
+  }
+  // 检查 HTML 格式 (第二优先级)
+  else if (IsClipboardFormatAvailable(RegisterClipboardFormatW(L"HTML Format"))) {
+    clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("text");
+    clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue("html");
+    clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
+    clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(2);
+  }
+  // 检查文件类型 (第三优先级)
+  else if (IsClipboardFormatAvailable(CF_HDROP)) {
     HANDLE hData = GetClipboardData(CF_HDROP);
     if (hData != nullptr) {
       HDROP hDrop = static_cast<HDROP>(hData);
@@ -88,11 +102,12 @@ void ClipboardPlugin::GetClipboardType(
           clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue(file_type);
           clipboard_info[flutter::EncodableValue("content")] = flutter::EncodableValue(file_paths);
           clipboard_info[flutter::EncodableValue("primaryPath")] = flutter::EncodableValue(first_path);
+          clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(3);
         }
       }
     }
   }
-  // 检查图片类型
+  // 检查图片类型 (第四优先级)
   else if (IsClipboardFormatAvailable(CF_DIB) || IsClipboardFormatAvailable(CF_BITMAP)) {
     std::string image_format = "bitmap";
     if (IsClipboardFormatAvailable(CF_DIB)) {
@@ -102,8 +117,9 @@ void ClipboardPlugin::GetClipboardType(
     clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("image");
     clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue(image_format);
     clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
+    clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(4);
   }
-  // 检查文本类型
+  // 检查文本类型 (最低优先级)
   else if (IsClipboardFormatAvailable(CF_UNICODETEXT) || IsClipboardFormatAvailable(CF_TEXT)) {
     HANDLE hData = GetClipboardData(CF_UNICODETEXT);
     if (hData != nullptr) {
@@ -117,26 +133,16 @@ void ClipboardPlugin::GetClipboardType(
         clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue(text_type);
         clipboard_info[flutter::EncodableValue("content")] = flutter::EncodableValue(text);
         clipboard_info[flutter::EncodableValue("length")] = flutter::EncodableValue(static_cast<int>(text.length()));
+        clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(5);
         
         GlobalUnlock(hData);
       }
     }
   }
-  // 检查 RTF 格式
-  else if (IsClipboardFormatAvailable(RegisterClipboardFormatW(L"Rich Text Format"))) {
-    clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("text");
-    clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue("rtf");
-    clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
-  }
-  // 检查 HTML 格式
-  else if (IsClipboardFormatAvailable(RegisterClipboardFormatW(L"HTML Format"))) {
-    clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("text");
-    clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue("html");
-    clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
-  }
   else {
     // 未知类型
     clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("unknown");
+    clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(99);
   }
 
   CloseClipboard();

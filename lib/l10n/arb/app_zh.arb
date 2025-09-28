@@ -303,6 +303,21 @@
   "clipTypeVideo": "视频",
   "@clipTypeVideo": {"description": "剪贴板类型-视频"},
 
+  "clipTypeUrl": "网址",
+  "@clipTypeUrl": {"description": "剪贴板类型-网址"},
+
+  "clipTypeEmail": "邮箱",
+  "@clipTypeEmail": {"description": "剪贴板类型-邮箱"},
+
+  "clipTypeJson": "JSON",
+  "@clipTypeJson": {"description": "剪贴板类型-JSON"},
+
+  "clipTypeXml": "XML",
+  "@clipTypeXml": {"description": "剪贴板类型-XML"},
+
+  "clipTypeCode": "代码",
+  "@clipTypeCode": {"description": "剪贴板类型-代码"},
+
   "performanceMonitor": "性能监控",
   "@performanceMonitor": {"description": "性能监控标题"},
 

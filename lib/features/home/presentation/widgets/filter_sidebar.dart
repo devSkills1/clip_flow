@@ -5,7 +5,6 @@ import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/strings.dart';
-import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -16,14 +15,14 @@ import 'package:go_router/go_router.dart';
 /// 提供筛选条件的选择和应用
 class FilterSidebar extends ConsumerWidget {
   const FilterSidebar({
-    required this.selectedType,
-    required this.onTypeSelected,
+    required this.selectedOption,
+    required this.onOptionSelected,
     required this.onDisplayModeChanged,
     required this.displayMode,
     super.key,
   });
-  final ClipType? selectedType;
-  final ValueChanged<ClipType?> onTypeSelected;
+  final FilterOption selectedOption;
+  final ValueChanged<FilterOption> onOptionSelected;
   final ValueChanged<DisplayMode> onDisplayModeChanged;
   final DisplayMode displayMode;
 
@@ -116,57 +115,78 @@ class FilterSidebar extends ConsumerWidget {
         _buildFilterItem(
           icon: Icons.text_fields,
           label: S.of(context)?.filterTypeAll ?? I18nFallbacks.filter.typeAll,
-          isSelected: selectedType == null,
-          onTap: () => onTypeSelected(null),
+          isSelected: selectedOption == FilterOption.all,
+          onTap: () => onOptionSelected(FilterOption.all),
         ),
         _buildFilterItem(
           icon: Icons.text_fields,
           label: S.of(context)?.filterTypeText ?? I18nFallbacks.filter.typeText,
-          isSelected: selectedType == ClipType.text,
-          onTap: () => onTypeSelected(ClipType.text),
+          isSelected: selectedOption == FilterOption.text,
+          onTap: () => onOptionSelected(FilterOption.text),
         ),
+        // 富文本联合筛选（RTF + HTML + Code）
         _buildFilterItem(
-          icon: Icons.description,
+          icon: Icons.text_format,
           label:
               S.of(context)?.filterTypeRichText ??
               I18nFallbacks.filter.typeRichText,
-          isSelected:
-              selectedType == ClipType.rtf || selectedType == ClipType.html,
-          onTap: () => onTypeSelected(ClipType.rtf),
+          isSelected: selectedOption == FilterOption.richTextUnion,
+          onTap: () => onOptionSelected(FilterOption.richTextUnion),
         ),
+        // // RTF 独立项
+        // _buildFilterItem(
+        //   icon: Icons.description,
+        //   label: I18nFallbacks.filter.typeRtf,
+        //   isSelected: selectedOption == FilterOption.rtf,
+        //   onTap: () => onOptionSelected(FilterOption.rtf),
+        // ),
+        // // HTML 独立项
+        // _buildFilterItem(
+        //   icon: Icons.language,
+        //   label: I18nFallbacks.filter.typeHtml,
+        //   isSelected: selectedOption == FilterOption.html,
+        //   onTap: () => onOptionSelected(FilterOption.html),
+        // ),
+        // // Code 独立项
+        // _buildFilterItem(
+        //   icon: Icons.code,
+        //   label: S.of(context)?.clipTypeCode ?? I18nFallbacks.common.clipTypeCode,
+        //   isSelected: selectedOption == FilterOption.code,
+        //   onTap: () => onOptionSelected(FilterOption.code),
+        // ),
         _buildFilterItem(
           icon: Icons.image,
           label:
               S.of(context)?.filterTypeImage ?? I18nFallbacks.filter.typeImage,
-          isSelected: selectedType == ClipType.image,
-          onTap: () => onTypeSelected(ClipType.image),
+          isSelected: selectedOption == FilterOption.image,
+          onTap: () => onOptionSelected(FilterOption.image),
         ),
         _buildFilterItem(
           icon: Icons.palette,
           label:
               S.of(context)?.filterTypeColor ?? I18nFallbacks.filter.typeColor,
-          isSelected: selectedType == ClipType.color,
-          onTap: () => onTypeSelected(ClipType.color),
+          isSelected: selectedOption == FilterOption.color,
+          onTap: () => onOptionSelected(FilterOption.color),
         ),
         _buildFilterItem(
           icon: Icons.insert_drive_file,
           label: S.of(context)?.filterTypeFile ?? I18nFallbacks.filter.typeFile,
-          isSelected: selectedType == ClipType.file,
-          onTap: () => onTypeSelected(ClipType.file),
+          isSelected: selectedOption == FilterOption.file,
+          onTap: () => onOptionSelected(FilterOption.file),
         ),
         _buildFilterItem(
           icon: Icons.audiotrack,
           label:
               S.of(context)?.filterTypeAudio ?? I18nFallbacks.filter.typeAudio,
-          isSelected: selectedType == ClipType.audio,
-          onTap: () => onTypeSelected(ClipType.audio),
+          isSelected: selectedOption == FilterOption.audio,
+          onTap: () => onOptionSelected(FilterOption.audio),
         ),
         _buildFilterItem(
           icon: Icons.videocam,
           label:
               S.of(context)?.filterTypeVideo ?? I18nFallbacks.filter.typeVideo,
-          isSelected: selectedType == ClipType.video,
-          onTap: () => onTypeSelected(ClipType.video),
+          isSelected: selectedOption == FilterOption.video,
+          onTap: () => onOptionSelected(FilterOption.video),
         ),
       ],
     );

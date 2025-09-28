@@ -303,6 +303,21 @@
   "clipTypeVideo": "Video",
   "@clipTypeVideo": {"description": "Clipboard type - video"},
 
+  "clipTypeUrl": "URL",
+  "@clipTypeUrl": {"description": "Clipboard type - URL"},
+
+  "clipTypeEmail": "Email",
+  "@clipTypeEmail": {"description": "Clipboard type - email"},
+
+  "clipTypeJson": "JSON",
+  "@clipTypeJson": {"description": "Clipboard type - JSON"},
+
+  "clipTypeXml": "XML",
+  "@clipTypeXml": {"description": "Clipboard type - XML"},
+
+  "clipTypeCode": "Code",
+  "@clipTypeCode": {"description": "Clipboard type - code"},
+
   "performanceMonitor": "Performance Monitor",
   "@performanceMonitor": {"description": "Performance monitor title"},
 

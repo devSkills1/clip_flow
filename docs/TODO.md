@@ -303,3 +303,61 @@
 *版本：v0.2.1-dev*  
 *修复耗时：约10小时*  
 *代码变更：11个文件，约500行代码*
+
+
+## 忽视内容回顾与修复计划
+
+> 记录在需求长期迭代中曾被忽视但已暴露或潜在影响较大的事项，用于后续评审与排期。
+
+### A. 空白保真与缩进保留
+- [ ] 统一“检测-存储-展示-复制”链路的空白保真策略（保留缩进/多空格/Tab）：
+  - [ ] 检测阶段：移除不必要的 trim/空白折叠；保留 `<br>`→换行，避免将多个空白合并为一个（HTML/代码）
+  - [ ] 存储阶段：确认数据库写入不做 TRIM/归一化；避免破坏原始缩进
+  - [ ] 展示阶段：文本/代码预览使用等宽字体并保留空白；支持水平滚动与软换行切换
+  - [ ] 复制阶段：复制到系统剪贴板时保留缩进/换行，避免二次折叠
+- [ ] 处理超长行溢出：提供水平滚动、软换行开关和行宽提示
+
+### B. 富文本“显示 vs 渲染”产品决策
+- [ ] 明确 HTML/RTF 的默认展示模式（纯文本 vs 渲染DOM），并给出安全策略（防 XSS/外链）
+- [ ] 复制行为策略：优先保留 RTF/HTML 原格式进行回写（不是仅纯文本）
+
+### C. 国际化一致性（i18n）
+- [ ] 补全筛选项与 UI 文案的多语言键值（如 “Rich Text”、“Code” 等），同步 zh/ en ARB
+- [ ] 为新增提示/错误信息补齐文案与语义描述
+
+### D. 联合筛选边界与分类准确性
+- [ ] 明确 “Rich Text” 联合筛选成员类型（RTF/HTML），并确认“Code”独立、不并入联合
+- [ ] 完整 HTML 文档 vs 片段 vs 简易标签的分类标准与回退策略（避免误判为富文本）
+- [ ] 调整检测器阈值，避免将简单标签（如单个 `<b>`）误判为 HTML 类型
+
+### E. 系统剪贴板格式回写
+- [ ] 卡片复制到系统剪贴板时，优先写入 RTF/HTML 富文本格式以保留样式与缩进
+- [ ] 评估与实现平台通道写入能力：macOS（补写入）、Windows、Linux
+
+### F. 代码可读性与预览体验
+- [ ] 默认等宽字体、保留空白；支持浅/深主题切换
+- [ ] 可选行号、复制按钮、折叠/展开与水平滚动增强
+
+### G. 构建质量与 Lint 健康度
+- [ ] 清理 `directives_ordering`、`lines_longer_than_80_chars`、`eol_at_end_of_file` 等分析警告
+- [ ] 修复 `cascade_invocations`、`inference_failure_on_instance_creation` 等问题
+- [ ] 在 CI 中加入 `flutter analyze` 门禁并失败即阻断
+
+### H. 颜色系统与 MD3 一致性
+- [ ] 统一使用 `ColorScheme` 语义色；校验对比度满足 WCAG 2.1 AA
+- [ ] 移除硬编码颜色，集中到 constants 管理
+
+### 关联文件（需要评审与变更）
+- `lib/core/services/clipboard_service.dart`
+- `lib/features/home/widgets/clip_item_card.dart`
+- `lib/features/home/pages/home_page.dart`
+- `lib/shared/providers/app_providers.dart`
+- `lib/features/home/widgets/filter_sidebar.dart`
+
+### 建议提交信息（示例）
+```
+chore(todo): 记录忽视内容并制定修复计划
+
+- 梳理空白保真、富文本展示/复制、i18n、联合筛选边界等关键问题
+- 补充构建与 lint 健康度、MD3 颜色系统一致性等工程事项
+```

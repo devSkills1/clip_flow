@@ -298,6 +298,21 @@ class SEn extends S {
   String get clipTypeVideo => 'Video';
 
   @override
+  String get clipTypeUrl => 'URL';
+
+  @override
+  String get clipTypeEmail => 'Email';
+
+  @override
+  String get clipTypeJson => 'JSON';
+
+  @override
+  String get clipTypeXml => 'XML';
+
+  @override
+  String get clipTypeCode => 'Code';
+
+  @override
   String get performanceMonitor => 'Performance Monitor';
 
   @override

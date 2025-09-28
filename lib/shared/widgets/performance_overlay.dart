@@ -751,7 +751,7 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
   }
 
   void _showRecommendationsDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(

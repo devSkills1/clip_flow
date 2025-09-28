@@ -42,9 +42,53 @@ import UniformTypeIdentifiers
 
         var clipboardInfo: [String: Any] = [:]
 
-        // 按优先级检查类型
-        if types.contains(.fileURL) {
-            // 文件类型
+        // 按优先级检查类型 - 富文本优先
+        if types.contains(.rtf) {
+            // RTF 富文本类型 - 最高优先级
+            if let rtfData = pasteboard.data(forType: .rtf) {
+                if let rtfString = String(data: rtfData, encoding: .utf8) {
+                    clipboardInfo = [
+                        "type": "rtf",
+                        "subType": "richText",
+                        "content": rtfString,
+                        "size": rtfData.count,
+                        "hasData": true,
+                        "priority": "high"
+                    ]
+                } else {
+                    clipboardInfo = [
+                        "type": "rtf",
+                        "subType": "rich_text",
+                        "size": rtfData.count,
+                        "hasData": true,
+                        "priority": "high"
+                    ]
+                }
+            }
+        } else if types.contains(.html) {
+            // HTML 类型 - 第二优先级
+            if let htmlData = pasteboard.data(forType: .html) {
+                if let htmlString = String(data: htmlData, encoding: .utf8) {
+                    clipboardInfo = [
+                        "type": "html",
+                        "subType": "markup",
+                        "content": htmlString,
+                        "size": htmlData.count,
+                        "hasData": true,
+                        "priority": "high"
+                    ]
+                } else {
+                    clipboardInfo = [
+                        "type": "html",
+                        "subType": "markup",
+                        "size": htmlData.count,
+                        "hasData": true,
+                        "priority": "high"
+                    ]
+                }
+            }
+        } else if types.contains(.fileURL) {
+            // 文件类型 - 第三优先级
             if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)
                 as? [NSURL]
             {
@@ -57,28 +101,10 @@ import UniformTypeIdentifiers
                         "subType": fileType,
                         "content": filePaths,
                         "primaryPath": firstPath,
+                        "hasData": true,
+                        "priority": "medium"
                     ]
                 }
-            }
-        } else if types.contains(.rtf) {
-            // RTF 富文本类型
-            if let rtfData = pasteboard.data(forType: .rtf) {
-                clipboardInfo = [
-                    "type": "rtf",
-                    "subType": "rich_text",
-                    "size": rtfData.count,
-                    "hasData": true,
-                ]
-            }
-        } else if types.contains(.html) {
-            // HTML 类型
-            if let htmlData = pasteboard.data(forType: .html) {
-                clipboardInfo = [
-                    "type": "html",
-                    "subType": "markup",
-                    "size": htmlData.count,
-                    "hasData": true,
-                ]
             }
         } else if types.contains(.tiff) || types.contains(.png)
             || types.contains(NSPasteboard.PasteboardType("public.jpeg"))
@@ -138,10 +164,11 @@ import UniformTypeIdentifiers
                     "subType": imageFormat,
                     "size": data.count,
                     "hasData": true,
+                    "priority": "medium"
                 ]
             }
         } else if types.contains(.string) {
-            // 文本类型
+            // 文本类型 - 最低优先级
             if let string = pasteboard.string(forType: .string) {
                 let textType = detectTextType(text: string)
                 clipboardInfo = [
@@ -149,16 +176,8 @@ import UniformTypeIdentifiers
                     "subType": textType,
                     "content": string,
                     "length": string.count,
-                ]
-            }
-        } else if types.contains(.rtf) {
-            // 富文本类型
-            if let rtfData = pasteboard.data(forType: .rtf) {
-                clipboardInfo = [
-                    "type": "text",
-                    "subType": "rtf",
-                    "size": rtfData.count,
                     "hasData": true,
+                    "priority": "low"
                 ]
             }
         } else {

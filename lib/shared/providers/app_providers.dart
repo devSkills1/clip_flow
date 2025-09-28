@@ -150,9 +150,27 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
 /// 当前搜索关键字的状态提供者。
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
-//// 筛选类型提供者
-/// 当前剪贴类型筛选的状态提供者。
-final filterTypeProvider = StateProvider<ClipType?>((ref) => null);
+//// 筛选选项定义（包含联合筛选：富文本=RTF+HTML+Code）
+/// UI 的筛选项（而非底层 ClipType），用于表示“全部/文本/富文本(联合)/RTF/HTML/代码/图片/颜色/文件/音频/视频”。
+enum FilterOption {
+  all,
+  text,
+  richTextUnion, // RTF + HTML + Code
+  rtf,
+  html,
+  code,
+  image,
+  color,
+  file,
+  audio,
+  video,
+}
+
+//// 筛选类型提供者（UI 层）
+/// 当前剪贴类型筛选的状态提供者（使用 FilterOption 支持联合筛选）。
+final filterTypeProvider = StateProvider<FilterOption>(
+  (ref) => FilterOption.all,
+);
 
 //// 显示模式（紧凑/默认/预览）
 /// UI 列表/网格的显示密度枚举。

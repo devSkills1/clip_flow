@@ -290,6 +290,21 @@ class SZh extends S {
   String get clipTypeVideo => '视频';
 
   @override
+  String get clipTypeUrl => '网址';
+
+  @override
+  String get clipTypeEmail => '邮箱';
+
+  @override
+  String get clipTypeJson => 'JSON';
+
+  @override
+  String get clipTypeXml => 'XML';
+
+  @override
+  String get clipTypeCode => '代码';
+
+  @override
   String get performanceMonitor => '性能监控';
 
   @override

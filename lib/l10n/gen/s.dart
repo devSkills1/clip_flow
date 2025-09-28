@@ -619,6 +619,36 @@ abstract class S {
   /// **'Video'**
   String get clipTypeVideo;
 
+  /// Clipboard type - URL
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get clipTypeUrl;
+
+  /// Clipboard type - email
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get clipTypeEmail;
+
+  /// Clipboard type - JSON
+  ///
+  /// In en, this message translates to:
+  /// **'JSON'**
+  String get clipTypeJson;
+
+  /// Clipboard type - XML
+  ///
+  /// In en, this message translates to:
+  /// **'XML'**
+  String get clipTypeXml;
+
+  /// Clipboard type - code
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get clipTypeCode;
+
   /// Performance monitor title
   ///
   /// In en, this message translates to:

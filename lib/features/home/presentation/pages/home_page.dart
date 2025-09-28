@@ -53,6 +53,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             case ClipType.html:
             case ClipType.rtf:
             case ClipType.color:
+            case ClipType.url:
+            case ClipType.email:
+            case ClipType.json:
+            case ClipType.xml:
+            case ClipType.code:
               // 文本类型直接加载
               validItem = dbItem;
 
@@ -128,16 +133,42 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final clipboardHistory = ref.watch(clipboardHistoryProvider);
     final searchQuery = ref.watch(searchQueryProvider);
-    final filterType = ref.watch(filterTypeProvider);
+    final filterOption = ref.watch(filterTypeProvider);
     final displayMode = ref.watch(displayModeProvider);
 
     // 过滤和搜索
     var filteredItems = clipboardHistory;
 
-    if (filterType != null) {
-      filteredItems = filteredItems
-          .where((item) => item.type == filterType)
-          .toList();
+    // 根据筛选选项过滤（支持联合筛选）
+    if (filterOption != FilterOption.all) {
+      filteredItems = filteredItems.where((item) {
+        switch (filterOption) {
+          case FilterOption.text:
+            return item.type == ClipType.text;
+          case FilterOption.richTextUnion:
+            return item.type == ClipType.rtf ||
+                item.type == ClipType.html ||
+                item.type == ClipType.code;
+          case FilterOption.rtf:
+            return item.type == ClipType.rtf;
+          case FilterOption.html:
+            return item.type == ClipType.html;
+          case FilterOption.code:
+            return item.type == ClipType.code;
+          case FilterOption.image:
+            return item.type == ClipType.image;
+          case FilterOption.color:
+            return item.type == ClipType.color;
+          case FilterOption.file:
+            return item.type == ClipType.file;
+          case FilterOption.audio:
+            return item.type == ClipType.audio;
+          case FilterOption.video:
+            return item.type == ClipType.video;
+          case FilterOption.all:
+            return true;
+        }
+      }).toList();
     }
 
     if (searchQuery.isNotEmpty) {
@@ -152,9 +183,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         children: [
           // 左侧筛选栏
           FilterSidebar(
-            selectedType: filterType,
-            onTypeSelected: (type) {
-              ref.read(filterTypeProvider.notifier).state = type;
+            selectedOption: filterOption,
+            onOptionSelected: (option) {
+              ref.read(filterTypeProvider.notifier).state = option;
             },
             onDisplayModeChanged: (mode) {
               ref.read(displayModeProvider.notifier).state = mode;
@@ -419,6 +450,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       case ClipType.html:
       case ClipType.audio:
       case ClipType.video:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
         final content = item.content ?? '';
         if (content.length > 50) {
           return '${content.substring(0, 50)}...';

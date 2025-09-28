@@ -24,11 +24,23 @@ class ClipItemCard extends StatelessWidget {
     super.key,
     this.searchQuery,
   });
+
+  /// 剪贴项
   final ClipItem item;
+
+  /// 显示模式
   final DisplayMode displayMode;
+
+  /// 点击回调
   final VoidCallback onTap;
+
+  /// 收藏回调
   final VoidCallback onFavorite;
+
+  /// 删除回调
   final VoidCallback onDelete;
+
+  /// 搜索关键词
   final String? searchQuery;
 
   @override
@@ -114,6 +126,21 @@ class ClipItemCard extends StatelessWidget {
       case ClipType.video:
         iconData = Icons.videocam;
         iconColor = Color(AppColors.iconColors['pink']!);
+      case ClipType.url:
+        iconData = Icons.link;
+        iconColor = Color(AppColors.iconColors['blue']!);
+      case ClipType.email:
+        iconData = Icons.email;
+        iconColor = Color(AppColors.iconColors['green']!);
+      case ClipType.json:
+        iconData = Icons.data_object;
+        iconColor = Color(AppColors.iconColors['orange']!);
+      case ClipType.xml:
+        iconData = Icons.code;
+        iconColor = Color(AppColors.iconColors['purple']!);
+      case ClipType.code:
+        iconData = Icons.terminal;
+        iconColor = Color(AppColors.iconColors['grey']!);
     }
 
     return Icon(iconData, size: 16, color: iconColor);
@@ -141,6 +168,16 @@ class ClipItemCard extends StatelessWidget {
             label = I18nCommonUtil.getClipTypeAudio(context);
           case ClipType.video:
             label = I18nCommonUtil.getClipTypeVideo(context);
+          case ClipType.url:
+            label = 'URL';
+          case ClipType.email:
+            label = 'Email';
+          case ClipType.json:
+            label = 'JSON';
+          case ClipType.xml:
+            label = 'XML';
+          case ClipType.code:
+            label = 'Code';
         }
 
         return Text(
@@ -204,7 +241,16 @@ class ClipItemCard extends StatelessWidget {
         return _buildImagePreview();
       case ClipType.file:
         return _buildFilePreview();
-      default:
+      case ClipType.text:
+      case ClipType.rtf:
+      case ClipType.html:
+      case ClipType.audio:
+      case ClipType.video:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
         return _buildTextPreview(context);
     }
   }
@@ -325,15 +371,40 @@ class ClipItemCard extends StatelessWidget {
     final wordCount = item.metadata['wordCount'] as int? ?? 0;
     final lineCount = item.metadata['lineCount'] as int? ?? 0;
 
+    final isMonospace =
+        item.type == ClipType.code ||
+        item.type == ClipType.json ||
+        item.type == ClipType.xml;
+    final shouldPreserveWhitespace =
+        item.type == ClipType.code ||
+        item.type == ClipType.html ||
+        item.type == ClipType.rtf;
+
+    final baseStyle =
+        (isMonospace
+            ? const TextStyle(fontFamily: 'monospace')
+            : Theme.of(context).textTheme.bodyMedium) ??
+        const TextStyle();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 文本内容 - 移除展开功能，直接显示
-        Text(
-          content,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        // 文本内容 - 保留缩进和空白（对于 code/html/rtf），并使用等宽字体渲染代码
+        if (shouldPreserveWhitespace)
+          RichText(
+            text: TextSpan(
+              text: content,
+              style: baseStyle.copyWith(height: 1.4),
+            ),
+            textScaler: MediaQuery.of(context).textScaler,
+            softWrap: false,
+          )
+        else
+          Text(
+            content,
+            style: baseStyle,
+          ),
         const SizedBox(height: Spacing.s8),
         Row(
           children: [
@@ -458,9 +529,6 @@ class ExpandableTextWidget extends StatefulWidget {
 }
 
 class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
-  final bool _isExpanded = false;
-  bool _hasOverflow = false;
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -475,7 +543,6 @@ class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
           maxLines: widget.maxLines,
           textDirection: Directionality.of(context),
         )..layout(maxWidth: availableWidth);
-        _hasOverflow = textPainter.didExceedMaxLines;
         textPainter.dispose();
 
         return _buildContent();

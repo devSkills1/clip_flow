@@ -202,6 +202,51 @@ class I18nCommonUtil {
     );
   }
 
+  /// 获取剪贴板类型：URL
+  static String getClipTypeUrl(BuildContext context) {
+    return getText(
+      context,
+      (l10n) => l10n.clipTypeUrl,
+      I18nFallbacks.common.clipTypeUrl,
+    );
+  }
+
+  /// 获取剪贴板类型：邮箱
+  static String getClipTypeEmail(BuildContext context) {
+    return getText(
+      context,
+      (l10n) => l10n.clipTypeEmail,
+      I18nFallbacks.common.clipTypeEmail,
+    );
+  }
+
+  /// 获取剪贴板类型：JSON
+  static String getClipTypeJson(BuildContext context) {
+    return getText(
+      context,
+      (l10n) => l10n.clipTypeJson,
+      I18nFallbacks.common.clipTypeJson,
+    );
+  }
+
+  /// 获取剪贴板类型：XML
+  static String getClipTypeXml(BuildContext context) {
+    return getText(
+      context,
+      (l10n) => l10n.clipTypeXml,
+      I18nFallbacks.common.clipTypeXml,
+    );
+  }
+
+  /// 获取剪贴板类型：代码
+  static String getClipTypeCode(BuildContext context) {
+    return getText(
+      context,
+      (l10n) => l10n.clipTypeCode,
+      I18nFallbacks.common.clipTypeCode,
+    );
+  }
+
   // ==================== 实体标签 ====================
 
   /// 获取实体标签：图片
@@ -466,6 +511,24 @@ class I18nCommonUtil {
       context,
       (l10n) => l10n.filterTypeRichText,
       I18nFallbacks.filter.typeRichText,
+    );
+  }
+
+  /// 获取筛选类型：RTF
+  static String getFilterTypeRtf(BuildContext context) {
+    return getText(
+      context,
+      (l10n) => l10n.filterTypeRichText, // fallback to rich text key
+      I18nFallbacks.filter.typeRtf,
+    );
+  }
+
+  /// 获取筛选类型：HTML
+  static String getFilterTypeHtml(BuildContext context) {
+    return getText(
+      context,
+      (l10n) => l10n.filterTypeRichText, // fallback to rich text key
+      I18nFallbacks.filter.typeHtml,
     );
   }
 

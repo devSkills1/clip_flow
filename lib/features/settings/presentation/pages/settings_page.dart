@@ -821,7 +821,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _validateAndRepairData() async {
     try {
       // 显示加载对话框
-      showDialog<void>(
+      await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (context) => const AlertDialog(
@@ -843,7 +843,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         Navigator.of(context).pop(); // 关闭加载对话框
 
         // 显示结果对话框
-        showDialog<void>(
+        await showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('数据验证完成'),

@@ -26,6 +26,21 @@ enum ClipType {
 
   /// 视频内容
   video,
+
+  /// URL链接
+  url,
+
+  /// 邮箱地址
+  email,
+
+  /// JSON数据
+  json,
+
+  /// XML数据
+  xml,
+
+  /// 代码内容
+  code,
 }
 
 /**
