@@ -10,7 +10,6 @@ import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// 剪贴板服务
@@ -408,9 +407,21 @@ class ClipboardService {
 
       // 发送到流
       _clipboardController.add(clipItem);
+      unawaited(
+        Log.d(
+          'Rich text clip item created: ${clipItem.type.name}',
+          tag: 'clipboard',
+        ),
+      );
     } on Exception catch (_) {
       // 处理错误
     }
+  }
+
+  /// 测试用：根据内容检测剪贴板类型（不缓存）
+  ClipType detectContentTypeForTesting(String content) {
+    // Public wrapper for unit tests
+    return _detectContentType(content);
   }
 
   ClipType _detectContentType(String content) {
@@ -1072,8 +1083,6 @@ class ClipboardService {
           metadata['wordCount'] = 0;
           metadata['lineCount'] = 1;
         }
-      default:
-        break;
     }
 
     return metadata;
@@ -1362,7 +1371,7 @@ class ClipboardService {
 
       // 不进行 trim()，以免丢失首行缩进；统一换行符后直接返回
       return candidate;
-    } catch (_) {
+    } on Exception catch (_) {
       // 解析失败则直接返回原始内容
       return html.replaceAll(RegExp(r'\r\n?'), '\n');
     }
@@ -1416,7 +1425,7 @@ class ClipboardService {
       _clipboardController.add(clipItem);
       unawaited(
         Log.d(
-          'Rich text clip item created: $type',
+          'Rich text clip item created: ${clipItem.type.name}',
           tag: 'clipboard',
         ),
       );
@@ -1650,7 +1659,9 @@ class ClipboardService {
           // 对于图片类型，如果有文件路径，优先复制文件；否则使用缩略图
           final imageFilePath = item.filePath;
           if (imageFilePath?.isNotEmpty ?? false) {
-            await _setClipboardFile(imageFilePath!);
+            // 解析为绝对路径
+            final absolutePath = await _resolveAbsoluteFilePath(imageFilePath!);
+            await _setClipboardFile(absolutePath);
           } else {
             final thumb = item.thumbnail;
             if (thumb != null && thumb.isNotEmpty) {
@@ -1661,16 +1672,30 @@ class ClipboardService {
           // 文件类型：使用原生文件复制
           final fileFilePath = item.filePath;
           if (fileFilePath?.isNotEmpty ?? false) {
-            await _setClipboardFile(fileFilePath!);
+            // 解析为绝对路径
+            final absolutePath = await _resolveAbsoluteFilePath(fileFilePath!);
+            await _setClipboardFile(absolutePath);
           } else {
             // 回退到文本复制
             final text = item.content ?? '';
             await Clipboard.setData(ClipboardData(text: text));
             _lastClipboardContent = text;
           }
-        case ClipType.text:
-        case ClipType.rtf:
         case ClipType.html:
+          // HTML 富文本：写入原生 HTML 类型，失败时回退为纯文本
+          {
+            final text = item.content ?? '';
+            await _setClipboardRichText('html', text);
+            _lastClipboardContent = text;
+          }
+        case ClipType.rtf:
+          // RTF 富文本：写入原生 RTF 类型，失败时回退为纯文本
+          {
+            final text = item.content ?? '';
+            await _setClipboardRichText('rtf', text);
+            _lastClipboardContent = text;
+          }
+        case ClipType.text:
         case ClipType.color:
         case ClipType.audio:
         case ClipType.video:
@@ -1684,8 +1709,8 @@ class ClipboardService {
           await Clipboard.setData(ClipboardData(text: text));
           _lastClipboardContent = text;
       }
-    } on Exception catch (_) {
-      // 处理错误
+    } on Exception catch (e) {
+      await Log.e('Failed to set clipboard content: $e');
     }
   }
 
@@ -1709,134 +1734,105 @@ class ClipboardService {
     }
   }
 
-  /// 检查文件路径是否为图片文件
-  bool _isImageFile(String filePath) {
-    final extension = filePath.toLowerCase().split('.').last;
-    const imageExtensions = {
-      'jpg',
-      'jpeg',
-      'png',
-      'gif',
-      'bmp',
-      'webp',
-      'svg',
-      'tiff',
-      'tif',
-      'ico',
-    };
-    return imageExtensions.contains(extension);
+  /// 写入富文本到系统剪贴板（HTML/RTF），失败则回退为纯文本
+  Future<void> _setClipboardRichText(String type, String content) async {
+    try {
+      await _platformChannel.invokeMethod('setRichTextData', {
+        'type': type,
+        'content': content,
+      });
+    } on Exception catch (_) {
+      await Clipboard.setData(ClipboardData(text: content));
+    }
   }
 
-  // ==== 媒体落盘相关：tmp -> fsync -> rename，返回相对路径 ====
+  /// 解析相对路径为绝对路径
+  Future<String> _resolveAbsoluteFilePath(String filePath) async {
+    // 如果已经是绝对路径，直接返回
+    if (filePath.startsWith('/')) {
+      return filePath;
+    }
+
+    // 解析相对路径为绝对路径
+    try {
+      final documentsDirectory = await getApplicationDocumentsDirectory();
+      return '${documentsDirectory.path}/$filePath';
+    } on Exception catch (e) {
+      await Log.e('Failed to resolve absolute file path: $e');
+      return filePath; // 回退到原路径
+    }
+  }
+
+  /// 判断是否为图片文件（封装 ImageUtils.isImageFile）
+  bool _isImageFile(String filePath) {
+    try {
+      return ImageUtils.isImageFile(filePath);
+    } on Exception catch (_) {
+      return false;
+    }
+  }
+
+  /// 根据图片二进制内容推断扩展名
+  String _inferImageExtension(Uint8List imageBytes) {
+    try {
+      final info = ImageUtils.getImageInfo(imageBytes);
+      final format = (info['format'] as String?)?.toLowerCase() ?? 'unknown';
+      switch (format) {
+        case 'jpeg':
+          return 'jpg';
+        case 'png':
+          return 'png';
+        case 'gif':
+          return 'gif';
+        case 'bmp':
+          return 'bmp';
+        case 'webp':
+          return 'webp';
+        default:
+          return 'png';
+      }
+    } on Exception catch (_) {
+      return 'png';
+    }
+  }
+
+  /// 将媒体（二进制）保存到磁盘并返回相对路径（media/...）
   Future<String> _saveMediaToDisk({
     required Uint8List bytes,
-    required String type, // 'image' | 'audio' | 'video' | 'file'
+    required String type, // 'image' 或 'file'
     String? suggestedExt,
   }) async {
-    // 根目录：应用文档目录内的 media
-    final dir = await _getMediaDir(type);
-    final now = DateTime.now();
-    final yyyy = now.year.toString().padLeft(4, '0');
-    final mm = now.month.toString().padLeft(2, '0');
-    final dd = now.day.toString().padLeft(2, '0');
-
-    final relDir = 'media/$type/$yyyy/$mm/$dd';
-    final absDir = Directory('${dir.path}/$relDir');
-    if (!await absDir.exists()) {
-      await absDir.create(recursive: true);
-    }
-
-    final uuid = DateTime.now().microsecondsSinceEpoch.toString();
-    final ext = (suggestedExt ?? 'bin').replaceAll('.', '');
-    final relPath = '$relDir/$uuid.$ext';
-    final absPath = '${dir.path}/$relPath';
-
-    // 1) 写入 tmp 文件
-    final tmpFile = File('$absPath.tmp');
-    await tmpFile.writeAsBytes(bytes, flush: true);
-
-    // 2) fsync：Dart 无直接 fsync，flush:true 已尽力；可追加 reopen 并 setLastModified 触发落盘
     try {
-      await tmpFile.setLastModified(DateTime.now());
-    } on Exception catch (_) {}
+      final dir = await getApplicationDocumentsDirectory();
+      final ts = DateTime.now().millisecondsSinceEpoch;
 
-    // 3) rename 到最终路径（原子）
-    await tmpFile.rename(absPath);
+      // 生成文件名：类型_时间戳_哈希前8位.扩展名
+      final ext = (suggestedExt ?? 'bin').toLowerCase();
+      final hash = sha256.convert(bytes).toString().substring(0, 8);
+      final fileName = '${type}_${ts}_$hash.$ext';
 
-    // 返回相对路径
-    return relPath;
-  }
+      // 构建绝对目录与相对路径
+      final relativeDir = type == 'image' ? 'media/images' : 'media/files';
+      final absoluteDir = '${dir.path}/$relativeDir';
+      final absolutePath = '$absoluteDir/$fileName';
+      final relativePath = '$relativeDir/$fileName';
 
-  Future<Directory> _getMediaDir(String type) async {
-    // 统一到应用文档目录（与 DatabaseService 删除逻辑一致）
-    final docs = await getApplicationDocumentsDirectory();
-    return Directory(docs.path);
-  }
-
-  String _inferImageExtension(Uint8List bytes) {
-    // 简单魔数判断
-    if (bytes.length >= 4) {
-      // PNG
-      if (bytes[0] == 0x89 &&
-          bytes[1] == 0x50 &&
-          bytes[2] == 0x4E &&
-          bytes[3] == 0x47) {
-        return 'png';
+      // 确保目录存在
+      final d = Directory(absoluteDir);
+      if (!d.existsSync()) {
+        await d.create(recursive: true);
       }
-      // JPEG
-      if (bytes[0] == 0xFF && bytes[1] == 0xD8) return 'jpg';
-      // GIF
-      if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46) {
-        return 'gif';
-      }
-      // WEBP (RIFF....WEBP)
-      if (bytes[0] == 0x52 &&
-          bytes[1] == 0x49 &&
-          bytes[2] == 0x46 &&
-          bytes[3] == 0x46) {
-        return 'webp';
-      }
+
+      // 写入文件
+      final f = File(absolutePath);
+      await f.writeAsBytes(bytes, flush: true);
+
+      return relativePath;
+    } on Exception catch (e) {
+      unawaited(
+        Log.w('Failed to save media to disk', tag: 'clipboard', error: e),
+      );
+      return '';
     }
-    return 'bin';
-  }
-
-  /// 清空系统剪贴板（文本渠道）
-  Future<void> clearClipboard() async {
-    try {
-      await Clipboard.setData(const ClipboardData(text: ''));
-      _lastClipboardContent = '';
-    } on Exception catch (_) {
-      // 处理错误
-    }
-  }
-
-  /// 释放资源：停止轮询、关闭流并清理缓存
-  void dispose() {
-    _pollingTimer?.cancel();
-    _clipboardController.close();
-
-    // 清理缓存
-    _contentCache.clear();
-    _cacheTimestamps.clear();
-  }
-
-  /// 公共测试方法：检测内容类型
-  /// 用于单元测试，暴露私有的 _detectContentType 方法
-  ClipType detectContentTypeForTesting(String content) {
-    return _detectContentType(content);
   }
 }
-
-// Riverpod Provider
-//// Riverpod Provider
-
-/// 剪贴板服务 Provider（单例）
-final clipboardServiceProvider = Provider<ClipboardService>((ref) {
-  return ClipboardService.instance;
-});
-
-/// 剪贴板变更流 Provider
-final clipboardStreamProvider = StreamProvider<ClipItem>((ref) {
-  final service = ref.watch(clipboardServiceProvider);
-  return service.clipboardStream;
-});

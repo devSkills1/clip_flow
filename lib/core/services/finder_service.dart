@@ -51,10 +51,10 @@ class FinderService {
 
       return result.exitCode == 0;
     } on FileSystemException catch (e) {
-      Log.e('Failed to show in Finder: $e');
+      await Log.e('Failed to show in Finder: $e');
       return false;
     } on Exception catch (e) {
-      Log.e('Failed to show in Finder: $e');
+      await Log.e('Failed to show in Finder: $e');
       return false;
     }
   }
@@ -79,7 +79,7 @@ class FinderService {
         return await showInFinder(documentsDirectory.path);
       }
     } on Exception catch (e) {
-      Log.e('Failed to show database in Finder: $e');
+      await Log.e('Failed to show database in Finder: $e');
       return false;
     }
   }
@@ -92,7 +92,7 @@ class FinderService {
       final documentsDirectory = await getApplicationDocumentsDirectory();
       return await showInFinder(documentsDirectory.path);
     } on Exception catch (e) {
-      Log.e('Failed to show app documents in Finder: $e');
+      await Log.e('Failed to show app documents in Finder: $e');
       return false;
     }
   }
@@ -107,13 +107,13 @@ class FinderService {
 
       // 如果媒体目录不存在，显示应用文档目录
       final mediaDirectory = Directory(mediaPath);
-      if (!await mediaDirectory.exists()) {
+      if (!mediaDirectory.existsSync()) {
         return await showAppDocumentsInFinder();
       }
 
       return await showInFinder(mediaPath);
     } on Exception catch (e) {
-      Log.e('Failed to show media directory in Finder: $e');
+      await Log.e('Failed to show media directory in Finder: $e');
       return false;
     }
   }
@@ -128,13 +128,13 @@ class FinderService {
 
       // 如果图片目录不存在，显示媒体目录
       final imageDirectory = Directory(imagePath);
-      if (!await imageDirectory.exists()) {
+      if (!imageDirectory.existsSync()) {
         return await showMediaDirectoryInFinder();
       }
 
       return await showInFinder(imagePath);
     } on Exception catch (e) {
-      Log.e('Failed to show image directory in Finder: $e');
+      await Log.e('Failed to show image directory in Finder: $e');
       return false;
     }
   }
@@ -149,13 +149,13 @@ class FinderService {
 
       // 如果文件目录不存在，显示媒体目录
       final fileDirectory = Directory(filePath);
-      if (!await fileDirectory.exists()) {
+      if (!fileDirectory.existsSync()) {
         return await showMediaDirectoryInFinder();
       }
 
       return await showInFinder(filePath);
     } on Exception catch (e) {
-      Log.e('Failed to show file directory in Finder: $e');
+      await Log.e('Failed to show file directory in Finder: $e');
       return false;
     }
   }
@@ -176,7 +176,7 @@ class FinderService {
 
       return await showInFinder(logPath);
     } on Exception catch (e) {
-      Log.e('Failed to show log directory in Finder: $e');
+      await Log.e('Failed to show log directory in Finder: $e');
       return false;
     }
   }

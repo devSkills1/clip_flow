@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/preferences_service.dart';
@@ -407,3 +408,19 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     _savePreferences();
   }
 }
+
+//// 剪贴板服务提供者
+/// 提供全局单例的 ClipboardService，并在首次读取时初始化轮询监听。
+final clipboardServiceProvider = Provider<ClipboardService>((ref) {
+  final service = ClipboardService.instance;
+  // 初始化剪贴板监听（幂等）
+  unawaited(service.initialize());
+  return service;
+});
+
+//// 剪贴板流提供者
+/// 订阅剪贴板变更事件流（ClipItem）。
+final clipboardStreamProvider = StreamProvider<ClipItem>((ref) {
+  final service = ref.watch(clipboardServiceProvider);
+  return service.clipboardStream;
+});

@@ -610,7 +610,7 @@ class DatabaseService {
       where: "type = 'text' AND (content IS NULL OR TRIM(content) = '')",
     );
 
-    Log.i('Cleaned $deletedCount empty text items from database');
+    await Log.i('Cleaned $deletedCount empty text items from database');
     return deletedCount;
   }
 
@@ -653,7 +653,7 @@ class DatabaseService {
     );
     stats['totalItemsRemaining'] = (totalItems.first['count'] as int?) ?? 0;
 
-    Log.i('Database validation completed: $stats');
+    await Log.i('Database validation completed: $stats');
     return stats;
   }
 }

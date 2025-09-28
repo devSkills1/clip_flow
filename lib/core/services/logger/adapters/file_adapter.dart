@@ -23,8 +23,8 @@ class FileLogAdapter implements LogAdapter {
     try {
       final baseDir = customDir ?? await _defaultLogsDir();
       final d = io.Directory(baseDir);
-      if (!await d.exists()) {
-        await d.create(recursive: true);
+      if (!d.existsSync()) {
+        d.createSync(recursive: true);
       }
       return FileLogAdapter._(d.path);
     } on Exception catch (_) {
@@ -60,8 +60,8 @@ class FileLogAdapter implements LogAdapter {
       final safe = _sanitizeFileName(id);
       final path = '$_dirPath/$safe.log';
       final f = io.File(path);
-      if (!await f.exists()) {
-        await f.create(recursive: true);
+      if (!f.existsSync()) {
+        f.createSync(recursive: true);
       }
       // 使用 id 文件时不参与日期滚动缓存键
       _currentFile = f;
@@ -77,7 +77,7 @@ class FileLogAdapter implements LogAdapter {
 
     // 防止并发创建
     while (_creating) {
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
     }
     if (_currentFile != null && _currentDateKey == dateKey) {
       return _currentFile!;
@@ -87,8 +87,8 @@ class FileLogAdapter implements LogAdapter {
     try {
       final path = '$_dirPath/$dateKey.log';
       final f = io.File(path);
-      if (!await f.exists()) {
-        await f.create(recursive: true);
+      if (!f.existsSync()) {
+        f.createSync(recursive: true);
       }
       _currentFile = f;
       _currentDateKey = dateKey;

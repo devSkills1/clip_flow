@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
@@ -8,9 +9,12 @@ import 'package:clip_flow_pro/core/constants/strings.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
+import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 /// 剪贴项卡片组件
 class ClipItemCard extends StatelessWidget {
@@ -47,40 +51,42 @@ class ClipItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
-        child: SizedBox(
-          height: _getFixedCardHeight(),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 头部：类型图标和操作按钮
-                Row(
-                  children: [
-                    _buildTypeIcon(),
-                    const SizedBox(width: Spacing.s12),
-                    Expanded(child: _buildTypeLabel()),
-                    _buildActionButtons(context),
-                  ],
-                ),
+      child: SizedBox(
+        height: _getFixedCardHeight(),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 头部：类型图标和操作按钮
+              Row(
+                children: [
+                  _buildTypeIcon(),
+                  const SizedBox(width: Spacing.s12),
+                  Expanded(child: _buildTypeLabel()),
+                  _buildActionButtons(context),
+                ],
+              ),
 
-                const SizedBox(height: Spacing.s12),
+              const SizedBox(height: Spacing.s12),
 
-                // 内容预览 - 可滑动区域
-                Expanded(
-                  child: SingleChildScrollView(
+              // 内容预览 - 可滑动区域（仅内容区域可点击触发复制）
+              Expanded(
+                child: SingleChildScrollView(
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.circular(
+                      ClipConstants.cardBorderRadius,
+                    ),
                     child: _buildContentPreview(context),
                   ),
                 ),
+              ),
 
-                // 底部：时间和标签
-                const SizedBox(height: Spacing.s8),
-                _buildFooter(context),
-              ],
-            ),
+              // 底部：时间和标签
+              const SizedBox(height: Spacing.s8),
+              _buildFooter(context),
+            ],
           ),
         ),
       ),
@@ -300,42 +306,118 @@ class ClipItemCard extends StatelessWidget {
     return Builder(
       builder: (context) {
         final theme = Theme.of(context);
-        return Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
-            borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
-          ),
-          child: item.thumbnail != null && item.thumbnail!.isNotEmpty
+        final rawPath = item.filePath;
+        final isImageCandidate =
+            rawPath != null &&
+            rawPath.isNotEmpty &&
+            ImageUtils.isImageFile(rawPath);
+        final wantOriginal =
+            displayMode == DisplayMode.preview && isImageCandidate;
+
+        Widget buildThumbFallback() {
+          return (item.thumbnail != null && item.thumbnail!.isNotEmpty)
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(
                     ClipConstants.cardBorderRadius,
                   ),
                   child: Image.memory(
                     Uint8List.fromList(item.thumbnail!),
-                    fit: BoxFit.contain,
-                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                    gaplessPlayback: true,
                     errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Icon(
-                          Icons.broken_image,
-                          size: 32,
-                          color: theme.colorScheme.outline,
+                      return Container(
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest
+                              .withAlpha(77),
+                          borderRadius: BorderRadius.circular(
+                            ClipConstants.cardBorderRadius,
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 32,
+                            color: theme.colorScheme.outline,
+                          ),
                         ),
                       );
                     },
                   ),
                 )
-              : Center(
-                  child: Icon(
-                    Icons.image,
-                    size: 32,
-                    color: theme.colorScheme.outline,
+              : Container(
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withAlpha(
+                      77,
+                    ),
+                    borderRadius: BorderRadius.circular(
+                      ClipConstants.cardBorderRadius,
+                    ),
                   ),
-                ),
-        );
+                  child: Center(
+                    child: Icon(
+                      Icons.image,
+                      size: 32,
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                );
+        }
+
+        return wantOriginal
+            ? FutureBuilder<String?>(
+                future: _resolveAbsoluteImagePath(rawPath),
+                builder: (context, snapshot) {
+                  final abs = snapshot.data;
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return buildThumbFallback();
+                  }
+                  if (abs == null) {
+                    return buildThumbFallback();
+                  }
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(
+                      ClipConstants.cardBorderRadius,
+                    ),
+                    child: Image.file(
+                      File(abs),
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      cacheWidth: 1024, // 更高缓存解码宽度以提升清晰度
+                      cacheHeight: 1024,
+                      errorBuilder: (context, error, stackTrace) {
+                        return buildThumbFallback();
+                      },
+                    ),
+                  );
+                },
+              )
+            : buildThumbFallback();
       },
     );
+  }
+
+  Future<String?> _resolveAbsoluteImagePath(String relativeOrAbsolute) async {
+    try {
+      // 已是绝对路径
+      final isAbsolute =
+          relativeOrAbsolute.startsWith('/') ||
+          RegExp('^[A-Za-z]:').hasMatch(relativeOrAbsolute);
+      if (isAbsolute) {
+        final file = File(relativeOrAbsolute);
+        if (file.existsSync()) return relativeOrAbsolute;
+        return null;
+      }
+      final dir = await getApplicationDocumentsDirectory();
+      final abs = p.join(dir.path, relativeOrAbsolute);
+      final file = File(abs);
+      if (file.existsSync()) return abs;
+      return null;
+    } on Exception catch (_) {
+      return null;
+    }
   }
 
   Widget _buildFilePreview() {
@@ -542,8 +624,10 @@ class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
           text: TextSpan(text: widget.text, style: widget.style),
           maxLines: widget.maxLines,
           textDirection: Directionality.of(context),
-        )..layout(maxWidth: availableWidth);
-        textPainter.dispose();
+        );
+        textPainter
+          ..layout(maxWidth: availableWidth)
+          ..dispose();
 
         return _buildContent();
       },
@@ -629,11 +713,11 @@ class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
           text: text.substring(index, index + query.length),
           style:
               widget.style?.copyWith(
-                backgroundColor: Colors.yellow.withAlpha(100),
+                backgroundColor: const Color(0xFFFFEB3B).withValues(alpha: 0.3),
                 fontWeight: FontWeight.bold,
               ) ??
               TextStyle(
-                backgroundColor: Colors.yellow.withOpacity(0.3),
+                backgroundColor: const Color(0xFFFFEB3B).withValues(alpha: 0.3),
                 fontWeight: FontWeight.bold,
               ),
         ),

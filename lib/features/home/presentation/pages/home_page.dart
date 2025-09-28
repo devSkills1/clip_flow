@@ -1,12 +1,8 @@
 import 'dart:io';
-
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
-
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
-
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';

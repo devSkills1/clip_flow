@@ -38,12 +38,17 @@ void main() {
       final overhead = performanceService.getMonitoringOverhead();
 
       expect(overhead, isA<Map<String, dynamic>>());
-      expect(overhead.containsKey('isActive'), isTrue);
-      expect(overhead.containsKey('frameTimesCount'), isTrue);
-      expect(overhead.containsKey('maxFrameTimesCount'), isTrue);
-      expect(overhead.containsKey('updateInterval'), isTrue);
-      expect(overhead.containsKey('isDebugMode'), isTrue);
-      expect(overhead.containsKey('isReleaseMode'), isTrue);
+      final keys = [
+        'isActive',
+        'frameTimesCount',
+        'maxFrameTimesCount',
+        'updateInterval',
+        'isDebugMode',
+        'isReleaseMode',
+      ];
+      for (final k in keys) {
+        expect(overhead.containsKey(k), isTrue);
+      }
     });
 
     test('should reset jank count', () {
@@ -82,11 +87,11 @@ void main() {
       }
     });
 
-    test('should maintain reasonable memory usage', () {
+    test('should maintain reasonable memory usage', () async {
       performanceService.startMonitoring();
 
       // 等待一些指标收集
-      Future.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
 
       final overhead = performanceService.getMonitoringOverhead();
       final frameTimesCount = overhead['frameTimesCount'] as int;
