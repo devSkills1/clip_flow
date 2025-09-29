@@ -1,6 +1,7 @@
 import Cocoa
 import FlutterMacOS
 import UniformTypeIdentifiers
+import Vision
 
 @objc class ClipboardPlugin: NSObject, FlutterPlugin {
 
@@ -31,6 +32,8 @@ import UniformTypeIdentifiers
             setClipboardImage(call: call, result: result)
         case "setClipboardFile":
             setClipboardFile(call: call, result: result)
+        case "performOCR":
+            performOCR(call: call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -596,5 +599,95 @@ import UniformTypeIdentifiers
 
         NSLog("ClipboardPlugin: No additional image types found")
         return nil
+    }
+    
+    // MARK: - OCR Methods
+    
+    private func performOCR(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let imageData = args["imageData"] as? FlutterStandardTypedData else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing imageData parameter", details: nil))
+            return
+        }
+        
+        NSLog("ClipboardPlugin: Starting OCR on image data (%d bytes)", imageData.data.count)
+        
+        // 创建NSImage
+        guard let nsImage = NSImage(data: imageData.data) else {
+            result(FlutterError(code: "INVALID_IMAGE", message: "Cannot create NSImage from data", details: nil))
+            return
+        }
+        
+        // 转换为CGImage
+        guard let cgImage = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            result(FlutterError(code: "INVALID_IMAGE", message: "Cannot create CGImage from NSImage", details: nil))
+            return
+        }
+        
+        // 创建Vision文字识别请求
+        let request = VNRecognizeTextRequest { [weak self] (request, error) in
+            DispatchQueue.main.async {
+                if let error = error {
+                    NSLog("ClipboardPlugin: OCR error: %@", error.localizedDescription)
+                    result(FlutterError(code: "OCR_ERROR", message: error.localizedDescription, details: nil))
+                    return
+                }
+                
+                guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                    NSLog("ClipboardPlugin: No text observations found")
+                    result(["text": "", "confidence": 0.0])
+                    return
+                }
+                
+                var recognizedText = ""
+                var totalConfidence: Float = 0.0
+                var observationCount = 0
+                
+                for observation in observations {
+                    guard let topCandidate = observation.topCandidates(1).first else { continue }
+                    
+                    recognizedText += topCandidate.string + "\n"
+                    totalConfidence += topCandidate.confidence
+                    observationCount += 1
+                    
+                    NSLog("ClipboardPlugin: Recognized text: '%@' (confidence: %.2f)", 
+                          topCandidate.string, topCandidate.confidence)
+                }
+                
+                // 移除最后的换行符
+                if recognizedText.hasSuffix("\n") {
+                    recognizedText = String(recognizedText.dropLast())
+                }
+                
+                let averageConfidence = observationCount > 0 ? totalConfidence / Float(observationCount) : 0.0
+                
+                NSLog("ClipboardPlugin: OCR completed. Text: '%@', Average confidence: %.2f", 
+                      recognizedText, averageConfidence)
+                
+                result([
+                    "text": recognizedText,
+                    "confidence": Double(averageConfidence)
+                ])
+            }
+        }
+        
+        // 配置OCR请求
+        request.recognitionLevel = .accurate
+        request.recognitionLanguages = ["en-US", "zh-Hans", "zh-Hant"] // 支持英文和中文
+        request.usesLanguageCorrection = true
+        
+        // 执行OCR请求
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try handler.perform([request])
+            } catch {
+                DispatchQueue.main.async {
+                    NSLog("ClipboardPlugin: Failed to perform OCR: %@", error.localizedDescription)
+                    result(FlutterError(code: "OCR_FAILED", message: error.localizedDescription, details: nil))
+                }
+            }
+        }
     }
 }

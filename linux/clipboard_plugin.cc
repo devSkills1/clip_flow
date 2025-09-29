@@ -9,6 +9,9 @@
 #include <cctype>
 #include <fstream>
 #include <sstream>
+#include <tesseract/baseapi.h>
+#include <leptonica/allheaders.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #define CLIPBOARD_PLUGIN(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST((obj), clipboard_plugin_get_type(), \
@@ -360,6 +363,132 @@ static void get_clipboard_image_data(FlMethodCall* method_call) {
   fl_method_call_respond_success(method_call, nullptr, nullptr);
 }
 
+static void perform_ocr(FlMethodCall* method_call) {
+  GtkClipboard* clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+  
+  // 检查剪贴板是否包含图像
+  if (!gtk_clipboard_wait_is_image_available(clipboard)) {
+    fl_method_call_respond_error(method_call, "NO_IMAGE", 
+                               "No image found in clipboard", 
+                               nullptr, nullptr);
+    return;
+  }
+  
+  // 获取剪贴板图像
+  GdkPixbuf* pixbuf = gtk_clipboard_wait_for_image(clipboard);
+  if (pixbuf == nullptr) {
+    fl_method_call_respond_error(method_call, "IMAGE_ERROR", 
+                               "Failed to get image from clipboard", 
+                               nullptr, nullptr);
+    return;
+  }
+  
+  try {
+    // 初始化 Tesseract OCR 引擎
+    tesseract::TessBaseAPI* ocr = new tesseract::TessBaseAPI();
+    
+    // 初始化 OCR 引擎，使用英文语言包
+    if (ocr->Init(nullptr, "eng") != 0) {
+      delete ocr;
+      g_object_unref(pixbuf);
+      fl_method_call_respond_error(method_call, "OCR_ERROR", 
+                                 "Failed to initialize OCR engine", 
+                                 nullptr, nullptr);
+      return;
+    }
+    
+    // 将 GdkPixbuf 转换为 Leptonica PIX 格式
+    gint width = gdk_pixbuf_get_width(pixbuf);
+    gint height = gdk_pixbuf_get_height(pixbuf);
+    gint channels = gdk_pixbuf_get_n_channels(pixbuf);
+    gint rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+    guchar* pixels = gdk_pixbuf_get_pixels(pixbuf);
+    
+    // 创建 PIX 对象
+    PIX* pix = nullptr;
+    if (channels == 3) {
+      // RGB 图像
+      pix = pixCreate(width, height, 24);
+      if (pix != nullptr) {
+        l_uint32* data = pixGetData(pix);
+        for (int y = 0; y < height; y++) {
+          for (int x = 0; x < width; x++) {
+            guchar* pixel = pixels + y * rowstride + x * channels;
+            l_uint32 val = (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
+            SET_DATA_BYTE(data, y * width + x, val);
+          }
+        }
+      }
+    } else if (channels == 4) {
+      // RGBA 图像，忽略 alpha 通道
+      pix = pixCreate(width, height, 24);
+      if (pix != nullptr) {
+        l_uint32* data = pixGetData(pix);
+        for (int y = 0; y < height; y++) {
+          for (int x = 0; x < width; x++) {
+            guchar* pixel = pixels + y * rowstride + x * channels;
+            l_uint32 val = (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
+            SET_DATA_BYTE(data, y * width + x, val);
+          }
+        }
+      }
+    }
+    
+    if (pix == nullptr) {
+      delete ocr;
+      g_object_unref(pixbuf);
+      fl_method_call_respond_error(method_call, "IMAGE_ERROR", 
+                                 "Failed to convert image format", 
+                                 nullptr, nullptr);
+      return;
+    }
+    
+    // 设置图像到 OCR 引擎
+    ocr->SetImage(pix);
+    
+    // 执行 OCR 识别
+    char* recognized_text = ocr->GetUTF8Text();
+    
+    if (recognized_text == nullptr) {
+      delete ocr;
+      pixDestroy(&pix);
+      g_object_unref(pixbuf);
+      fl_method_call_respond_error(method_call, "OCR_ERROR", 
+                                 "OCR recognition failed", 
+                                 nullptr, nullptr);
+      return;
+    }
+    
+    // 创建返回结果
+    g_autoptr(FlValue) result_map = fl_value_new_map();
+    g_autoptr(FlValue) text_value = fl_value_new_string(recognized_text);
+    g_autoptr(FlValue) confidence_value = fl_value_new_float(ocr->MeanTextConf() / 100.0);
+    
+    fl_value_set_string_take(result_map, "text", fl_value_ref(text_value));
+    fl_value_set_string_take(result_map, "confidence", fl_value_ref(confidence_value));
+    
+    fl_method_call_respond_success(method_call, result_map, nullptr);
+    
+    // 清理资源
+    delete[] recognized_text;
+    delete ocr;
+    pixDestroy(&pix);
+    g_object_unref(pixbuf);
+    
+  } catch (const std::exception& e) {
+    g_object_unref(pixbuf);
+    std::string error_msg = "OCR failed: " + std::string(e.what());
+    fl_method_call_respond_error(method_call, "OCR_ERROR", 
+                               error_msg.c_str(), 
+                               nullptr, nullptr);
+  } catch (...) {
+    g_object_unref(pixbuf);
+    fl_method_call_respond_error(method_call, "OCR_ERROR", 
+                               "Unknown OCR error occurred", 
+                               nullptr, nullptr);
+  }
+}
+
 static void clipboard_plugin_handle_method_call(
     ClipboardPlugin* self,
     FlMethodCall* method_call) {
@@ -374,6 +503,8 @@ static void clipboard_plugin_handle_method_call(
     get_clipboard_file_paths(method_call);
   } else if (strcmp(method, "getClipboardImageData") == 0) {
     get_clipboard_image_data(method_call);
+  } else if (strcmp(method, "performOCR") == 0) {
+    perform_ocr(method_call);
   } else {
     fl_method_call_respond_not_implemented(method_call, nullptr);
   }

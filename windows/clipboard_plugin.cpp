@@ -9,6 +9,12 @@
 #include <memory>
 #include <algorithm>
 #include <cctype>
+#include <winrt/base.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Graphics.Imaging.h>
+#include <winrt/Windows.Media.Ocr.h>
+#include <winrt/Windows.Storage.Streams.h>
 
 namespace clipboard_plugin {
 
@@ -46,6 +52,8 @@ void ClipboardPlugin::HandleMethodCall(
     GetClipboardFilePaths(std::move(result));
   } else if (method_call.method_name().compare("getClipboardImageData") == 0) {
     GetClipboardImageData(std::move(result));
+  } else if (method_call.method_name().compare("performOCR") == 0) {
+    PerformOCR(std::move(result));
   } else {
     result->NotImplemented();
   }
@@ -364,7 +372,117 @@ bool ClipboardPlugin::IsJSON(const std::string& text) {
 }
 
 bool ClipboardPlugin::IsXMLOrHTML(const std::string& text) {
-  return text.front() == '<' && text.back() == '>';
+  return text.find('<') != std::string::npos && text.find('>') != std::string::npos;
+}
+
+void ClipboardPlugin::PerformOCR(
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+  
+  try {
+    // 初始化 WinRT
+    winrt::init_apartment();
+    
+    // 检查剪贴板是否包含图像
+    if (!OpenClipboard(nullptr)) {
+      result->Error("CLIPBOARD_ERROR", "Failed to open clipboard");
+      return;
+    }
+
+    if (!IsClipboardFormatAvailable(CF_BITMAP) && !IsClipboardFormatAvailable(CF_DIB)) {
+      CloseClipboard();
+      result->Error("NO_IMAGE", "No image found in clipboard");
+      return;
+    }
+
+    // 获取剪贴板图像数据
+    HANDLE hData = GetClipboardData(CF_DIB);
+    if (hData == nullptr) {
+      CloseClipboard();
+      result->Error("IMAGE_ERROR", "Failed to get image data from clipboard");
+      return;
+    }
+
+    // 将 DIB 数据转换为 WinRT SoftwareBitmap
+    LPBITMAPINFOHEADER lpbi = (LPBITMAPINFOHEADER)GlobalLock(hData);
+    if (lpbi == nullptr) {
+      CloseClipboard();
+      result->Error("IMAGE_ERROR", "Failed to lock image data");
+      return;
+    }
+
+    // 创建 OCR 引擎
+    auto ocrEngine = winrt::Windows::Media::Ocr::OcrEngine::TryCreateFromUserProfileLanguages();
+    if (ocrEngine == nullptr) {
+      GlobalUnlock(hData);
+      CloseClipboard();
+      result->Error("OCR_ERROR", "Failed to create OCR engine");
+      return;
+    }
+
+    // 计算图像数据大小
+    DWORD dwBmpSize = lpbi->biSizeImage;
+    if (dwBmpSize == 0) {
+      dwBmpSize = (lpbi->biWidth * lpbi->biBitCount + 31) / 32 * 4 * lpbi->biHeight;
+    }
+
+    // 创建内存流
+    auto stream = winrt::Windows::Storage::Streams::InMemoryRandomAccessStream();
+    auto writer = winrt::Windows::Storage::Streams::DataWriter(stream);
+    
+    // 写入 BMP 文件头
+    BITMAPFILEHEADER bmfh = {};
+    bmfh.bfType = 0x4D42; // "BM"
+    bmfh.bfSize = sizeof(BITMAPFILEHEADER) + lpbi->biSize + dwBmpSize;
+    bmfh.bfOffBits = sizeof(BITMAPFILEHEADER) + lpbi->biSize;
+    
+    writer.WriteBytes(winrt::array_view<uint8_t const>(
+      reinterpret_cast<uint8_t const*>(&bmfh), sizeof(BITMAPFILEHEADER)));
+    
+    // 写入 DIB 数据
+    writer.WriteBytes(winrt::array_view<uint8_t const>(
+      reinterpret_cast<uint8_t const*>(lpbi), lpbi->biSize + dwBmpSize));
+    
+    GlobalUnlock(hData);
+    CloseClipboard();
+
+    // 存储数据到流
+    auto storeOperation = writer.StoreAsync();
+    storeOperation.get();
+    writer.DetachStream();
+    
+    // 从流创建 BitmapDecoder
+    stream.Seek(0);
+    auto decoder = winrt::Windows::Graphics::Imaging::BitmapDecoder::CreateAsync(stream).get();
+    auto softwareBitmap = decoder.GetSoftwareBitmapAsync().get();
+
+    // 执行 OCR
+    auto ocrResult = ocrEngine.RecognizeAsync(softwareBitmap).get();
+    
+    // 提取文本
+    std::string recognizedText;
+    for (auto const& line : ocrResult.Lines()) {
+      if (!recognizedText.empty()) {
+        recognizedText += "\n";
+      }
+      recognizedText += winrt::to_string(line.Text());
+    }
+
+    // 返回结果
+    flutter::EncodableMap ocr_result;
+    ocr_result[flutter::EncodableValue("text")] = flutter::EncodableValue(recognizedText);
+    ocr_result[flutter::EncodableValue("confidence")] = flutter::EncodableValue(1.0); // Windows OCR 不提供置信度
+    
+    result->Success(flutter::EncodableValue(ocr_result));
+    
+  } catch (winrt::hresult_error const& ex) {
+    std::string error_message = "OCR failed: " + winrt::to_string(ex.message());
+    result->Error("OCR_ERROR", error_message);
+  } catch (std::exception const& ex) {
+    std::string error_message = "OCR failed: " + std::string(ex.what());
+    result->Error("OCR_ERROR", error_message);
+  } catch (...) {
+    result->Error("OCR_ERROR", "Unknown OCR error occurred");
+  }
 }
 
 }  // namespace clipboard_plugin

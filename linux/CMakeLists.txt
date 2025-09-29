@@ -54,12 +54,18 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
 
+# OCR dependencies
+pkg_check_modules(TESSERACT REQUIRED IMPORTED_TARGET tesseract)
+pkg_check_modules(LEPTONICA REQUIRED IMPORTED_TARGET lept)
+
 # Clipboard plugin
 add_library(clipboard_plugin STATIC
   "clipboard_plugin.cc"
   "clipboard_plugin.h"
 )
 target_link_libraries(clipboard_plugin PRIVATE PkgConfig::GTK)
+target_link_libraries(clipboard_plugin PRIVATE PkgConfig::TESSERACT)
+target_link_libraries(clipboard_plugin PRIVATE PkgConfig::LEPTONICA)
 target_link_libraries(clipboard_plugin PRIVATE flutter)
 target_include_directories(clipboard_plugin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 apply_standard_settings(clipboard_plugin)

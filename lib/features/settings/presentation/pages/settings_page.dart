@@ -1,3 +1,7 @@
+// ignore_for_file: public_member_api_docs
+// 忽略公共成员API文档要求，因为这是内部设置页面，不需要对外暴露API文档
+import 'dart:async';
+
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
@@ -36,8 +40,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         SnackBar(
           content: Text(
             ref.read(userPreferencesProvider).isDeveloperMode
-                ? '开发者模式已激活'
-                : '开发者模式已关闭',
+                ? I18nFallbacks.settings.developerModeActive
+                : I18nFallbacks.settings.developerModeInactive,
           ),
           duration: const Duration(seconds: 2),
         ),
@@ -260,11 +264,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           if (preferences.isDeveloperMode) ...[
             _buildSection(
               context,
-              title: '开发者选项',
+              title: I18nFallbacks.settings.developerOptionsTitle,
               children: [
                 _buildSwitchTile(
-                  title: '性能监控覆盖层',
-                  subtitle: '显示实时性能指标覆盖层',
+                  title: I18nFallbacks.settings.performanceOverlayTitle,
+                  subtitle: I18nFallbacks.settings.performanceOverlaySubtitle,
                   value: preferences.showPerformanceOverlay,
                   onChanged: (value) {
                     ref
@@ -273,14 +277,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   },
                 ),
                 _buildListTile(
-                  title: '清理空数据',
-                  subtitle: '清理数据库中的空内容记录',
+                  title: I18nFallbacks.settings.storageCleanEmptyTitle,
+                  subtitle: I18nFallbacks.settings.storageCleanEmptySubtitle,
                   trailing: const Icon(Icons.cleaning_services),
                   onTap: _cleanEmptyData,
                 ),
                 _buildListTile(
-                  title: '验证数据完整性',
-                  subtitle: '检查并修复数据库完整性问题',
+                  title: I18nFallbacks.settings.storageValidateTitle,
+                  subtitle: I18nFallbacks.settings.storageValidateSubtitle,
                   trailing: const Icon(Icons.verified),
                   onTap: _validateAndRepairData,
                 ),
@@ -311,9 +315,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     l10n?.actionCheckUpdateSubtitle ??
                     I18nFallbacks.settings.actionCheckUpdateSubtitle,
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  // 检查更新逻辑
-                },
+                onTap: _checkForUpdates,
               ),
               _buildListTile(
                 title:
@@ -323,9 +325,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     l10n?.actionFeedbackSubtitle ??
                     I18nFallbacks.settings.actionFeedbackSubtitle,
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  // 反馈逻辑
-                },
+                onTap: _openFeedback,
               ),
             ],
           ),
@@ -493,7 +493,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     items: [100, 200, 500, 1000, 2000].map((value) {
                       return DropdownMenuItem(
                         value: value,
-                        child: Text('$value 条'),
+                        child: Text(
+                          I18nFallbacks.settings.maxHistoryUnit(value),
+                        ),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -529,37 +531,43 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           S.of(context)?.dialogThemeTitle ??
               I18nFallbacks.settings.dialogThemeTitle,
         ),
-        content: RadioGroup<ThemeMode>(
-          groupValue: ref.read(themeModeProvider),
-          onChanged: (value) {
-            ref.read(themeModeProvider.notifier).state = value!;
-            Navigator.of(context).pop();
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            final selectedTheme = ref.read(themeModeProvider);
+            return RadioGroup<ThemeMode>(
+              groupValue: selectedTheme,
+              onChanged: (value) {
+                ref.read(themeModeProvider.notifier).state = value!;
+                Navigator.of(context).pop();
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<ThemeMode>(
+                    title: Text(
+                      S.of(context)?.themeLight ??
+                          I18nFallbacks.settings.themeLight,
+                    ),
+                    value: ThemeMode.light,
+                  ),
+                  RadioListTile<ThemeMode>(
+                    title: Text(
+                      S.of(context)?.themeDark ??
+                          I18nFallbacks.settings.themeDark,
+                    ),
+                    value: ThemeMode.dark,
+                  ),
+                  RadioListTile<ThemeMode>(
+                    title: Text(
+                      S.of(context)?.themeSystem ??
+                          I18nFallbacks.settings.themeSystem,
+                    ),
+                    value: ThemeMode.system,
+                  ),
+                ],
+              ),
+            );
           },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<ThemeMode>(
-                title: Text(
-                  S.of(context)?.themeLight ??
-                      I18nFallbacks.settings.themeLight,
-                ),
-                value: ThemeMode.light,
-              ),
-              RadioListTile<ThemeMode>(
-                title: Text(
-                  S.of(context)?.themeDark ?? I18nFallbacks.settings.themeDark,
-                ),
-                value: ThemeMode.dark,
-              ),
-              RadioListTile<ThemeMode>(
-                title: Text(
-                  S.of(context)?.themeSystem ??
-                      I18nFallbacks.settings.themeSystem,
-                ),
-                value: ThemeMode.system,
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -573,70 +581,62 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           S.of(context)?.dialogDisplayModeTitle ??
               I18nFallbacks.settings.dialogDisplayModeTitle,
         ),
-        content: RadioGroup<DisplayMode>(
-          groupValue: ref.read(userPreferencesProvider).defaultDisplayMode,
-          onChanged: (value) {
-            ref
-                .read(userPreferencesProvider.notifier)
-                .setDefaultDisplayMode(value!);
-            Navigator.of(context).pop();
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            var selectedMode = ref
+                .read(userPreferencesProvider)
+                .defaultDisplayMode;
+            return RadioGroup<DisplayMode>(
+              groupValue: selectedMode,
+              onChanged: (value) {
+                setState(() {
+                  selectedMode = value!;
+                });
+                ref
+                    .read(userPreferencesProvider.notifier)
+                    .setDefaultDisplayMode(value!);
+                Navigator.of(context).pop();
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<DisplayMode>(
+                    title: Text(
+                      S.of(context)?.displayCompact ??
+                          I18nFallbacks.settings.displayCompact,
+                    ),
+                    subtitle: Text(
+                      S.of(context)?.displayCompactDesc ??
+                          I18nFallbacks.settings.displayCompactDesc,
+                    ),
+                    value: DisplayMode.compact,
+                  ),
+                  RadioListTile<DisplayMode>(
+                    title: Text(
+                      S.of(context)?.displayNormal ??
+                          I18nFallbacks.settings.displayNormal,
+                    ),
+                    subtitle: Text(
+                      S.of(context)?.displayNormalDesc ??
+                          I18nFallbacks.settings.displayNormalDesc,
+                    ),
+                    value: DisplayMode.normal,
+                  ),
+                  RadioListTile<DisplayMode>(
+                    title: Text(
+                      S.of(context)?.displayPreview ??
+                          I18nFallbacks.settings.displayPreview,
+                    ),
+                    subtitle: Text(
+                      S.of(context)?.displayPreviewDesc ??
+                          I18nFallbacks.settings.displayPreviewDesc,
+                    ),
+                    value: DisplayMode.preview,
+                  ),
+                ],
+              ),
+            );
           },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text(
-                  S.of(context)?.displayCompact ??
-                      I18nFallbacks.settings.displayCompact,
-                ),
-                subtitle: Text(
-                  S.of(context)?.displayCompactDesc ??
-                      I18nFallbacks.settings.displayCompactDesc,
-                ),
-                leading: const Radio<DisplayMode>(value: DisplayMode.compact),
-                onTap: () {
-                  ref
-                      .read(userPreferencesProvider.notifier)
-                      .setDefaultDisplayMode(DisplayMode.compact);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                title: Text(
-                  S.of(context)?.displayNormal ??
-                      I18nFallbacks.settings.displayNormal,
-                ),
-                subtitle: Text(
-                  S.of(context)?.displayNormalDesc ??
-                      I18nFallbacks.settings.displayNormalDesc,
-                ),
-                leading: const Radio<DisplayMode>(value: DisplayMode.normal),
-                onTap: () {
-                  ref
-                      .read(userPreferencesProvider.notifier)
-                      .setDefaultDisplayMode(DisplayMode.normal);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                title: Text(
-                  S.of(context)?.displayPreview ??
-                      I18nFallbacks.settings.displayPreview,
-                ),
-                subtitle: Text(
-                  S.of(context)?.displayPreviewDesc ??
-                      I18nFallbacks.settings.displayPreviewDesc,
-                ),
-                leading: const Radio<DisplayMode>(value: DisplayMode.preview),
-                onTap: () {
-                  ref
-                      .read(userPreferencesProvider.notifier)
-                      .setDefaultDisplayMode(DisplayMode.preview);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -650,43 +650,39 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           S.of(context)?.dialogLanguageTitle ??
               I18nFallbacks.settings.dialogLanguageTitle,
         ),
-        content: RadioGroup<String>(
-          groupValue: ref.read(userPreferencesProvider).language,
-          onChanged: (value) {
-            ref.read(userPreferencesProvider.notifier).setLanguage(value!);
-            Navigator.of(context).pop();
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            var selectedLanguage = ref.read(userPreferencesProvider).language;
+            return RadioGroup<String>(
+              groupValue: selectedLanguage,
+              onChanged: (value) {
+                setState(() {
+                  selectedLanguage = value!;
+                });
+                ref.read(userPreferencesProvider.notifier).setLanguage(value!);
+                Navigator.of(context).pop();
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<String>(
+                    title: Text(
+                      S.of(context)?.languageZhCN ??
+                          I18nFallbacks.settings.languageZhCN,
+                    ),
+                    value: 'zh_CN',
+                  ),
+                  RadioListTile<String>(
+                    title: Text(
+                      S.of(context)?.languageEnUS ??
+                          I18nFallbacks.settings.languageEnUS,
+                    ),
+                    value: 'en_US',
+                  ),
+                ],
+              ),
+            );
           },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text(
-                  S.of(context)?.languageZhCN ??
-                      I18nFallbacks.settings.languageZhCN,
-                ),
-                leading: const Radio<String>(value: 'zh_CN'),
-                onTap: () {
-                  ref
-                      .read(userPreferencesProvider.notifier)
-                      .setLanguage('zh_CN');
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                title: Text(
-                  S.of(context)?.languageEnUS ??
-                      I18nFallbacks.settings.languageEnUS,
-                ),
-                leading: const Radio<String>(value: 'en_US'),
-                onTap: () {
-                  ref
-                      .read(userPreferencesProvider.notifier)
-                      .setLanguage('en_US');
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -784,8 +780,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('清理空数据'),
-          content: const Text('确定要清理数据库中的空内容记录吗？此操作不可撤销。'),
+          title: Text(I18nFallbacks.settings.cleanEmptyDialogTitle),
+          content: Text(I18nFallbacks.settings.cleanEmptyDialogContent),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -809,29 +805,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       // 执行清理
       final count = await DatabaseService.instance.cleanEmptyTextItems();
       if (mounted) {
-        _showSuccessSnackBar('已清理 $count 条空数据记录');
+        _showSuccessSnackBar(I18nFallbacks.settings.cleanSuccessMessage(count));
       }
     } on Exception catch (e) {
       if (mounted) {
-        _showErrorSnackBar('清理失败: $e');
+        _showErrorSnackBar(
+          I18nFallbacks.settings.cleanErrorMessage(e.toString()),
+        );
       }
     }
   }
 
   Future<void> _validateAndRepairData() async {
     try {
-      // 显示加载对话框
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('正在验证数据完整性...'),
-            ],
+      // 显示加载对话框（不等待它完成）
+      unawaited(
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: 16),
+                Text(I18nFallbacks.settings.validateProgressText),
+              ],
+            ),
           ),
         ),
       );
@@ -846,14 +846,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         await showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('数据验证完成'),
+            title: Text(I18nFallbacks.settings.validateCompleteDialogTitle),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('清理空文本记录: ${stats['emptyTextItemsDeleted']} 条'),
-                Text('清理孤儿文件: ${stats['orphanFilesDeleted']} 个'),
-                Text('剩余记录总数: ${stats['totalItemsRemaining']} 条'),
+                Text(
+                  I18nFallbacks.settings.validateEmptyTextDeleted(
+                    stats['emptyTextItemsDeleted'] ?? 0,
+                  ),
+                ),
+                Text(
+                  I18nFallbacks.settings.validateOrphanFilesDeleted(
+                    stats['orphanFilesDeleted'] ?? 0,
+                  ),
+                ),
+                Text(
+                  I18nFallbacks.settings.validateTotalRemaining(
+                    stats['totalItemsRemaining'] ?? 0,
+                  ),
+                ),
               ],
             ),
             actions: [
@@ -870,8 +882,153 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } on Exception catch (e) {
       if (mounted) {
         Navigator.of(context).pop(); // 关闭加载对话框
-        _showErrorSnackBar('验证失败: $e');
+        _showErrorSnackBar(
+          I18nFallbacks.settings.validateErrorMessage(e.toString()),
+        );
       }
+    }
+  }
+
+  /// 检查应用更新
+  Future<void> _checkForUpdates() async {
+    try {
+      // 显示检查中的对话框
+      unawaited(
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: Spacing.s16),
+                Text(
+                  I18nFallbacks.settings.checkUpdateProgressText,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // 模拟检查更新（实际项目中应该调用真实的更新检查API）
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      if (mounted) {
+        Navigator.of(context).pop(); // 关闭检查中对话框
+
+        // 显示结果对话框
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(I18nFallbacks.settings.checkUpdateDialogTitle),
+            content: Text(I18nFallbacks.settings.checkUpdateDialogContent),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  S.of(context)?.actionOk ?? I18nFallbacks.common.actionOk,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // 关闭检查中对话框
+        _showErrorSnackBar(
+          I18nFallbacks.settings.checkUpdateErrorMessage(e.toString()),
+        );
+      }
+    }
+  }
+
+  /// 打开反馈页面
+  Future<void> _openFeedback() async {
+    try {
+      // 显示反馈选项对话框
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(I18nFallbacks.settings.feedbackDialogTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.email),
+                title: Text(I18nFallbacks.settings.feedbackEmailTitle),
+                subtitle: const Text('feedback@clipflowpro.com'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _openEmailFeedback();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.bug_report),
+                title: Text(I18nFallbacks.settings.feedbackIssueTitle),
+                subtitle: Text(I18nFallbacks.settings.feedbackIssueSubtitle),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _openIssuePage();
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                S.of(context)?.actionCancel ??
+                    I18nFallbacks.common.actionCancel,
+              ),
+            ),
+          ],
+        ),
+      );
+    } on Exception catch (e) {
+      _showErrorSnackBar(
+        I18nFallbacks.settings.feedbackErrorMessage(e.toString()),
+      );
+    }
+  }
+
+  /// 打开邮件反馈
+  Future<void> _openEmailFeedback() async {
+    try {
+      // 这里应该使用url_launcher打开邮件客户端
+      // 暂时显示一个提示
+      _showInfoSnackBar(I18nFallbacks.settings.feedbackEmailInDevelopment);
+    } on Exception catch (e) {
+      _showErrorSnackBar(
+        I18nFallbacks.settings.feedbackEmailErrorMessage(e.toString()),
+      );
+    }
+  }
+
+  /// 打开问题报告页面
+  Future<void> _openIssuePage() async {
+    try {
+      // 这里应该使用url_launcher打开GitHub Issues页面
+      // 暂时显示一个提示
+      _showInfoSnackBar(I18nFallbacks.settings.feedbackIssueInDevelopment);
+    } on Exception catch (e) {
+      _showErrorSnackBar(
+        I18nFallbacks.settings.feedbackIssueErrorMessage(e.toString()),
+      );
+    }
+  }
+
+  /// 显示信息提示
+  void _showInfoSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
     }
   }
 }

@@ -57,9 +57,16 @@ add_library(clipboard_plugin STATIC
   "clipboard_plugin.cpp"
   "clipboard_plugin.h"
 )
-target_link_libraries(clipboard_plugin PRIVATE flutter flutter_wrapper_app)
+target_link_libraries(clipboard_plugin PRIVATE flutter flutter_wrapper_app windowsapp)
 target_include_directories(clipboard_plugin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 apply_standard_settings(clipboard_plugin)
+
+# Enable WinRT for OCR functionality
+target_compile_definitions(clipboard_plugin PRIVATE WINRT_LEAN_AND_MEAN)
+set_target_properties(clipboard_plugin PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+)
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.

@@ -251,7 +251,7 @@ class ClipboardDebug {
 
       return true;
     } on PlatformException catch (e) {
-      await Log.e(
+      Log.e(
         'Re-initialization failed',
         tag: 'clipboard_debug',
         error: e,

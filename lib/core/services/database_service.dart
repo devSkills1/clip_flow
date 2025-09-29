@@ -95,6 +95,19 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
+    await Log.i(
+      'Inserting clip item with OCR data',
+      tag: 'DatabaseService',
+      fields: {
+        'id': item.id,
+        'type': item.type.name,
+        'hasOcrText': item.ocrText != null && item.ocrText!.isNotEmpty,
+        'ocrTextLength': item.ocrText?.length ?? 0,
+        'hasOcrConfidence': item.metadata.containsKey('ocrConfidence'),
+        'ocrConfidence': item.metadata['ocrConfidence'],
+      },
+    );
+
     await _database!.insert(ClipConstants.clipItemsTable, {
       'id': item.id,
       'type': item.type.name,
@@ -104,11 +117,21 @@ class DatabaseService {
       'file_path': item.filePath,
       'thumbnail': item.thumbnail,
       'metadata': jsonEncode(item.metadata),
+      'ocr_text': item.ocrText,
       'is_favorite': item.isFavorite ? 1 : 0,
       'created_at': item.createdAt.toIso8601String(),
       'updated_at': item.updatedAt.toIso8601String(),
       'schema_version': 1,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
+
+    await Log.d(
+      'Clip item inserted successfully',
+      tag: 'DatabaseService',
+      fields: {
+        'id': item.id,
+        'type': item.type.name,
+      },
+    );
   }
 
   /// 更新一条剪贴项记录
@@ -129,6 +152,7 @@ class DatabaseService {
         'file_path': item.filePath,
         'thumbnail': item.thumbnail,
         'metadata': jsonEncode(item.metadata),
+        'ocr_text': item.ocrText,
         'is_favorite': item.isFavorite ? 1 : 0,
         'updated_at': item.updatedAt.toIso8601String(),
         'schema_version': 1,
@@ -242,7 +266,7 @@ class DatabaseService {
     return maps.map(_mapToClipItem).toList();
   }
 
-  /// 搜索剪贴项（在 metadata JSON 文本中模糊匹配）
+  /// 搜索剪贴项（在 content、metadata 和 OCR 文本中模糊匹配）
   ///
   /// 参数：
   /// - query：关键字
@@ -257,16 +281,117 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
+    await Log.i(
+      'Searching clip items with OCR text support',
+      tag: 'DatabaseService',
+      fields: {
+        'query': query,
+        'limit': limit,
+        'offset': offset,
+      },
+    );
+
+    // 搜索内容、元数据和OCR文本
     final List<Map<String, dynamic>> maps = await _database!.query(
       ClipConstants.clipItemsTable,
-      where: 'metadata LIKE ?',
-      whereArgs: ['%$query%'],
+      where: '''
+        content LIKE ? OR 
+        metadata LIKE ? OR 
+        ocr_text LIKE ?
+      ''',
+      whereArgs: ['%$query%', '%$query%', '%$query%'],
       orderBy: 'created_at DESC',
       limit: limit,
       offset: offset,
     );
 
-    return maps.map(_mapToClipItem).toList();
+    final results = maps.map(_mapToClipItem).toList();
+
+    await Log.i(
+      'Search completed with OCR text support',
+      tag: 'DatabaseService',
+      fields: {
+        'query': query,
+        'resultCount': results.length,
+        'hasOcrMatches': results.any(
+          (item) =>
+              item.ocrText?.toLowerCase().contains(query.toLowerCase()) ??
+              false,
+        ),
+      },
+    );
+
+    return results;
+  }
+
+  /// 搜索指定类型的剪贴项（支持OCR文本搜索）
+  ///
+  /// 参数：
+  /// - query：搜索关键字
+  /// - type：剪贴项类型（可选）
+  /// - limit/offset：分页参数
+  ///
+  /// 返回：匹配的剪贴项列表
+  Future<List<ClipItem>> searchClipItemsByType(
+    String query, {
+    ClipType? type,
+    int? limit,
+    int? offset,
+  }) async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    await Log.i(
+      'Searching clip items by type with OCR text support',
+      tag: 'DatabaseService',
+      fields: {
+        'query': query,
+        'type': type?.name,
+        'limit': limit,
+        'offset': offset,
+      },
+    );
+
+    var whereClause = '''
+      content LIKE ? OR 
+      metadata LIKE ? OR 
+      ocr_text LIKE ?
+    ''';
+    final whereArgs = ['%$query%', '%$query%', '%$query%'];
+
+    // 如果指定了类型，添加类型过滤
+    if (type != null) {
+      whereClause = '($whereClause) AND type = ?';
+      whereArgs.add(type.name);
+    }
+
+    final List<Map<String, dynamic>> maps = await _database!.query(
+      ClipConstants.clipItemsTable,
+      where: whereClause,
+      whereArgs: whereArgs,
+      orderBy: 'created_at DESC',
+      limit: limit,
+      offset: offset,
+    );
+
+    final results = maps.map(_mapToClipItem).toList();
+
+    await Log.i(
+      'Type-specific search completed with OCR text support',
+      tag: 'DatabaseService',
+      fields: {
+        'query': query,
+        'type': type?.name,
+        'resultCount': results.length,
+        'hasOcrMatches': results.any(
+          (item) =>
+              item.ocrText?.toLowerCase().contains(query.toLowerCase()) ??
+              false,
+        ),
+      },
+    );
+
+    return results;
   }
 
   /// 通过 id 获取剪贴项
@@ -417,6 +542,7 @@ class DatabaseService {
     final filePathRaw = map['file_path'];
     final thumbRaw = map['thumbnail'];
     final metadataRaw = map['metadata'];
+    final ocrTextRaw = map['ocr_text'];
     final isFavRaw = map['is_favorite'];
     final createdAtRaw = map['created_at'];
     final updatedAtRaw = map['updated_at'];
@@ -447,6 +573,7 @@ class DatabaseService {
       filePath: filePathRaw is String ? filePathRaw : null,
       thumbnail: thumbRaw is List ? List<int>.from(thumbRaw) : null,
       metadata: metadata,
+      ocrText: ocrTextRaw is String ? ocrTextRaw : null,
       isFavorite: isFavRaw == 1 || isFavRaw == true,
       createdAt: createdAtRaw is String
           ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
@@ -582,6 +709,18 @@ class DatabaseService {
       await db.execute(
         'ALTER TABLE ${ClipConstants.clipItemsTable} '
         'ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+
+    // clip_items: ocr_text TEXT
+    final hasOcrText = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'ocr_text',
+    );
+    if (!hasOcrText) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN ocr_text TEXT',
       );
     }
 

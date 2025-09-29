@@ -324,6 +324,105 @@ class _SettingsFallback {
 
   /// 存储管理错误消息：日志文件夹
   String get storageErrorLog => '无法在Finder中显示日志文件夹';
+
+  /// 存储：清理空数据 标题
+  String get storageCleanEmptyTitle => '清理空数据';
+
+  /// 存储：清理空数据 副标题
+  String get storageCleanEmptySubtitle => '删除内容为空的剪贴板记录';
+
+  /// 存储：验证数据完整性 标题
+  String get storageValidateTitle => '验证数据完整性';
+
+  /// 存储：验证数据完整性 副标题
+  String get storageValidateSubtitle => '检查并修复数据库中的问题';
+
+  /// 开发者选项 标题
+  String get developerOptionsTitle => '开发者选项';
+
+  /// 性能监控覆盖层 标题
+  String get performanceOverlayTitle => '性能监控覆盖层';
+
+  /// 性能监控覆盖层 副标题
+  String get performanceOverlaySubtitle => '显示实时性能指标覆盖层';
+
+  /// 开发者模式状态：已激活
+  String get developerModeActive => '开发者模式已激活';
+
+  /// 开发者模式状态：已关闭
+  String get developerModeInactive => '开发者模式已关闭';
+
+  /// 最大历史记录数单位
+  String maxHistoryUnit(int count) => '$count 条';
+
+  /// 清理空数据对话框标题
+  String get cleanEmptyDialogTitle => '清理空数据';
+
+  /// 清理空数据对话框内容
+  String get cleanEmptyDialogContent => '确定要清理数据库中的空内容记录吗？此操作不可撤销。';
+
+  /// 清理成功消息
+  String cleanSuccessMessage(int count) => '已清理 $count 条空数据记录';
+
+  /// 清理失败消息
+  String cleanErrorMessage(String error) => '清理失败: $error';
+
+  /// 数据验证进度文本
+  String get validateProgressText => '正在验证数据完整性...';
+
+  /// 数据验证完成对话框标题
+  String get validateCompleteDialogTitle => '数据验证完成';
+
+  /// 清理空文本记录统计
+  String validateEmptyTextDeleted(int count) => '清理空文本记录: $count 条';
+
+  /// 清理孤儿文件统计
+  String validateOrphanFilesDeleted(int count) => '清理孤儿文件: $count 个';
+
+  /// 剩余记录总数统计
+  String validateTotalRemaining(int count) => '剩余记录总数: $count 条';
+
+  /// 验证失败消息
+  String validateErrorMessage(String error) => '验证失败: $error';
+
+  /// 检查更新进度文本
+  String get checkUpdateProgressText => '正在检查更新...';
+
+  /// 检查更新对话框标题
+  String get checkUpdateDialogTitle => '检查更新';
+
+  /// 检查更新对话框内容
+  String get checkUpdateDialogContent => '您已经是最新版本';
+
+  /// 检查更新失败消息
+  String checkUpdateErrorMessage(String error) => '检查更新失败: $error';
+
+  /// 反馈与建议对话框标题
+  String get feedbackDialogTitle => '反馈与建议';
+
+  /// 邮件反馈标题
+  String get feedbackEmailTitle => '邮件反馈';
+
+  /// 问题报告标题
+  String get feedbackIssueTitle => '问题报告';
+
+  /// 问题报告副标题
+  String get feedbackIssueSubtitle => '在GitHub上报告问题';
+
+  /// 打开反馈失败消息
+  String feedbackErrorMessage(String error) => '打开反馈失败: $error';
+
+  /// 邮件反馈开发中消息
+  String get feedbackEmailInDevelopment => '邮件反馈功能开发中...';
+
+  /// 打开邮件失败消息
+  String feedbackEmailErrorMessage(String error) => '打开邮件失败: $error';
+
+  /// 问题报告开发中消息
+  String get feedbackIssueInDevelopment => '问题报告功能开发中...';
+
+  /// 打开问题页面失败消息
+  String feedbackIssueErrorMessage(String error) => '打开问题页面失败: $error';
 }
 
 class _StorageFallback {

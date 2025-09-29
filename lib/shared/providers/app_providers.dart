@@ -1,5 +1,5 @@
-// ignore_for_file: public_member_api_docs
-// 忽略公共成员API文档要求，因为这是内部依赖注入配置文件，不需要对外暴露API文档
+// ignore_for_file: public_member_api_docs - 内部依赖注入配置文件，不需要对外暴露API文档
+// 该文件包含应用级别的Provider定义，主要用于内部状态管理，不作为公共API使用
 import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/routes.dart';
@@ -130,7 +130,7 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     return state.where((item) => item.type == type).toList();
   }
 
-  /// 按内容与标签进行全文搜索。
+  /// 按内容、标签和OCR文本进行全文搜索。
   List<ClipItem> search(String query) {
     if (query.isEmpty) return state;
 
@@ -143,7 +143,12 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
               .join(' ') ??
           '';
 
-      return content.contains(lowercaseQuery) || tags.contains(lowercaseQuery);
+      // 搜索OCR文本
+      final ocrText = (item.ocrText ?? '').toLowerCase();
+
+      return content.contains(lowercaseQuery) ||
+          tags.contains(lowercaseQuery) ||
+          ocrText.contains(lowercaseQuery);
     }).toList();
   }
 }
@@ -151,6 +156,28 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
 //// 搜索查询提供者
 /// 当前搜索关键字的状态提供者。
 final searchQueryProvider = StateProvider<String>((ref) => '');
+
+//// 数据库搜索结果提供者
+/// 基于搜索查询从数据库获取搜索结果的异步提供者。
+// ignore: specify_nonobvious_property_types - 类型已通过泛型参数明确指定
+final databaseSearchProvider = FutureProvider.family<List<ClipItem>, String>(
+  (ref, query) async {
+    if (query.isEmpty) return [];
+
+    try {
+      final databaseService = DatabaseService.instance;
+      return await databaseService.searchClipItems(query, limit: 100);
+    } on Exception catch (e) {
+      // 记录搜索失败的错误并返回空列表
+      await Log.w(
+        'Database search failed',
+        fields: {'query': query, 'error': e.toString()},
+        tag: 'DatabaseSearchProvider',
+      );
+      return [];
+    }
+  },
+);
 
 //// 筛选选项定义（包含联合筛选：富文本=RTF+HTML+Code）
 /// UI 的筛选项（而非底层 ClipType），用于表示“全部/文本/富文本(联合)/RTF/HTML/代码/图片/颜色/文件/音频/视频”。

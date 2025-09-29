@@ -38,6 +38,9 @@ class ClipboardPlugin : public flutter::Plugin {
   
   void GetClipboardImageData(
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  
+  void PerformOCR(
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
   // Helper methods
   std::string DetectFileType(const std::string& path);

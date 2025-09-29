@@ -61,6 +61,7 @@ class ClipItem {
     String? id,
     this.thumbnail,
     this.isFavorite = false,
+    this.ocrText,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : id = id ?? const Uuid().v4(),
@@ -78,6 +79,7 @@ class ClipItem {
     final isFavRaw = json['isFavorite'];
     final createdAtRaw = json['createdAt'];
     final updatedAtRaw = json['updatedAt'];
+    final ocrTextRaw = json['ocrText'];
 
     return ClipItem(
       id: id,
@@ -94,6 +96,7 @@ class ClipItem {
                 ? Map<String, dynamic>.from(metadataRaw)
                 : <String, dynamic>{}),
       isFavorite: isFavRaw is bool ? isFavRaw : (isFavRaw == 1),
+      ocrText: ocrTextRaw is String ? ocrTextRaw : null,
       createdAt: createdAtRaw is String
           ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
           : (createdAtRaw is DateTime ? createdAtRaw : DateTime.now()),
@@ -124,6 +127,9 @@ class ClipItem {
   /// 是否收藏：用于界面筛选与置顶等功能
   final bool isFavorite;
 
+  /// OCR识别的文本内容：用于图片中的文字搜索
+  final String? ocrText;
+
   /// 创建时间：该条目首次创建的时间
   final DateTime createdAt;
 
@@ -139,6 +145,7 @@ class ClipItem {
     List<int>? thumbnail,
     Map<String, dynamic>? metadata,
     bool? isFavorite,
+    String? ocrText,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -150,6 +157,7 @@ class ClipItem {
       thumbnail: thumbnail ?? this.thumbnail,
       metadata: metadata ?? this.metadata,
       isFavorite: isFavorite ?? this.isFavorite,
+      ocrText: ocrText ?? this.ocrText,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -165,6 +173,7 @@ class ClipItem {
       'thumbnail': thumbnail,
       'metadata': metadata,
       'isFavorite': isFavorite,
+      'ocrText': ocrText,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

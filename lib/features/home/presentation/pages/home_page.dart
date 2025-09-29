@@ -133,11 +133,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     final filterOption = ref.watch(filterTypeProvider);
     final displayMode = ref.watch(displayModeProvider);
 
-    // 过滤和搜索
+    // 对于无搜索查询的情况，应用筛选器到内存中的历史记录
     var filteredItems = clipboardHistory;
-
-    // 根据筛选选项过滤（支持联合筛选）
-    if (filterOption != FilterOption.all) {
+    if (searchQuery.isEmpty && filterOption != FilterOption.all) {
       filteredItems = filteredItems.where((item) {
         switch (filterOption) {
           case FilterOption.text:
@@ -166,12 +164,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             return true;
         }
       }).toList();
-    }
-
-    if (searchQuery.isNotEmpty) {
-      filteredItems = ref
-          .read(clipboardHistoryProvider.notifier)
-          .search(searchQuery);
     }
 
     return Scaffold(
@@ -227,13 +219,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                 // 内容区域
                 Expanded(
-                  child: filteredItems.isEmpty
-                      ? _buildEmptyState(l10n)
-                      : _buildClipboardList(
-                          filteredItems,
-                          displayMode,
-                          searchQuery,
-                        ),
+                  child: _buildContentArea(
+                    searchQuery,
+                    filteredItems,
+                    displayMode,
+                    l10n,
+                  ),
                 ),
               ],
             ),
@@ -477,5 +468,67 @@ class _HomePageState extends ConsumerState<HomePage> {
         }
         return content;
     }
+  }
+
+  Widget _buildContentArea(
+    String searchQuery,
+    List<ClipItem> filteredItems,
+    DisplayMode displayMode,
+    S? l10n,
+  ) {
+    // 如果有搜索查询，检查搜索状态
+    if (searchQuery.isNotEmpty) {
+      final searchResult = ref.watch(databaseSearchProvider(searchQuery));
+      return searchResult.when(
+        data: (items) {
+          // 应用筛选器到搜索结果
+          final filterOption = ref.watch(filterTypeProvider);
+          var filtered = items;
+          if (filterOption != FilterOption.all) {
+            filtered = items.where((item) {
+              switch (filterOption) {
+                case FilterOption.text:
+                  return item.type == ClipType.text;
+                case FilterOption.richTextUnion:
+                  return item.type == ClipType.rtf ||
+                      item.type == ClipType.html ||
+                      item.type == ClipType.code;
+                case FilterOption.rtf:
+                  return item.type == ClipType.rtf;
+                case FilterOption.html:
+                  return item.type == ClipType.html;
+                case FilterOption.code:
+                  return item.type == ClipType.code;
+                case FilterOption.image:
+                  return item.type == ClipType.image;
+                case FilterOption.color:
+                  return item.type == ClipType.color;
+                case FilterOption.file:
+                  return item.type == ClipType.file;
+                case FilterOption.audio:
+                  return item.type == ClipType.audio;
+                case FilterOption.video:
+                  return item.type == ClipType.video;
+                case FilterOption.all:
+                  return true;
+              }
+            }).toList();
+          }
+
+          return filtered.isEmpty
+              ? _buildEmptyState(l10n)
+              : _buildClipboardList(filtered, displayMode, searchQuery);
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, stackTrace) => _buildEmptyState(l10n),
+      );
+    }
+
+    // 无搜索查询时的正常显示
+    return filteredItems.isEmpty
+        ? _buildEmptyState(l10n)
+        : _buildClipboardList(filteredItems, displayMode, searchQuery);
   }
 }

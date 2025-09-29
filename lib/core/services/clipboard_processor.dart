@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/ocr_service.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
@@ -172,12 +174,68 @@ class ClipboardProcessor {
       // 提取元数据
       final metadata = await _extractImageMetadata(imageBytes);
 
+      // OCR文字识别
+      String? ocrText;
+      await Log.i(
+        'Starting OCR processing for image',
+        tag: 'ClipboardProcessor',
+        fields: {
+          'imageSize': imageBytes.length,
+          'contentHash': contentHash,
+        },
+      );
+
+      try {
+        final ocrService = OcrServiceFactory.getInstance();
+        final ocrResult = await ocrService.recognizeText(imageBytes);
+
+        if (ocrResult != null && ocrResult.text.isNotEmpty) {
+          ocrText = ocrResult.text;
+          // 将OCR置信度添加到元数据中
+          metadata['ocrConfidence'] = ocrResult.confidence;
+
+          await Log.i(
+            'OCR processing completed successfully',
+            tag: 'ClipboardProcessor',
+            fields: {
+              'textLength': ocrText.length,
+              'confidence': ocrResult.confidence,
+              'contentHash': contentHash,
+            },
+          );
+        } else {
+          await Log.w(
+            'OCR processing returned no text',
+            tag: 'ClipboardProcessor',
+            fields: {
+              'contentHash': contentHash,
+              'resultNull': ocrResult == null,
+              'textEmpty': ocrResult?.text.isEmpty ?? true,
+            },
+          );
+        }
+      } on Exception catch (e) {
+        // OCR失败不影响图片保存
+        metadata['ocrError'] = e.toString();
+
+        await Log.e(
+          'OCR processing failed',
+          tag: 'ClipboardProcessor',
+          error: e,
+          fields: {
+            'contentHash': contentHash,
+            'imageSize': imageBytes.length,
+          },
+        );
+      }
+
       return ClipItem(
         type: ClipType.image,
         content: '', // 图片内容为空
         filePath: relativePath,
         thumbnail: thumbnail,
         metadata: metadata,
+        ocrText: ocrText,
         id: contentHash,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
