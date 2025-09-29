@@ -4,6 +4,7 @@ import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
+import 'package:clip_flow_pro/debug/clipboard_debug_page.dart';
 import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/filter_sidebar.dart';
@@ -193,16 +194,35 @@ class _HomePageState extends ConsumerState<HomePage> {
           Expanded(
             child: Column(
               children: [
-                // 顶部搜索栏
-                SearchBarWidget(
-                  controller: _searchController,
-                  onSearchChanged: (query) {
-                    ref.read(searchQueryProvider.notifier).state = query;
-                  },
-                  onClear: () {
-                    _searchController.clear();
-                    ref.read(searchQueryProvider.notifier).state = '';
-                  },
+                // 顶部搜索栏和调试按钮
+                Row(
+                  children: [
+                    Expanded(
+                      child: SearchBarWidget(
+                        controller: _searchController,
+                        onSearchChanged: (query) {
+                          ref.read(searchQueryProvider.notifier).state = query;
+                        },
+                        onClear: () {
+                          _searchController.clear();
+                          ref.read(searchQueryProvider.notifier).state = '';
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 调试按钮
+                    IconButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const ClipboardDebugPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.bug_report),
+                      tooltip: '剪贴板调试工具',
+                    ),
+                  ],
                 ),
 
                 // 内容区域

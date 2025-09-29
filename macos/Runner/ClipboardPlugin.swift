@@ -13,6 +13,8 @@ import UniformTypeIdentifiers
 
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "test":
+            result("ClipboardPlugin is working on macOS")
         case "getClipboardType":
             getClipboardType(result: result)
         case "getClipboardSequence":

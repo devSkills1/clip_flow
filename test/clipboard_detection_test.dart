@@ -6,6 +6,10 @@ void main() {
   group('剪贴板类型检测优化测试', () {
     late ClipboardService clipboardService;
 
+    setUpAll(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+    });
+
     setUp(() {
       clipboardService = ClipboardService();
     });

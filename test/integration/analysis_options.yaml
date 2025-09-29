@@ -1,0 +1,20 @@
+include: ../../analysis_options.yaml
+
+analyzer:
+  errors:
+    # 允许在集成测试中使用 print 语句
+    avoid_print: ignore
+    
+    # 放宽其他测试相关规则
+    public_member_api_docs: ignore
+    flutter_style_todos: ignore
+    parameter_assignments: ignore
+    avoid_field_initializers_in_const_classes: ignore
+
+linter:
+  rules:
+    # 保持基本的代码质量规则，但允许测试特定的模式
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_fields
+    - prefer_final_locals

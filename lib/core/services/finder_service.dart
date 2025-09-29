@@ -170,7 +170,7 @@ class FinderService {
 
       // 如果日志目录不存在，显示应用文档目录
       final logDirectory = Directory(logPath);
-      if (!await logDirectory.exists()) {
+      if (!logDirectory.existsSync()) {
         return await showAppDocumentsInFinder();
       }
 

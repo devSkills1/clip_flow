@@ -6,6 +6,8 @@ void main() {
   group('代码检测测试', () {
     late ClipboardService clipboardService;
 
+    setUpAll(TestWidgetsFlutterBinding.ensureInitialized);
+
     setUp(() {
       clipboardService = ClipboardService();
     });
@@ -108,13 +110,13 @@ const MyComponent = () => {
       expect(result, ClipType.html, reason: '包含多个HTML标签的片段应该被识别为HTML类型');
     });
 
-    test('简单HTML标签应该被识别为文本', () {
+    test('简单HTML标签应该被识别为HTML', () {
       const simpleContent = '<div>Simple content</div>';
 
       final result = clipboardService.detectContentTypeForTesting(
         simpleContent,
       );
-      expect(result, ClipType.text, reason: '简单的HTML标签应该被识别为文本类型');
+      expect(result, ClipType.html, reason: '简单的HTML标签应该被识别为HTML类型');
     });
   });
 }

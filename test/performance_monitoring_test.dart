@@ -52,10 +52,10 @@ void main() {
     });
 
     test('should reset jank count', () {
-      performanceService.startMonitoring();
-
-      // 模拟一些卡顿
-      performanceService.resetJankCount();
+      performanceService
+        ..startMonitoring()
+        // 模拟一些卡顿
+        ..resetJankCount();
 
       final metrics = performanceService.getCurrentMetrics();
       expect(metrics.jankCount, equals(0));

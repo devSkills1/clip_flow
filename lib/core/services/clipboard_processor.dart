@@ -1,0 +1,741 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
+import 'package:clip_flow_pro/core/utils/image_utils.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+
+/// 剪贴板内容处理器
+///
+/// 负责处理和转换剪贴板内容，包括：
+/// - 内容缓存和去重
+/// - 元数据提取
+/// - 文件保存和管理
+/// - 图片处理和缩略图生成
+/// - 富文本内容处理
+class ClipboardProcessor {
+  static const MethodChannel _platformChannel = MethodChannel(
+    'clipboard_service',
+  );
+
+  final ClipboardDetector _detector = ClipboardDetector();
+
+  // 缓存配置
+  static const int _maxCacheSize = 100;
+  static const Duration _cacheExpiry = Duration(hours: 24);
+  static const int _maxContentLength = 1024 * 1024; // 1MB
+  static const int _maxMemoryUsage = 50 * 1024 * 1024; // 50MB
+
+  // 内容缓存
+  final Map<String, _CacheEntry> _contentCache = {};
+  final Map<String, DateTime> _hashTimestamps = {};
+
+  // 性能监控
+  int _currentMemoryUsage = 0;
+  int _cacheHits = 0;
+  int _cacheMisses = 0;
+  DateTime? _lastCleanup;
+
+  /// 处理剪贴板内容并创建 ClipItem
+  Future<ClipItem?> processClipboardContent() async {
+    try {
+      // 获取原生剪贴板数据
+      final nativeData = await _getNativeClipboardData();
+      if (nativeData == null) return null;
+
+      // 检查缓存
+      final contentHash = _calculateContentHash(nativeData);
+      if (_isCached(contentHash)) {
+        return null; // 内容未变化
+      }
+
+      // 处理不同类型的内容
+      ClipItem? item;
+
+      if (nativeData.containsKey('image')) {
+        item = await _processImageContent(nativeData, contentHash);
+      } else if (nativeData.containsKey('files')) {
+        item = await _processFileContent(nativeData, contentHash);
+      } else if (nativeData.containsKey('rtf')) {
+        item = await _processRichTextContent(nativeData, contentHash);
+      } else if (nativeData.containsKey('html')) {
+        item = await _processHtmlContent(nativeData, contentHash);
+      } else if (nativeData.containsKey('text')) {
+        item = await _processTextContent(nativeData, contentHash);
+      }
+
+      if (item != null) {
+        _updateCache(contentHash, item);
+      }
+
+      return item;
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 获取原生剪贴板数据
+  Future<Map<String, dynamic>?> _getNativeClipboardData() async {
+    try {
+      // 使用现有的平台方法获取剪贴板类型和数据
+      final typeResult = await _platformChannel
+          .invokeMethod<Map<Object?, Object?>>('getClipboardType');
+      if (typeResult == null) return null;
+
+      final typeData = typeResult.cast<String, dynamic>();
+      final clipboardType = typeData['type'] as String?;
+
+      if (clipboardType == null) return null;
+
+      // 根据类型获取相应的数据
+      final result = <String, dynamic>{'type': clipboardType};
+
+      switch (clipboardType) {
+        case 'image':
+          final imageData = await _platformChannel.invokeMethod<Uint8List>(
+            'getClipboardImageData',
+          );
+          if (imageData != null) {
+            result['image'] = imageData;
+          }
+
+        case 'file':
+          final filePaths = await _platformChannel.invokeMethod<List<dynamic>>(
+            'getClipboardFilePaths',
+          );
+          if (filePaths != null && filePaths.isNotEmpty) {
+            result['files'] = filePaths;
+          }
+
+        case 'rtf':
+          final rtfData = await _platformChannel
+              .invokeMethod<Map<Object?, Object?>>('getRichTextData');
+          if (rtfData != null) {
+            final rtfMap = rtfData.cast<String, dynamic>();
+            result['rtf'] = rtfMap['rtf'];
+            if (rtfMap.containsKey('text')) {
+              result['text'] = rtfMap['text'];
+            }
+          }
+
+        case 'html':
+          // HTML 内容通过 typeData 中的 content 字段获取
+          if (typeData.containsKey('content')) {
+            result['html'] = typeData['content'];
+          }
+
+        default:
+          // 对于文本类型，使用 Flutter 的 Clipboard API
+          final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+          if (clipboardData?.text != null) {
+            result['text'] = clipboardData!.text;
+          }
+      }
+
+      return result;
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 处理图片内容
+  Future<ClipItem?> _processImageContent(
+    Map<String, dynamic> data,
+    String contentHash,
+  ) async {
+    try {
+      final imageBytes = data['image'] as Uint8List?;
+      if (imageBytes == null || imageBytes.isEmpty) return null;
+
+      // 限制图片大小
+      if (imageBytes.length > _maxContentLength) {
+        return null;
+      }
+
+      // 保存图片到磁盘
+      final extension = _inferImageExtension(imageBytes);
+      final relativePath = await _saveMediaToDisk(
+        bytes: imageBytes,
+        type: 'image',
+        suggestedExt: extension,
+      );
+
+      if (relativePath.isEmpty) return null;
+
+      // 生成缩略图
+      final thumbnail = await _generateThumbnail(imageBytes);
+
+      // 提取元数据
+      final metadata = await _extractImageMetadata(imageBytes);
+
+      return ClipItem(
+        type: ClipType.image,
+        content: '', // 图片内容为空
+        filePath: relativePath,
+        thumbnail: thumbnail,
+        metadata: metadata,
+        id: contentHash,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 处理文件内容
+  Future<ClipItem?> _processFileContent(
+    Map<String, dynamic> data,
+    String contentHash,
+  ) async {
+    try {
+      final files = data['files'] as List<dynamic>?;
+      if (files == null || files.isEmpty) return null;
+
+      final filePath = files.first as String;
+      final file = File(filePath);
+
+      if (!file.existsSync()) return null;
+
+      // 检测文件类型
+      final fileType = _detector.detectFileType(filePath);
+
+      // 提取元数据
+      final metadata = await _extractFileMetadata(file, fileType);
+
+      // 处理图片文件的缩略图
+      List<int>? thumbnail;
+      if (fileType == ClipType.image) {
+        thumbnail = await _generateFileThumbnail(file);
+      }
+
+      return ClipItem(
+        type: fileType,
+        content: filePath,
+        filePath: filePath,
+        thumbnail: thumbnail,
+        metadata: metadata,
+        id: contentHash,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 处理富文本内容
+  Future<ClipItem?> _processRichTextContent(
+    Map<String, dynamic> data,
+    String contentHash,
+  ) async {
+    try {
+      final rtfContent = data['rtf'] as String?;
+      final plainText = data['text'] as String?;
+
+      if (rtfContent == null || rtfContent.isEmpty) return null;
+
+      // 检查是否为代码内容
+      if (plainText != null &&
+          _detector.detectContentType(plainText) == ClipType.code) {
+        return _processCodeContent(plainText, contentHash);
+      }
+
+      // 提取元数据
+      final metadata = await _extractTextMetadata(rtfContent, ClipType.rtf);
+
+      return ClipItem(
+        type: ClipType.rtf,
+        content: rtfContent,
+        metadata: metadata,
+        id: contentHash,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 处理 HTML 内容
+  Future<ClipItem?> _processHtmlContent(
+    Map<String, dynamic> data,
+    String contentHash,
+  ) async {
+    try {
+      final htmlContent = data['html'] as String?;
+      final plainText = data['text'] as String?;
+
+      if (htmlContent == null || htmlContent.isEmpty) return null;
+
+      // 检查是否为代码内容
+      if (plainText != null &&
+          _detector.detectContentType(plainText) == ClipType.code) {
+        return _processCodeContent(plainText, contentHash);
+      }
+
+      // 提取元数据
+      final metadata = await _extractTextMetadata(htmlContent, ClipType.html);
+
+      return ClipItem(
+        type: ClipType.html,
+        content: htmlContent,
+        metadata: metadata,
+        id: contentHash,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 处理文本内容
+  Future<ClipItem?> _processTextContent(
+    Map<String, dynamic> data,
+    String contentHash,
+  ) async {
+    try {
+      final textContent = data['text'] as String?;
+      if (textContent == null || textContent.isEmpty) return null;
+
+      // 限制文本长度
+      if (textContent.length > _maxContentLength) {
+        return null;
+      }
+
+      // 检测内容类型
+      final contentType = _detector.detectContentType(textContent);
+
+      // 根据类型处理
+      switch (contentType) {
+        case ClipType.code:
+          return _processCodeContent(textContent, contentHash);
+        case ClipType.color:
+        case ClipType.url:
+        case ClipType.email:
+        case ClipType.json:
+        case ClipType.xml:
+          return _processSpecialTextContent(
+            textContent,
+            contentType,
+            contentHash,
+          );
+        default:
+          return _processPlainTextContent(textContent, contentHash);
+      }
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 处理代码内容
+  Future<ClipItem> _processCodeContent(
+    String content,
+    String contentHash,
+  ) async {
+    final language = _detector.estimateLanguage(content);
+    final metadata = await _extractTextMetadata(content, ClipType.code);
+    metadata['language'] = language;
+
+    return ClipItem(
+      type: ClipType.code,
+      content: content,
+      metadata: metadata,
+      id: contentHash,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  /// 处理特殊文本内容（颜色、URL等）
+  Future<ClipItem> _processSpecialTextContent(
+    String content,
+    ClipType type,
+    String contentHash,
+  ) async {
+    final metadata = await _extractTextMetadata(content, type);
+
+    // 为颜色类型添加特殊元数据
+    if (type == ClipType.color) {
+      metadata.addAll(_extractColorMetadata(content));
+    }
+
+    return ClipItem(
+      type: type,
+      content: content,
+      metadata: metadata,
+      id: contentHash,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  /// 处理纯文本内容
+  Future<ClipItem> _processPlainTextContent(
+    String content,
+    String contentHash,
+  ) async {
+    final metadata = await _extractTextMetadata(content, ClipType.text);
+
+    return ClipItem(
+      type: ClipType.text,
+      content: content,
+      metadata: metadata,
+      id: contentHash,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  /// 计算内容哈希
+  String _calculateContentHash(Map<String, dynamic> data) {
+    final content = json.encode(data);
+    return sha256.convert(utf8.encode(content)).toString().substring(0, 16);
+  }
+
+  /// 检查是否已缓存（优化版本）
+  bool _isCached(String contentHash) {
+    final entry = _contentCache[contentHash];
+    if (entry == null) {
+      _cacheMisses++;
+      return false;
+    }
+
+    // 检查是否过期
+    final now = DateTime.now();
+    if (now.difference(entry.timestamp) > _cacheExpiry) {
+      _contentCache.remove(contentHash);
+      _hashTimestamps.remove(contentHash);
+      _updateMemoryUsage();
+      _cacheMisses++;
+      return false;
+    }
+
+    _cacheHits++;
+    return true;
+  }
+
+  /// 更新缓存（优化版本）
+  void _updateCache(String contentHash, ClipItem item) {
+    final now = DateTime.now();
+
+    // 检查内存使用情况
+    if (_currentMemoryUsage > _maxMemoryUsage) {
+      _performSmartCleanup();
+    }
+
+    // 如果缓存已满，移除最旧的条目
+    if (_contentCache.length >= _maxCacheSize) {
+      _removeOldestEntry();
+    }
+
+    final entry = _CacheEntry(item, now);
+    _contentCache[contentHash] = entry;
+    _hashTimestamps[contentHash] = now;
+    _updateMemoryUsage();
+  }
+
+  /// 智能缓存清理
+  void _performSmartCleanup() {
+    final now = DateTime.now();
+
+    // 按访问时间和大小排序，优先清理大文件和旧文件
+    final entries = _contentCache.entries.toList();
+    entries.sort((a, b) {
+      final ageA = now.difference(a.value.timestamp).inMinutes;
+      final ageB = now.difference(b.value.timestamp).inMinutes;
+      final sizeA = _estimateItemSize(a.value.item);
+      final sizeB = _estimateItemSize(b.value.item);
+
+      // 综合考虑年龄和大小
+      final scoreA = ageA * 0.7 + sizeA * 0.3;
+      final scoreB = ageB * 0.7 + sizeB * 0.3;
+
+      return scoreB.compareTo(scoreA);
+    });
+
+    // 清理一半的缓存
+    final toRemove = entries.take(entries.length ~/ 2);
+    for (final entry in toRemove) {
+      _contentCache.remove(entry.key);
+      _hashTimestamps.remove(entry.key);
+    }
+
+    _updateMemoryUsage();
+    _lastCleanup = now;
+  }
+
+  /// 移除最旧的缓存条目
+  void _removeOldestEntry() {
+    if (_contentCache.isEmpty) return;
+
+    String? oldestKey;
+    DateTime? oldestTime;
+
+    for (final entry in _hashTimestamps.entries) {
+      if (oldestTime == null || entry.value.isBefore(oldestTime)) {
+        oldestTime = entry.value;
+        oldestKey = entry.key;
+      }
+    }
+
+    if (oldestKey != null) {
+      _contentCache.remove(oldestKey);
+      _hashTimestamps.remove(oldestKey);
+      _updateMemoryUsage();
+    }
+  }
+
+  /// 估算条目大小
+  int _estimateItemSize(ClipItem item) {
+    var size = 0;
+
+    // 内容大小
+    if (item.content != null) {
+      size += item.content!.length * 2; // UTF-16 编码
+    }
+
+    // 缩略图大小
+    if (item.thumbnail != null) {
+      size += item.thumbnail!.length;
+    }
+
+    // 元数据大小
+    size += item.metadata.toString().length * 2;
+
+    return size;
+  }
+
+  /// 更新内存使用统计
+  void _updateMemoryUsage() {
+    _currentMemoryUsage = 0;
+    for (final entry in _contentCache.values) {
+      _currentMemoryUsage += _estimateItemSize(entry.item);
+    }
+  }
+
+  /// 生成缩略图
+  Future<List<int>?> _generateThumbnail(Uint8List imageBytes) async {
+    try {
+      return await ImageUtils.generateThumbnail(
+        imageBytes,
+      );
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 生成文件缩略图
+  Future<List<int>?> _generateFileThumbnail(File file) async {
+    try {
+      final bytes = await file.readAsBytes();
+      return await ImageUtils.generateThumbnail(
+        bytes,
+      );
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 推断图片扩展名
+  String _inferImageExtension(Uint8List imageBytes) {
+    try {
+      final info = ImageUtils.getImageInfo(imageBytes);
+      final format = (info['format'] as String?)?.toLowerCase() ?? 'unknown';
+      switch (format) {
+        case 'jpeg':
+          return 'jpg';
+        case 'png':
+          return 'png';
+        case 'gif':
+          return 'gif';
+        case 'bmp':
+          return 'bmp';
+        case 'webp':
+          return 'webp';
+        default:
+          return 'png';
+      }
+    } on Exception catch (_) {
+      return 'png';
+    }
+  }
+
+  /// 保存媒体文件到磁盘
+  Future<String> _saveMediaToDisk({
+    required Uint8List bytes,
+    required String type,
+    String? suggestedExt,
+  }) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final ts = DateTime.now().millisecondsSinceEpoch;
+
+      final ext = (suggestedExt ?? 'bin').toLowerCase();
+      final hash = sha256.convert(bytes).toString().substring(0, 8);
+      final fileName = '${type}_${ts}_$hash.$ext';
+
+      final relativeDir = type == 'image' ? 'media/images' : 'media/files';
+      final absoluteDir = '${dir.path}/$relativeDir';
+      final absolutePath = '$absoluteDir/$fileName';
+      final relativePath = '$relativeDir/$fileName';
+
+      final d = Directory(absoluteDir);
+      if (!d.existsSync()) {
+        await d.create(recursive: true);
+      }
+
+      final f = File(absolutePath);
+      await f.writeAsBytes(bytes, flush: true);
+
+      return relativePath;
+    } on Exception catch (_) {
+      return '';
+    }
+  }
+
+  /// 提取图片元数据
+  Future<Map<String, dynamic>> _extractImageMetadata(
+    Uint8List imageBytes,
+  ) async {
+    final metadata = <String, dynamic>{
+      'contentLength': imageBytes.length,
+      'sourceApp': await _getSourceApp(),
+    };
+
+    try {
+      final imageInfo = ImageUtils.getImageInfo(imageBytes);
+      metadata.addAll(imageInfo);
+    } on Exception catch (_) {
+      metadata['imageFormat'] = 'unknown';
+      metadata['width'] = 0;
+      metadata['height'] = 0;
+    }
+
+    return metadata;
+  }
+
+  /// 提取文件元数据
+  Future<Map<String, dynamic>> _extractFileMetadata(
+    File file,
+    ClipType type,
+  ) async {
+    final stat = file.statSync();
+
+    return {
+      'contentLength': stat.size,
+      'sourceApp': await _getSourceApp(),
+      'fileSize': stat.size,
+      'lastModified': stat.modified.toIso8601String(),
+      'fileType': type.toString(),
+    };
+  }
+
+  /// 提取文本元数据
+  Future<Map<String, dynamic>> _extractTextMetadata(
+    String content,
+    ClipType type,
+  ) async {
+    return {
+      'contentLength': content.length,
+      'sourceApp': await _getSourceApp(),
+      'wordCount': _calculateWordCount(content),
+      'lineCount': content.split('\n').length,
+    };
+  }
+
+  /// 提取颜色元数据
+  Map<String, dynamic> _extractColorMetadata(String colorValue) {
+    final metadata = <String, dynamic>{};
+
+    final trimmed = colorValue.trim();
+
+    // Hex 颜色
+    if (trimmed.startsWith('#')) {
+      metadata['colorFormat'] = 'hex';
+      metadata['colorValue'] = trimmed;
+    }
+    // RGB/RGBA 颜色
+    else if (trimmed.startsWith('rgb')) {
+      metadata['colorFormat'] = trimmed.startsWith('rgba') ? 'rgba' : 'rgb';
+      metadata['colorValue'] = trimmed;
+    }
+    // HSL/HSLA 颜色
+    else if (trimmed.startsWith('hsl')) {
+      metadata['colorFormat'] = trimmed.startsWith('hsla') ? 'hsla' : 'hsl';
+      metadata['colorValue'] = trimmed;
+    }
+
+    return metadata;
+  }
+
+  /// 获取源应用
+  Future<String?> _getSourceApp() async {
+    try {
+      return await _platformChannel.invokeMethod<String>('getSourceApp');
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// 计算单词数
+  int _calculateWordCount(String text) {
+    if (text.isEmpty) return 0;
+    return text.trim().split(RegExp(r'\s+')).length;
+  }
+
+  /// 清理缓存
+  void clearCache() {
+    _contentCache.clear();
+    _hashTimestamps.clear();
+    _currentMemoryUsage = 0;
+    _cacheHits = 0;
+    _cacheMisses = 0;
+    _lastCleanup = null;
+  }
+
+  /// 获取缓存统计（增强版本）
+  Map<String, dynamic> getCacheStats() {
+    final hitRate = _cacheHits + _cacheMisses > 0
+        ? _cacheHits / (_cacheHits + _cacheMisses)
+        : 0.0;
+
+    return {
+      'cacheSize': _contentCache.length,
+      'maxCacheSize': _maxCacheSize,
+      'cacheExpiry': _cacheExpiry.inHours,
+      'memoryUsage': _currentMemoryUsage,
+      'maxMemoryUsage': _maxMemoryUsage,
+      'memoryUsagePercent': (_currentMemoryUsage / _maxMemoryUsage * 100)
+          .toStringAsFixed(1),
+      'cacheHits': _cacheHits,
+      'cacheMisses': _cacheMisses,
+      'hitRate': (hitRate * 100).toStringAsFixed(1),
+      'lastCleanup': _lastCleanup?.toIso8601String(),
+    };
+  }
+
+  /// 获取性能指标
+  Map<String, dynamic> getPerformanceMetrics() {
+    return {
+      'cacheEfficiency': getCacheStats(),
+      'memoryOptimization': {
+        'smartCleanupEnabled': true,
+        'adaptiveCaching': true,
+        'memoryThreshold': _maxMemoryUsage,
+      },
+    };
+  }
+}
+
+/// 缓存条目
+class _CacheEntry {
+  _CacheEntry(this.item, this.timestamp);
+  final ClipItem item;
+  final DateTime timestamp;
+}
