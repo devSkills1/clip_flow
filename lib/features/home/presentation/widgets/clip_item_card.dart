@@ -560,9 +560,11 @@ class ClipItemCard extends StatelessWidget {
       return '${(bytes / 1024).toStringAsFixed(1)} ${AppStrings.unitKB}';
     }
     if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} ${AppStrings.unitMB}';
+      final mbValue = (bytes / (1024 * 1024)).toStringAsFixed(1);
+      return '$mbValue ${AppStrings.unitMB}';
     }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} ${AppStrings.unitGB}';
+    final gbValue = (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1);
+    return '$gbValue ${AppStrings.unitGB}';
   }
 
   String _getTimeAgo(BuildContext context) {
@@ -620,14 +622,14 @@ class _ExpandableTextWidgetState extends State<ExpandableTextWidget> {
             ? constraints.maxWidth
             : MediaQuery.of(context).size.width - 64;
 
+        // 使用 TextPainter 进行布局计算，然后立即释放资源
         final textPainter = TextPainter(
           text: TextSpan(text: widget.text, style: widget.style),
           maxLines: widget.maxLines,
           textDirection: Directionality.of(context),
-        );
-        textPainter
-          ..layout(maxWidth: availableWidth)
-          ..dispose();
+        )..layout(maxWidth: availableWidth);
+        // ignore: cascade_invocations - dispose() 必须在 layout() 之后单独调用，不能使用级联操作符
+        textPainter.dispose();
 
         return _buildContent();
       },

@@ -57,7 +57,8 @@ class _ClipboardDebugPageState extends State<ClipboardDebugPage> {
         setState(() {
           _events.insert(
             0,
-            '${DateTime.now()}: ${clipItem.type} - ${clipItem.content?.substring(0, 30) ?? ""}...',
+            '${DateTime.now()}: ${clipItem.type} - '
+            '${clipItem.content?.substring(0, 30) ?? ""}...',
           );
           if (_events.length > 20) {
             _events.removeLast();

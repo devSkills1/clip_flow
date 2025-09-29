@@ -214,7 +214,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     IconButton(
                       onPressed: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (context) => const ClipboardDebugPage(),
                           ),
                         );

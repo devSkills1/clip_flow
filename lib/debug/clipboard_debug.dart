@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
-import 'package:flutter/foundation.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:flutter/services.dart';
 
 /// 剪贴板调试工具
@@ -34,7 +34,7 @@ class ClipboardDebug {
 
       // 5. 测试基本剪贴板操作
       results['basic_operations'] = await _testBasicOperations();
-    } catch (e) {
+    } on PlatformException catch (e) {
       results['error'] = e.toString();
     }
 
@@ -48,7 +48,7 @@ class ClipboardDebug {
     return {
       'is_polling': service.isPolling,
       'current_interval': service.currentPollingInterval.inMilliseconds,
-      'stream_available': service.clipboardStream != null,
+      'stream_available': true,
     };
   }
 
@@ -61,7 +61,7 @@ class ClipboardDebug {
         'channel_available': true,
         'test_result': result,
       };
-    } catch (e) {
+    } on PlatformException catch (e) {
       return {
         'channel_available': false,
         'error': e.toString(),
@@ -83,7 +83,7 @@ class ClipboardDebug {
         'write_permission': true,
         'current_content': clipboardData?.text ?? 'empty',
       };
-    } catch (e) {
+    } on PlatformException catch (e) {
       return {
         'read_permission': false,
         'write_permission': false,
@@ -104,7 +104,7 @@ class ClipboardDebug {
           sequence = await _platformChannel.invokeMethod<int>(
             'getClipboardSequence',
           );
-        } catch (e) {
+        } on PlatformException catch (_) {
           // 序列号获取失败
         }
       }
@@ -116,7 +116,7 @@ class ClipboardDebug {
         // 添加一些额外的配置信息
         pollingStats['interval_range'] = '100ms - 2000ms';
         pollingStats['adaptive_polling'] = true;
-      } catch (e) {
+      } on PlatformException catch (e) {
         pollingStats = {'stats_error': e.toString()};
       }
 
@@ -129,7 +129,7 @@ class ClipboardDebug {
         'polling_stats': pollingStats,
         'status': service.isPolling ? '✅ 正在轮询' : '❌ 未轮询',
       };
-    } catch (e) {
+    } on PlatformException catch (e) {
       return {
         'error': e.toString(),
       };
@@ -150,7 +150,7 @@ class ClipboardDebug {
   - 当前类型: ${clipType?.toString() ?? '无内容'}
   - 有内容: $hasContent
 ''';
-    } catch (e) {
+    } on PlatformException catch (e) {
       return '❌ 触发剪贴板检查失败: $e';
     }
   }
@@ -160,7 +160,7 @@ class ClipboardDebug {
     try {
       final items = await DatabaseService.instance.getAllClipItems(limit: 1000);
       return '✅ 剪贴板历史记录: ${items.length} 条';
-    } catch (e) {
+    } on PlatformException catch (e) {
       return '❌ 获取历史记录失败: $e';
     }
   }
@@ -174,7 +174,7 @@ class ClipboardDebug {
       await Clipboard.setData(ClipboardData(text: testText));
 
       // 等待一小段时间
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
 
       // 读取剪贴板
       final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
@@ -187,7 +187,7 @@ class ClipboardDebug {
         'written_text': testText,
         'read_text': readText,
       };
-    } catch (e) {
+    } on PlatformException catch (e) {
       return {
         'write_success': false,
         'read_success': false,
@@ -206,28 +206,33 @@ class ClipboardDebug {
         final preview = content.length > 50
             ? '${content.substring(0, 50)}...'
             : content;
-        debugPrint('剪贴板变化检测到: ${clipItem.type} - $preview');
+        Log.d(
+          'Clipboard change detected: ${clipItem.type} - $preview',
+          tag: 'clipboard_debug',
+        );
       },
-      onError: (error) {
-        debugPrint('剪贴板监听错误: $error');
+      onError: (Object error) {
+        Log.e(
+          'Clipboard monitoring error',
+          tag: 'clipboard_debug',
+          error: error,
+        );
       },
     );
   }
 
   /// 停止监听
-  static void stopListening(StreamSubscription? subscription) {
+  static void stopListening(StreamSubscription<ClipItem>? subscription) {
     subscription?.cancel();
   }
 
   /// 打印诊断结果
   static void printDiagnostics(Map<String, dynamic> results) {
-    debugPrint('=== 剪贴板诊断结果 ===');
-
+    Log.d('=== 剪贴板诊断结果 ===', tag: 'clipboard_debug');
     for (final entry in results.entries) {
-      debugPrint('${entry.key}: ${entry.value}');
+      Log.d('${entry.key}: ${entry.value}', tag: 'clipboard_debug');
     }
-
-    debugPrint('=== 诊断完成 ===');
+    Log.d('=== 诊断完成 ===', tag: 'clipboard_debug');
   }
 
   /// 重新初始化剪贴板服务
@@ -239,14 +244,18 @@ class ClipboardDebug {
       await service.dispose();
 
       // 等待一小段时间
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future<void>.delayed(const Duration(milliseconds: 500));
 
       // 重新初始化
       await service.initialize();
 
       return true;
-    } catch (e) {
-      debugPrint('重新初始化失败: $e');
+    } on PlatformException catch (e) {
+      await Log.e(
+        'Re-initialization failed',
+        tag: 'clipboard_debug',
+        error: e,
+      );
       return false;
     }
   }

@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+// 忽略公共成员API文档要求，因为这是内部性能监控组件，不需要对外暴露API文档
 import 'dart:async';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
@@ -445,7 +446,11 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
           _buildMetricRow(
             S.of(context)?.performanceAvgFrameTime ??
                 I18nFallbacks.performance.avgFrameTime,
-            '${((_detailedStats['avgFrameTime'] as double?) ?? 0.0).toStringAsFixed(2)} ms',
+            () {
+              final avgFrameTime =
+                  (_detailedStats['avgFrameTime'] as double?) ?? 0.0;
+              return '${avgFrameTime.toStringAsFixed(2)} ms';
+            }(),
             _getPerformanceColor(
               ((_detailedStats['avgFrameTime'] as double?) ?? 0.0) - 16.67,
               5,
@@ -455,7 +460,11 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
           _buildMetricRow(
             S.of(context)?.performanceJankPercentage ??
                 I18nFallbacks.performance.jankPercentage,
-            '${((_detailedStats['jankPercentage'] as double?) ?? 0.0).toStringAsFixed(1)}%',
+            () {
+              final jankPercentage =
+                  (_detailedStats['jankPercentage'] as double?) ?? 0.0;
+              return '${jankPercentage.toStringAsFixed(1)}%';
+            }(),
             _getPerformanceColor(
               (_detailedStats['jankPercentage'] as double?) ?? 0.0,
               5,
@@ -465,7 +474,11 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
           _buildMetricRow(
             S.of(context)?.performanceFrameTimeVariance ??
                 I18nFallbacks.performance.frameTimeVariance,
-            '${((_detailedStats['frameTimeVariance'] as double?) ?? 0.0).toStringAsFixed(2)} ms²',
+            () {
+              final frameTimeVariance =
+                  (_detailedStats['frameTimeVariance'] as double?) ?? 0.0;
+              return '${frameTimeVariance.toStringAsFixed(2)} ms²';
+            }(),
             _getPerformanceColor(
               (_detailedStats['frameTimeVariance'] as double?) ?? 0.0,
               10,

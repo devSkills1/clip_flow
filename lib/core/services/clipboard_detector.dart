@@ -2,7 +2,7 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/code_analyzer.dart';
 import 'package:clip_flow_pro/core/services/content_analyzer.dart';
 import 'package:clip_flow_pro/core/services/html_analyzer.dart';
-import 'package:flutter/foundation.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 
 /// 剪贴板内容类型检测器
 ///
@@ -54,8 +54,11 @@ class ClipboardDetector {
         }
       } on Exception catch (e) {
         // 记录错误但继续处理
-        // TODO(analyzer): 使用适当的日志框架记录错误
-        debugPrint('Analysis error: $e');
+        Log.w(
+          'Analysis error during content type detection',
+          tag: 'clipboard_detector',
+          error: e,
+        );
       }
     }
 
@@ -371,7 +374,7 @@ class ClipboardDetector {
           'confidence': result.confidence,
           'metadata': result.metadata,
         });
-      } catch (e) {
+      } on Exception catch (e) {
         results.add({
           'type': analyzer.supportedType.toString().split('.').last,
           'confidence': 0.0,

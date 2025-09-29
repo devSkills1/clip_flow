@@ -325,7 +325,13 @@ class ClipboardProcessor {
             contentType,
             contentHash,
           );
-        default:
+        case ClipType.text:
+        case ClipType.rtf:
+        case ClipType.html:
+        case ClipType.image:
+        case ClipType.file:
+        case ClipType.audio:
+        case ClipType.video:
           return _processPlainTextContent(textContent, contentHash);
       }
     } on Exception catch (_) {
@@ -445,19 +451,19 @@ class ClipboardProcessor {
     final now = DateTime.now();
 
     // 按访问时间和大小排序，优先清理大文件和旧文件
-    final entries = _contentCache.entries.toList();
-    entries.sort((a, b) {
-      final ageA = now.difference(a.value.timestamp).inMinutes;
-      final ageB = now.difference(b.value.timestamp).inMinutes;
-      final sizeA = _estimateItemSize(a.value.item);
-      final sizeB = _estimateItemSize(b.value.item);
+    final entries = _contentCache.entries.toList()
+      ..sort((a, b) {
+        final ageA = now.difference(a.value.timestamp).inMinutes;
+        final ageB = now.difference(b.value.timestamp).inMinutes;
+        final sizeA = _estimateItemSize(a.value.item);
+        final sizeB = _estimateItemSize(b.value.item);
 
-      // 综合考虑年龄和大小
-      final scoreA = ageA * 0.7 + sizeA * 0.3;
-      final scoreB = ageB * 0.7 + sizeB * 0.3;
+        // 综合考虑年龄和大小
+        final scoreA = ageA * 0.7 + sizeA * 0.3;
+        final scoreB = ageB * 0.7 + sizeB * 0.3;
 
-      return scoreB.compareTo(scoreA);
-    });
+        return scoreB.compareTo(scoreA);
+      });
 
     // 清理一半的缓存
     final toRemove = entries.take(entries.length ~/ 2);
@@ -506,9 +512,7 @@ class ClipboardProcessor {
     }
 
     // 元数据大小
-    size += item.metadata.toString().length * 2;
-
-    return size;
+    return size + item.metadata.toString().length * 2;
   }
 
   /// 更新内存使用统计

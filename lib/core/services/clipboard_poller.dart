@@ -264,12 +264,12 @@ class ClipboardPoller {
   /// 记录剪贴板变化
   void _recordChange() {
     final now = DateTime.now();
-    _recentChanges.add(now);
-
-    // 保持最近的变化记录在指定窗口内
-    _recentChanges.removeWhere(
-      (change) => now.difference(change).inSeconds > _recentChangeWindow,
-    );
+    _recentChanges
+      ..add(now)
+      // 保持最近的变化记录在指定窗口内
+      ..removeWhere(
+        (change) => now.difference(change).inSeconds > _recentChangeWindow,
+      );
 
     _consecutiveNoChangeCount = 0;
   }

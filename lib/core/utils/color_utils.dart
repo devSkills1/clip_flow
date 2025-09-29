@@ -113,23 +113,32 @@ class ColorUtils {
   /// Converts HEX (supports #RGB/#RGBA/#RRGGBB/#RRGGBBAA) to RGB map.
   /// Returns {'r':R,'g':G,'b':B}.
   static Map<String, int> hexToRgb(String hex) {
-    hex = hex.replaceFirst('#', '');
-    if (hex.length == 3) {
+    var processedHex = hex.replaceFirst('#', '');
+    if (processedHex.length == 3) {
       // #RGB => #RRGGBB
-      hex = hex.split('').map((c) => c + c).join();
-    } else if (hex.length == 4) {
+      processedHex = processedHex.split('').map((c) => c + c).join();
+    } else if (processedHex.length == 4) {
       // #RGBA => #RRGGBBAA
-      hex = hex.split('').map((c) => c + c).join();
+      processedHex = processedHex.split('').map((c) => c + c).join();
     }
 
-    if (hex.length == 8) {
+    if (processedHex.length == 8) {
       // #RRGGBBAA => 仅取 RRGGBB，忽略末尾 AA
-      hex = hex.substring(0, 6);
+      processedHex = processedHex.substring(0, 6);
     }
 
-    final r = int.parse(hex.substring(0, 2), radix: ClipConstants.hexRadix);
-    final g = int.parse(hex.substring(2, 4), radix: ClipConstants.hexRadix);
-    final b = int.parse(hex.substring(4, 6), radix: ClipConstants.hexRadix);
+    final r = int.parse(
+      processedHex.substring(0, 2),
+      radix: ClipConstants.hexRadix,
+    );
+    final g = int.parse(
+      processedHex.substring(2, 4),
+      radix: ClipConstants.hexRadix,
+    );
+    final b = int.parse(
+      processedHex.substring(4, 6),
+      radix: ClipConstants.hexRadix,
+    );
 
     return {'r': r, 'g': g, 'b': b};
   }
@@ -185,31 +194,34 @@ class ColorUtils {
   // HSL转RGB
   /// Converts HSL (h:0-360, s/l:0-100) to RGB map.
   static Map<String, int> hslToRgb(double h, double s, double l) {
-    h /= 360;
-    s /= 100;
-    l /= 100;
+    final normalizedH = h / 360;
+    final normalizedS = s / 100;
+    final normalizedL = l / 100;
 
     double r;
     double g;
     double b;
 
-    if (s == 0) {
-      r = g = b = l; // 灰色
+    if (normalizedS == 0) {
+      r = g = b = normalizedL; // 灰色
     } else {
       double hue2rgb(double p, double q, double t) {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1 / 6) return p + (q - p) * 6 * t;
-        if (t < 1 / 2) return q;
-        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        var normalizedT = t;
+        if (normalizedT < 0) normalizedT += 1;
+        if (normalizedT > 1) normalizedT -= 1;
+        if (normalizedT < 1 / 6) return p + (q - p) * 6 * normalizedT;
+        if (normalizedT < 1 / 2) return q;
+        if (normalizedT < 2 / 3) return p + (q - p) * (2 / 3 - normalizedT) * 6;
         return p;
       }
 
-      final q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      final p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1 / 3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1 / 3);
+      final q = normalizedL < 0.5
+          ? normalizedL * (1 + normalizedS)
+          : normalizedL + normalizedS - normalizedL * normalizedS;
+      final p = 2 * normalizedL - q;
+      r = hue2rgb(p, q, normalizedH + 1 / 3);
+      g = hue2rgb(p, q, normalizedH);
+      b = hue2rgb(p, q, normalizedH - 1 / 3);
     }
 
     return {
@@ -282,7 +294,8 @@ class ColorUtils {
   // 颜色值转换为16进制字符串
   /// Converts a [Color] to hex string.
   /// If [includeAlpha] is true, format is #RRGGBBAA, otherwise #RRGGBB.
-  /// Set [withHash] to false to omit leading '#'. Uppercase when [upperCase] is true.
+  /// Set [withHash] to false to omit leading '#'.
+  /// Uppercase when [upperCase] is true.
   static String colorToHex(
     Color color, {
     bool includeAlpha = false,

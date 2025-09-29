@@ -4,7 +4,7 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
 import 'package:clip_flow_pro/core/services/clipboard_poller.dart';
 import 'package:clip_flow_pro/core/services/clipboard_processor.dart';
-import 'package:flutter/foundation.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:flutter/services.dart';
 
 /// 剪贴板服务协调器
@@ -51,12 +51,20 @@ class ClipboardService {
       // 启动轮询器，监听剪贴板变化
       _poller.startPolling(
         onClipboardChanged: _handleClipboardChange,
-        onError: (error) => debugPrint('ClipboardService 轮询错误: $error'),
+        onError: (error) => Log.e(
+          'ClipboardService polling error',
+          tag: 'clipboard_service',
+          error: error,
+        ),
       );
 
       _isInitialized = true;
     } on Exception catch (e) {
-      debugPrint('ClipboardService 初始化失败: $e');
+      await Log.e(
+        'ClipboardService initialization failed',
+        tag: 'clipboard_service',
+        error: e,
+      );
       rethrow;
     }
   }
@@ -71,7 +79,11 @@ class ClipboardService {
 
       _isInitialized = false;
     } on Exception catch (e) {
-      debugPrint('ClipboardService 停止服务失败: $e');
+      await Log.e(
+        'ClipboardService dispose failed',
+        tag: 'clipboard_service',
+        error: e,
+      );
     }
   }
 
@@ -85,7 +97,11 @@ class ClipboardService {
         _clipboardController.add(clipItem);
       }
     } on Exception catch (e) {
-      debugPrint('ClipboardService 处理剪贴板变化失败: $e');
+      await Log.e(
+        'ClipboardService handle clipboard change failed',
+        tag: 'clipboard_service',
+        error: e,
+      );
     }
   }
 
@@ -133,7 +149,11 @@ class ClipboardService {
 
       return true;
     } on Exception catch (e) {
-      debugPrint('ClipboardService 设置剪贴板内容失败: $e');
+      await Log.e(
+        'ClipboardService set clipboard content failed',
+        tag: 'clipboard_service',
+        error: e,
+      );
       return false;
     }
   }
@@ -169,7 +189,11 @@ class ClipboardService {
       final data = result.cast<String, dynamic>();
       return _detector.detectContentType(data.toString());
     } on Exception catch (e) {
-      debugPrint('ClipboardService 获取剪贴板类型失败: $e');
+      await Log.e(
+        'ClipboardService get clipboard type failed',
+        tag: 'clipboard_service',
+        error: e,
+      );
       return null;
     }
   }
@@ -181,7 +205,11 @@ class ClipboardService {
       final result = await platform.invokeMethod<bool>('hasClipboardContent');
       return result ?? false;
     } on Exception catch (e) {
-      debugPrint('ClipboardService 检查剪贴板内容失败: $e');
+      await Log.e(
+        'ClipboardService check clipboard content failed',
+        tag: 'clipboard_service',
+        error: e,
+      );
       return false;
     }
   }
@@ -192,7 +220,11 @@ class ClipboardService {
       await Clipboard.setData(const ClipboardData(text: ''));
       return true;
     } on Exception catch (e) {
-      debugPrint('ClipboardService 清空剪贴板失败: $e');
+      await Log.e(
+        'ClipboardService clear clipboard failed',
+        tag: 'clipboard_service',
+        error: e,
+      );
       return false;
     }
   }

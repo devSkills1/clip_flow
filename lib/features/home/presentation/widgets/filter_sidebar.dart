@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+// 忽略公共成员API文档要求，因为这是内部UI组件，不需要对外暴露API文档
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/dimensions.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
@@ -150,7 +151,8 @@ class FilterSidebar extends ConsumerWidget {
         // // Code 独立项
         // _buildFilterItem(
         //   icon: Icons.code,
-        //   label: S.of(context)?.clipTypeCode ?? I18nFallbacks.common.clipTypeCode,
+        //   label: S.of(context)?.clipTypeCode ??
+        //       I18nFallbacks.common.clipTypeCode,
         //   isSelected: selectedOption == FilterOption.code,
         //   onTap: () => onOptionSelected(FilterOption.code),
         // ),

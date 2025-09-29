@@ -42,7 +42,7 @@ cache/
 
 # 用户数据
 user_data/
-data/
+/data/
 *.dat
 
 # 配置文件
@@ -96,6 +96,8 @@ crash_reports/
 # VSCode 工作区（若不希望提交）
 .vscode/
 .vscode/*
+# 但保留 C++ 配置文件
+!.vscode/c_cpp_properties.json
 
 #忽略所有Pods文件
 ios/Pods/

@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+// 忽略公共成员API文档要求，因为这是内部依赖注入配置文件，不需要对外暴露API文档
 import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/routes.dart';

@@ -356,21 +356,13 @@ class PerformanceService {
   }
 
   /// 记录数据库查询时间
-  set dbQueryTime(double timeMs) {
-    _lastDbQueryTime = timeMs;
-  }
-
-  /// 记录数据库查询时间（兼容测试调用）
+  // ignore: use_setters_to_change_properties - 使用方法名更清晰地表达"记录"的语义
   void recordDbQueryTime(double timeMs) {
     _lastDbQueryTime = timeMs;
   }
 
   /// 记录剪贴板捕获时间
-  set clipboardCaptureTime(double timeMs) {
-    _lastClipboardCaptureTime = timeMs;
-  }
-
-  /// 记录剪贴板捕获时间（兼容测试调用）
+  // ignore: use_setters_to_change_properties - 使用方法名更清晰地表达"记录"的语义
   void recordClipboardCaptureTime(double timeMs) {
     _lastClipboardCaptureTime = timeMs;
   }

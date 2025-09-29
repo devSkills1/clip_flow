@@ -108,7 +108,8 @@ class ImageUtils {
   }
 
   // 检测图片格式
-  /// Detects image format from magic bytes. Returns 'unknown' if not recognized.
+  /// Detects image format from magic bytes.
+  /// Returns 'unknown' if not recognized.
   static String _getImageFormat(Uint8List data) {
     if (data.length < 4) return 'unknown';
 
@@ -146,7 +147,8 @@ class ImageUtils {
   }
 
   // 提取图片主色调
-  /// Returns top-[colorCount] quantized dominant colors: [{'r','g','b','count'},...].
+  /// Returns top-[colorCount] quantized dominant colors:
+  /// [{'r','g','b','count'},...].
   static List<Map<String, dynamic>> extractDominantColors(
     Uint8List imageData, {
     int colorCount = 5,
@@ -240,8 +242,16 @@ class ImageUtils {
         ClipConstants.bytesInKB *
             ClipConstants.bytesInKB *
             ClipConstants.bytesInKB) {
-      return '${(bytes / (ClipConstants.bytesInKB * ClipConstants.bytesInKB)).toStringAsFixed(1)} MB';
+      final mbValue =
+          (bytes / (ClipConstants.bytesInKB * ClipConstants.bytesInKB))
+              .toStringAsFixed(1);
+      return '$mbValue MB';
     }
-    return '${(bytes / (ClipConstants.bytesInKB * ClipConstants.bytesInKB * ClipConstants.bytesInKB)).toStringAsFixed(1)} GB';
+    const gbDivisor =
+        ClipConstants.bytesInKB *
+        ClipConstants.bytesInKB *
+        ClipConstants.bytesInKB;
+    final gbValue = (bytes / gbDivisor).toStringAsFixed(1);
+    return '$gbValue GB';
   }
 }
