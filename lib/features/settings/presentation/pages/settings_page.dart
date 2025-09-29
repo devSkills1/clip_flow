@@ -5,8 +5,10 @@ import 'dart:async';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
+import 'package:clip_flow_pro/core/models/hotkey_config.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/finder_service.dart';
+import 'package:clip_flow_pro/features/settings/presentation/widgets/hotkey_capture_dialog.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -423,32 +425,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void _showHotkeyDialog(BuildContext context, WidgetRef ref) {
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          S.of(context)?.dialogHotkeyTitle ??
-              I18nFallbacks.settings.dialogHotkeyTitle,
-        ),
-        content: Text(
-          S.of(context)?.dialogHotkeyContent ??
-              I18nFallbacks.settings.dialogHotkeyContent,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              S.of(context)?.actionCancel ?? I18nFallbacks.common.actionCancel,
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              // 设置快捷键逻辑
-              Navigator.of(context).pop();
-            },
-            child: Text(
-              S.of(context)?.actionOk ?? I18nFallbacks.common.actionOk,
-            ),
-          ),
-        ],
+      builder: (context) => const HotkeyCaptureDialog(
+        action: HotkeyAction.toggleWindow,
       ),
     );
   }

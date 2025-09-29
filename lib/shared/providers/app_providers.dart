@@ -6,6 +6,7 @@ import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
+import 'package:clip_flow_pro/core/services/hotkey_service.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/preferences_service.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
@@ -452,3 +453,24 @@ final clipboardStreamProvider = StreamProvider<ClipItem>((ref) {
   final service = ref.watch(clipboardServiceProvider);
   return service.clipboardStream;
 });
+
+//// 偏好设置服务提供者
+/// 提供全局单例的 PreferencesService。
+final preferencesServiceProvider = Provider<PreferencesService>((ref) {
+  return PreferencesService();
+});
+
+//// 快捷键服务提供者
+/// 提供全局单例的 HotkeyService，使用已在main.dart中初始化的实例。
+final hotkeyServiceProvider = Provider<HotkeyService>((ref) {
+  // 使用静态实例，避免重复创建和初始化
+  return _hotkeyServiceInstance;
+});
+
+// 全局快捷键服务实例，在main.dart中初始化
+late final HotkeyService _hotkeyServiceInstance;
+
+/// 设置全局快捷键服务实例
+void setHotkeyServiceInstance(HotkeyService instance) {
+  _hotkeyServiceInstance = instance;
+}

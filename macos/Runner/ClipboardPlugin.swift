@@ -4,11 +4,25 @@ import UniformTypeIdentifiers
 import Vision
 
 @objc class ClipboardPlugin: NSObject, FlutterPlugin {
-
+    // 全局事件监听器
+    private var globalEventMonitor: Any?
+    
+    // 快捷键信息结构
+    private struct HotkeyInfo {
+        let keyCode: UInt16
+        let modifiers: NSEvent.ModifierFlags
+    }
+    
+    // 注册的快捷键
+    private var registeredHotkeys: [String: HotkeyInfo] = [:]
+    
+    // Flutter方法通道
+    private var channel: FlutterMethodChannel?
+    
     static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(
-            name: "clipboard_service", binaryMessenger: registrar.messenger)
+        let channel = FlutterMethodChannel(name: "clipboard_service", binaryMessenger: registrar.messenger)
         let instance = ClipboardPlugin()
+        instance.channel = channel
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 
@@ -34,6 +48,14 @@ import Vision
             setClipboardFile(call: call, result: result)
         case "performOCR":
             performOCR(call: call, result: result)
+        case "isHotkeySupported":
+            isHotkeySupported(result: result)
+        case "registerHotkey":
+            registerHotkey(call: call, result: result)
+        case "unregisterHotkey":
+            unregisterHotkey(call: call, result: result)
+        case "isSystemHotkey":
+            isSystemHotkey(call: call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -689,5 +711,200 @@ import Vision
                 }
             }
         }
+    }
+    
+    // MARK: - Hotkey Support
+    
+    /// 检查是否支持全局快捷键
+    private func isHotkeySupported(result: @escaping FlutterResult) {
+        // macOS 支持全局快捷键
+        result(true)
+    }
+    
+    /// 注册快捷键
+    private func registerHotkey(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let action = args["action"] as? String,
+              let keyString = args["key"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid arguments", details: nil))
+            return
+        }
+        
+        // 解析快捷键字符串 (例如: "Cmd+Shift+C")
+        let components = keyString.components(separatedBy: "+")
+        
+        guard let keyCode = parseKeyCode(from: components) else {
+            result(FlutterError(code: "INVALID_KEY", message: "Invalid key code", details: nil))
+            return
+        }
+        
+        let modifiers = parseModifiers(from: components)
+        
+        // 注册快捷键
+        let success = registerGlobalHotkey(action: action, keyCode: keyCode, modifiers: modifiers)
+        result(success)
+    }
+    
+    /// 取消注册快捷键
+    private func unregisterHotkey(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let action = args["action"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid action", details: nil))
+            return
+        }
+        
+        let success = unregisterGlobalHotkey(action: action)
+        result(success)
+    }
+    
+    /// 检查是否为系统快捷键
+    private func isSystemHotkey(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let keyString = args["key"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid key string", details: nil))
+            return
+        }
+        
+        // 简单的系统快捷键检查
+        let systemHotkeys = [
+            "Cmd+Q", "Cmd+W", "Cmd+Tab", "Cmd+Space",
+            "Cmd+C", "Cmd+V", "Cmd+X", "Cmd+Z", "Cmd+Y"
+        ]
+        
+        let isSystem = systemHotkeys.contains(keyString)
+        result(isSystem)
+    }
+    
+    // MARK: - Modern Hotkey Implementation
+    
+    /// 注册全局快捷键（使用NSEvent监听）
+    private func registerGlobalHotkey(action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> Bool {
+        // 取消之前的注册
+        unregisterGlobalHotkey(action: action)
+        
+        // 保存快捷键配置
+        registeredHotkeys[action] = HotkeyInfo(keyCode: keyCode, modifiers: modifiers)
+        
+        // 如果这是第一个快捷键，启动全局监听器
+        if globalEventMonitor == nil {
+            setupGlobalEventMonitor()
+        }
+        
+        return true
+    }
+    
+    /// 取消注册全局快捷键
+    private func unregisterGlobalHotkey(action: String) -> Bool {
+        registeredHotkeys.removeValue(forKey: action)
+        
+        // 如果没有注册的快捷键了，停止全局监听器
+        if registeredHotkeys.isEmpty && globalEventMonitor != nil {
+            NSEvent.removeMonitor(globalEventMonitor!)
+            globalEventMonitor = nil
+        }
+        
+        return true
+    }
+    
+    /// 设置全局事件监听器
+    private func setupGlobalEventMonitor() {
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            self?.handleGlobalKeyEvent(event)
+        }
+    }
+    
+    /// 处理全局按键事件
+    private func handleGlobalKeyEvent(_ event: NSEvent) {
+        let keyCode = event.keyCode
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
+        
+        // 检查是否匹配任何注册的快捷键
+        for (action, hotkey) in registeredHotkeys {
+            if keyCode == hotkey.keyCode && modifiers == hotkey.modifiers {
+                // 通知Flutter端
+                DispatchQueue.main.async { [weak self] in
+                    self?.channel?.invokeMethod("onHotkeyPressed", arguments: ["action": action])
+                }
+                break
+            }
+        }
+    }
+    
+    /// 解析按键代码
+    private func parseKeyCode(from components: [String]) -> UInt16? {
+        let keyComponent = components.last?.lowercased()
+        
+        switch keyComponent {
+        case "a": return 0x00
+        case "s": return 0x01
+        case "d": return 0x02
+        case "f": return 0x03
+        case "h": return 0x04
+        case "g": return 0x05
+        case "z": return 0x06
+        case "x": return 0x07
+        case "c": return 0x08
+        case "v": return 0x09
+        case "b": return 0x0B
+        case "q": return 0x0C
+        case "w": return 0x0D
+        case "e": return 0x0E
+        case "r": return 0x0F
+        case "y": return 0x10
+        case "t": return 0x11
+        case "1": return 0x12
+        case "2": return 0x13
+        case "3": return 0x14
+        case "4": return 0x15
+        case "6": return 0x16
+        case "5": return 0x17
+        case "=": return 0x18
+        case "9": return 0x19
+        case "7": return 0x1A
+        case "-": return 0x1B
+        case "8": return 0x1C
+        case "0": return 0x1D
+        case "]": return 0x1E
+        case "o": return 0x1F
+        case "u": return 0x20
+        case "[": return 0x21
+        case "i": return 0x22
+        case "p": return 0x23
+        case "l": return 0x25
+        case "j": return 0x26
+        case "'": return 0x27
+        case "k": return 0x28
+        case ";": return 0x29
+        case "\\": return 0x2A
+        case ",": return 0x2B
+        case "/": return 0x2C
+        case "n": return 0x2D
+        case "m": return 0x2E
+        case ".": return 0x2F
+        case "`": return 0x32
+        case "space": return 0x31
+        case "delete": return 0x33
+        case "escape": return 0x35
+        case "enter": return 0x24
+        case "tab": return 0x30
+        default: return nil
+        }
+    }
+    
+    /// 解析修饰键
+    private func parseModifiers(from components: [String]) -> NSEvent.ModifierFlags {
+        var modifiers: NSEvent.ModifierFlags = []
+        
+        for component in components {
+            switch component.lowercased() {
+            case "cmd", "command": modifiers.insert(.command)
+            case "shift": modifiers.insert(.shift)
+            case "option", "alt": modifiers.insert(.option)
+            case "control", "ctrl": modifiers.insert(.control)
+            default: break
+            }
+        }
+        
+        return modifiers
     }
 }

@@ -128,4 +128,45 @@ class PreferencesService {
       'lastModified': hasPrefs ? DateTime.now().toIso8601String() : null,
     };
   }
+
+  /// 保存字符串值
+  ///
+  /// 参数：
+  /// - key: 存储键
+  /// - value: 要保存的字符串值
+  ///
+  /// 返回：保存是否成功
+  Future<bool> setString(String key, String value) async {
+    await initialize();
+    if (_prefs == null) return false;
+
+    try {
+      return await _prefs!.setString(key, value);
+    } on Exception catch (e) {
+      unawaited(
+        Log.e('Failed to save string value', tag: 'preferences', error: e),
+      );
+      return false;
+    }
+  }
+
+  /// 获取字符串值
+  ///
+  /// 参数：
+  /// - key: 存储键
+  ///
+  /// 返回：字符串值，如果不存在则返回 null
+  Future<String?> getString(String key) async {
+    await initialize();
+    if (_prefs == null) return null;
+
+    try {
+      return _prefs!.getString(key);
+    } on Exception catch (e) {
+      unawaited(
+        Log.e('Failed to get string value', tag: 'preferences', error: e),
+      );
+      return null;
+    }
+  }
 }

@@ -4,7 +4,10 @@ import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/encryption_service.dart';
+import 'package:clip_flow_pro/core/services/hotkey_service.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/preferences_service.dart';
+import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
@@ -45,6 +48,15 @@ void main() async {
   await DatabaseService.instance.initialize();
   await EncryptionService.instance.initialize();
   await ClipboardService.instance.initialize();
+
+  // 初始化快捷键服务
+  final preferencesService = PreferencesService();
+  await preferencesService.initialize();
+  final hotkeyService = HotkeyService(preferencesService);
+  await hotkeyService.initialize();
+
+  // 设置全局快捷键服务实例
+  setHotkeyServiceInstance(hotkeyService);
 
   runApp(const ProviderScope(child: ClipFlowProApp()));
 }
