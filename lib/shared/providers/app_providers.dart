@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/autostart_service.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/hotkey_service.dart';
@@ -356,10 +357,43 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     try {
       final loadedPreferences = await _preferencesService.loadPreferences();
       state = loadedPreferences;
+
+      // 同步开机自启动状态
+      await _syncAutostartStatus();
     } on Exception catch (e) {
       // 如果加载失败，保持默认设置
       unawaited(
         Log.e('Failed to load user preferences', tag: 'providers', error: e),
+      );
+    }
+  }
+
+  /// 同步开机自启动状态
+  /// 检查系统实际的开机自启动状态，与用户偏好设置保持一致
+  Future<void> _syncAutostartStatus() async {
+    try {
+      final autostartService = AutostartService.instance;
+      if (!autostartService.isSupported) {
+        return; // 不支持的平台直接返回
+      }
+
+      final systemEnabled = await autostartService.isEnabled();
+      final preferenceEnabled = state.autoStart;
+
+      if (systemEnabled != preferenceEnabled) {
+        // 系统状态与偏好设置不一致，以系统状态为准
+        state = state.copyWith(autoStart: systemEnabled);
+        await _savePreferences();
+        unawaited(
+          Log.i(
+            '同步开机自启动状态: 系统=${systemEnabled ? "启用" : "禁用"}',
+            tag: 'UserPreferences',
+          ),
+        );
+      }
+    } on Exception catch (e) {
+      unawaited(
+        Log.w('同步开机自启动状态失败', tag: 'UserPreferences', error: e),
       );
     }
   }
@@ -376,9 +410,41 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   }
 
   /// 切换"开机自启动"偏好。
-  void toggleAutoStart() {
-    state = state.copyWith(autoStart: !state.autoStart);
-    _savePreferences();
+  Future<void> toggleAutoStart() async {
+    final newValue = !state.autoStart;
+
+    try {
+      final autostartService = AutostartService.instance;
+
+      if (autostartService.isSupported) {
+        // 先调用系统服务
+        if (newValue) {
+          await autostartService.enable();
+        } else {
+          await autostartService.disable();
+        }
+        unawaited(
+          Log.i(
+            '开机自启动${newValue ? "启用" : "禁用"}成功',
+            tag: 'UserPreferences',
+          ),
+        );
+      }
+
+      // 更新状态并保存
+      state = state.copyWith(autoStart: newValue);
+      await _savePreferences();
+    } on Exception catch (e) {
+      // 如果系统调用失败，不更新状态
+      unawaited(
+        Log.e(
+          '开机自启动${newValue ? "启用" : "禁用"}失败',
+          tag: 'UserPreferences',
+          error: e,
+        ),
+      );
+      rethrow; // 重新抛出异常，让UI层处理
+    }
   }
 
   /// 切换"最小化到托盘"偏好。

@@ -56,6 +56,12 @@ import Vision
             unregisterHotkey(call: call, result: result)
         case "isSystemHotkey":
             isSystemHotkey(call: call, result: result)
+        case "isAutostartEnabled":
+            isAutostartEnabled(result: result)
+        case "enableAutostart":
+            enableAutostart(result: result)
+        case "disableAutostart":
+            disableAutostart(result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -906,5 +912,106 @@ import Vision
         }
         
         return modifiers
+    }
+    
+    // MARK: - 开机自启动功能
+    
+    /// 检查是否启用了开机自启动
+    private func isAutostartEnabled(result: @escaping FlutterResult) {
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
+        
+        // 检查 Launch Agents 目录中是否存在 plist 文件
+        let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
+        let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
+        let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")
+        
+        let isEnabled = FileManager.default.fileExists(atPath: plistPath.path)
+        result(isEnabled)
+    }
+    
+    /// 启用开机自启动
+    private func enableAutostart(result: @escaping FlutterResult) {
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
+        
+        // 获取应用程序路径
+        let appPath = Bundle.main.bundlePath
+        
+        // 创建 Launch Agents 目录
+        let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
+        let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
+        
+        do {
+            try FileManager.default.createDirectory(at: launchAgentsPath, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            print("创建 LaunchAgents 目录失败: \(error)")
+            result(false)
+            return
+        }
+        
+        // 创建 plist 文件内容
+        let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")
+        let plistContent = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>Label</key>
+            <string>\(bundleIdentifier)</string>
+            <key>ProgramArguments</key>
+            <array>
+                <string>\(appPath)/Contents/MacOS/clip_flow_pro</string>
+            </array>
+            <key>RunAtLoad</key>
+            <true/>
+            <key>KeepAlive</key>
+            <false/>
+        </dict>
+        </plist>
+        """
+        
+        do {
+            try plistContent.write(to: plistPath, atomically: true, encoding: .utf8)
+            
+            // 加载 Launch Agent
+            let task = Process()
+            task.launchPath = "/bin/launchctl"
+            task.arguments = ["load", plistPath.path]
+            task.launch()
+            task.waitUntilExit()
+            
+            result(task.terminationStatus == 0)
+        } catch {
+            print("创建开机自启动配置失败: \(error)")
+            result(false)
+        }
+    }
+    
+    /// 禁用开机自启动
+    private func disableAutostart(result: @escaping FlutterResult) {
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
+        
+        let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
+        let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
+        let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")
+        
+        // 卸载 Launch Agent
+        if FileManager.default.fileExists(atPath: plistPath.path) {
+            let task = Process()
+            task.launchPath = "/bin/launchctl"
+            task.arguments = ["unload", plistPath.path]
+            task.launch()
+            task.waitUntilExit()
+            
+            // 删除 plist 文件
+            do {
+                try FileManager.default.removeItem(at: plistPath)
+                result(true)
+            } catch {
+                print("删除开机自启动配置失败: \(error)")
+                result(false)
+            }
+        } else {
+            result(true) // 文件不存在，认为已经禁用
+        }
     }
 }

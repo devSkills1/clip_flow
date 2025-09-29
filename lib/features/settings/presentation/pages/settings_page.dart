@@ -87,8 +87,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     l10n?.generalAutoStartSubtitle ??
                     I18nFallbacks.settings.generalAutoStartSubtitle,
                 value: preferences.autoStart,
-                onChanged: (value) {
-                  ref.read(userPreferencesProvider.notifier).toggleAutoStart();
+                onChanged: (value) async {
+                  await ref
+                      .read(userPreferencesProvider.notifier)
+                      .toggleAutoStart();
                 },
               ),
               _buildSwitchTile(
