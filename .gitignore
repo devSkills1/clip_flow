@@ -102,3 +102,37 @@ crash_reports/
 #忽略所有Pods文件
 ios/Pods/
 macos/Pods/
+
+# ===== 项目特定文件 =====
+# 构建计数器和版本管理
+# .build_counter  # 注释掉，允许提交以确保团队构建号同步
+.version_cache
+
+# 发布文件（现在生成到 build/ 目录中，由 build/ 规则覆盖）
+
+# 构建产物（额外保护）
+*.dmg
+*.sha256
+*.app/
+*.ipa
+*.apk
+*.aab
+
+# 临时测试文件
+test_*.png
+test_*.jpg
+test_*.jpeg
+*_test_image.*
+
+# 性能和调试文件
+*.trace
+*.profile
+flutter_*.log
+
+# 本地开发配置
+.local/
+local_config.json
+
+# 备份文件
+*.backup
+*.bak.*

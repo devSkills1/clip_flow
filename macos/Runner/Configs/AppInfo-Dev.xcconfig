@@ -1,0 +1,20 @@
+// Application-level settings for the Runner target (Development Environment).
+//
+// This configuration is used for development builds to ensure proper isolation
+// from production environment.
+
+// The application's name for development
+PRODUCT_NAME = ClipFlow Pro Dev
+
+// The application's bundle identifier for development
+PRODUCT_BUNDLE_IDENTIFIER = com.clipflow.pro.dev
+
+// The copyright displayed in application information
+PRODUCT_COPYRIGHT = Copyright © 2025 ClipFlow. All rights reserved.
+
+// 代码签名配置 - 开发环境（禁用签名）
+DEVELOPMENT_TEAM = 
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = 
+CODE_SIGNING_ALLOWED = NO
+CODE_SIGNING_REQUIRED = NO

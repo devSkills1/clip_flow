@@ -146,3 +146,14 @@ flutter build macos -v
 flutter run -d macos -v 
 # 详细运行 macOS 桌面应用
 ```
+
+```bash
+git diff --cached docs/TODO.md 
+# 查看暂存区 TODO.md 变更
+
+git log --oneline -5 docs/TODO.md
+# 查看最近 5 条 TODO.md 变更记录
+
+git diff --cached --stat
+# 查看暂存区变更统计
+```

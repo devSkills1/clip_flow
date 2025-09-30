@@ -1,0 +1,21 @@
+// Application-level settings for the Runner target (Production Environment).
+//
+// This configuration is used for production builds and app store distribution.
+
+// The application's name for production
+PRODUCT_NAME = ClipFlow Pro
+
+// The application's bundle identifier for production
+PRODUCT_BUNDLE_IDENTIFIER = com.clipflow.pro
+
+// The copyright displayed in application information
+PRODUCT_COPYRIGHT = Copyright © 2025 ClipFlow. All rights reserved.
+
+// Production specific settings - 代码签名配置
+// 注意：生产环境需要有效的开发者证书才能正常构建
+// 如果没有证书，可以临时禁用签名进行测试构建
+DEVELOPMENT_TEAM = 
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = 
+CODE_SIGNING_ALLOWED = NO
+CODE_SIGNING_REQUIRED = NO
