@@ -34,6 +34,9 @@ class _HotkeyCaptureDialogState extends ConsumerState<HotkeyCaptureDialog> {
   /// 当前捕获的主键
   String? _capturedKey;
 
+  /// 是否忽略按键重复触发
+  bool _ignoreRepeat = false;
+
   /// 是否正在监听按键
   bool _isListening = false;
 
@@ -50,6 +53,7 @@ class _HotkeyCaptureDialogState extends ConsumerState<HotkeyCaptureDialog> {
     if (widget.currentConfig != null) {
       _capturedModifiers.addAll(widget.currentConfig!.modifiers);
       _capturedKey = widget.currentConfig!.key;
+      _ignoreRepeat = widget.currentConfig!.ignoreRepeat;
     }
   }
 
@@ -150,6 +154,7 @@ class _HotkeyCaptureDialogState extends ConsumerState<HotkeyCaptureDialog> {
         key: _capturedKey!,
         modifiers: _capturedModifiers,
         description: _getActionDescription(widget.action),
+        ignoreRepeat: _ignoreRepeat,
       );
 
       // 注册快捷键
@@ -260,6 +265,18 @@ class _HotkeyCaptureDialogState extends ConsumerState<HotkeyCaptureDialog> {
               ),
 
               const SizedBox(height: HotkeyDialogConstants.largeSpacing),
+
+              // 忽略重复触发开关
+              SwitchListTile(
+                title: const Text('忽略重复按键触发'),
+                subtitle: const Text('按住同一键时不重复触发'),
+                value: _ignoreRepeat,
+                onChanged: (value) {
+                  setState(() {
+                    _ignoreRepeat = value;
+                  });
+                },
+              ),
 
               // 操作按钮
               Row(

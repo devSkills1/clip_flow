@@ -60,10 +60,12 @@ abstract class OcrService {
   ///
   /// [imageBytes] 图片的字节数据
   /// [language] 识别语言代码，如 'en', 'zh', 'auto' 等
+  /// [minConfidence] 最小置信度阈值，低于该值的结果可能被原生层过滤
   /// 返回识别结果，如果识别失败返回null
   Future<OcrResult?> recognizeText(
     Uint8List imageBytes, {
     String language = 'auto',
+    double? minConfidence,
   });
 
   /// 检查OCR服务是否可用

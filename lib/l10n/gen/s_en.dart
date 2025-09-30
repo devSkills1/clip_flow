@@ -460,4 +460,18 @@ class SEn extends S {
 
   @override
   String get performanceHealthUnknown => 'Unknown';
+
+  @override
+  String get ocrLanguageTitle => 'OCR Language';
+
+  @override
+  String get ocrLanguageSubtitle =>
+      'Choose the language used for text recognition';
+
+  @override
+  String get ocrMinConfidenceTitle => 'Minimum confidence threshold';
+
+  @override
+  String get ocrMinConfidenceSubtitle =>
+      'Ignore results below this confidence score';
 }

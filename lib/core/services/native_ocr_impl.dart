@@ -10,7 +10,20 @@ import 'package:flutter/services.dart';
 /// - Windows: Windows.Media.Ocr API ✅ 已实现
 /// - Linux: Tesseract OCR ✅ 已实现
 class NativeOcrImpl implements OcrService {
+  /// 构造函数，异步预取语言列表，不阻塞构造
+  NativeOcrImpl() {
+    // 异步预取语言列表，不阻塞构造
+    _fetchSupportedLanguages();
+  }
+
   static const MethodChannel _channel = MethodChannel('clipboard_service');
+
+  // 语言列表缓存（优先原生查询，回退基本集合）
+  List<String> _supportedLanguagesCache = const [
+    'en-US',
+    'zh-Hans',
+    'zh-Hant',
+  ];
 
   /// 获取当前平台信息
   String get _platformInfo {
@@ -29,6 +42,7 @@ class NativeOcrImpl implements OcrService {
   Future<OcrResult?> recognizeText(
     Uint8List imageBytes, {
     String language = 'auto',
+    double? minConfidence,
   }) async {
     // 检查平台支持
     if (!_isPlatformSupported) {
@@ -48,16 +62,22 @@ class NativeOcrImpl implements OcrService {
       fields: {
         'imageSize': imageBytes.length,
         'language': language,
+        if (minConfidence != null) 'minConfidence': minConfidence,
         'platform': _platformInfo,
       },
     );
 
     try {
       // 调用原生OCR方法
-      final result = await _channel.invokeMethod('performOCR', {
+      final args = {
         'imageData': imageBytes,
         'language': language,
-      });
+      };
+      if (minConfidence != null) {
+        args['minConfidence'] = minConfidence;
+      }
+
+      final result = await _channel.invokeMethod('performOCR', args);
 
       if (result == null) {
         await Log.w(
@@ -148,6 +168,8 @@ class NativeOcrImpl implements OcrService {
     try {
       // 尝试调用测试方法来检查原生插件是否可用
       await _channel.invokeMethod('isOCRAvailable');
+      // 成功时刷新语言支持列表
+      await _fetchSupportedLanguages();
       await Log.i(
         'OCR service available',
         tag: 'OCR',
@@ -168,11 +190,12 @@ class NativeOcrImpl implements OcrService {
         },
       );
       return false;
-    } catch (e) {
+    } on Object catch (e, stackTrace) {
       await Log.e(
         'Error checking OCR availability',
         tag: 'OCR',
         error: e,
+        stackTrace: stackTrace,
         fields: {
           'platform': _platformInfo,
         },
@@ -183,36 +206,35 @@ class NativeOcrImpl implements OcrService {
 
   @override
   List<String> getSupportedLanguages() {
-    // 根据平台返回支持的语言
-    // macOS Vision框架支持多种语言
-    final languages = [
-      'auto',
-      'en',
-      'en-US',
-      'zh',
-      'zh-Hans',
-      'zh-Hant',
-      'ja',
-      'ko',
-      'fr',
-      'de',
-      'es',
-      'it',
-      'pt',
-      'ru',
-      'ar',
-    ];
+    // 返回缓存的语言列表，包含 'auto'
+    return ['auto', ..._supportedLanguagesCache];
+  }
 
-    Log.d(
-      'Retrieved supported OCR languages',
-      tag: 'OCR',
-      fields: {
-        'languageCount': languages.length,
-        'languages': languages,
-      },
-    );
-
-    return languages;
+  Future<void> _fetchSupportedLanguages() async {
+    try {
+      final langs = await _channel.invokeMethod<List<dynamic>>(
+        'getSupportedOCRLanguages',
+      );
+      if (langs != null && langs.isNotEmpty) {
+        _supportedLanguagesCache = langs.map((e) => e.toString()).toList();
+        await Log.d(
+          'Updated OCR language cache',
+          tag: 'OCR',
+          fields: {
+            'count': _supportedLanguagesCache.length,
+          },
+        );
+      }
+    } on PlatformException catch (e) {
+      await Log.w(
+        'Failed to fetch OCR languages from native',
+        tag: 'OCR',
+        error: e,
+      );
+    } on Object catch (_) {
+      // 忽略其他错误，保留回退缓存
+      await Log.w('Failed to fetch OCR languages from native', tag: 'OCR');
+    }
   }
 
   @override

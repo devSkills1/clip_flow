@@ -477,5 +477,17 @@
   "@performanceHealthWarmingUp": {"description": "Performance health status - warming up"},
 
   "performanceHealthUnknown": "Unknown",
-  "@performanceHealthUnknown": {"description": "Performance health status - unknown"}
+  "@performanceHealthUnknown": {"description": "Performance health status - unknown"},
+
+  "ocrLanguageTitle": "OCR Language",
+  "@ocrLanguageTitle": {"description": "Settings - OCR - language - title"},
+
+  "ocrLanguageSubtitle": "Choose the language used for text recognition",
+  "@ocrLanguageSubtitle": {"description": "Settings - OCR - language - subtitle"},
+
+  "ocrMinConfidenceTitle": "Minimum confidence threshold",
+  "@ocrMinConfidenceTitle": {"description": "Settings - OCR - min confidence - title"},
+
+  "ocrMinConfidenceSubtitle": "Ignore results below this confidence score",
+  "@ocrMinConfidenceSubtitle": {"description": "Settings - OCR - min confidence - subtitle"}
 }

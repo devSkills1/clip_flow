@@ -1,5 +1,54 @@
 # ClipFlow Pro 开发 TODO
 
+## 项目完成度评估与下一步建议（2025-09-30）
+### 完成度概览
+- 桌面三端（macOS/Windows/Linux）构建与运行已就绪。
+- 插件层跨平台 OCR：macOS Vision（含修订版本分支）、Windows WinRT、Linux Tesseract。
+- 应用层结构与设置偏好完整，国际化键值与回退机制齐全。
+- macOS 构建零警告（已修复可用性与警告问题）。
+
+### 发布与分发缺口
+- 缺少 CI/CD 工作流（GitHub Actions）与制品自动上传。
+- 缺少应用图标与品牌资源统一，`Info.plist` 的 `CFBundleIconFile` 为空。
+- 未落地签名与安装器流程：macOS（签名/公证）、Windows（NSIS/Inno/Wix）、Linux（DEB/RPM）。
+- 移动端未覆盖（项目定位偏桌面），Web 缺少部署说明。
+
+### CI/CD 建议与任务
+- 建立跨平台矩阵：`macos-latest`、`windows-latest`、`ubuntu-latest`。
+- 步骤：`flutter pub get` → `flutter analyze` → `dart format --output none --set-exit-if-changed` → `flutter test` → 三端 `flutter build` → 上传构建制品。
+- macOS 增加 `codesign` 与 `notarization`（API Key/Issuer），产出 `.app` 或 `.dmg`。
+- Windows 使用 NSIS/Inno/Wix 生成安装器；Linux 用 `fpm`/`cpack` 打包。
+- 引入 `CHANGELOG.md` 与语义化版本；CI 自动更新版本号与发布说明。
+
+### 品牌与体验
+- 增加应用主图标、托盘图标与启动图；统一各平台资源路径。
+- 更新 `Info.plist` 的 `CFBundleIconFile` 并接入资源管线。
+- 设置页可访问性与快捷键提示；列表焦点管理与 `Semantics` 覆盖。
+- Windows OCR 端明确说明“置信度不可用”，统一最小置信度的阈值文案。
+
+### 测试与质量门禁
+- 单元测试覆盖核心服务（剪贴板、数据库、热键、偏好）≥80%。
+- 集成测试：平台通道端到端（剪贴板事件→OCR→入库→展示）。
+- 性能基线：冷启动、滚动卡顿、DB 查询延迟；加阈值断言做回归。
+- 在 CI 中启用 `flutter analyze` 与格式化检查。
+
+### 性能与稳定性
+- 冷启动优化：延迟初始化耗时模块；按需加载图片缩略图。
+- 数据库索引与事务化；批量写入；搜索采用二级索引或 FTS。
+- 内存控制：缩略图缓存 LRU、主线程避免同步 I/O。
+
+### 安全与隐私
+- 明确隐私策略与本地数据加密；导出/同步的密钥管理与确认提示。
+- 日志与诊断开关：允许关闭或匿名化性能与错误日志。
+
+### 近期行动清单（优先级顺序）
+1. 建立跨平台 CI 工作流，接入测试与构建制品上传。
+2. 增加应用与托盘图标，完善 `Info.plist` 与各平台资源配置。
+3. 扩充核心服务单测与端到端集成测试，固化性能阈值。
+4. 落地 macOS 签名与公证流程；随后补齐 Windows 安装器与 Linux 包。
+5. 新增 `CHANGELOG.md` 与版本策略，完善发布文档与脚本。
+
+# old 
 ## 紧急修复（高优先级）
 
 ### 1. 剪贴板文件处理修复 🚨

@@ -900,6 +900,30 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Unknown'**
   String get performanceHealthUnknown;
+
+  /// Settings - OCR - language - title
+  ///
+  /// In en, this message translates to:
+  /// **'OCR Language'**
+  String get ocrLanguageTitle;
+
+  /// Settings - OCR - language - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the language used for text recognition'**
+  String get ocrLanguageSubtitle;
+
+  /// Settings - OCR - min confidence - title
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum confidence threshold'**
+  String get ocrMinConfidenceTitle;
+
+  /// Settings - OCR - min confidence - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Ignore results below this confidence score'**
+  String get ocrMinConfidenceSubtitle;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

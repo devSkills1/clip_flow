@@ -231,6 +231,8 @@ class UserPreferences {
     this.maxHistoryItems = 500,
     this.enableEncryption = true,
     this.enableOCR = true,
+    this.ocrLanguage = 'auto',
+    this.ocrMinConfidence = 0.5,
     this.language = 'zh_CN',
     this.defaultDisplayMode = DisplayMode.normal,
     this.isDeveloperMode = false,
@@ -246,6 +248,8 @@ class UserPreferences {
       maxHistoryItems: (json['maxHistoryItems'] as int?) ?? 500,
       enableEncryption: (json['enableEncryption'] as bool?) ?? true,
       enableOCR: (json['enableOCR'] as bool?) ?? true,
+      ocrLanguage: (json['ocrLanguage'] as String?) ?? 'auto',
+      ocrMinConfidence: ((json['ocrMinConfidence'] as num?) ?? 0.5).toDouble(),
       language: (json['language'] as String?) ?? 'zh_CN',
       defaultDisplayMode: DisplayMode.values.firstWhere(
         (e) => e.name == (json['defaultDisplayMode'] as String?),
@@ -275,6 +279,12 @@ class UserPreferences {
   /// 是否启用 OCR
   final bool enableOCR;
 
+  /// OCR 识别语言（包含 'auto' 自动识别）
+  final String ocrLanguage;
+
+  /// OCR 最小置信度阈值 (0.0 - 1.0)
+  final double ocrMinConfidence;
+
   /// 显示语言代码（如 'zh_CN'）
   final String language;
 
@@ -295,6 +305,8 @@ class UserPreferences {
     int? maxHistoryItems,
     bool? enableEncryption,
     bool? enableOCR,
+    String? ocrLanguage,
+    double? ocrMinConfidence,
     String? language,
     DisplayMode? defaultDisplayMode,
     bool? isDeveloperMode,
@@ -307,6 +319,8 @@ class UserPreferences {
       maxHistoryItems: maxHistoryItems ?? this.maxHistoryItems,
       enableEncryption: enableEncryption ?? this.enableEncryption,
       enableOCR: enableOCR ?? this.enableOCR,
+      ocrLanguage: ocrLanguage ?? this.ocrLanguage,
+      ocrMinConfidence: ocrMinConfidence ?? this.ocrMinConfidence,
       language: language ?? this.language,
       defaultDisplayMode: defaultDisplayMode ?? this.defaultDisplayMode,
       isDeveloperMode: isDeveloperMode ?? this.isDeveloperMode,
@@ -324,6 +338,8 @@ class UserPreferences {
       'maxHistoryItems': maxHistoryItems,
       'enableEncryption': enableEncryption,
       'enableOCR': enableOCR,
+      'ocrLanguage': ocrLanguage,
+      'ocrMinConfidence': ocrMinConfidence,
       'language': language,
       'defaultDisplayMode': defaultDisplayMode.name,
       'isDeveloperMode': isDeveloperMode,
@@ -480,6 +496,20 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 设置显示语言代码（例如 'zh_CN'）。
   void setLanguage(String language) {
     state = state.copyWith(language: language);
+    _savePreferences();
+  }
+
+  /// 设置 OCR 识别语言（如 'auto', 'en-US', 'zh-Hans' 等）。
+  void setOcrLanguage(String language) {
+    state = state.copyWith(ocrLanguage: language);
+    _savePreferences();
+  }
+
+  /// 设置 OCR 最小置信度阈值 (0.0 - 1.0)。
+  void setOcrMinConfidence(double value) {
+    // 约束到合法区间
+    final clamped = value.clamp(0.0, 1.0);
+    state = state.copyWith(ocrMinConfidence: clamped);
     _savePreferences();
   }
 

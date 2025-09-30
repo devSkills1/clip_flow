@@ -187,6 +187,18 @@ class _SettingsFallback {
   /// 安全：启用OCR 副标题
   String get securityEnableOcrSubtitle => '自动识别图片中的文字';
 
+  /// OCR：识别语言 标题
+  String get ocrLanguageTitle => 'OCR 识别语言';
+
+  /// OCR：识别语言 副标题
+  String get ocrLanguageSubtitle => '选择用于识别的语言（可选自动）';
+
+  /// OCR：最小置信度 标题
+  String get ocrMinConfidenceTitle => '最小置信度阈值';
+
+  /// OCR：最小置信度 副标题
+  String get ocrMinConfidenceSubtitle => '低于该阈值的识别结果将被忽略';
+
   /// 外观：主题模式 标题
   String get appearanceThemeModeTitle => '主题模式';
 

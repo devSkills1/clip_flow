@@ -2,6 +2,7 @@ import Cocoa
 import FlutterMacOS
 import UniformTypeIdentifiers
 import Vision
+import ServiceManagement
 
 @objc class ClipboardPlugin: NSObject, FlutterPlugin {
     // 全局事件监听器
@@ -11,6 +12,7 @@ import Vision
     private struct HotkeyInfo {
         let keyCode: UInt16
         let modifiers: NSEvent.ModifierFlags
+        let ignoreRepeat: Bool
     }
     
     // 注册的快捷键
@@ -48,6 +50,10 @@ import Vision
             setClipboardFile(call: call, result: result)
         case "performOCR":
             performOCR(call: call, result: result)
+        case "isOCRAvailable":
+            isOCRAvailable(result: result)
+        case "getSupportedOCRLanguages":
+            getSupportedOCRLanguages(result: result)
         case "isHotkeySupported":
             isHotkeySupported(result: result)
         case "registerHotkey":
@@ -637,7 +643,7 @@ import Vision
             result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing imageData parameter", details: nil))
             return
         }
-        
+
         NSLog("ClipboardPlugin: Starting OCR on image data (%d bytes)", imageData.data.count)
         
         // 创建NSImage
@@ -652,8 +658,11 @@ import Vision
             return
         }
         
+        // 可选的最小置信度过滤（需在闭包外声明以便捕获）
+        let minConfidence = (args["minConfidence"] as? Double) ?? 0.0
+
         // 创建Vision文字识别请求
-        let request = VNRecognizeTextRequest { [weak self] (request, error) in
+        let request = VNRecognizeTextRequest { (request, error) in
             DispatchQueue.main.async {
                 if let error = error {
                     NSLog("ClipboardPlugin: OCR error: %@", error.localizedDescription)
@@ -670,16 +679,21 @@ import Vision
                 var recognizedText = ""
                 var totalConfidence: Float = 0.0
                 var observationCount = 0
+                let threshold: Float = Float(minConfidence)
                 
                 for observation in observations {
                     guard let topCandidate = observation.topCandidates(1).first else { continue }
-                    
-                    recognizedText += topCandidate.string + "\n"
-                    totalConfidence += topCandidate.confidence
-                    observationCount += 1
-                    
-                    NSLog("ClipboardPlugin: Recognized text: '%@' (confidence: %.2f)", 
-                          topCandidate.string, topCandidate.confidence)
+                    // 置信度过滤
+                    if topCandidate.confidence >= threshold {
+                        recognizedText += topCandidate.string + "\n"
+                        totalConfidence += topCandidate.confidence
+                        observationCount += 1
+                        NSLog("ClipboardPlugin: Recognized text: '%@' (confidence: %.2f)", 
+                              topCandidate.string, topCandidate.confidence)
+                    } else {
+                        NSLog("ClipboardPlugin: Skipped low-confidence text: '%.2f' < '%.2f'", 
+                              topCandidate.confidence, threshold)
+                    }
                 }
                 
                 // 移除最后的换行符
@@ -701,7 +715,13 @@ import Vision
         
         // 配置OCR请求
         request.recognitionLevel = .accurate
-        request.recognitionLanguages = ["en-US", "zh-Hans", "zh-Hant"] // 支持英文和中文
+        // 处理语言参数
+        let langParam = (args["language"] as? String) ?? "auto"
+        if langParam == "auto" {
+            request.recognitionLanguages = ["en-US", "zh-Hans", "zh-Hant"]
+        } else {
+            request.recognitionLanguages = [langParam]
+        }
         request.usesLanguageCorrection = true
         
         // 执行OCR请求
@@ -716,6 +736,35 @@ import Vision
                     result(FlutterError(code: "OCR_FAILED", message: error.localizedDescription, details: nil))
                 }
             }
+        }
+    }
+
+    /// 检查 OCR 是否可用
+    private func isOCRAvailable(result: @escaping FlutterResult) {
+        if #available(macOS 10.15, *) {
+            result(true)
+        } else {
+            result(false)
+        }
+    }
+
+    /// 返回系统支持的 OCR 语言列表
+    private func getSupportedOCRLanguages(result: @escaping FlutterResult) {
+        if #available(macOS 10.15, *) {
+            do {
+                var langs: [String]
+                if #available(macOS 11.0, *) {
+                    langs = try VNRecognizeTextRequest.supportedRecognitionLanguages(for: .accurate, revision: VNRecognizeTextRequestRevision2)
+                } else {
+                    // 在 macOS 10.15 上使用 Revision1 以避免可用性编译错误
+                    langs = try VNRecognizeTextRequest.supportedRecognitionLanguages(for: .accurate, revision: VNRecognizeTextRequestRevision1)
+                }
+                result(langs)
+            } catch {
+                result(FlutterError(code: "LANG_QUERY_FAILED", message: error.localizedDescription, details: nil))
+            }
+        } else {
+            result(["en-US", "zh-Hans", "zh-Hant"]) // 基本回退
         }
     }
     
@@ -735,9 +784,18 @@ import Vision
             result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid arguments", details: nil))
             return
         }
+        let ignoreRepeat = (args["ignoreRepeat"] as? Bool) ?? true
         
         // 解析快捷键字符串 (例如: "Cmd+Shift+C")
         let components = keyString.components(separatedBy: "+")
+        
+        // 校验仅存在一个主键
+        let modifierSet: Set<String> = ["cmd", "ctrl", "alt", "shift", "meta", "option"]
+        let mainKeys = components.filter { !modifierSet.contains($0.lowercased()) }
+        guard mainKeys.count == 1 else {
+            result(FlutterError(code: "INVALID_KEY", message: "Invalid key combination", details: ["mainKeys": mainKeys]))
+            return
+        }
         
         guard let keyCode = parseKeyCode(from: components) else {
             result(FlutterError(code: "INVALID_KEY", message: "Invalid key code", details: nil))
@@ -747,7 +805,7 @@ import Vision
         let modifiers = parseModifiers(from: components)
         
         // 注册快捷键
-        let success = registerGlobalHotkey(action: action, keyCode: keyCode, modifiers: modifiers)
+        let success = registerGlobalHotkey(action: action, keyCode: keyCode, modifiers: modifiers, ignoreRepeat: ignoreRepeat)
         result(success)
     }
     
@@ -784,13 +842,16 @@ import Vision
     // MARK: - Modern Hotkey Implementation
     
     /// 注册全局快捷键（使用NSEvent监听）
-    private func registerGlobalHotkey(action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> Bool {
-        // 取消之前的注册
-        unregisterGlobalHotkey(action: action)
-        
+    private func registerGlobalHotkey(action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags, ignoreRepeat: Bool) -> Bool {
+        // 取消之前的注册并处理返回值
+        let unregOk = unregisterGlobalHotkey(action: action)
+        if !unregOk {
+            NSLog("ClipboardPlugin: Failed to unregister previous hotkey for action %@", action)
+        }
+
         // 保存快捷键配置
-        registeredHotkeys[action] = HotkeyInfo(keyCode: keyCode, modifiers: modifiers)
-        
+        registeredHotkeys[action] = HotkeyInfo(keyCode: keyCode, modifiers: modifiers, ignoreRepeat: ignoreRepeat)
+
         // 如果这是第一个快捷键，启动全局监听器
         if globalEventMonitor == nil {
             setupGlobalEventMonitor()
@@ -826,6 +887,7 @@ import Vision
         
         // 检查是否匹配任何注册的快捷键
         for (action, hotkey) in registeredHotkeys {
+            if hotkey.ignoreRepeat && event.isARepeat { continue }
             if keyCode == hotkey.keyCode && modifiers == hotkey.modifiers {
                 // 通知Flutter端
                 DispatchQueue.main.async { [weak self] in
@@ -918,42 +980,50 @@ import Vision
     
     /// 检查是否启用了开机自启动
     private func isAutostartEnabled(result: @escaping FlutterResult) {
+        if #available(macOS 13.0, *) {
+            let status = SMAppService.mainApp.status
+            result(status == .enabled)
+            return
+        }
+        // 旧版系统回退到 LaunchAgents 检查
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
-        
-        // 检查 Launch Agents 目录中是否存在 plist 文件
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
         let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")
-        
         let isEnabled = FileManager.default.fileExists(atPath: plistPath.path)
         result(isEnabled)
     }
     
     /// 启用开机自启动
     private func enableAutostart(result: @escaping FlutterResult) {
+        if #available(macOS 13.0, *) {
+            do {
+                try SMAppService.mainApp.register()
+                result(true)
+                return
+            } catch {
+                NSLog("SMAppService register failed: %@", error.localizedDescription)
+                result(FlutterError(code: "SM_REGISTER_FAILED", message: error.localizedDescription, details: nil))
+                return
+            }
+        }
+        // 旧版系统回退到 LaunchAgents
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
-        
-        // 获取应用程序路径
         let appPath = Bundle.main.bundlePath
-        
-        // 创建 Launch Agents 目录
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
-        
         do {
             try FileManager.default.createDirectory(at: launchAgentsPath, withIntermediateDirectories: true, attributes: nil)
         } catch {
-            print("创建 LaunchAgents 目录失败: \(error)")
-            result(false)
+            NSLog("创建 LaunchAgents 目录失败: %@", error.localizedDescription)
+            result(FlutterError(code: "LAUNCH_AGENTS_DIR_FAILED", message: error.localizedDescription, details: nil))
             return
         }
-        
-        // 创建 plist 文件内容
         let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")
         let plistContent = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
+        <?xml version=\"1.0\" encoding=\"UTF-8\"?>
+        <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+        <plist version=\"1.0\">
         <dict>
             <key>Label</key>
             <string>\(bundleIdentifier)</string>
@@ -968,50 +1038,56 @@ import Vision
         </dict>
         </plist>
         """
-        
         do {
             try plistContent.write(to: plistPath, atomically: true, encoding: .utf8)
-            
-            // 加载 Launch Agent
             let task = Process()
             task.launchPath = "/bin/launchctl"
             task.arguments = ["load", plistPath.path]
             task.launch()
             task.waitUntilExit()
-            
-            result(task.terminationStatus == 0)
+            if task.terminationStatus == 0 {
+                result(true)
+            } else {
+                result(FlutterError(code: "LAUNCHCTL_LOAD_FAILED", message: "launchctl load failed", details: task.terminationStatus))
+            }
         } catch {
-            print("创建开机自启动配置失败: \(error)")
-            result(false)
+            NSLog("创建开机自启动配置失败: %@", error.localizedDescription)
+            result(FlutterError(code: "CREATE_PLIST_FAILED", message: error.localizedDescription, details: nil))
         }
     }
     
     /// 禁用开机自启动
     private func disableAutostart(result: @escaping FlutterResult) {
+        if #available(macOS 13.0, *) {
+            do {
+                try SMAppService.mainApp.unregister()
+                result(true)
+                return
+            } catch {
+                NSLog("SMAppService unregister failed: %@", error.localizedDescription)
+                result(FlutterError(code: "SM_UNREGISTER_FAILED", message: error.localizedDescription, details: nil))
+                return
+            }
+        }
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
-        
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
         let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")
-        
-        // 卸载 Launch Agent
         if FileManager.default.fileExists(atPath: plistPath.path) {
             let task = Process()
             task.launchPath = "/bin/launchctl"
             task.arguments = ["unload", plistPath.path]
             task.launch()
             task.waitUntilExit()
-            
-            // 删除 plist 文件
             do {
                 try FileManager.default.removeItem(at: plistPath)
                 result(true)
             } catch {
-                print("删除开机自启动配置失败: \(error)")
-                result(false)
+                NSLog("删除开机自启动配置失败: %@", error.localizedDescription)
+                result(FlutterError(code: "REMOVE_PLIST_FAILED", message: error.localizedDescription, details: nil))
             }
         } else {
-            result(true) // 文件不存在，认为已经禁用
+            result(true)
         }
     }
 }

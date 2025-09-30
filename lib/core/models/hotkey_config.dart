@@ -53,6 +53,7 @@ class HotkeyConfig {
     required this.description,
     this.enabled = true,
     this.isDefault = false,
+    this.ignoreRepeat = true,
   });
 
   /// 从JSON创建
@@ -72,6 +73,7 @@ class HotkeyConfig {
       enabled: json['enabled'] as bool? ?? true,
       description: json['description'] as String,
       isDefault: json['isDefault'] as bool? ?? false,
+      ignoreRepeat: json['ignoreRepeat'] as bool? ?? true,
     );
   }
 
@@ -92,6 +94,9 @@ class HotkeyConfig {
 
   /// 是否为系统默认配置
   final bool isDefault;
+
+  /// 是否忽略按键重复（长按不重复触发）
+  final bool ignoreRepeat;
 
   /// 获取快捷键的字符串表示
   String get displayString {
@@ -158,6 +163,7 @@ class HotkeyConfig {
     bool? enabled,
     String? description,
     bool? isDefault,
+    bool? ignoreRepeat,
   }) {
     return HotkeyConfig(
       action: action ?? this.action,
@@ -166,6 +172,7 @@ class HotkeyConfig {
       enabled: enabled ?? this.enabled,
       description: description ?? this.description,
       isDefault: isDefault ?? this.isDefault,
+      ignoreRepeat: ignoreRepeat ?? this.ignoreRepeat,
     );
   }
 
@@ -178,6 +185,7 @@ class HotkeyConfig {
       'enabled': enabled,
       'description': description,
       'isDefault': isDefault,
+      'ignoreRepeat': ignoreRepeat,
     };
   }
 
@@ -200,6 +208,7 @@ class HotkeyConfig {
       key,
       modifiers,
       enabled,
+      ignoreRepeat,
     );
   }
 
@@ -211,6 +220,7 @@ class HotkeyConfig {
 
 /// 默认快捷键配置
 class DefaultHotkeyConfigs {
+  /// 系统默认快捷键配置列表
   static const List<HotkeyConfig> defaults = [
     HotkeyConfig(
       action: HotkeyAction.toggleWindow,

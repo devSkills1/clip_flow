@@ -444,4 +444,16 @@ class SZh extends S {
 
   @override
   String get performanceHealthUnknown => '未知';
+
+  @override
+  String get ocrLanguageTitle => 'OCR 识别语言';
+
+  @override
+  String get ocrLanguageSubtitle => '选择用于识别的语言（可选自动）';
+
+  @override
+  String get ocrMinConfidenceTitle => '最小置信度阈值';
+
+  @override
+  String get ocrMinConfidenceSubtitle => '低于该阈值的识别结果将被忽略';
 }

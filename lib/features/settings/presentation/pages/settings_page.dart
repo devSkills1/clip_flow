@@ -8,6 +8,7 @@ import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/hotkey_config.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/finder_service.dart';
+import 'package:clip_flow_pro/core/services/ocr_service.dart';
 import 'package:clip_flow_pro/features/settings/presentation/widgets/hotkey_capture_dialog.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
@@ -174,6 +175,70 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ref.read(userPreferencesProvider.notifier).toggleOCR();
                 },
               ),
+              if (preferences.enableOCR) ...[
+                const SizedBox(height: 8),
+                // OCR 语言选择
+                ListTile(
+                  title: Text(
+                    I18nFallbacks.settings.ocrLanguageTitle,
+                  ),
+                  subtitle: Text(
+                    I18nFallbacks.settings.ocrLanguageSubtitle,
+                  ),
+                  trailing: DropdownButton<String>(
+                    value: preferences.ocrLanguage,
+                    items: OcrServiceFactory.getInstance()
+                        .getSupportedLanguages()
+                        .map(
+                          (lang) {
+                            return DropdownMenuItem(
+                              value: lang,
+                              child: Text(lang),
+                            );
+                          },
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        ref
+                            .read(userPreferencesProvider.notifier)
+                            .setOcrLanguage(value);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // OCR 最小置信度滑块
+                ListTile(
+                  title: Text(
+                    I18nFallbacks.settings.ocrMinConfidenceTitle,
+                  ),
+                  subtitle: Text(
+                    I18nFallbacks.settings.ocrMinConfidenceSubtitle,
+                  ),
+                  trailing: SizedBox(
+                    width: 220,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Expanded(
+                          child: Slider(
+                            value: preferences.ocrMinConfidence,
+                            divisions: 20,
+                            label:
+                                '${(preferences.ocrMinConfidence * 100).round()}%',
+                            onChanged: (v) {
+                              ref
+                                  .read(userPreferencesProvider.notifier)
+                                  .setOcrMinConfidence(v);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
 

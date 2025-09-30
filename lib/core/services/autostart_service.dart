@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
@@ -10,7 +11,6 @@ import 'package:flutter/services.dart';
 /// - Windows: 通过注册表
 /// - Linux: 通过 .desktop 文件
 class AutostartService {
-
   /// 私有构造函数
   AutostartService._();
   static const MethodChannel _channel = MethodChannel('clipboard_service');
@@ -29,7 +29,7 @@ class AutostartService {
   /// 获取当前开机自启动状态
   Future<bool> isEnabled() async {
     if (!isSupported) {
-      Log.w('开机自启动功能在当前平台不支持', tag: 'AutostartService');
+      await Log.w('开机自启动功能在当前平台不支持', tag: 'AutostartService');
       return false;
     }
 
@@ -42,8 +42,8 @@ class AutostartService {
         return await _isEnabledLinux();
       }
       return false;
-    } catch (e) {
-      Log.e('检查开机自启动状态失败', tag: 'AutostartService', error: e);
+    } on Object catch (e) {
+      await Log.e('检查开机自启动状态失败', tag: 'AutostartService', error: e);
       return false;
     }
   }
@@ -51,7 +51,7 @@ class AutostartService {
   /// 启用开机自启动
   Future<bool> enable() async {
     if (!isSupported) {
-      Log.w('开机自启动功能在当前平台不支持', tag: 'AutostartService');
+      await Log.w('开机自启动功能在当前平台不支持', tag: 'AutostartService');
       return false;
     }
 
@@ -66,14 +66,14 @@ class AutostartService {
       }
 
       if (result) {
-        Log.i('开机自启动已启用', tag: 'AutostartService');
+        await Log.i('开机自启动已启用', tag: 'AutostartService');
       } else {
-        Log.w('启用开机自启动失败', tag: 'AutostartService');
+        await Log.w('启用开机自启动失败', tag: 'AutostartService');
       }
 
       return result;
-    } catch (e) {
-      Log.e('启用开机自启动失败', tag: 'AutostartService', error: e);
+    } on Object catch (e) {
+      await Log.e('启用开机自启动失败', tag: 'AutostartService', error: e);
       return false;
     }
   }
@@ -81,7 +81,7 @@ class AutostartService {
   /// 禁用开机自启动
   Future<bool> disable() async {
     if (!isSupported) {
-      Log.w('开机自启动功能在当前平台不支持', tag: 'AutostartService');
+      await Log.w('开机自启动功能在当前平台不支持', tag: 'AutostartService');
       return false;
     }
 
@@ -96,14 +96,14 @@ class AutostartService {
       }
 
       if (result) {
-        Log.i('开机自启动已禁用', tag: 'AutostartService');
+        await Log.i('开机自启动已禁用', tag: 'AutostartService');
       } else {
-        Log.w('禁用开机自启动失败', tag: 'AutostartService');
+        await Log.w('禁用开机自启动失败', tag: 'AutostartService');
       }
 
       return result;
-    } catch (e) {
-      Log.e('禁用开机自启动失败', tag: 'AutostartService', error: e);
+    } on Object catch (e) {
+      await Log.e('禁用开机自启动失败', tag: 'AutostartService', error: e);
       return false;
     }
   }
@@ -124,7 +124,7 @@ class AutostartService {
       final result = await _channel.invokeMethod<bool>('isAutostartEnabled');
       return result ?? false;
     } on PlatformException catch (e) {
-      Log.e('macOS 检查开机自启动状态失败', tag: 'AutostartService', error: e);
+      await Log.e('macOS 检查开机自启动状态失败', tag: 'AutostartService', error: e);
       return false;
     }
   }
@@ -134,7 +134,7 @@ class AutostartService {
       final result = await _channel.invokeMethod<bool>('enableAutostart');
       return result ?? false;
     } on PlatformException catch (e) {
-      Log.e('macOS 启用开机自启动失败', tag: 'AutostartService', error: e);
+      await Log.e('macOS 启用开机自启动失败', tag: 'AutostartService', error: e);
       return false;
     }
   }
@@ -144,7 +144,7 @@ class AutostartService {
       final result = await _channel.invokeMethod<bool>('disableAutostart');
       return result ?? false;
     } on PlatformException catch (e) {
-      Log.e('macOS 禁用开机自启动失败', tag: 'AutostartService', error: e);
+      await Log.e('macOS 禁用开机自启动失败', tag: 'AutostartService', error: e);
       return false;
     }
   }
@@ -152,38 +152,38 @@ class AutostartService {
   // Windows 平台实现（占位符）
   Future<bool> _isEnabledWindows() async {
     // TODO: 实现 Windows 平台的开机自启动检查
-    Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
+    await Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   Future<bool> _enableWindows() async {
     // TODO: 实现 Windows 平台的开机自启动启用
-    Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
+    await Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   Future<bool> _disableWindows() async {
     // TODO: 实现 Windows 平台的开机自启动禁用
-    Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
+    await Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   // Linux 平台实现（占位符）
   Future<bool> _isEnabledLinux() async {
     // TODO: 实现 Linux 平台的开机自启动检查
-    Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
+    await Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   Future<bool> _enableLinux() async {
     // TODO: 实现 Linux 平台的开机自启动启用
-    Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
+    await Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   Future<bool> _disableLinux() async {
     // TODO: 实现 Linux 平台的开机自启动禁用
-    Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
+    await Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 }

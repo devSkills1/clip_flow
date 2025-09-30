@@ -16,7 +16,8 @@ class MockOcrService implements OcrService {
   @override
   Future<OcrResult?> recognizeText(
     Uint8List imageBytes, {
-    String? language,
+    String language = 'auto',
+    double? minConfidence,
   }) async {
     // 模拟OCR处理
     if (imageBytes.isEmpty) {

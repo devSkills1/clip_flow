@@ -23,13 +23,20 @@ enum HotkeyConflictType {
 /// 快捷键冲突信息
 @immutable
 class HotkeyConflict {
+  /// 构造函数
   const HotkeyConflict({
     required this.config,
     required this.type,
     required this.description,
   });
+
+  /// 冲突的快捷键配置
   final HotkeyConfig config;
+
+  /// 冲突类型
   final HotkeyConflictType type;
+
+  /// 冲突描述
   final String description;
 }
 
@@ -157,13 +164,30 @@ class HotkeyService {
     try {
       switch (call.method) {
         case 'onHotkeyPressed':
-          final actionName = call.arguments as String?;
+          String? actionName;
+          final args = call.arguments;
+          if (args is String) {
+            actionName = args;
+          } else if (args is Map) {
+            final map = Map<Object?, Object?>.from(args);
+            final value = map['action'];
+            actionName = value is String ? value : null;
+          }
+
           if (actionName != null) {
             final action = HotkeyAction.values.firstWhere(
               (a) => a.name == actionName,
               orElse: () => throw ArgumentError('Unknown action: $actionName'),
             );
             await _handleHotkeyPressed(action);
+          } else {
+            await Log.w(
+              '快捷键回调参数无效',
+              tag: _tag,
+              fields: {
+                'arguments': call.arguments,
+              },
+            );
           }
         default:
           await Log.w('未知的方法调用: ${call.method}', tag: _tag);
@@ -248,13 +272,14 @@ class HotkeyService {
         'action': config.action.name,
         'key': config.systemKeyString,
         'enabled': config.enabled,
+        'ignoreRepeat': config.ignoreRepeat,
       });
 
       if (result ?? false) {
         _registeredHotkeys[config.action] = config;
         await _saveHotkeyConfigs();
 
-        Log.i(
+        await Log.i(
           '快捷键注册成功',
           tag: _tag,
           fields: {
@@ -422,6 +447,7 @@ class HotkeyService {
               'action': config.action.name,
               'key': config.systemKeyString,
               'enabled': config.enabled,
+              'ignoreRepeat': config.ignoreRepeat,
             });
 
             if (result ?? false) {

@@ -477,5 +477,17 @@
   "@performanceHealthWarmingUp": {"description": "性能健康状态-预热"},
 
   "performanceHealthUnknown": "未知",
-  "@performanceHealthUnknown": {"description": "性能健康状态-未知"}
+  "@performanceHealthUnknown": {"description": "性能健康状态-未知"},
+
+  "ocrLanguageTitle": "OCR 识别语言",
+  "@ocrLanguageTitle": {"description": "设置-OCR-识别语言-标题"},
+
+  "ocrLanguageSubtitle": "选择用于识别的语言（可选自动）",
+  "@ocrLanguageSubtitle": {"description": "设置-OCR-识别语言-说明"},
+
+  "ocrMinConfidenceTitle": "最小置信度阈值",
+  "@ocrMinConfidenceTitle": {"description": "设置-OCR-最小置信度-标题"},
+
+  "ocrMinConfidenceSubtitle": "低于该阈值的识别结果将被忽略",
+  "@ocrMinConfidenceSubtitle": {"description": "设置-OCR-最小置信度-说明"}
 }

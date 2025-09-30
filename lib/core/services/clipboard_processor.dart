@@ -6,6 +6,7 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/ocr_service.dart';
+import 'package:clip_flow_pro/core/services/preferences_service.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
@@ -186,33 +187,48 @@ class ClipboardProcessor {
       );
 
       try {
-        final ocrService = OcrServiceFactory.getInstance();
-        final ocrResult = await ocrService.recognizeText(imageBytes);
+        // 加载用户偏好以获取 OCR 语言与置信度阈值
+        final prefs = await PreferencesService().loadPreferences();
 
-        if (ocrResult != null && ocrResult.text.isNotEmpty) {
-          ocrText = ocrResult.text;
-          // 将OCR置信度添加到元数据中
-          metadata['ocrConfidence'] = ocrResult.confidence;
-
-          await Log.i(
-            'OCR processing completed successfully',
+        // 如果未启用OCR，跳过识别
+        if (!prefs.enableOCR) {
+          await Log.d(
+            'OCR disabled by user preferences',
             tag: 'ClipboardProcessor',
-            fields: {
-              'textLength': ocrText.length,
-              'confidence': ocrResult.confidence,
-              'contentHash': contentHash,
-            },
           );
         } else {
-          await Log.w(
-            'OCR processing returned no text',
-            tag: 'ClipboardProcessor',
-            fields: {
-              'contentHash': contentHash,
-              'resultNull': ocrResult == null,
-              'textEmpty': ocrResult?.text.isEmpty ?? true,
-            },
+          final ocrService = OcrServiceFactory.getInstance();
+          final ocrResult = await ocrService.recognizeText(
+            imageBytes,
+            language: prefs.ocrLanguage,
+            minConfidence: prefs.ocrMinConfidence,
           );
+
+          if (ocrResult != null && ocrResult.text.isNotEmpty) {
+            ocrText = ocrResult.text;
+            // 将OCR置信度添加到元数据中
+            metadata['ocrConfidence'] = ocrResult.confidence;
+
+            await Log.i(
+              'OCR processing completed successfully',
+              tag: 'ClipboardProcessor',
+              fields: {
+                'textLength': ocrText.length,
+                'confidence': ocrResult.confidence,
+                'contentHash': contentHash,
+              },
+            );
+          } else {
+            await Log.w(
+              'OCR processing returned no text',
+              tag: 'ClipboardProcessor',
+              fields: {
+                'contentHash': contentHash,
+                'resultNull': ocrResult == null,
+                'textEmpty': ocrResult?.text.isEmpty ?? true,
+              },
+            );
+          }
         }
       } on Exception catch (e) {
         // OCR失败不影响图片保存

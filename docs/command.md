@@ -136,3 +136,13 @@ flutter run --trace-skia
 ```bash
 dart --observe
 # Dart VM 观察/调试（部分场景）
+
+```bash
+flutter build macos -v
+# 详细构建 macOS 桌面应用
+```
+
+```bash
+flutter run -d macos -v 
+# 详细运行 macOS 桌面应用
+```
