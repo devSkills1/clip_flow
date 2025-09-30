@@ -16,18 +16,22 @@ class ClipboardPoller {
     'clipboard_service',
   );
 
-  // 轮询间隔配置
-  static const Duration _minInterval = Duration(milliseconds: 100);
-  static const Duration _maxInterval = Duration(milliseconds: 2000);
-  static const Duration _defaultInterval = Duration(milliseconds: 500);
-  static const Duration _idleInterval = Duration(milliseconds: 5000); // 空闲时的长间隔
+  // 轮询间隔配置 - 优化以减少权限请求
+  static const Duration _minInterval = Duration(milliseconds: 500); // 增加最小间隔
+  static const Duration _maxInterval = Duration(milliseconds: 5000); // 增加最大间隔
+  static const Duration _defaultInterval = Duration(
+    milliseconds: 1000,
+  ); // 增加默认间隔
+  static const Duration _idleInterval = Duration(
+    milliseconds: 10000,
+  ); // 空闲时的长间隔
 
-  // 自适应调整参数
-  static const double _speedUpFactor = 0.8;
-  static const double _slowDownFactor = 1.2;
-  static const int _consecutiveNoChangeThreshold = 5;
-  static const int _recentChangeWindow = 10;
-  static const int _idleThreshold = 50; // 进入空闲模式的阈值
+  // 自适应调整参数 - 更保守的设置
+  static const double _speedUpFactor = 0.9; // 减少加速幅度
+  static const double _slowDownFactor = 1.5; // 增加减速幅度
+  static const int _consecutiveNoChangeThreshold = 3; // 更快进入慢速模式
+  static const int _recentChangeWindow = 5; // 减少监控窗口
+  static const int _idleThreshold = 20; // 更快进入空闲模式
 
   Timer? _pollingTimer;
   Duration _currentInterval = _defaultInterval;
@@ -74,6 +78,10 @@ class ClipboardPoller {
     _pollingTimer = null;
     _isPolling = false;
     _isPaused = false;
+
+    // 清理回调，避免在关闭后误触发
+    _onClipboardChanged = null;
+    _onError = null;
 
     // 更新总轮询时间
     if (_pollingStartTime != null) {
@@ -139,6 +147,8 @@ class ClipboardPoller {
     final adjustedInterval = _getSmartInterval();
 
     _pollingTimer = Timer(adjustedInterval, () async {
+      // 如果在等待期间已停止或暂停，直接退出当前回合
+      if (!_isPolling || _isPaused) return;
       try {
         _totalChecks++;
         final hasChanged = await _checkClipboardChange();

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
@@ -6,6 +7,8 @@ import 'package:clip_flow_pro/core/services/clipboard_poller.dart';
 import 'package:clip_flow_pro/core/services/clipboard_processor.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 /// 剪贴板服务协调器
 ///
@@ -42,12 +45,15 @@ class ClipboardService {
   Stream<ClipItem> get clipboardStream => _clipboardController.stream;
 
   bool _isInitialized = false;
+  // 关闭保护：避免在关闭后继续向流推送事件
+  bool _isShuttingDown = false;
 
   /// 初始化剪贴板服务
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
+      _isShuttingDown = false;
       // 启动轮询器，监听剪贴板变化
       _poller.startPolling(
         onClipboardChanged: _handleClipboardChange,
@@ -74,10 +80,11 @@ class ClipboardService {
     if (!_isInitialized) return;
 
     try {
+      // 标记正在关闭，避免回调期间继续推送事件
+      _isShuttingDown = true;
+      _isInitialized = false;
       _poller.stopPolling();
       await _clipboardController.close();
-
-      _isInitialized = false;
     } on Exception catch (e) {
       await Log.e(
         'ClipboardService dispose failed',
@@ -89,6 +96,8 @@ class ClipboardService {
 
   /// 处理剪贴板变化
   Future<void> _handleClipboardChange() async {
+    // 关闭或未初始化状态下直接忽略
+    if (_isShuttingDown || !_isInitialized) return;
     try {
       // 使用处理器处理剪贴板内容
       final clipItem = await _processor.processClipboardContent();
@@ -172,8 +181,65 @@ class ClipboardService {
 
   /// 设置文件到剪贴板
   Future<void> _setFileContent(String filePath) async {
+    // 将传入路径规范化为绝对路径，确保原生侧能够正确访问
+    var normalizedPath = filePath;
+    try {
+      if (filePath.startsWith('file://')) {
+        // file URI → 绝对路径
+        normalizedPath = Uri.parse(filePath).toFilePath();
+      } else {
+        // 非绝对路径（相对路径，如 'media/files/...') → 拼接应用文档目录
+        final isAbsoluteUnix = filePath.startsWith('/');
+        final isAbsoluteWin = RegExp(r'^[A-Za-z]:\\').hasMatch(filePath);
+        if (!isAbsoluteUnix && !isAbsoluteWin) {
+          final documentsDirectory = await getApplicationDocumentsDirectory();
+          normalizedPath = p.join(documentsDirectory.path, filePath);
+        }
+      }
+    } catch (_) {
+      // 如果解析失败，回退使用原始字符串
+      normalizedPath = filePath;
+    }
+
+    // 本地存在性检查与备用根目录解析（兼容 ~/Documents/ 路径存储）
+    try {
+      var candidatePath = normalizedPath;
+      var f = File(candidatePath);
+      if (!f.existsSync()) {
+        final home = Platform.environment['HOME'];
+        if (home != null && !candidatePath.startsWith('/')) {
+          final altPath = p.join(home, 'Documents', filePath);
+          final altFile = File(altPath);
+          if (altFile.existsSync()) {
+            candidatePath = altPath;
+            f = altFile;
+          }
+        }
+      }
+
+      if (!f.existsSync()) {
+        await Log.e(
+          'ClipboardService set clipboard content failed',
+          tag: 'clipboard_service',
+          fields: {
+            'path': candidatePath,
+            'sourcePath': filePath,
+            'normalizedPath': normalizedPath,
+          },
+        );
+        return;
+      }
+
+      normalizedPath = candidatePath;
+    } catch (_) {
+      // 文件检查异常时，继续交由原生处理（保持行为一致）
+    }
+
     const platform = MethodChannel('clipboard_service');
-    await platform.invokeMethod('setFile', {'filePath': filePath});
+    // 与原生 macOS 插件对齐的方法名：setClipboardFile
+    await platform.invokeMethod('setClipboardFile', {
+      'filePath': normalizedPath,
+    });
   }
 
   /// 获取当前剪贴板内容类型

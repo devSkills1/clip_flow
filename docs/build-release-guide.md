@@ -372,6 +372,32 @@ flutter build macos --dart-define=ENVIRONMENT=development --release
 
 提示：在 CI 环境下无需显式传 `--yes`，脚本检测到 `CI` 环境变量会自动进入无交互模式。
 
+#### DMG 安装行为与脚本建议
+
+- 双击 `*.dmg` 仅会挂载磁盘映像，不会自动复制到 `Applications`。安装需在挂载窗口中将应用拖拽到 `Applications`（或手动将 `.app` 拖拽到 `/Applications`）。
+- 在构建脚本中为 `hdiutil` 回退添加 `Applications` 快捷方式，提升安装体验：
+  ```bash
+  ln -sf /Applications "$TEMP_DIR/Applications"
+  ```
+- 使用 `create-dmg` 时需同时传入“输出文件”和“源路径”两个位置参数，例如：
+  ```bash
+  create-dmg \
+    --overwrite \
+    --volname "$VOLUME_NAME" \
+    --window-pos 200 120 \
+    --window-size 800 400 \
+    --icon-size 110 \
+    --app-drop-link 600 200 \
+    "$DMG_OUTPUT_PATH" \
+    "$TEMP_DIR"
+  ```
+- 验证：构建完成后双击挂载，窗口内应出现应用图标与 `Applications` 别名；拖拽安装后在 `/Applications` 中可见 `ClipFlow Pro.app` 并能正常启动。
+- 若首次运行受隔离限制，按“安装说明”章节中的 `xattr -dr com.apple.quarantine` 单应用豁免处理。
+
+#### `.pkg` 安装器文档
+
+如需“一键安装”体验（自动复制到 `Applications`），请参考新增文档：`docs/pkg-build-guide.md`。
+
 ### 发布脚本功能
 
 `release.sh` 脚本会自动完成以下操作：

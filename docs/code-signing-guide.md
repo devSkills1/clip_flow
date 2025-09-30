@@ -169,6 +169,28 @@ fi
 - [ ] 核心功能正常工作
 - [ ] 权限请求正常显示
 
+### 隐私权限与重复弹窗排查（Files & Folders）
+
+如果出现“每次复制文件都弹出访问‘文稿/文件夹’的权限”提醒，通常是以下原因：
+
+- 应用未安装到固定路径，频繁从构建目录或 DMG 运行，系统将其视为不同可执行文件，从而重新请求权限。
+- 应用未签名或每次构建更换了签名信息，导致权限记录无法复用。
+- 程序直接访问受保护目录（如“文稿/桌面”）而未通过用户选择与安全书签机制（Security‑Scoped Bookmarks）。
+
+推荐的解决与规避步骤：
+
+- 将应用复制到 `/Applications` 并从该位置运行，保持路径与 Bundle Identifier 稳定。
+- 使用至少临时（Ad‑Hoc）或开发者证书签名，升级时保持签名主体不变，以便系统复用权限记录。
+- 在代码中通过 `NSOpenPanel` 让用户选择目标文件夹，并生成 Security‑Scoped Bookmark 持久化访问；需要在 entitlements 中启用：
+  - `com.apple.security.app-sandbox = true`
+  - `com.apple.security.files.user-selected.read-write = true`
+  - `com.apple.security.files.bookmarks.app-scope = true`
+- 如果只是访问“下载”目录，可使用 `com.apple.security.files.downloads.read-write` 直接授权，减少额外弹窗。
+
+开发侧验证：在“系统设置 > 隐私与安全 > 文件与文件夹”中确认 ClipFlow Pro 已获得对应目录的访问权限；若未出现，请从应用内发起一次真实访问（或通过 NSOpenPanel 选择目录）后再检查。
+
+---
+
 ### 分发前检查
 - [ ] 创建安装说明文档
 - [ ] 测试在其他设备上安装

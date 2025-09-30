@@ -266,18 +266,18 @@ class FilterSidebar extends ConsumerWidget {
           ),
         ),
         _buildDisplayModeItem(
-          icon: Icons.view_list,
-          label:
-              S.of(context)?.displayCompact ??
-              I18nFallbacks.filter.displayCompact,
-          mode: DisplayMode.compact,
-        ),
-        _buildDisplayModeItem(
           icon: Icons.view_module,
           label:
               S.of(context)?.displayNormal ??
               I18nFallbacks.filter.displayNormal,
           mode: DisplayMode.normal,
+        ),
+        _buildDisplayModeItem(
+          icon: Icons.view_list,
+          label:
+              S.of(context)?.displayCompact ??
+              I18nFallbacks.filter.displayCompact,
+          mode: DisplayMode.compact,
         ),
         _buildDisplayModeItem(
           icon: Icons.view_agenda,
@@ -296,6 +296,12 @@ class FilterSidebar extends ConsumerWidget {
     required DisplayMode mode,
   }) {
     final isSelected = displayMode == mode;
+    // 根据不同显示模式微调图标与文字样式，提升辨识度
+    final iconSize = switch (mode) {
+      DisplayMode.compact => 16.0,
+      DisplayMode.normal => 18.0,
+      DisplayMode.preview => 20.0,
+    };
 
     return Builder(
       builder: (context) => Material(
@@ -319,7 +325,7 @@ class FilterSidebar extends ConsumerWidget {
               children: [
                 Icon(
                   icon,
-                  size: 18,
+                  size: iconSize,
                   color: isSelected
                       ? Theme.of(context).colorScheme.onPrimaryContainer
                       : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -331,6 +337,12 @@ class FilterSidebar extends ConsumerWidget {
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.normal,
+                    // 预览模式的标签稍大一点，便于强调
+                    fontSize: switch (mode) {
+                      DisplayMode.compact => 13,
+                      DisplayMode.normal => 14,
+                      DisplayMode.preview => 15,
+                    },
                     color: isSelected
                         ? Theme.of(context).colorScheme.onPrimaryContainer
                         : Theme.of(context).colorScheme.onSurface,

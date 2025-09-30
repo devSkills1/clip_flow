@@ -354,8 +354,10 @@ class HtmlAnalyzer extends ContentAnalyzer {
     double confidence,
     Map<String, dynamic> metadata,
   ) {
+    // 从原始置信度开始
+    var localConfidence = confidence;
+
     // 如果检测到 JSX，大幅降低 HTML 置信度
-    var localConfidence = 0.0;
     if (metadata['isJsx'] == true) {
       localConfidence = (confidence * 0.2).clamp(0.0, 1.0);
     }

@@ -72,14 +72,12 @@ void ClipboardPlugin::GetClipboardType(
   // 优先检查 RTF 格式 (最高优先级)
   if (IsClipboardFormatAvailable(RegisterClipboardFormatW(L"Rich Text Format"))) {
     clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("text");
-    clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue("rtf");
     clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
     clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(1);
   }
   // 检查 HTML 格式 (第二优先级)
   else if (IsClipboardFormatAvailable(RegisterClipboardFormatW(L"HTML Format"))) {
     clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("text");
-    clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue("html");
     clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
     clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(2);
   }
@@ -104,11 +102,9 @@ void ClipboardPlugin::GetClipboardType(
         
         if (!file_paths.empty()) {
           std::string first_path = std::get<std::string>(file_paths[0]);
-          std::string file_type = DetectFileType(first_path);
           
           clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("file");
-          clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue(file_type);
-          clipboard_info[flutter::EncodableValue("content")] = flutter::EncodableValue(file_paths);
+          clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
           clipboard_info[flutter::EncodableValue("primaryPath")] = flutter::EncodableValue(first_path);
           clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(3);
         }
@@ -123,24 +119,21 @@ void ClipboardPlugin::GetClipboardType(
     }
     
     clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("image");
-    clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue(image_format);
     clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
     clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(4);
   }
   // 检查文本类型 (最低优先级)
-  else if (IsClipboardFormatAvailable(CF_UNICODETEXT) || IsClipboardFormatAvailable(CF_TEXT)) {
+    else if (IsClipboardFormatAvailable(CF_UNICODETEXT) || IsClipboardFormatAvailable(CF_TEXT)) {
     HANDLE hData = GetClipboardData(CF_UNICODETEXT);
     if (hData != nullptr) {
       wchar_t* pszText = static_cast<wchar_t*>(GlobalLock(hData));
       if (pszText != nullptr) {
         std::wstring ws(pszText);
         std::string text(ws.begin(), ws.end());
-        std::string text_type = DetectTextType(text);
         
         clipboard_info[flutter::EncodableValue("type")] = flutter::EncodableValue("text");
-        clipboard_info[flutter::EncodableValue("subType")] = flutter::EncodableValue(text_type);
-        clipboard_info[flutter::EncodableValue("content")] = flutter::EncodableValue(text);
         clipboard_info[flutter::EncodableValue("length")] = flutter::EncodableValue(static_cast<int>(text.length()));
+        clipboard_info[flutter::EncodableValue("hasData")] = flutter::EncodableValue(true);
         clipboard_info[flutter::EncodableValue("priority")] = flutter::EncodableValue(5);
         
         GlobalUnlock(hData);
@@ -292,6 +285,8 @@ std::string ClipboardPlugin::DetectFileType(const std::string& path) {
   return "file";
 }
 
+// 说明：细粒度文本类型判断现由 Dart 层负责；
+// 原生实现保留但不在运行时使用，避免规则漂移。
 std::string ClipboardPlugin::DetectTextType(const std::string& text) {
   std::string trimmed = text;
   // 简单的 trim 实现
@@ -335,6 +330,8 @@ std::string ClipboardPlugin::DetectTextType(const std::string& text) {
   return "plain";
 }
 
+// 说明：颜色值解析与规范化已迁移到 Dart 层的 ColorUtils；
+// 本方法保留但不参与运行时分类。
 bool ClipboardPlugin::IsColorValue(const std::string& text) {
   // 简单的十六进制颜色检查
   if (text.length() == 7 && text[0] == '#') {

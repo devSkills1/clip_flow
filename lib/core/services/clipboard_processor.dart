@@ -7,6 +7,7 @@ import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/ocr_service.dart';
 import 'package:clip_flow_pro/core/services/preferences_service.dart';
+import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
@@ -278,19 +279,58 @@ class ClipboardProcessor {
       // 检测文件类型
       final fileType = _detector.detectFileType(filePath);
 
-      // 提取元数据
+      // 保存到应用沙盒（统一管理文件），并保留原始扩展名与原始文件名
+      String? relativePath;
+      try {
+        final bytes = await file.readAsBytes();
+        final ext = file.path.split('.').length > 1
+            ? file.path.split('.').last.toLowerCase()
+            : null;
+        relativePath = await _saveMediaToDisk(
+          bytes: bytes,
+          type: 'file',
+          suggestedExt: ext,
+          // 传入原始文件名，尽可能保留
+          originalName: file.path.split('/').last,
+          keepOriginalName: true,
+        );
+      } on Exception catch (_) {
+        // 如果保存失败，继续使用原始路径，但这可能导致沙盒不可见
+      }
+
+      // 提取元数据（补充文件名与原始路径）
       final metadata = await _extractFileMetadata(file, fileType);
+      final fileName = file.path.split('/').last;
+      metadata['fileName'] = fileName;
+      metadata['originalPath'] = file.path;
 
       // 处理图片文件的缩略图
       List<int>? thumbnail;
       if (fileType == ClipType.image) {
-        thumbnail = await _generateFileThumbnail(file);
+        // 优先使用保存后的文件生成缩略图
+        try {
+          if (relativePath != null && relativePath.isNotEmpty) {
+            final documentsDirectory = await getApplicationDocumentsDirectory();
+            final savedFile = File('${documentsDirectory.path}/$relativePath');
+            if (savedFile.existsSync()) {
+              thumbnail = await _generateFileThumbnail(savedFile);
+            } else {
+              thumbnail = await _generateFileThumbnail(file);
+            }
+          } else {
+            thumbnail = await _generateFileThumbnail(file);
+          }
+        } on Exception catch (_) {
+          // 缩略图生成失败不影响创建条目
+        }
       }
 
       return ClipItem(
         type: fileType,
-        content: filePath,
-        filePath: filePath,
+        content: '',
+        filePath: (relativePath != null && relativePath.isNotEmpty)
+            ? relativePath
+            : filePath,
         thumbnail: thumbnail,
         metadata: metadata,
         id: contentHash,
@@ -649,14 +689,53 @@ class ClipboardProcessor {
     required Uint8List bytes,
     required String type,
     String? suggestedExt,
+    String? originalName,
+    bool keepOriginalName = false,
   }) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final ts = DateTime.now().millisecondsSinceEpoch;
 
-      final ext = (suggestedExt ?? 'bin').toLowerCase();
+      // 计算扩展名：优先使用建议扩展名，其次取原始文件名的扩展名
+      String ext;
+      if (suggestedExt != null && suggestedExt.isNotEmpty) {
+        ext = suggestedExt.toLowerCase();
+      } else if (originalName != null && originalName.contains('.')) {
+        ext = originalName.split('.').last.toLowerCase();
+      } else {
+        ext = 'bin';
+      }
+
+      // 计算文件名哈希（用于去重/避免冲突）
       final hash = sha256.convert(bytes).toString().substring(0, 8);
-      final fileName = '${type}_${ts}_$hash.$ext';
+
+      // 原始名称清理：去除非法字符，限制长度
+      String sanitizedBase(String name) {
+        // 去除路径分隔符，仅保留文件名部分
+        final base = name.split('/').last.split(r'\').last;
+        // 去掉扩展名
+        final dotIndex = base.lastIndexOf('.');
+        final withoutExt = dotIndex > 0 ? base.substring(0, dotIndex) : base;
+        // 仅保留字母数字、空格、横杠和下划线，其它替换为下划线
+        final replaced = withoutExt.replaceAll(
+          RegExp('[^A-Za-z0-9 _.-]'),
+          '_',
+        );
+        // 将连续空格压缩并以下划线替换
+        final compact = replaced.replaceAll(RegExp(r'\s+'), '_');
+        // 限制长度，避免超长文件名
+        return compact.length > 80 ? compact.substring(0, 80) : compact;
+      }
+
+      String fileName;
+      if (keepOriginalName && originalName != null && originalName.isNotEmpty) {
+        final base = sanitizedBase(originalName);
+        // 使用“原始名_时间戳_哈希.扩展名”的格式，既可读又避免重名
+        fileName = '${base}_${ts}_$hash.$ext';
+      } else {
+        // 保持原有命名策略：type_时间戳_哈希.扩展名
+        fileName = '${type}_${ts}_$hash.$ext';
+      }
 
       final relativeDir = type == 'image' ? 'media/images' : 'media/files';
       final absoluteDir = '${dir.path}/$relativeDir';
@@ -733,20 +812,62 @@ class ClipboardProcessor {
 
     final trimmed = colorValue.trim();
 
-    // Hex 颜色
+    // Hex 颜色：统一规范到 #RRGGBB
     if (trimmed.startsWith('#')) {
       metadata['colorFormat'] = 'hex';
       metadata['colorValue'] = trimmed;
+
+      try {
+        final rgb = ColorUtils.hexToRgb(trimmed);
+        metadata['colorHex'] = ColorUtils.rgbToHex(
+          rgb['r']!,
+          rgb['g']!,
+          rgb['b']!,
+        );
+      } on Exception catch (_) {
+        // 无法解析则不写入 colorHex
+      }
     }
-    // RGB/RGBA 颜色
+    // RGB 或 RGBA：解析数值并转换为 #RRGGBB（忽略透明度）
     else if (trimmed.startsWith('rgb')) {
-      metadata['colorFormat'] = trimmed.startsWith('rgba') ? 'rgba' : 'rgb';
+      final isRgba = trimmed.startsWith('rgba');
+      metadata['colorFormat'] = isRgba ? 'rgba' : 'rgb';
       metadata['colorValue'] = trimmed;
+
+      final match = RegExp(
+        r'rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*([\d.]+))?\s*\)',
+      ).firstMatch(trimmed);
+      if (match != null) {
+        final r = int.parse(match.group(1)!).clamp(0, 255);
+        final g = int.parse(match.group(2)!).clamp(0, 255);
+        final b = int.parse(match.group(3)!).clamp(0, 255);
+        metadata['colorHex'] = ColorUtils.rgbToHex(r, g, b);
+      }
     }
-    // HSL/HSLA 颜色
+    // HSL 或 HSLA：解析数值并转换为 #RRGGBB（忽略透明度）
     else if (trimmed.startsWith('hsl')) {
-      metadata['colorFormat'] = trimmed.startsWith('hsla') ? 'hsla' : 'hsl';
+      final isHsla = trimmed.startsWith('hsla');
+      metadata['colorFormat'] = isHsla ? 'hsla' : 'hsl';
       metadata['colorValue'] = trimmed;
+
+      final match = RegExp(
+        r'hsla?\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%(?:\s*,\s*([\d.]+))?\s*\)',
+      ).firstMatch(trimmed);
+      if (match != null) {
+        final h = double.parse(match.group(1)!);
+        final s = double.parse(match.group(2)!);
+        final l = double.parse(match.group(3)!);
+        try {
+          final rgb = ColorUtils.hslToRgb(h, s, l);
+          metadata['colorHex'] = ColorUtils.rgbToHex(
+            rgb['r']!,
+            rgb['g']!,
+            rgb['b']!,
+          );
+        } on Exception catch (_) {
+          // 解析失败则不写入 colorHex
+        }
+      }
     }
 
     return metadata;

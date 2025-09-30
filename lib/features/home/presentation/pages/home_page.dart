@@ -11,6 +11,7 @@ import 'package:clip_flow_pro/features/home/presentation/widgets/filter_sidebar.
 import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar_widget.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -201,19 +202,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                         },
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    // 调试按钮
-                    IconButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (context) => const ClipboardDebugPage(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.bug_report),
-                      tooltip: '剪贴板调试工具',
-                    ),
+                    if (!kReleaseMode) ...[
+                      const SizedBox(width: 8),
+                      // 调试按钮（仅在非生产模式显示）
+                      IconButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (context) => const ClipboardDebugPage(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.bug_report),
+                        tooltip: '剪贴板调试工具',
+                      ),
+                    ],
                   ],
                 ),
 

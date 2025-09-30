@@ -21,6 +21,19 @@ import ServiceManagement
     // Flutter方法通道
     private var channel: FlutterMethodChannel?
     
+    // Security-Scoped Bookmarks 访问缓存
+    private var accessingBookmarks: [String: URL] = [:]
+    
+    // 权限缓存机制
+    private var lastClipboardSequence: Int = -1
+    private var lastSequenceCheckTime: Date = Date.distantPast
+    private let sequenceCacheInterval: TimeInterval = 0.5 // 500ms 缓存间隔
+    
+    // 类型缓存机制
+    private var lastClipboardType: [String: Any]?
+    private var lastTypeCheckTime: Date = Date.distantPast
+    private var lastTypeSequence: Int = -1
+    
     static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "clipboard_service", binaryMessenger: registrar.messenger)
         let instance = ClipboardPlugin()
@@ -68,6 +81,14 @@ import ServiceManagement
             enableAutostart(result: result)
         case "disableAutostart":
             disableAutostart(result: result)
+        case "pickDirectoryForBookmark":
+            pickDirectoryForBookmark(call: call, result: result)
+        case "startBookmarkAccess":
+            startBookmarkAccess(call: call, result: result)
+        case "stopBookmarkAccess":
+            stopBookmarkAccess(call: call, result: result)
+        case "removeBookmark":
+            removeBookmark(call: call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -75,6 +96,16 @@ import ServiceManagement
 
     private func getClipboardType(result: @escaping FlutterResult) {
         let pasteboard = NSPasteboard.general
+        let currentSequence = pasteboard.changeCount
+        let now = Date()
+        
+        // 如果剪贴板内容没有变化且缓存有效，直接返回缓存
+        if let cachedType = lastClipboardType,
+           currentSequence == lastTypeSequence,
+           now.timeIntervalSince(lastTypeCheckTime) < sequenceCacheInterval {
+            result(cachedType)
+            return
+        }
 
         // 检查可用的类型
         let types = pasteboard.types ?? []
@@ -88,7 +119,6 @@ import ServiceManagement
                 if let rtfString = String(data: rtfData, encoding: .utf8) {
                     clipboardInfo = [
                         "type": "rtf",
-                        "subType": "richText",
                         "content": rtfString,
                         "size": rtfData.count,
                         "hasData": true,
@@ -97,7 +127,6 @@ import ServiceManagement
                 } else {
                     clipboardInfo = [
                         "type": "rtf",
-                        "subType": "rich_text",
                         "size": rtfData.count,
                         "hasData": true,
                         "priority": "high"
@@ -110,7 +139,6 @@ import ServiceManagement
                 if let htmlString = String(data: htmlData, encoding: .utf8) {
                     clipboardInfo = [
                         "type": "html",
-                        "subType": "markup",
                         "content": htmlString,
                         "size": htmlData.count,
                         "hasData": true,
@@ -119,7 +147,6 @@ import ServiceManagement
                 } else {
                     clipboardInfo = [
                         "type": "html",
-                        "subType": "markup",
                         "size": htmlData.count,
                         "hasData": true,
                         "priority": "high"
@@ -137,7 +164,6 @@ import ServiceManagement
                     let fileType = detectFileType(path: firstPath)
                     clipboardInfo = [
                         "type": "file",
-                        "subType": fileType,
                         "content": filePaths,
                         "primaryPath": firstPath,
                         "hasData": true,
@@ -200,20 +226,16 @@ import ServiceManagement
             if let data = imageData {
                 clipboardInfo = [
                     "type": "image",
-                    "subType": imageFormat,
                     "size": data.count,
                     "hasData": true,
                     "priority": "medium"
                 ]
             }
         } else if types.contains(.string) {
-            // 文本类型 - 最低优先级
+            // 文本类型 - 最低优先级（细分判定交由 Dart 层处理）
             if let string = pasteboard.string(forType: .string) {
-                let textType = detectTextType(text: string)
                 clipboardInfo = [
                     "type": "text",
-                    "subType": textType,
-                    "content": string,
                     "length": string.count,
                     "hasData": true,
                     "priority": "low"
@@ -227,12 +249,29 @@ import ServiceManagement
             ]
         }
 
+        // 更新缓存
+        lastClipboardType = clipboardInfo
+        lastTypeCheckTime = now
+        lastTypeSequence = currentSequence
+        
         result(clipboardInfo)
     }
 
     private func getClipboardSequence(result: @escaping FlutterResult) {
+        let now = Date()
+        
+        // 如果距离上次检查时间小于缓存间隔，直接返回缓存的值
+        if now.timeIntervalSince(lastSequenceCheckTime) < sequenceCacheInterval && lastClipboardSequence != -1 {
+            result(lastClipboardSequence)
+            return
+        }
+        
+        // 更新缓存
         let pasteboard = NSPasteboard.general
-        result(pasteboard.changeCount)
+        lastClipboardSequence = pasteboard.changeCount
+        lastSequenceCheckTime = now
+        
+        result(lastClipboardSequence)
     }
 
     private func getClipboardFilePaths(result: @escaping FlutterResult) {
@@ -414,6 +453,8 @@ import ServiceManagement
         return "file"
     }
 
+    // 说明：细粒度文本/颜色判定已收敛到 Dart 层；
+    // 本方法保留但不再在原生侧被调用，仅供参考/后续清理。
     private func detectTextType(text: String) -> String {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -450,6 +491,8 @@ import ServiceManagement
         return "plain"
     }
 
+    // 说明：颜色值判断逻辑已迁移至 Dart 的 ColorUtils；
+    // 原生侧保留此方法但不参与运行时分类。
     private func isColorValue(text: String) -> Bool {
         // 十六进制颜色（与Dart端保持一致，支持可选的#号和4位颜色）
         let hexPattern = "^#?(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$"
@@ -1054,6 +1097,96 @@ import ServiceManagement
             NSLog("创建开机自启动配置失败: %@", error.localizedDescription)
             result(FlutterError(code: "CREATE_PLIST_FAILED", message: error.localizedDescription, details: nil))
         }
+    }
+
+    // MARK: - Files & Folders 权限：安全书签
+
+    /// 让用户选择目录并创建持久化安全书签（需要 entitlements: app-scope bookmarks）
+    private func pickDirectoryForBookmark(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let key = args["key"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing 'key'", details: nil))
+            return
+        }
+        DispatchQueue.main.async {
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.prompt = "选择"
+            panel.message = "请选择需要授权访问的文件夹"
+            let response = panel.runModal()
+            if response == .OK, let url = panel.url {
+                do {
+                    let bookmark = try url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+                    UserDefaults.standard.set(bookmark, forKey: "bookmark.\(key)")
+                    UserDefaults.standard.synchronize()
+                    result(["key": key, "path": url.path])
+                } catch {
+                    result(FlutterError(code: "BOOKMARK_FAILED", message: error.localizedDescription, details: nil))
+                }
+            } else {
+                result(nil)
+            }
+        }
+    }
+
+    /// 开始访问指定安全书签（解析并 startAccessingSecurityScopedResource）
+    private func startBookmarkAccess(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let key = args["key"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing 'key'", details: nil))
+            return
+        }
+        guard let data = UserDefaults.standard.data(forKey: "bookmark.\(key)") else {
+            result(FlutterError(code: "BOOKMARK_NOT_FOUND", message: "Bookmark not found for key: \(key)", details: nil))
+            return
+        }
+        var isStale = false
+        do {
+            let url = try URL(resolvingBookmarkData: data, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &isStale)
+            if isStale {
+                let newData = try url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+                UserDefaults.standard.set(newData, forKey: "bookmark.\(key)")
+            }
+            if url.startAccessingSecurityScopedResource() {
+                accessingBookmarks[key] = url
+                result(["key": key, "path": url.path])
+            } else {
+                result(FlutterError(code: "BOOKMARK_ACCESS_DENIED", message: "Failed to start accessing bookmark for key: \(key)", details: nil))
+            }
+        } catch {
+            result(FlutterError(code: "BOOKMARK_RESOLVE_FAILED", message: error.localizedDescription, details: nil))
+        }
+    }
+
+    /// 停止访问指定安全书签
+    private func stopBookmarkAccess(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let key = args["key"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing 'key'", details: nil))
+            return
+        }
+        if let url = accessingBookmarks.removeValue(forKey: key) {
+            url.stopAccessingSecurityScopedResource()
+            result(true)
+        } else {
+            result(false)
+        }
+    }
+
+    /// 删除已保存的安全书签
+    private func removeBookmark(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let key = args["key"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing 'key'", details: nil))
+            return
+        }
+        if let url = accessingBookmarks.removeValue(forKey: key) {
+            url.stopAccessingSecurityScopedResource()
+        }
+        UserDefaults.standard.removeObject(forKey: "bookmark.\(key)")
+        result(true)
     }
     
     /// 禁用开机自启动

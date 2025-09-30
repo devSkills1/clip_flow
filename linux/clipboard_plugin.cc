@@ -130,6 +130,8 @@ static std::string trim(const std::string& str) {
   return str.substr(first, (last - first + 1));
 }
 
+// 说明：颜色值判断已迁移到 Dart 层的 ColorUtils；
+// 本方法保留但不参与运行时分类。
 static bool is_color_value(const std::string& text) {
   std::string trimmed = trim(text);
   
@@ -175,6 +177,8 @@ static bool is_xml_or_html(const std::string& text) {
   return trimmed.front() == '<' && trimmed.back() == '>';
 }
 
+// 说明：细粒度文本分类由 Dart 层负责；
+// 原生实现保留但不在运行时使用，避免双端规则漂移。
 static std::string detect_text_type(const std::string& text) {
   std::string trimmed = trim(text);
   
@@ -213,14 +217,12 @@ static void get_clipboard_type(FlMethodCall* method_call) {
   // 优先检查 RTF 格式 (最高优先级)
   if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/rtf", FALSE))) {
     fl_value_set_string_take(result_map, "type", fl_value_new_string("text"));
-    fl_value_set_string_take(result_map, "subType", fl_value_new_string("rtf"));
     fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
     fl_value_set_string_take(result_map, "priority", fl_value_new_int(1));
   }
   // 检查 HTML 格式 (第二优先级)
   else if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/html", FALSE))) {
     fl_value_set_string_take(result_map, "type", fl_value_new_string("text"));
-    fl_value_set_string_take(result_map, "subType", fl_value_new_string("html"));
     fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
     fl_value_set_string_take(result_map, "priority", fl_value_new_int(2));
   }
@@ -250,7 +252,6 @@ static void get_clipboard_type(FlMethodCall* method_call) {
         }
         
         fl_value_set_string_take(result_map, "type", fl_value_new_string("file"));
-        fl_value_set_string_take(result_map, "subType", fl_value_new_string(file_type.c_str()));
         fl_value_set_string_take(result_map, "content", paths_list);
         fl_value_set_string_take(result_map, "primaryPath", fl_value_new_string(first_path.c_str()));
         fl_value_set_string_take(result_map, "priority", fl_value_new_int(3));
@@ -264,7 +265,6 @@ static void get_clipboard_type(FlMethodCall* method_call) {
     GdkPixbuf* pixbuf = gtk_clipboard_wait_for_image(clipboard);
     if (pixbuf != nullptr) {
       fl_value_set_string_take(result_map, "type", fl_value_new_string("image"));
-      fl_value_set_string_take(result_map, "subType", fl_value_new_string("pixbuf"));
       fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
       fl_value_set_string_take(result_map, "priority", fl_value_new_int(4));
       
@@ -276,12 +276,10 @@ static void get_clipboard_type(FlMethodCall* method_call) {
     gchar* text = gtk_clipboard_wait_for_text(clipboard);
     if (text != nullptr) {
       std::string text_str(text);
-      std::string text_type = detect_text_type(text_str);
       
       fl_value_set_string_take(result_map, "type", fl_value_new_string("text"));
-      fl_value_set_string_take(result_map, "subType", fl_value_new_string(text_type.c_str()));
-      fl_value_set_string_take(result_map, "content", fl_value_new_string(text));
       fl_value_set_string_take(result_map, "length", fl_value_new_int(text_str.length()));
+      fl_value_set_string_take(result_map, "hasData", fl_value_new_bool(TRUE));
       fl_value_set_string_take(result_map, "priority", fl_value_new_int(5));
       
       g_free(text);

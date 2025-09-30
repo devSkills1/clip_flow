@@ -50,11 +50,17 @@ class ClipItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      // 为悬停或提升时的阴影预留上下与左右间距，避免阴影顶到边框
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
       clipBehavior: Clip.antiAlias,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+      ),
       child: SizedBox(
         height: _getFixedCardHeight(),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(_contentPadding()),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -73,6 +79,12 @@ class ClipItemCard extends StatelessWidget {
               // 内容预览 - 可滑动区域（仅内容区域可点击触发复制）
               Expanded(
                 child: SingleChildScrollView(
+                  physics:
+                      ((displayMode == DisplayMode.preview &&
+                              item.type == ClipType.image) ||
+                          _isTextLike())
+                      ? const NeverScrollableScrollPhysics()
+                      : const ClampingScrollPhysics(),
                   child: InkWell(
                     onTap: onTap,
                     borderRadius: BorderRadius.circular(
@@ -102,6 +114,18 @@ class ClipItemCard extends StatelessWidget {
         return 180; // 正常模式固定高度
       case DisplayMode.preview:
         return 160; // 预览模式固定高度
+    }
+  }
+
+  // 不同显示模式下的内容内边距，提升层次与紧凑度
+  double _contentPadding() {
+    switch (displayMode) {
+      case DisplayMode.compact:
+        return 12;
+      case DisplayMode.normal:
+        return 16;
+      case DisplayMode.preview:
+        return 14;
     }
   }
 
@@ -381,15 +405,26 @@ class ClipItemCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(
                       ClipConstants.cardBorderRadius,
                     ),
-                    child: Image.file(
-                      File(abs),
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.high,
-                      cacheWidth: 1024, // 更高缓存解码宽度以提升清晰度
-                      cacheHeight: 1024,
-                      errorBuilder: (context, error, stackTrace) {
-                        return buildThumbFallback();
-                      },
+                    child: SizedBox(
+                      height: _imageViewportHeight(),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            //scrollDirection: Axis.vertical,
+                            physics: const ClampingScrollPhysics(),
+                            child: Image.file(
+                              File(abs),
+                              width: constraints.maxWidth,
+                              fit: BoxFit.fitWidth,
+                              filterQuality: FilterQuality.high,
+                              cacheWidth: 1024, // 更高缓存解码宽度以提升清晰度
+                              errorBuilder: (context, error, stackTrace) {
+                                return buildThumbFallback();
+                              },
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   );
                 },
@@ -397,6 +432,17 @@ class ClipItemCard extends StatelessWidget {
             : buildThumbFallback();
       },
     );
+  }
+
+  double _imageViewportHeight() {
+    switch (displayMode) {
+      case DisplayMode.compact:
+        return 120;
+      case DisplayMode.normal:
+        return 140;
+      case DisplayMode.preview:
+        return 160;
+    }
   }
 
   Future<String?> _resolveAbsoluteImagePath(String relativeOrAbsolute) async {
@@ -472,21 +518,31 @@ class ClipItemCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 文本内容 - 保留缩进和空白（对于 code/html/rtf），并使用等宽字体渲染代码
-        if (shouldPreserveWhitespace)
-          RichText(
-            text: TextSpan(
-              text: content,
-              style: baseStyle.copyWith(height: 1.4),
-            ),
-            textScaler: MediaQuery.of(context).textScaler,
-            softWrap: false,
-          )
-        else
-          Text(
-            content,
-            style: baseStyle,
+        // 固定可视高度，仅在该区域内部滚动文本
+        SizedBox(
+          height: _textViewportHeight(),
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: shouldPreserveWhitespace
+                // 等宽 + 保留空白的文本，支持横向滚动避免超长行溢出
+                ? SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const ClampingScrollPhysics(),
+                    child: RichText(
+                      text: TextSpan(
+                        text: content,
+                        style: baseStyle.copyWith(height: 1.4),
+                      ),
+                      textScaler: MediaQuery.of(context).textScaler,
+                      softWrap: false,
+                    ),
+                  )
+                : Text(
+                    content,
+                    style: baseStyle,
+                  ),
           ),
+        ),
         const SizedBox(height: Spacing.s8),
         Row(
           children: [
@@ -511,6 +567,38 @@ class ClipItemCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  // 文本类内容类型，用于决定是否启用内部滚动并禁用外层滚动
+  bool _isTextLike() {
+    switch (item.type) {
+      case ClipType.text:
+      case ClipType.rtf:
+      case ClipType.html:
+      case ClipType.audio:
+      case ClipType.video:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
+        return true;
+      case ClipType.color:
+      case ClipType.image:
+      case ClipType.file:
+        return false;
+    }
+  }
+
+  double _textViewportHeight() {
+    switch (displayMode) {
+      case DisplayMode.compact:
+        return 120;
+      case DisplayMode.normal:
+        return 140;
+      case DisplayMode.preview:
+        return 160;
+    }
   }
 
   Widget _buildFooter(BuildContext context) {
