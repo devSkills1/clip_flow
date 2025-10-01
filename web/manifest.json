@@ -1,11 +1,11 @@
 {
-    "name": "clip_flow_pro",
-    "short_name": "clip_flow_pro",
+    "name": "ClipFlow Pro",
+    "short_name": "ClipFlow",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#667eea",
+    "theme_color": "#667eea",
+    "description": "跨平台剪贴板历史管理工具 - 支持文本、图片、文件等多种类型，智能搜索，现代化界面",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
