@@ -113,7 +113,7 @@ class _OcrDemoPageState extends State<OcrDemoPage> {
           _confidence = 0;
         }
       });
-    } catch (e) {
+    } on FormatException catch (e) {
       setState(() {
         _result = '错误: $e';
         _confidence = 0;

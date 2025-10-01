@@ -196,7 +196,7 @@ class ClipboardService {
           normalizedPath = p.join(documentsDirectory.path, filePath);
         }
       }
-    } catch (_) {
+    } on FileSystemException catch (_) {
       // 如果解析失败，回退使用原始字符串
       normalizedPath = filePath;
     }
@@ -231,7 +231,7 @@ class ClipboardService {
       }
 
       normalizedPath = candidatePath;
-    } catch (_) {
+    } on FileSystemException catch (_) {
       // 文件检查异常时，继续交由原生处理（保持行为一致）
     }
 

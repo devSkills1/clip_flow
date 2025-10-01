@@ -161,7 +161,7 @@ import ServiceManagement
                 let filePaths = fileURLs.compactMap { $0.path }
                 if !filePaths.isEmpty {
                     let firstPath = filePaths[0]
-                    let fileType = detectFileType(path: firstPath)
+                    let _ = detectFileType(path: firstPath)
                     clipboardInfo = [
                         "type": "file",
                         "content": filePaths,
@@ -227,6 +227,7 @@ import ServiceManagement
                 clipboardInfo = [
                     "type": "image",
                     "size": data.count,
+                    "format": imageFormat,
                     "hasData": true,
                     "priority": "medium"
                 ]

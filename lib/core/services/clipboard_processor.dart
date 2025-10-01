@@ -286,12 +286,16 @@ class ClipboardProcessor {
         final ext = file.path.split('.').length > 1
             ? file.path.split('.').last.toLowerCase()
             : null;
+
+        // 获取原始文件名（不包含路径）
+        final originalFileName = file.path.split('/').last;
+
         relativePath = await _saveMediaToDisk(
           bytes: bytes,
           type: 'file',
           suggestedExt: ext,
-          // 传入原始文件名，尽可能保留
-          originalName: file.path.split('/').last,
+          // 传入原始文件名，保留原始名称
+          originalName: originalFileName,
           keepOriginalName: true,
         );
       } on Exception catch (_) {
@@ -709,29 +713,42 @@ class ClipboardProcessor {
       // 计算文件名哈希（用于去重/避免冲突）
       final hash = sha256.convert(bytes).toString().substring(0, 8);
 
-      // 原始名称清理：去除非法字符，限制长度
+      // 原始名称清理：去除非法字符，限制长度，支持中文文件名
       String sanitizedBase(String name) {
         // 去除路径分隔符，仅保留文件名部分
         final base = name.split('/').last.split(r'\').last;
         // 去掉扩展名
         final dotIndex = base.lastIndexOf('.');
         final withoutExt = dotIndex > 0 ? base.substring(0, dotIndex) : base;
-        // 仅保留字母数字、空格、横杠和下划线，其它替换为下划线
+
+        // 保留中文字符、字母数字、空格、横杠和下划线，其它替换为下划线
+        // 支持中文字符范围：\u4e00-\u9fff
         final replaced = withoutExt.replaceAll(
-          RegExp('[^A-Za-z0-9 _.-]'),
+          RegExp('[^A-Za-z0-9\u4e00-\u9fff _.-]'),
           '_',
         );
-        // 将连续空格压缩并以下划线替换
-        final compact = replaced.replaceAll(RegExp(r'\s+'), '_');
-        // 限制长度，避免超长文件名
-        return compact.length > 80 ? compact.substring(0, 80) : compact;
+
+        // 将连续空格和下划线压缩
+        final compact = replaced
+            .replaceAll(RegExp(r'\s+'), '_') // 空格转下划线
+            .replaceAll(RegExp('_+'), '_') // 连续下划线压缩
+            .replaceAll(RegExp(r'^_+|_+$'), ''); // 去除首尾下划线
+
+        // 如果清理后为空，使用默认名称
+        if (compact.isEmpty) {
+          return 'file';
+        }
+
+        // 限制长度，避免超长文件名，优先保留前面的字符
+        return compact.length > 60 ? compact.substring(0, 60) : compact;
       }
 
       String fileName;
       if (keepOriginalName && originalName != null && originalName.isNotEmpty) {
         final base = sanitizedBase(originalName);
-        // 使用“原始名_时间戳_哈希.扩展名”的格式，既可读又避免重名
-        fileName = '${base}_${ts}_$hash.$ext';
+        // 使用更简洁的格式：原始名_哈希.扩展名
+        // 哈希已经足够唯一，无需时间戳
+        fileName = '${base}_$hash.$ext';
       } else {
         // 保持原有命名策略：type_时间戳_哈希.扩展名
         fileName = '${type}_${ts}_$hash.$ext';
