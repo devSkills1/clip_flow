@@ -307,34 +307,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: I18nFallbacks.settings.sectionStorage,
             children: [
               _buildListTile(
-                title: I18nFallbacks.settings.storageDataBaseTitle,
-                subtitle: I18nFallbacks.settings.storageDataBaseSubtitle,
-                trailing: const Icon(Icons.folder_open),
-                onTap: _showDatabaseInFinder,
-              ),
-              _buildListTile(
-                title: I18nFallbacks.settings.storageImageTitle,
-                subtitle: I18nFallbacks.settings.storageImageSubtitle,
-                trailing: const Icon(Icons.folder_open),
-                onTap: _showImageDirectoryInFinder,
-              ),
-              _buildListTile(
-                title: I18nFallbacks.settings.storageFileTitle,
-                subtitle: I18nFallbacks.settings.storageFileSubtitle,
-                trailing: const Icon(Icons.folder_open),
-                onTap: _showFileDirectoryInFinder,
-              ),
-              _buildListTile(
                 title: I18nFallbacks.settings.storageAppDataTitle,
                 subtitle: I18nFallbacks.settings.storageAppDataSubtitle,
                 trailing: const Icon(Icons.folder_open),
                 onTap: _showAppDocumentsInFinder,
-              ),
-              _buildListTile(
-                title: I18nFallbacks.settings.storageLogTitle,
-                subtitle: I18nFallbacks.settings.storageLogSubtitle,
-                trailing: const Icon(Icons.folder_open),
-                onTap: _showLogDirectoryInFinder,
               ),
             ],
           ),
@@ -736,63 +712,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   // 存储管理相关方法
-  Future<void> _showDatabaseInFinder() async {
-    try {
-      final success = await FinderService.instance.showDatabaseInFinder();
-      if (!success && mounted) {
-        _showErrorSnackBar(I18nFallbacks.settings.storageErrorDatabase);
-      }
-    } on Exception catch (e) {
-      if (mounted) {
-        _showErrorSnackBar(I18nFallbacks.settings.storageErrorOpenFinder('$e'));
-      }
-    }
-  }
-
-  Future<void> _showImageDirectoryInFinder() async {
-    try {
-      final success = await FinderService.instance.showImageDirectoryInFinder();
-      if (!success && mounted) {
-        _showErrorSnackBar(I18nFallbacks.settings.storageErrorImage);
-      }
-    } on Exception catch (e) {
-      if (mounted) {
-        _showErrorSnackBar(I18nFallbacks.settings.storageErrorOpenFinder('$e'));
-      }
-    }
-  }
-
-  Future<void> _showFileDirectoryInFinder() async {
-    try {
-      final success = await FinderService.instance.showFileDirectoryInFinder();
-      if (!success && mounted) {
-        _showErrorSnackBar(I18nFallbacks.settings.storageErrorFile);
-      }
-    } on Exception catch (e) {
-      if (mounted) {
-        _showErrorSnackBar(I18nFallbacks.settings.storageErrorOpenFinder('$e'));
-      }
-    }
-  }
 
   Future<void> _showAppDocumentsInFinder() async {
     try {
       final success = await FinderService.instance.showAppDocumentsInFinder();
       if (!success && mounted) {
         _showErrorSnackBar(I18nFallbacks.settings.storageErrorAppData);
-      }
-    } on Exception catch (e) {
-      if (mounted) {
-        _showErrorSnackBar(I18nFallbacks.settings.storageErrorOpenFinder('$e'));
-      }
-    }
-  }
-
-  Future<void> _showLogDirectoryInFinder() async {
-    try {
-      final success = await FinderService.instance.showLogDirectoryInFinder();
-      if (!success && mounted) {
-        _showErrorSnackBar(I18nFallbacks.settings.storageErrorLog);
       }
     } on Exception catch (e) {
       if (mounted) {

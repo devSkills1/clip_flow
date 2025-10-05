@@ -1,6 +1,8 @@
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
+import 'package:clip_flow_pro/core/models/hotkey_config.dart';
+import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:clip_flow_pro/shared/widgets/performance_overlay.dart'
@@ -28,6 +30,36 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
     final initialListener = ref.read(windowListenerProvider);
     windowManager.addListener(initialListener);
     // 窗口监听器内部（Provider）已监听用户偏好变化，这里不再使用 ref.listen，避免运行时限制
+
+    // 注册toggleWindow快捷键回调
+    _registerToggleWindowCallback();
+  }
+
+  /// 注册toggleWindow快捷键回调
+  void _registerToggleWindowCallback() {
+    ref.read(hotkeyServiceProvider).registerActionCallback(
+      HotkeyAction.toggleWindow,
+      () {
+        ref
+            .read(trayServiceProvider)
+            .when(
+              data: (trayService) => trayService.toggleWindow(),
+              loading: () {
+                // TrayService还在初始化中，忽略此次快捷键
+                Log.i('TrayService is initializing', tag: 'tray');
+              },
+              error: (error, stackTrace) {
+                // 记录错误但不阻塞用户操作
+                Log.e(
+                  'TrayService error',
+                  tag: 'tray',
+                  error: error,
+                  stackTrace: stackTrace,
+                );
+              },
+            );
+      },
+    );
   }
 
   @override
