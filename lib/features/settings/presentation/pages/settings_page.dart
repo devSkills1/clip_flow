@@ -28,6 +28,7 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
+  S? get l10n => S.of(context);
   int _versionTapCount = 0;
 
   void _handleVersionTap() {
@@ -44,8 +45,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         SnackBar(
           content: Text(
             ref.read(userPreferencesProvider).isDeveloperMode
-                ? I18nFallbacks.settings.developerModeActive
-                : I18nFallbacks.settings.developerModeInactive,
+                ? l10n?.developerModeActive ??
+                      I18nFallbacks.settings.developerModeActive
+                : l10n?.developerModeInactive ??
+                      I18nFallbacks.settings.developerModeInactive,
           ),
           duration: const Duration(seconds: 2),
         ),
@@ -60,7 +63,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final preferences = ref.watch(userPreferencesProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final l10n = S.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -111,8 +113,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               // 性能监控覆盖层开关（在所有构建类型中可用）
               _buildSwitchTile(
-                title: I18nFallbacks.settings.performanceOverlayTitle,
-                subtitle: I18nFallbacks.settings.performanceOverlaySubtitle,
+                title:
+                    l10n?.performanceOverlayTitle ??
+                    I18nFallbacks.settings.performanceOverlayTitle,
+                subtitle:
+                    l10n?.performanceOverlaySubtitle ??
+                    I18nFallbacks.settings.performanceOverlaySubtitle,
                 value: preferences.showPerformanceOverlay,
                 onChanged: (value) {
                   ref
@@ -192,10 +198,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 // OCR 语言选择
                 ListTile(
                   title: Text(
-                    I18nFallbacks.settings.ocrLanguageTitle,
+                    l10n?.ocrLanguageTitle ??
+                        I18nFallbacks.settings.ocrLanguageTitle,
                   ),
                   subtitle: Text(
-                    I18nFallbacks.settings.ocrLanguageSubtitle,
+                    l10n?.ocrLanguageSubtitle ??
+                        I18nFallbacks.settings.ocrLanguageSubtitle,
                   ),
                   trailing: DropdownButton<String>(
                     value: preferences.ocrLanguage,
@@ -223,10 +231,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 // OCR 最小置信度滑块
                 ListTile(
                   title: Text(
-                    I18nFallbacks.settings.ocrMinConfidenceTitle,
+                    l10n?.ocrMinConfidenceTitle ??
+                        I18nFallbacks.settings.ocrMinConfidenceTitle,
                   ),
                   subtitle: Text(
-                    I18nFallbacks.settings.ocrMinConfidenceSubtitle,
+                    l10n?.ocrMinConfidenceSubtitle ??
+                        I18nFallbacks.settings.ocrMinConfidenceSubtitle,
                   ),
                   trailing: SizedBox(
                     width: 220,
@@ -304,11 +314,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           // 存储管理
           _buildSection(
             context,
-            title: I18nFallbacks.settings.sectionStorage,
+            title:
+                l10n?.sectionStorage ?? I18nFallbacks.settings.sectionStorage,
             children: [
               _buildListTile(
-                title: I18nFallbacks.settings.storageAppDataTitle,
-                subtitle: I18nFallbacks.settings.storageAppDataSubtitle,
+                title:
+                    l10n?.storageAppDataTitle ??
+                    I18nFallbacks.settings.storageAppDataTitle,
+                subtitle:
+                    l10n?.storageAppDataSubtitle ??
+                    I18nFallbacks.settings.storageAppDataSubtitle,
                 trailing: const Icon(Icons.folder_open),
                 onTap: _showAppDocumentsInFinder,
               ),
@@ -321,17 +336,27 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           if (preferences.isDeveloperMode) ...[
             _buildSection(
               context,
-              title: I18nFallbacks.settings.developerOptionsTitle,
+              title:
+                  l10n?.developerOptionsTitle ??
+                  I18nFallbacks.settings.developerOptionsTitle,
               children: [
                 _buildListTile(
-                  title: I18nFallbacks.settings.storageCleanEmptyTitle,
-                  subtitle: I18nFallbacks.settings.storageCleanEmptySubtitle,
+                  title:
+                      l10n?.storageCleanEmptyTitle ??
+                      I18nFallbacks.settings.storageCleanEmptyTitle,
+                  subtitle:
+                      l10n?.storageCleanEmptySubtitle ??
+                      I18nFallbacks.settings.storageCleanEmptySubtitle,
                   trailing: const Icon(Icons.cleaning_services),
                   onTap: _cleanEmptyData,
                 ),
                 _buildListTile(
-                  title: I18nFallbacks.settings.storageValidateTitle,
-                  subtitle: I18nFallbacks.settings.storageValidateSubtitle,
+                  title:
+                      l10n?.storageValidateTitle ??
+                      I18nFallbacks.settings.storageValidateTitle,
+                  subtitle:
+                      l10n?.storageValidateSubtitle ??
+                      I18nFallbacks.settings.storageValidateSubtitle,
                   trailing: const Icon(Icons.verified),
                   onTap: _validateAndRepairData,
                 ),
@@ -432,7 +457,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String _getThemeModeText(BuildContext context, ThemeMode mode) {
-    final l10n = S.of(context);
     switch (mode) {
       case ThemeMode.light:
         return l10n?.themeLight ?? I18nFallbacks.settings.themeLight;
@@ -444,7 +468,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String _getDisplayModeText(BuildContext context, DisplayMode mode) {
-    final l10n = S.of(context);
     switch (mode) {
       case DisplayMode.compact:
         return l10n?.displayCompact ?? I18nFallbacks.settings.displayCompact;
@@ -456,7 +479,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String _getLanguageText(BuildContext context, String language) {
-    final l10n = S.of(context);
     switch (language) {
       case 'zh_CN':
         return l10n?.languageZhCN ?? I18nFallbacks.settings.languageZhCN;
@@ -517,7 +539,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       return DropdownMenuItem(
                         value: value,
                         child: Text(
-                          I18nFallbacks.settings.maxHistoryUnit(value),
+                          S.of(context)?.maxHistoryUnit(value) ??
+                              I18nFallbacks.settings.maxHistoryUnit(value),
                         ),
                       );
                     }).toList(),
@@ -752,8 +775,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(I18nFallbacks.settings.cleanEmptyDialogTitle),
-          content: Text(I18nFallbacks.settings.cleanEmptyDialogContent),
+          title: Text(
+            l10n?.cleanEmptyDialogTitle ??
+                I18nFallbacks.settings.cleanEmptyDialogTitle,
+          ),
+          content: Text(
+            l10n?.cleanEmptyDialogContent ??
+                I18nFallbacks.settings.cleanEmptyDialogContent,
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -777,12 +806,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       // 执行清理
       final count = await DatabaseService.instance.cleanEmptyTextItems();
       if (mounted) {
-        _showSuccessSnackBar(I18nFallbacks.settings.cleanSuccessMessage(count));
+        _showSuccessSnackBar(
+          l10n?.cleanSuccessMessage(count) ??
+              I18nFallbacks.settings.cleanSuccessMessage(count),
+        );
       }
     } on Exception catch (e) {
       if (mounted) {
         _showErrorSnackBar(
-          I18nFallbacks.settings.cleanErrorMessage(e.toString()),
+          l10n?.cleanErrorMessage(e.toString()) ??
+              I18nFallbacks.settings.cleanErrorMessage(e.toString()),
         );
       }
     }
@@ -801,7 +834,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               children: [
                 const CircularProgressIndicator(),
                 const SizedBox(width: 16),
-                Text(I18nFallbacks.settings.validateProgressText),
+                Text(
+                  l10n?.validateProgressText ??
+                      I18nFallbacks.settings.validateProgressText,
+                ),
               ],
             ),
           ),
@@ -818,25 +854,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         await showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(I18nFallbacks.settings.validateCompleteDialogTitle),
+            title: Text(
+              l10n?.validateCompleteDialogTitle ??
+                  I18nFallbacks.settings.validateCompleteDialogTitle,
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  I18nFallbacks.settings.validateEmptyTextDeleted(
-                    stats['emptyTextItemsDeleted'] ?? 0,
-                  ),
+                  l10n?.validateEmptyTextDeleted(
+                        stats['emptyTextItemsDeleted'] ?? 0,
+                      ) ??
+                      I18nFallbacks.settings.validateEmptyTextDeleted(
+                        stats['emptyTextItemsDeleted'] ?? 0,
+                      ),
                 ),
                 Text(
-                  I18nFallbacks.settings.validateOrphanFilesDeleted(
-                    stats['orphanFilesDeleted'] ?? 0,
-                  ),
+                  l10n?.validateOrphanFilesDeleted(
+                        stats['orphanFilesDeleted'] ?? 0,
+                      ) ??
+                      I18nFallbacks.settings.validateOrphanFilesDeleted(
+                        stats['orphanFilesDeleted'] ?? 0,
+                      ),
                 ),
                 Text(
-                  I18nFallbacks.settings.validateTotalRemaining(
-                    stats['totalItemsRemaining'] ?? 0,
-                  ),
+                  l10n?.validateTotalRemaining(
+                        stats['totalItemsRemaining'] ?? 0,
+                      ) ??
+                      I18nFallbacks.settings.validateTotalRemaining(
+                        stats['totalItemsRemaining'] ?? 0,
+                      ),
                 ),
               ],
             ),
@@ -855,7 +903,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (mounted) {
         Navigator.of(context).pop(); // 关闭加载对话框
         _showErrorSnackBar(
-          I18nFallbacks.settings.validateErrorMessage(e.toString()),
+          l10n?.validateErrorMessage(e.toString()) ??
+              I18nFallbacks.settings.validateErrorMessage(e.toString()),
         );
       }
     }
@@ -876,7 +925,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 const CircularProgressIndicator(),
                 const SizedBox(width: Spacing.s16),
                 Text(
-                  I18nFallbacks.settings.checkUpdateProgressText,
+                  l10n?.checkUpdateProgressText ??
+                      I18nFallbacks.settings.checkUpdateProgressText,
                 ),
               ],
             ),
@@ -897,15 +947,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           await showDialog<void>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('发现新版本'),
+              title: Text(
+                S.of(context)?.updateAvailableTitle ??
+                    I18nFallbacks.settings.updateAvailableTitle,
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('最新版本: ${latestVersion?.version}'),
+                  Text(
+                    '${S.of(context)?.updateLatestVersionPrefix ?? I18nFallbacks.settings.updateLatestVersionPrefix}${latestVersion?.version}',
+                  ),
                   const SizedBox(height: Spacing.s8),
                   if (latestVersion?.releaseNotes.isNotEmpty ?? false) ...[
-                    const Text('更新内容:'),
+                    Text(
+                      S.of(context)?.updateReleaseNotesTitle ??
+                          I18nFallbacks.settings.updateReleaseNotesTitle,
+                    ),
                     const SizedBox(height: Spacing.s4),
                     Text(
                       latestVersion!.releaseNotes,
@@ -917,14 +975,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('稍后更新'),
+                  child: Text(
+                    S.of(context)?.updateLaterAction ??
+                        I18nFallbacks.settings.updateLaterAction,
+                  ),
                 ),
                 FilledButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                     updateService.openDownloadPage();
                   },
-                  child: const Text('立即下载'),
+                  child: Text(
+                    S.of(context)?.downloadNowAction ??
+                        I18nFallbacks.settings.downloadNowAction,
+                  ),
                 ),
               ],
             ),
@@ -934,8 +998,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           await showDialog<void>(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text(I18nFallbacks.settings.checkUpdateDialogTitle),
-              content: Text(I18nFallbacks.settings.checkUpdateDialogContent),
+              title: Text(
+                l10n?.checkUpdateDialogTitle ??
+                    I18nFallbacks.settings.checkUpdateDialogTitle,
+              ),
+              content: Text(
+                l10n?.checkUpdateDialogContent ??
+                    I18nFallbacks.settings.checkUpdateDialogContent,
+              ),
               actions: [
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -952,7 +1022,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (mounted) {
         Navigator.of(context).pop(); // 关闭检查中对话框
         _showErrorSnackBar(
-          I18nFallbacks.settings.checkUpdateErrorMessage(e.toString()),
+          l10n?.checkUpdateErrorMessage(e.toString()) ??
+              I18nFallbacks.settings.checkUpdateErrorMessage(e.toString()),
         );
       }
     }
@@ -965,14 +1036,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(I18nFallbacks.settings.feedbackDialogTitle),
+          title: Text(
+            l10n?.feedbackDialogTitle ??
+                I18nFallbacks.settings.feedbackDialogTitle,
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 leading: const Icon(Icons.email),
-                title: Text(I18nFallbacks.settings.feedbackEmailTitle),
-                subtitle: const Text('feedback@clipflowpro.com'),
+                title: Text(
+                  l10n?.feedbackEmailTitle ??
+                      I18nFallbacks.settings.feedbackEmailTitle,
+                ),
+                subtitle: Text(
+                  l10n?.feedbackEmailAddress ?? 'feedback@clipflowpro.com',
+                ),
                 onTap: () {
                   Navigator.of(context).pop();
                   _openEmailFeedback();
@@ -980,8 +1059,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.bug_report),
-                title: Text(I18nFallbacks.settings.feedbackIssueTitle),
-                subtitle: Text(I18nFallbacks.settings.feedbackIssueSubtitle),
+                title: Text(
+                  l10n?.feedbackIssueTitle ??
+                      I18nFallbacks.settings.feedbackIssueTitle,
+                ),
+                subtitle: Text(
+                  l10n?.feedbackIssueSubtitle ??
+                      I18nFallbacks.settings.feedbackIssueSubtitle,
+                ),
                 onTap: () {
                   Navigator.of(context).pop();
                   _openIssuePage();
@@ -1002,7 +1087,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       );
     } on Exception catch (e) {
       _showErrorSnackBar(
-        I18nFallbacks.settings.feedbackErrorMessage(e.toString()),
+        l10n?.feedbackErrorMessage(e.toString()) ??
+            I18nFallbacks.settings.feedbackErrorMessage(e.toString()),
       );
     }
   }
@@ -1012,10 +1098,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     try {
       // 这里应该使用url_launcher打开邮件客户端
       // 暂时显示一个提示
-      _showInfoSnackBar(I18nFallbacks.settings.feedbackEmailInDevelopment);
+      _showInfoSnackBar(
+        l10n?.feedbackEmailInDevelopment ??
+            I18nFallbacks.settings.feedbackEmailInDevelopment,
+      );
     } on Exception catch (e) {
       _showErrorSnackBar(
-        I18nFallbacks.settings.feedbackEmailErrorMessage(e.toString()),
+        l10n?.feedbackEmailErrorMessage(e.toString()) ??
+            I18nFallbacks.settings.feedbackEmailErrorMessage(e.toString()),
       );
     }
   }
@@ -1025,10 +1115,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     try {
       // 这里应该使用url_launcher打开GitHub Issues页面
       // 暂时显示一个提示
-      _showInfoSnackBar(I18nFallbacks.settings.feedbackIssueInDevelopment);
+      _showInfoSnackBar(
+        l10n?.feedbackIssueInDevelopment ??
+            I18nFallbacks.settings.feedbackIssueInDevelopment,
+      );
     } on Exception catch (e) {
       _showErrorSnackBar(
-        I18nFallbacks.settings.feedbackIssueErrorMessage(e.toString()),
+        l10n?.feedbackIssueErrorMessage(e.toString()) ??
+            I18nFallbacks.settings.feedbackIssueErrorMessage(e.toString()),
       );
     }
   }

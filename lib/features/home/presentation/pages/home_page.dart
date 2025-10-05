@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
-import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
@@ -168,7 +167,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(AppColors.transparent),
       body: Row(
         children: [
           // 左侧筛选栏

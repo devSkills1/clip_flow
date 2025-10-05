@@ -489,5 +489,140 @@
   "@ocrMinConfidenceTitle": {"description": "设置-OCR-最小置信度-标题"},
 
   "ocrMinConfidenceSubtitle": "低于该阈值的识别结果将被忽略",
-  "@ocrMinConfidenceSubtitle": {"description": "设置-OCR-最小置信度-说明"}
+  "@ocrMinConfidenceSubtitle": {"description": "设置-OCR-最小置信度-说明"},
+
+  "updateAvailableTitle": "发现新版本",
+  "@updateAvailableTitle": {
+    "description": "更新可用对话框标题"
+  },
+  "updateLatestVersionPrefix": "最新版本: ",
+  "@updateLatestVersionPrefix": {
+    "description": "最新版本前缀"
+  },
+  "updateReleaseNotesTitle": "更新内容:",
+  "@updateReleaseNotesTitle": {
+    "description": "更新内容标题"
+  },
+  "updateLaterAction": "稍后更新",
+  "@updateLaterAction": {
+    "description": "稍后更新按钮"
+  },
+  "downloadNowAction": "立即下载",
+  "@downloadNowAction": {
+    "description": "立即下载按钮"
+  },
+
+  "sectionStorage": "存储管理",
+  "@sectionStorage": {"description": "设置页-存储管理分组标题"},
+  "storageAppDataTitle": "应用数据",
+  "@storageAppDataTitle": {"description": "存储-应用数据-标题"},
+  "storageAppDataSubtitle": "在Finder中显示应用数据目录",
+  "@storageAppDataSubtitle": {"description": "存储-应用数据-副标题"},
+  "developerOptionsTitle": "开发者选项",
+  "@developerOptionsTitle": {"description": "开发者选项标题"},
+  "storageCleanEmptyTitle": "清理空数据",
+  "@storageCleanEmptyTitle": {"description": "存储-清理空数据-标题"},
+  "storageCleanEmptySubtitle": "删除内容为空的剪贴板记录",
+  "@storageCleanEmptySubtitle": {"description": "存储-清理空数据-副标题"},
+  "storageValidateTitle": "验证数据完整性",
+  "@storageValidateTitle": {"description": "存储-验证数据完整性-标题"},
+  "storageValidateSubtitle": "检查并修复数据库中的问题",
+  "@storageValidateSubtitle": {"description": "存储-验证数据完整性-副标题"},
+  "performanceOverlayTitle": "性能监控浮层",
+  "@performanceOverlayTitle": {"description": "性能监控浮层-标题"},
+  "performanceOverlaySubtitle": "显示实时性能指标",
+  "@performanceOverlaySubtitle": {"description": "性能监控浮层-副标题"},
+  "developerModeActive": "开发者模式已激活",
+  "@developerModeActive": {"description": "开发者模式状态-已激活"},
+  "developerModeInactive": "开发者模式已关闭",
+  "@developerModeInactive": {"description": "开发者模式状态-已关闭"},
+  "maxHistoryUnit": "{count} 条",
+  "@maxHistoryUnit": {
+    "description": "最大历史记录数单位",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "cleanEmptyDialogTitle": "确认清理空数据",
+  "@cleanEmptyDialogTitle": {"description": "清理空数据对话框标题"},
+  "cleanEmptyDialogContent": "此操作将永久删除所有内容为空的记录，且无法撤销。是否继续？",
+  "@cleanEmptyDialogContent": {"description": "清理空数据对话框内容"},
+  "cleanSuccessMessage": "成功清理 {count} 条空数据记录",
+  "@cleanSuccessMessage": {
+    "description": "清理成功消息",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "cleanErrorMessage": "清理失败: {error}",
+  "@cleanErrorMessage": {
+    "description": "清理失败消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "validateProgressText": "正在验证数据...",
+  "@validateProgressText": {"description": "数据验证进度文本"},
+  "validateCompleteDialogTitle": "验证完成",
+  "@validateCompleteDialogTitle": {"description": "数据验证完成对话框标题"},
+  "validateEmptyTextDeleted": "已删除空文本记录: {count}条",
+  "@validateEmptyTextDeleted": {
+    "description": "已删除空文本记录统计",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "validateOrphanFilesDeleted": "已删除孤立文件: {count}个",
+  "@validateOrphanFilesDeleted": {
+    "description": "已删除孤立文件统计",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "validateTotalRemaining": "剩余有效记录: {count}条",
+  "@validateTotalRemaining": {
+    "description": "剩余有效记录统计",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "validateErrorMessage": "验证失败: {error}",
+  "@validateErrorMessage": {
+    "description": "验证失败消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "checkUpdateErrorMessage": "检查更新失败: {error}",
+  "@checkUpdateErrorMessage": {
+    "description": "检查更新失败消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "feedbackDialogTitle": "反馈与帮助",
+  "@feedbackDialogTitle": {"description": "反馈对话框标题"},
+  "feedbackEmailTitle": "发送邮件",
+  "@feedbackEmailTitle": {"description": "邮件反馈标题"},
+  "feedbackEmailAddress": "feedback@clipflowpro.com",
+  "@feedbackEmailAddress": {"description": "反馈邮箱地址"},
+  "feedbackIssueTitle": "提交问题",
+  "@feedbackIssueTitle": {"description": "问题报告标题"},
+  "feedbackIssueSubtitle": "在 GitHub 上报告错误或提出建议",
+  "@feedbackIssueSubtitle": {"description": "问题报告副标题"},
+  "feedbackErrorMessage": "无法打开反馈渠道: {error}",
+  "@feedbackErrorMessage": {
+    "description": "打开反馈失败消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "feedbackEmailInDevelopment": "邮件功能正在开发中，请稍后重试。",
+  "@feedbackEmailInDevelopment": {"description": "邮件反馈开发中消息"},
+  "feedbackEmailErrorMessage": "无法打开邮件客户端: {error}",
+  "@feedbackEmailErrorMessage": {
+    "description": "打开邮件失败消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "feedbackIssueInDevelopment": "问题报告功能正在开发中，请稍后重试。",
+  "@feedbackIssueInDevelopment": {"description": "问题报告开发中消息"},
+  "feedbackIssueErrorMessage": "无法打开链接: {error}",
+  "@feedbackIssueErrorMessage": {
+    "description": "打开问题页面失败消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "checkUpdateProgressText": "正在检查更新...",
+  "@checkUpdateProgressText": {
+    "description": "检查更新进度文本"
+  },
+  "checkUpdateDialogTitle": "检查更新",
+  "@checkUpdateDialogTitle": {
+    "description": "检查更新对话框标题"
+  },
+  "checkUpdateDialogContent": "您已经是最新版本",
+  "@checkUpdateDialogContent": {
+    "description": "检查更新对话框内容"
+  }
 }

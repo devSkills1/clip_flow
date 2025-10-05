@@ -924,6 +924,258 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Ignore results below this confidence score'**
   String get ocrMinConfidenceSubtitle;
+
+  /// Update available dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'New version available'**
+  String get updateAvailableTitle;
+
+  /// Latest version prefix
+  ///
+  /// In en, this message translates to:
+  /// **'Latest version: '**
+  String get updateLatestVersionPrefix;
+
+  /// Release notes title
+  ///
+  /// In en, this message translates to:
+  /// **'Release notes:'**
+  String get updateReleaseNotesTitle;
+
+  /// Update later button
+  ///
+  /// In en, this message translates to:
+  /// **'Update later'**
+  String get updateLaterAction;
+
+  /// Download now button
+  ///
+  /// In en, this message translates to:
+  /// **'Download now'**
+  String get downloadNowAction;
+
+  /// Settings - Storage Management section title
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Management'**
+  String get sectionStorage;
+
+  /// Storage - Application Data - title
+  ///
+  /// In en, this message translates to:
+  /// **'Application Data'**
+  String get storageAppDataTitle;
+
+  /// Storage - Application Data - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Show application data directory in Finder'**
+  String get storageAppDataSubtitle;
+
+  /// Developer Options title
+  ///
+  /// In en, this message translates to:
+  /// **'Developer Options'**
+  String get developerOptionsTitle;
+
+  /// Storage - Clean Empty Data - title
+  ///
+  /// In en, this message translates to:
+  /// **'Clean Empty Data'**
+  String get storageCleanEmptyTitle;
+
+  /// Storage - Clean Empty Data - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Delete clipboard records with empty content'**
+  String get storageCleanEmptySubtitle;
+
+  /// Storage - Validate Data Integrity - title
+  ///
+  /// In en, this message translates to:
+  /// **'Validate Data Integrity'**
+  String get storageValidateTitle;
+
+  /// Storage - Validate Data Integrity - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Check and repair issues in the database'**
+  String get storageValidateSubtitle;
+
+  /// Performance Overlay - title
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Overlay'**
+  String get performanceOverlayTitle;
+
+  /// Performance Overlay - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Show real-time performance metrics'**
+  String get performanceOverlaySubtitle;
+
+  /// Developer mode status - active
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode activated'**
+  String get developerModeActive;
+
+  /// Developer mode status - inactive
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode deactivated'**
+  String get developerModeInactive;
+
+  /// Max history unit
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String maxHistoryUnit(int count);
+
+  /// Clean empty data dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Clean Empty Data'**
+  String get cleanEmptyDialogTitle;
+
+  /// Clean empty data dialog content
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete all records with empty content and cannot be undone. Continue?'**
+  String get cleanEmptyDialogContent;
+
+  /// Clean success message
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully cleaned {count} empty data records'**
+  String cleanSuccessMessage(int count);
+
+  /// Clean failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Clean failed: {error}'**
+  String cleanErrorMessage(String error);
+
+  /// Data validation progress text
+  ///
+  /// In en, this message translates to:
+  /// **'Validating data...'**
+  String get validateProgressText;
+
+  /// Data validation complete dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Validation Complete'**
+  String get validateCompleteDialogTitle;
+
+  /// Deleted empty text records stat
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted empty text records: {count}'**
+  String validateEmptyTextDeleted(int count);
+
+  /// Deleted orphan files stat
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted orphan files: {count}'**
+  String validateOrphanFilesDeleted(int count);
+
+  /// Total valid records remaining stat
+  ///
+  /// In en, this message translates to:
+  /// **'Total valid records remaining: {count}'**
+  String validateTotalRemaining(int count);
+
+  /// Validation failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Validation failed: {error}'**
+  String validateErrorMessage(String error);
+
+  /// Check update failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Check for update failed: {error}'**
+  String checkUpdateErrorMessage(String error);
+
+  /// Feedback dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback & Help'**
+  String get feedbackDialogTitle;
+
+  /// Email feedback title
+  ///
+  /// In en, this message translates to:
+  /// **'Send Email'**
+  String get feedbackEmailTitle;
+
+  /// Feedback email address
+  ///
+  /// In en, this message translates to:
+  /// **'feedback@clipflowpro.com'**
+  String get feedbackEmailAddress;
+
+  /// Issue report title
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Issue'**
+  String get feedbackIssueTitle;
+
+  /// Issue report subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Report a bug or suggest a feature on GitHub'**
+  String get feedbackIssueSubtitle;
+
+  /// Open feedback failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open feedback channel: {error}'**
+  String feedbackErrorMessage(String error);
+
+  /// Email feedback in development message
+  ///
+  /// In en, this message translates to:
+  /// **'Email feature is under development. Please try again later.'**
+  String get feedbackEmailInDevelopment;
+
+  /// Open email failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open mail client: {error}'**
+  String feedbackEmailErrorMessage(String error);
+
+  /// Issue report in development message
+  ///
+  /// In en, this message translates to:
+  /// **'Issue reporting feature is under development. Please try again later.'**
+  String get feedbackIssueInDevelopment;
+
+  /// Open issue page failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open link: {error}'**
+  String feedbackIssueErrorMessage(String error);
+
+  /// Check update progress text
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates...'**
+  String get checkUpdateProgressText;
+
+  /// Check update dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get checkUpdateDialogTitle;
+
+  /// Check update dialog content
+  ///
+  /// In en, this message translates to:
+  /// **'You are up to date'**
+  String get checkUpdateDialogContent;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

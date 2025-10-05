@@ -474,4 +474,159 @@ class SEn extends S {
   @override
   String get ocrMinConfidenceSubtitle =>
       'Ignore results below this confidence score';
+
+  @override
+  String get updateAvailableTitle => 'New version available';
+
+  @override
+  String get updateLatestVersionPrefix => 'Latest version: ';
+
+  @override
+  String get updateReleaseNotesTitle => 'Release notes:';
+
+  @override
+  String get updateLaterAction => 'Update later';
+
+  @override
+  String get downloadNowAction => 'Download now';
+
+  @override
+  String get sectionStorage => 'Storage Management';
+
+  @override
+  String get storageAppDataTitle => 'Application Data';
+
+  @override
+  String get storageAppDataSubtitle =>
+      'Show application data directory in Finder';
+
+  @override
+  String get developerOptionsTitle => 'Developer Options';
+
+  @override
+  String get storageCleanEmptyTitle => 'Clean Empty Data';
+
+  @override
+  String get storageCleanEmptySubtitle =>
+      'Delete clipboard records with empty content';
+
+  @override
+  String get storageValidateTitle => 'Validate Data Integrity';
+
+  @override
+  String get storageValidateSubtitle =>
+      'Check and repair issues in the database';
+
+  @override
+  String get performanceOverlayTitle => 'Performance Overlay';
+
+  @override
+  String get performanceOverlaySubtitle => 'Show real-time performance metrics';
+
+  @override
+  String get developerModeActive => 'Developer mode activated';
+
+  @override
+  String get developerModeInactive => 'Developer mode deactivated';
+
+  @override
+  String maxHistoryUnit(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get cleanEmptyDialogTitle => 'Confirm Clean Empty Data';
+
+  @override
+  String get cleanEmptyDialogContent =>
+      'This will permanently delete all records with empty content and cannot be undone. Continue?';
+
+  @override
+  String cleanSuccessMessage(int count) {
+    return 'Successfully cleaned $count empty data records';
+  }
+
+  @override
+  String cleanErrorMessage(String error) {
+    return 'Clean failed: $error';
+  }
+
+  @override
+  String get validateProgressText => 'Validating data...';
+
+  @override
+  String get validateCompleteDialogTitle => 'Validation Complete';
+
+  @override
+  String validateEmptyTextDeleted(int count) {
+    return 'Deleted empty text records: $count';
+  }
+
+  @override
+  String validateOrphanFilesDeleted(int count) {
+    return 'Deleted orphan files: $count';
+  }
+
+  @override
+  String validateTotalRemaining(int count) {
+    return 'Total valid records remaining: $count';
+  }
+
+  @override
+  String validateErrorMessage(String error) {
+    return 'Validation failed: $error';
+  }
+
+  @override
+  String checkUpdateErrorMessage(String error) {
+    return 'Check for update failed: $error';
+  }
+
+  @override
+  String get feedbackDialogTitle => 'Feedback & Help';
+
+  @override
+  String get feedbackEmailTitle => 'Send Email';
+
+  @override
+  String get feedbackEmailAddress => 'feedback@clipflowpro.com';
+
+  @override
+  String get feedbackIssueTitle => 'Submit Issue';
+
+  @override
+  String get feedbackIssueSubtitle =>
+      'Report a bug or suggest a feature on GitHub';
+
+  @override
+  String feedbackErrorMessage(String error) {
+    return 'Could not open feedback channel: $error';
+  }
+
+  @override
+  String get feedbackEmailInDevelopment =>
+      'Email feature is under development. Please try again later.';
+
+  @override
+  String feedbackEmailErrorMessage(String error) {
+    return 'Could not open mail client: $error';
+  }
+
+  @override
+  String get feedbackIssueInDevelopment =>
+      'Issue reporting feature is under development. Please try again later.';
+
+  @override
+  String feedbackIssueErrorMessage(String error) {
+    return 'Could not open link: $error';
+  }
+
+  @override
+  String get checkUpdateProgressText => 'Checking for updates...';
+
+  @override
+  String get checkUpdateDialogTitle => 'Check for updates';
+
+  @override
+  String get checkUpdateDialogContent => 'You are up to date';
 }

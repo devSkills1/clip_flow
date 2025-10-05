@@ -456,4 +456,152 @@ class SZh extends S {
 
   @override
   String get ocrMinConfidenceSubtitle => '低于该阈值的识别结果将被忽略';
+
+  @override
+  String get updateAvailableTitle => '发现新版本';
+
+  @override
+  String get updateLatestVersionPrefix => '最新版本: ';
+
+  @override
+  String get updateReleaseNotesTitle => '更新内容:';
+
+  @override
+  String get updateLaterAction => '稍后更新';
+
+  @override
+  String get downloadNowAction => '立即下载';
+
+  @override
+  String get sectionStorage => '存储管理';
+
+  @override
+  String get storageAppDataTitle => '应用数据';
+
+  @override
+  String get storageAppDataSubtitle => '在Finder中显示应用数据目录';
+
+  @override
+  String get developerOptionsTitle => '开发者选项';
+
+  @override
+  String get storageCleanEmptyTitle => '清理空数据';
+
+  @override
+  String get storageCleanEmptySubtitle => '删除内容为空的剪贴板记录';
+
+  @override
+  String get storageValidateTitle => '验证数据完整性';
+
+  @override
+  String get storageValidateSubtitle => '检查并修复数据库中的问题';
+
+  @override
+  String get performanceOverlayTitle => '性能监控浮层';
+
+  @override
+  String get performanceOverlaySubtitle => '显示实时性能指标';
+
+  @override
+  String get developerModeActive => '开发者模式已激活';
+
+  @override
+  String get developerModeInactive => '开发者模式已关闭';
+
+  @override
+  String maxHistoryUnit(int count) {
+    return '$count 条';
+  }
+
+  @override
+  String get cleanEmptyDialogTitle => '确认清理空数据';
+
+  @override
+  String get cleanEmptyDialogContent => '此操作将永久删除所有内容为空的记录，且无法撤销。是否继续？';
+
+  @override
+  String cleanSuccessMessage(int count) {
+    return '成功清理 $count 条空数据记录';
+  }
+
+  @override
+  String cleanErrorMessage(String error) {
+    return '清理失败: $error';
+  }
+
+  @override
+  String get validateProgressText => '正在验证数据...';
+
+  @override
+  String get validateCompleteDialogTitle => '验证完成';
+
+  @override
+  String validateEmptyTextDeleted(int count) {
+    return '已删除空文本记录: $count条';
+  }
+
+  @override
+  String validateOrphanFilesDeleted(int count) {
+    return '已删除孤立文件: $count个';
+  }
+
+  @override
+  String validateTotalRemaining(int count) {
+    return '剩余有效记录: $count条';
+  }
+
+  @override
+  String validateErrorMessage(String error) {
+    return '验证失败: $error';
+  }
+
+  @override
+  String checkUpdateErrorMessage(String error) {
+    return '检查更新失败: $error';
+  }
+
+  @override
+  String get feedbackDialogTitle => '反馈与帮助';
+
+  @override
+  String get feedbackEmailTitle => '发送邮件';
+
+  @override
+  String get feedbackEmailAddress => 'feedback@clipflowpro.com';
+
+  @override
+  String get feedbackIssueTitle => '提交问题';
+
+  @override
+  String get feedbackIssueSubtitle => '在 GitHub 上报告错误或提出建议';
+
+  @override
+  String feedbackErrorMessage(String error) {
+    return '无法打开反馈渠道: $error';
+  }
+
+  @override
+  String get feedbackEmailInDevelopment => '邮件功能正在开发中，请稍后重试。';
+
+  @override
+  String feedbackEmailErrorMessage(String error) {
+    return '无法打开邮件客户端: $error';
+  }
+
+  @override
+  String get feedbackIssueInDevelopment => '问题报告功能正在开发中，请稍后重试。';
+
+  @override
+  String feedbackIssueErrorMessage(String error) {
+    return '无法打开链接: $error';
+  }
+
+  @override
+  String get checkUpdateProgressText => '正在检查更新...';
+
+  @override
+  String get checkUpdateDialogTitle => '检查更新';
+
+  @override
+  String get checkUpdateDialogContent => '您已经是最新版本';
 }

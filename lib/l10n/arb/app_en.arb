@@ -489,5 +489,140 @@
   "@ocrMinConfidenceTitle": {"description": "Settings - OCR - min confidence - title"},
 
   "ocrMinConfidenceSubtitle": "Ignore results below this confidence score",
-  "@ocrMinConfidenceSubtitle": {"description": "Settings - OCR - min confidence - subtitle"}
+  "@ocrMinConfidenceSubtitle": {"description": "Settings - OCR - min confidence - subtitle"},
+
+  "updateAvailableTitle": "New version available",
+  "@updateAvailableTitle": {
+    "description": "Update available dialog title"
+  },
+  "updateLatestVersionPrefix": "Latest version: ",
+  "@updateLatestVersionPrefix": {
+    "description": "Latest version prefix"
+  },
+  "updateReleaseNotesTitle": "Release notes:",
+  "@updateReleaseNotesTitle": {
+    "description": "Release notes title"
+  },
+  "updateLaterAction": "Update later",
+  "@updateLaterAction": {
+    "description": "Update later button"
+  },
+  "downloadNowAction": "Download now",
+  "@downloadNowAction": {
+    "description": "Download now button"
+  },
+
+  "sectionStorage": "Storage Management",
+  "@sectionStorage": {"description": "Settings - Storage Management section title"},
+  "storageAppDataTitle": "Application Data",
+  "@storageAppDataTitle": {"description": "Storage - Application Data - title"},
+  "storageAppDataSubtitle": "Show application data directory in Finder",
+  "@storageAppDataSubtitle": {"description": "Storage - Application Data - subtitle"},
+  "developerOptionsTitle": "Developer Options",
+  "@developerOptionsTitle": {"description": "Developer Options title"},
+  "storageCleanEmptyTitle": "Clean Empty Data",
+  "@storageCleanEmptyTitle": {"description": "Storage - Clean Empty Data - title"},
+  "storageCleanEmptySubtitle": "Delete clipboard records with empty content",
+  "@storageCleanEmptySubtitle": {"description": "Storage - Clean Empty Data - subtitle"},
+  "storageValidateTitle": "Validate Data Integrity",
+  "@storageValidateTitle": {"description": "Storage - Validate Data Integrity - title"},
+  "storageValidateSubtitle": "Check and repair issues in the database",
+  "@storageValidateSubtitle": {"description": "Storage - Validate Data Integrity - subtitle"},
+  "performanceOverlayTitle": "Performance Overlay",
+  "@performanceOverlayTitle": {"description": "Performance Overlay - title"},
+  "performanceOverlaySubtitle": "Show real-time performance metrics",
+  "@performanceOverlaySubtitle": {"description": "Performance Overlay - subtitle"},
+  "developerModeActive": "Developer mode activated",
+  "@developerModeActive": {"description": "Developer mode status - active"},
+  "developerModeInactive": "Developer mode deactivated",
+  "@developerModeInactive": {"description": "Developer mode status - inactive"},
+  "maxHistoryUnit": "{count} items",
+  "@maxHistoryUnit": {
+    "description": "Max history unit",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "cleanEmptyDialogTitle": "Confirm Clean Empty Data",
+  "@cleanEmptyDialogTitle": {"description": "Clean empty data dialog title"},
+  "cleanEmptyDialogContent": "This will permanently delete all records with empty content and cannot be undone. Continue?",
+  "@cleanEmptyDialogContent": {"description": "Clean empty data dialog content"},
+  "cleanSuccessMessage": "Successfully cleaned {count} empty data records",
+  "@cleanSuccessMessage": {
+    "description": "Clean success message",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "cleanErrorMessage": "Clean failed: {error}",
+  "@cleanErrorMessage": {
+    "description": "Clean failed message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "validateProgressText": "Validating data...",
+  "@validateProgressText": {"description": "Data validation progress text"},
+  "validateCompleteDialogTitle": "Validation Complete",
+  "@validateCompleteDialogTitle": {"description": "Data validation complete dialog title"},
+  "validateEmptyTextDeleted": "Deleted empty text records: {count}",
+  "@validateEmptyTextDeleted": {
+    "description": "Deleted empty text records stat",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "validateOrphanFilesDeleted": "Deleted orphan files: {count}",
+  "@validateOrphanFilesDeleted": {
+    "description": "Deleted orphan files stat",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "validateTotalRemaining": "Total valid records remaining: {count}",
+  "@validateTotalRemaining": {
+    "description": "Total valid records remaining stat",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "validateErrorMessage": "Validation failed: {error}",
+  "@validateErrorMessage": {
+    "description": "Validation failed message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "checkUpdateErrorMessage": "Check for update failed: {error}",
+  "@checkUpdateErrorMessage": {
+    "description": "Check update failed message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "feedbackDialogTitle": "Feedback & Help",
+  "@feedbackDialogTitle": {"description": "Feedback dialog title"},
+  "feedbackEmailTitle": "Send Email",
+  "@feedbackEmailTitle": {"description": "Email feedback title"},
+  "feedbackEmailAddress": "feedback@clipflowpro.com",
+  "@feedbackEmailAddress": {"description": "Feedback email address"},
+  "feedbackIssueTitle": "Submit Issue",
+  "@feedbackIssueTitle": {"description": "Issue report title"},
+  "feedbackIssueSubtitle": "Report a bug or suggest a feature on GitHub",
+  "@feedbackIssueSubtitle": {"description": "Issue report subtitle"},
+  "feedbackErrorMessage": "Could not open feedback channel: {error}",
+  "@feedbackErrorMessage": {
+    "description": "Open feedback failed message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "feedbackEmailInDevelopment": "Email feature is under development. Please try again later.",
+  "@feedbackEmailInDevelopment": {"description": "Email feedback in development message"},
+  "feedbackEmailErrorMessage": "Could not open mail client: {error}",
+  "@feedbackEmailErrorMessage": {
+    "description": "Open email failed message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "feedbackIssueInDevelopment": "Issue reporting feature is under development. Please try again later.",
+  "@feedbackIssueInDevelopment": {"description": "Issue report in development message"},
+  "feedbackIssueErrorMessage": "Could not open link: {error}",
+  "@feedbackIssueErrorMessage": {
+    "description": "Open issue page failed message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "checkUpdateProgressText": "Checking for updates...",
+  "@checkUpdateProgressText": {
+    "description": "Check update progress text"
+  },
+  "checkUpdateDialogTitle": "Check for updates",
+  "@checkUpdateDialogTitle": {
+    "description": "Check update dialog title"
+  },
+  "checkUpdateDialogContent": "You are up to date",
+  "@checkUpdateDialogContent": {
+    "description": "Check update dialog content"
+  }
 }

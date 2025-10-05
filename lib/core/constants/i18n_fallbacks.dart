@@ -409,6 +409,21 @@ class _SettingsFallback {
   /// 检查更新失败消息
   String checkUpdateErrorMessage(String error) => '检查更新失败: $error';
 
+  /// 更新可用对话框标题
+  String get updateAvailableTitle => '发现新版本';
+
+  /// 最新版本前缀（用于显示 "最新版本: 1.2.3"）
+  String get updateLatestVersionPrefix => '最新版本: ';
+
+  /// 更新内容标题
+  String get updateReleaseNotesTitle => '更新内容:';
+
+  /// 稍后更新按钮
+  String get updateLaterAction => '稍后更新';
+
+  /// 立即下载按钮
+  String get downloadNowAction => '立即下载';
+
   /// 反馈与建议对话框标题
   String get feedbackDialogTitle => '反馈与建议';
 
