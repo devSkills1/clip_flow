@@ -471,7 +471,7 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     _savePreferences();
 
     // 更新托盘服务的用户偏好设置
-    TrayService().updateUserPreferences(state);
+    TrayService().userPreferences = state;
   }
 
   /// 设置全局快捷键。
@@ -587,7 +587,7 @@ final trayServiceProvider = FutureProvider<TrayService>((ref) async {
 
   // 监听用户偏好设置变化
   ref.listen<UserPreferences>(userPreferencesProvider, (previous, next) {
-    trayService.updateUserPreferences(next);
+    trayService.userPreferences = next;
   });
 
   return trayService;

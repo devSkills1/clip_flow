@@ -100,8 +100,8 @@ class EnhancedKeyHandler {
         return '${modifierStrings.join(' + ')} + ?';
       }
     } else {
-      final modifierStrings = _getModifierStrings(modifiers);
-      modifierStrings.add(mainKey.toUpperCase());
+      final modifierStrings = _getModifierStrings(modifiers)
+        ..add(mainKey.toUpperCase());
       return modifierStrings.join(' + ');
     }
   }

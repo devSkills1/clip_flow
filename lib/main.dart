@@ -2,18 +2,52 @@ import 'package:clip_flow_pro/app.dart';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
+import 'package:clip_flow_pro/core/services/crash_service.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/encryption_service.dart';
+import 'package:clip_flow_pro/core/services/error_handler.dart';
 import 'package:clip_flow_pro/core/services/hotkey_service.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/preferences_service.dart';
+import 'package:clip_flow_pro/core/services/update_service.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
+  // 使用Sentry包装整个应用
+  await SentryFlutter.init(
+    (options) {
+      options
+        ..dsn = const String.fromEnvironment('SENTRY_DSN')
+        ..environment = const bool.fromEnvironment('dart.vm.product')
+            ? 'production'
+            : 'development';
+    },
+    appRunner: _runApp,
+  );
+}
+
+Future<void> _runApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化全局错误处理器
+  ErrorHandler.initialize();
+
+  // 初始化崩溃监控服务
+  try {
+    await CrashService().initialize();
+  } on Exception catch (e, stackTrace) {
+    // 如果崩溃监控初始化失败，不阻止应用启动
+    // 此时日志系统还未初始化，所以暂时忽略错误
+    await CrashService.reportError(
+      e,
+      stackTrace,
+      context: 'Failed to initialize CrashService',
+    );
+  }
 
   // 初始化窗口管理
   await windowManager.ensureInitialized();
@@ -55,6 +89,19 @@ void main() async {
 
   // 设置全局快捷键服务实例
   setHotkeyServiceInstance(hotkeyService);
+
+  // 初始化自动更新服务
+  try {
+    await UpdateService().initialize();
+    // 安排后台检查更新
+    UpdateService().scheduleBackgroundCheck();
+  } on Exception catch (e, stackTrace) {
+    await CrashService.reportError(
+      e,
+      stackTrace,
+      context: 'Failed to initialize UpdateService',
+    );
+  }
 
   runApp(const ProviderScope(child: ClipFlowProApp()));
 }

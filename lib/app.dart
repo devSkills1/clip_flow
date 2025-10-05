@@ -36,7 +36,7 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
     try {
       final currentListener = ref.read(windowListenerProvider);
       windowManager.removeListener(currentListener);
-    } catch (_) {}
+    } on Exception catch (_) {}
     super.dispose();
   }
 
@@ -48,9 +48,10 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
     final userPreferences = ref.watch(userPreferencesProvider);
 
     // 初始化托盘服务（异步）
-    ref.watch(trayServiceProvider);
     // 保持窗口监听器 Provider 存活，以便其内部监听用户偏好变化并更新监听器实例
-    ref.watch(windowListenerProvider);
+    ref
+      ..watch(trayServiceProvider)
+      ..watch(windowListenerProvider);
     // 窗口监听器的注册在 initState 中完成，避免在 build 中重复注册
 
     // 根据用户偏好设置确定locale

@@ -9,6 +9,7 @@ import 'package:clip_flow_pro/core/models/hotkey_config.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/finder_service.dart';
 import 'package:clip_flow_pro/core/services/ocr_service.dart';
+import 'package:clip_flow_pro/core/services/update_service.dart';
 import 'package:clip_flow_pro/features/settings/presentation/widgets/hotkey_capture_dialog.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
@@ -958,28 +959,69 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
       );
 
-      // 模拟检查更新（实际项目中应该调用真实的更新检查API）
-      await Future<void>.delayed(const Duration(seconds: 2));
+      // 使用真实的更新检查服务
+      final updateService = UpdateService();
+      final hasUpdate = await updateService.checkForUpdates();
 
       if (mounted) {
         Navigator.of(context).pop(); // 关闭检查中对话框
 
-        // 显示结果对话框
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(I18nFallbacks.settings.checkUpdateDialogTitle),
-            content: Text(I18nFallbacks.settings.checkUpdateDialogContent),
-            actions: [
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  S.of(context)?.actionOk ?? I18nFallbacks.common.actionOk,
-                ),
+        if (hasUpdate) {
+          // 有可用更新
+          final latestVersion = updateService.latestVersion;
+          await showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('发现新版本'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('最新版本: ${latestVersion?.version}'),
+                  const SizedBox(height: Spacing.s8),
+                  if (latestVersion?.releaseNotes.isNotEmpty ?? false) ...[
+                    const Text('更新内容:'),
+                    const SizedBox(height: Spacing.s4),
+                    Text(
+                      latestVersion!.releaseNotes,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
-        );
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('稍后更新'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    updateService.openDownloadPage();
+                  },
+                  child: const Text('立即下载'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          // 已是最新版本
+          await showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(I18nFallbacks.settings.checkUpdateDialogTitle),
+              content: Text(I18nFallbacks.settings.checkUpdateDialogContent),
+              actions: [
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    S.of(context)?.actionOk ?? I18nFallbacks.common.actionOk,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
       }
     } on Exception catch (e) {
       if (mounted) {

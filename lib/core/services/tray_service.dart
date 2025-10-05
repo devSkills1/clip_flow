@@ -72,7 +72,7 @@ class TrayService with TrayListener {
       await trayManager.destroy();
       _isInitialized = false;
       await Log.i('TrayService disposed');
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       await Log.e(
         'Failed to dispose TrayService: $e',
         error: e,
@@ -87,7 +87,7 @@ class TrayService with TrayListener {
       // 使用项目中的图标文件
       await trayManager.setIcon('assets/icons/clipboard_brand_fresh_192.png');
       await Log.i('Tray icon set successfully');
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       await Log.e(
         'Failed to set tray icon: $e',
         error: e,
@@ -124,7 +124,7 @@ class TrayService with TrayListener {
 
       await trayManager.setContextMenu(menu);
       await Log.i('Tray menu set successfully');
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       await Log.e(
         'Failed to set tray menu: $e',
         error: e,
@@ -139,7 +139,7 @@ class TrayService with TrayListener {
       await windowManager.show();
       await windowManager.focus();
       await Log.i('Window shown and focused');
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       await Log.e(
         'Failed to show window: $e',
         error: e,
@@ -153,7 +153,7 @@ class TrayService with TrayListener {
     try {
       await windowManager.hide();
       await Log.i('Window hidden');
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       await Log.e(
         'Failed to hide window: $e',
         error: e,
@@ -171,7 +171,7 @@ class TrayService with TrayListener {
       } else {
         await showWindow();
       }
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       await Log.e(
         'Failed to toggle window: $e',
         error: e,
@@ -185,7 +185,7 @@ class TrayService with TrayListener {
     try {
       await Log.i('Exiting application from tray');
       await windowManager.destroy();
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       await Log.e('Failed to exit app: $e', error: e, stackTrace: stackTrace);
     }
   }
@@ -195,7 +195,7 @@ class TrayService with TrayListener {
     try {
       // 与用户偏好默认值保持一致：默认为 true
       return _userPreferences?.minimizeToTray ?? true;
-    } catch (e) {
+    } on Exception catch (_) {
       // 同步方法中不能使用await，所以这里只返回默认值
       return true;
     }
@@ -212,10 +212,12 @@ class TrayService with TrayListener {
   }
 
   /// 更新用户偏好设置
-  void updateUserPreferences(UserPreferences preferences) {
+  set userPreferences(UserPreferences preferences) {
     _userPreferences = preferences;
   }
 
+  /// 获取用户偏好设置
+  UserPreferences get userPreferences => _userPreferences ?? UserPreferences();
   // TrayListener 实现
 
   @override
@@ -241,7 +243,6 @@ class TrayService with TrayListener {
       case 'settings':
         // 显示设置页面
         showWindow();
-      // TODO: 导航到设置页面
       case 'quit':
         exitApp();
     }
