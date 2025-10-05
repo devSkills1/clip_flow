@@ -3,8 +3,9 @@ import FlutterMacOS
 
 @main
 class AppDelegate: FlutterAppDelegate {
+  // 当最后一个窗口被关闭时，不自动终止应用，以支持最小化到托盘的常驻运行
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-    return true
+    return false
   }
 
   override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {

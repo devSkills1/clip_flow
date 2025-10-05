@@ -44,6 +44,11 @@ class ClipboardDetector {
   ClipType detectContentType(String content) {
     if (content.isEmpty) return ClipType.text;
 
+    // 大文本快速路径：如果内容很大且明显是纯文本（不含代码/HTML常见符号），直接判定为文本
+    if (content.length > 8000 && _likelyPlainText(content)) {
+      return ClipType.text;
+    }
+
     // 运行所有分析器
     final results = <AnalysisResult>[];
     for (final analyzer in _analyzers) {
@@ -390,4 +395,35 @@ class ClipboardDetector {
       'decision': decision.toString().split('.').last,
     };
   }
+}
+
+/// 判断是否很可能为纯文本（不包含代码/HTML常见符号）
+bool _likelyPlainText(String content) {
+  // 快速字符扫描，避免昂贵的正则与多分析器匹配
+  const specialChars = [
+    '<',
+    '>',
+    '{',
+    '}',
+    '[',
+    ']',
+    '(',
+    ')',
+    ';',
+    ':',
+    '=',
+    '/',
+    r'\',
+    '#',
+    '@',
+    r'$',
+    '`',
+  ];
+  for (final ch in specialChars) {
+    if (content.contains(ch)) return false;
+  }
+  if (content.contains('http://') || content.contains('https://')) {
+    return false;
+  }
+  return true;
 }

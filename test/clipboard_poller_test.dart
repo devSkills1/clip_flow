@@ -2,8 +2,32 @@ import 'dart:async';
 
 import 'package:clip_flow_pro/core/services/clipboard_poller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 
 void main() {
+  // 确保测试环境初始化 ServicesBinding，避免 MethodChannel 未初始化错误
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // 为平台通道注入剪贴板序列号的 Mock，实现稳定的序列递增
+  const MethodChannel _testClipboardChannel = MethodChannel(
+    'clipboard_service',
+  );
+  int _mockSequence = 0;
+
+  setUpAll(() {
+    _testClipboardChannel.setMockMethodCallHandler((MethodCall call) async {
+      if (call.method == 'getClipboardSequence') {
+        _mockSequence += 1;
+        return _mockSequence;
+      }
+      return null;
+    });
+  });
+
+  tearDownAll(() {
+    _testClipboardChannel.setMockMethodCallHandler(null);
+  });
+
   group('ClipboardPoller 测试', () {
     late ClipboardPoller poller;
 

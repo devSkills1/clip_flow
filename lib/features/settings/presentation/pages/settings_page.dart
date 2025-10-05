@@ -108,6 +108,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       .toggleMinimizeToTray();
                 },
               ),
+              // 性能监控覆盖层开关（在所有构建类型中可用）
+              _buildSwitchTile(
+                title: I18nFallbacks.settings.performanceOverlayTitle,
+                subtitle: I18nFallbacks.settings.performanceOverlaySubtitle,
+                value: preferences.showPerformanceOverlay,
+                onChanged: (value) {
+                  ref
+                      .read(userPreferencesProvider.notifier)
+                      .togglePerformanceOverlay();
+                },
+              ),
               _buildListTile(
                 title:
                     l10n?.generalGlobalHotkeyTitle ??
@@ -335,16 +346,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               context,
               title: I18nFallbacks.settings.developerOptionsTitle,
               children: [
-                _buildSwitchTile(
-                  title: I18nFallbacks.settings.performanceOverlayTitle,
-                  subtitle: I18nFallbacks.settings.performanceOverlaySubtitle,
-                  value: preferences.showPerformanceOverlay,
-                  onChanged: (value) {
-                    ref
-                        .read(userPreferencesProvider.notifier)
-                        .togglePerformanceOverlay();
-                  },
-                ),
                 _buildListTile(
                   title: I18nFallbacks.settings.storageCleanEmptyTitle,
                   subtitle: I18nFallbacks.settings.storageCleanEmptySubtitle,

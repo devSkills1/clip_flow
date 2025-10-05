@@ -10,6 +10,8 @@ import 'package:clip_flow_pro/core/services/database_service.dart';
 import 'package:clip_flow_pro/core/services/hotkey_service.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/preferences_service.dart';
+import 'package:clip_flow_pro/core/services/tray_service.dart';
+import 'package:clip_flow_pro/core/services/window_listener.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
 import 'package:clip_flow_pro/features/home/presentation/pages/home_page.dart';
@@ -467,6 +469,9 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   void toggleMinimizeToTray() {
     state = state.copyWith(minimizeToTray: !state.minimizeToTray);
     _savePreferences();
+
+    // 更新托盘服务的用户偏好设置
+    TrayService().updateUserPreferences(state);
   }
 
   /// 设置全局快捷键。
@@ -570,3 +575,38 @@ late final HotkeyService _hotkeyServiceInstance;
 void setHotkeyServiceInstance(HotkeyService instance) {
   _hotkeyServiceInstance = instance;
 }
+
+/// 托盘服务提供者
+/// 提供全局单例的 TrayService，并监听用户偏好设置变化。
+final trayServiceProvider = FutureProvider<TrayService>((ref) async {
+  final trayService = TrayService();
+  final userPreferences = ref.watch(userPreferencesProvider);
+
+  // 初始化托盘服务
+  await trayService.initialize(userPreferences);
+
+  // 监听用户偏好设置变化
+  ref.listen<UserPreferences>(userPreferencesProvider, (previous, next) {
+    trayService.updateUserPreferences(next);
+  });
+
+  return trayService;
+});
+
+/// 窗口监听器提供者
+/// 提供全局单例的 AppWindowListener，用于处理窗口事件。
+final windowListenerProvider = Provider<AppWindowListener>((ref) {
+  final trayService = TrayService();
+  final windowListener = AppWindowListener(trayService);
+
+  // 监听用户偏好变化并更新窗口监听器
+  ref.listen(userPreferencesProvider, (previous, next) {
+    windowListener.userPreferences = next;
+  });
+
+  // 初始化用户偏好
+  final userPreferences = ref.read(userPreferencesProvider);
+  windowListener.userPreferences = userPreferences;
+
+  return windowListener;
+});

@@ -8,19 +8,50 @@ import 'package:clip_flow_pro/shared/widgets/performance_overlay.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:window_manager/window_manager.dart';
 
 /// The root application widget of ClipFlow Pro.
 /// Provides router configuration and light/dark themes.
-class ClipFlowProApp extends ConsumerWidget {
+class ClipFlowProApp extends ConsumerStatefulWidget {
   /// Creates the root application widget.
   const ClipFlowProApp({super.key});
 
   @override
+  ConsumerState<ClipFlowProApp> createState() => _ClipFlowProAppState();
+}
+
+class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
+  @override
+  void initState() {
+    super.initState();
+    // 初始注册窗口监听器，确保 preventClose 生效时能正确处理关闭事件
+    final initialListener = ref.read(windowListenerProvider);
+    windowManager.addListener(initialListener);
+    // 窗口监听器内部（Provider）已监听用户偏好变化，这里不再使用 ref.listen，避免运行时限制
+  }
+
+  @override
+  void dispose() {
+    // 组件销毁时移除监听器
+    try {
+      final currentListener = ref.read(windowListenerProvider);
+      windowManager.removeListener(currentListener);
+    } catch (_) {}
+    super.dispose();
+  }
+
+  @override
   /// Builds the root MaterialApp with routing, theming, and localization.
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
     final userPreferences = ref.watch(userPreferencesProvider);
+
+    // 初始化托盘服务（异步）
+    ref.watch(trayServiceProvider);
+    // 保持窗口监听器 Provider 存活，以便其内部监听用户偏好变化并更新监听器实例
+    ref.watch(windowListenerProvider);
+    // 窗口监听器的注册在 initState 中完成，避免在 build 中重复注册
 
     // 根据用户偏好设置确定locale
     Locale locale;
@@ -51,9 +82,8 @@ class ClipFlowProApp extends ConsumerWidget {
         return Stack(
           children: [
             child!,
-            // 性能监控覆盖层（仅在开发者模式且启用时显示）
-            if (userPreferences.isDeveloperMode &&
-                userPreferences.showPerformanceOverlay)
+            // 性能监控覆盖层（启用时显示，支持 release）
+            if (userPreferences.showPerformanceOverlay)
               const custom.PerformanceOverlay(),
           ],
         );

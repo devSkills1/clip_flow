@@ -30,12 +30,10 @@ void main() async {
 
   /// 主函数
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.setPreventClose(true); // 阻止默认关闭行为，由监听器处理
     await windowManager.show();
     await windowManager.focus();
   });
-
-  // 初始化系统托盘 (暂时注释，需要添加图标文件)
-  // await trayManager.setIcon('assets/icons/tray_icon.png');
 
   // 初始化日志系统
   await Log.init(

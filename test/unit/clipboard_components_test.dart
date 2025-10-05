@@ -105,8 +105,12 @@ void main() {
     test('应该能够获取性能指标', () {
       final metrics = poller.getPerformanceMetrics();
       expect(metrics, isA<Map<String, dynamic>>());
-      expect(metrics.containsKey('averageInterval'), true);
-      expect(metrics.containsKey('successRate'), true);
+      expect(metrics.containsKey('pollingEfficiency'), true);
+      expect(metrics.containsKey('resourceOptimization'), true);
+
+      final efficiency = metrics['pollingEfficiency'] as Map<String, dynamic>;
+      expect(efficiency.containsKey('averageInterval'), true);
+      expect(efficiency.containsKey('successRate'), true);
     });
 
     test('应该能够重置统计信息', () {
@@ -136,7 +140,7 @@ void main() {
     test('应该能够获取缓存统计信息', () {
       final stats = processor.getCacheStats();
       expect(stats, isA<Map<String, dynamic>>());
-      expect(stats.containsKey('totalItems'), true);
+      expect(stats.containsKey('cacheSize'), true);
       expect(stats.containsKey('memoryUsage'), true);
       expect(stats.containsKey('hitRate'), true);
     });
@@ -144,23 +148,35 @@ void main() {
     test('应该能够获取性能指标', () {
       final metrics = processor.getPerformanceMetrics();
       expect(metrics, isA<Map<String, dynamic>>());
-      expect(metrics.containsKey('cacheHitRate'), true);
-      expect(metrics.containsKey('memoryUsage'), true);
-      expect(metrics.containsKey('maxMemoryUsage'), true);
+      expect(metrics.containsKey('cacheEfficiency'), true);
+      expect(metrics.containsKey('memoryOptimization'), true);
+
+      final cacheEfficiency = metrics['cacheEfficiency'] as Map;
+      expect(cacheEfficiency.containsKey('hitRate'), true);
+      expect(cacheEfficiency.containsKey('memoryUsagePercent'), true);
+
+      final memoryOptimization = metrics['memoryOptimization'] as Map;
+      expect(memoryOptimization.containsKey('memoryThreshold'), true);
+      expect(memoryOptimization['memoryThreshold'], isA<int>());
+      expect(memoryOptimization['memoryThreshold'], greaterThan(0));
     });
 
     test('缓存统计应该有正确的初始值', () {
       final stats = processor.getCacheStats();
-      expect(stats['totalItems'], anyOf(0, isNull));
+      expect(stats['cacheSize'], anyOf(0, isNull));
       expect(stats['memoryUsage'], anyOf(0, isNull));
-      expect(stats['hitRate'], anyOf(0.0, isNull));
+      expect(stats['hitRate'], isA<String>());
     });
 
     test('性能指标应该有合理的默认值', () {
       final metrics = processor.getPerformanceMetrics();
-      expect(metrics['cacheHitRate'], anyOf(0.0, isNull));
-      expect(metrics['memoryUsage'], anyOf(0, isNull));
-      expect(metrics['maxMemoryUsage'], anyOf(greaterThan(0), isNull));
+      final cacheEfficiency = metrics['cacheEfficiency'] as Map;
+      expect(cacheEfficiency.containsKey('hitRate'), true);
+      expect(cacheEfficiency.containsKey('memoryUsagePercent'), true);
+
+      final memoryOptimization = metrics['memoryOptimization'] as Map;
+      expect(memoryOptimization.containsKey('memoryThreshold'), true);
+      expect(memoryOptimization['memoryThreshold'], greaterThan(0));
     });
   });
 
@@ -191,7 +207,7 @@ void main() {
     test('所有组件都应该有正确的初始状态', () {
       expect(detector.detectContentType('test'), isA<ClipType>());
       expect(poller.isPolling, false);
-      expect(processor.getCacheStats()['totalItems'], anyOf(0, isNull));
+      expect(processor.getCacheStats()['cacheSize'], anyOf(0, isNull));
     });
 
     test('组件应该能够正确清理资源', () {

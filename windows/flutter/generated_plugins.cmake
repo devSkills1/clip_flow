@@ -5,7 +5,9 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   screen_retriever_windows
+  sentry_flutter
   tray_manager
+  url_launcher_windows
   window_manager
 )
 

@@ -5,6 +5,7 @@ import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
 import 'package:clip_flow_pro/core/services/clipboard_poller.dart';
 import 'package:clip_flow_pro/core/services/clipboard_processor.dart';
 import 'package:clip_flow_pro/core/services/clipboard_service.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// 性能监控测试
@@ -15,6 +16,34 @@ import 'package:flutter_test/flutter_test.dart';
 /// - 内存使用
 /// - 响应时间
 void main() {
+  // 为测试环境提供平台通道的模拟实现，避免未初始化的 ServicesBinding 错误
+  TestWidgetsFlutterBinding.ensureInitialized();
+  int _mockSequence = 0;
+  const MethodChannel _testClipboardChannel = MethodChannel(
+    'clipboard_service',
+  );
+
+  setUpAll(() {
+    // 模拟 getClipboardSequence 返回递增的序列号，以便轮询统计出现成功检查
+    _testClipboardChannel.setMockMethodCallHandler((MethodCall call) async {
+      switch (call.method) {
+        case 'getClipboardSequence':
+          _mockSequence += 1;
+          return _mockSequence;
+        case 'getClipboardType':
+          // 模拟类型为文本，避免 _getNativeClipboardData 返回 null
+          return <String, Object?>{'type': 'text'};
+        default:
+          return null;
+      }
+    });
+  });
+
+  tearDownAll(() {
+    // 清理 Mock，避免影响其他测试
+    _testClipboardChannel.setMockMethodCallHandler(null);
+  });
+
   group('性能监控测试', () {
     late ClipboardService clipboardService;
     late ClipboardProcessor processor;
@@ -41,6 +70,9 @@ void main() {
 
         // 模拟重复内容处理
         const testContent = 'Hello, World!';
+
+        // 设置剪贴板为固定文本，确保两次处理内容一致
+        await Clipboard.setData(const ClipboardData(text: testContent));
 
         // 第一次处理 - 应该是缓存未命中
         final stopwatch1 = Stopwatch()..start();
