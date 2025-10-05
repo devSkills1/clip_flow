@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/path_service.dart';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// 数据库服务类
@@ -37,8 +37,9 @@ class DatabaseService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    final documentsDirectory = await getApplicationDocumentsDirectory();
-    final path = join(documentsDirectory.path, ClipConstants.databaseName);
+    final path = await PathService.instance.getDatabasePath(
+      ClipConstants.databaseName,
+    );
 
     _database = await openDatabase(
       path,
@@ -603,14 +604,16 @@ class DatabaseService {
   /// 参数：
   /// - relativePath：相对路径，如 'media/image.jpg'
   Future<String> _resolveAbsoluteMediaPath(String relativePath) async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final documentsDirectory = await PathService.instance
+        .getDocumentsDirectory();
     return join(documentsDirectory.path, relativePath);
   }
 
   /// 安全删除整个媒体目录
   Future<void> _deleteMediaDirectorySafe() async {
     try {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final documentsDirectory = await PathService.instance
+          .getDocumentsDirectory();
       final mediaDirectory = Directory(join(documentsDirectory.path, 'media'));
       if (mediaDirectory.existsSync()) {
         await mediaDirectory.delete(recursive: true);
@@ -626,7 +629,8 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
-    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final documentsDirectory = await PathService.instance
+        .getDocumentsDirectory();
     final mediaRoot = Directory(join(documentsDirectory.path, 'media'));
     if (!mediaRoot.existsSync()) return 0;
 

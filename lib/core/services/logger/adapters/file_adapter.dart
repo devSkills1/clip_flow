@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io' as io;
 
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/path_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 
 /// 文件日志适配器：
 /// - Web 环境自动返回 null（通过工厂）
@@ -34,8 +34,7 @@ class FileLogAdapter implements LogAdapter {
 
   static Future<String> _defaultLogsDir() async {
     // 移动/桌面：应用文档目录/logs
-    final dir = await getApplicationDocumentsDirectory();
-    return '${dir.path}/logs';
+    return PathService.instance.getLogsDirectoryPath();
   }
 
   @override

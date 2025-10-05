@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/path_service.dart';
 import 'package:dio/dio.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// 版本信息模型
@@ -228,9 +228,8 @@ class UpdateService {
     _updateStatus(UpdateStatus.downloading);
 
     try {
-      final downloadDir = await getTemporaryDirectory();
       final fileName = _getDownloadFileName(_latestVersion!.downloadUrl);
-      final filePath = '${downloadDir.path}/$fileName';
+      final filePath = await PathService.instance.getDownloadPath(fileName);
 
       await Log.i('Downloading update to: $filePath');
 

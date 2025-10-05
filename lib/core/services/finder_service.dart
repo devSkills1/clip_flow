@@ -1,8 +1,9 @@
 import 'dart:io';
+
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/path_service.dart';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:process/process.dart';
 
 /// Finder服务类
@@ -64,7 +65,8 @@ class FinderService {
   /// 返回操作是否成功
   Future<bool> showDatabaseInFinder() async {
     try {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final documentsDirectory = await PathService.instance
+          .getDocumentsDirectory();
       final databasePath = join(
         documentsDirectory.path,
         ClipConstants.databaseName,
@@ -89,7 +91,8 @@ class FinderService {
   /// 返回操作是否成功
   Future<bool> showAppDocumentsInFinder() async {
     try {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final documentsDirectory = await PathService.instance
+          .getDocumentsDirectory();
       return await showInFinder(documentsDirectory.path);
     } on Exception catch (e) {
       await Log.e('Failed to show app documents in Finder: $e');
@@ -102,7 +105,8 @@ class FinderService {
   /// 返回操作是否成功
   Future<bool> showMediaDirectoryInFinder() async {
     try {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final documentsDirectory = await PathService.instance
+          .getDocumentsDirectory();
       final mediaPath = join(documentsDirectory.path, 'media');
 
       // 如果媒体目录不存在，显示应用文档目录
@@ -123,7 +127,8 @@ class FinderService {
   /// 返回操作是否成功
   Future<bool> showImageDirectoryInFinder() async {
     try {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final documentsDirectory = await PathService.instance
+          .getDocumentsDirectory();
       final imagePath = join(documentsDirectory.path, 'media', 'images');
 
       // 如果图片目录不存在，显示媒体目录
@@ -144,7 +149,8 @@ class FinderService {
   /// 返回操作是否成功
   Future<bool> showFileDirectoryInFinder() async {
     try {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final documentsDirectory = await PathService.instance
+          .getDocumentsDirectory();
       final filePath = join(documentsDirectory.path, 'media', 'files');
 
       // 如果文件目录不存在，显示媒体目录
@@ -165,7 +171,8 @@ class FinderService {
   /// 返回操作是否成功
   Future<bool> showLogDirectoryInFinder() async {
     try {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final documentsDirectory = await PathService.instance
+          .getDocumentsDirectory();
       final logPath = join(documentsDirectory.path, 'logs');
 
       // 如果日志目录不存在，显示应用文档目录
@@ -185,7 +192,8 @@ class FinderService {
   ///
   /// 返回数据库文件的完整路径
   Future<String> getDatabasePath() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final documentsDirectory = await PathService.instance
+        .getDocumentsDirectory();
     return join(documentsDirectory.path, ClipConstants.databaseName);
   }
 
@@ -193,7 +201,8 @@ class FinderService {
   ///
   /// 返回应用文档目录的完整路径
   Future<String> getAppDocumentsPath() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final documentsDirectory = await PathService.instance
+        .getDocumentsDirectory();
     return documentsDirectory.path;
   }
 
@@ -201,7 +210,8 @@ class FinderService {
   ///
   /// 返回媒体文件目录的完整路径
   Future<String> getMediaDirectoryPath() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final documentsDirectory = await PathService.instance
+        .getDocumentsDirectory();
     return join(documentsDirectory.path, 'media');
   }
 
@@ -209,7 +219,8 @@ class FinderService {
   ///
   /// 返回图片文件目录的完整路径
   Future<String> getImageDirectoryPath() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final documentsDirectory = await PathService.instance
+        .getDocumentsDirectory();
     return join(documentsDirectory.path, 'media', 'images');
   }
 
@@ -217,7 +228,8 @@ class FinderService {
   ///
   /// 返回文件目录的完整路径
   Future<String> getFileDirectoryPath() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final documentsDirectory = await PathService.instance
+        .getDocumentsDirectory();
     return join(documentsDirectory.path, 'media', 'files');
   }
 
@@ -225,7 +237,8 @@ class FinderService {
   ///
   /// 返回日志文件目录的完整路径
   Future<String> getLogDirectoryPath() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final documentsDirectory = await PathService.instance
+        .getDocumentsDirectory();
     return join(documentsDirectory.path, 'logs');
   }
 }

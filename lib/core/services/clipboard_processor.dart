@@ -6,12 +6,12 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/ocr_service.dart';
+import 'package:clip_flow_pro/core/services/path_service.dart';
 import 'package:clip_flow_pro/core/services/preferences_service.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 
 /// 剪贴板内容处理器
 ///
@@ -314,7 +314,8 @@ class ClipboardProcessor {
         // 优先使用保存后的文件生成缩略图
         try {
           if (relativePath != null && relativePath.isNotEmpty) {
-            final documentsDirectory = await getApplicationDocumentsDirectory();
+            final documentsDirectory = await PathService.instance
+                .getDocumentsDirectory();
             final savedFile = File('${documentsDirectory.path}/$relativePath');
             if (savedFile.existsSync()) {
               thumbnail = await _generateFileThumbnail(savedFile);
@@ -697,7 +698,7 @@ class ClipboardProcessor {
     bool keepOriginalName = false,
   }) async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await PathService.instance.getDocumentsDirectory();
       final ts = DateTime.now().millisecondsSinceEpoch;
 
       // 计算扩展名：优先使用建议扩展名，其次取原始文件名的扩展名

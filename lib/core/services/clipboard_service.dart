@@ -6,9 +6,10 @@ import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
 import 'package:clip_flow_pro/core/services/clipboard_poller.dart';
 import 'package:clip_flow_pro/core/services/clipboard_processor.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/path_service.dart';
+import 'package:clip_flow_pro/core/services/permission_service.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 /// 剪贴板服务协调器
 ///
@@ -54,6 +55,20 @@ class ClipboardService {
 
     try {
       _isShuttingDown = false;
+
+      // 检查剪贴板权限
+      final permissionStatus = await PermissionService.instance.checkPermission(
+        PermissionType.clipboard,
+      );
+
+      if (permissionStatus != PermissionStatus.granted) {
+        await Log.w(
+          'Clipboard permission not granted: $permissionStatus',
+          tag: 'clipboard_service',
+        );
+        // 即使权限未授予，也继续初始化，但会在操作时进行检查
+      }
+
       // 启动轮询器，监听剪贴板变化
       _poller.startPolling(
         onClipboardChanged: _handleClipboardChange,
@@ -98,7 +113,21 @@ class ClipboardService {
   Future<void> _handleClipboardChange() async {
     // 关闭或未初始化状态下直接忽略
     if (_isShuttingDown || !_isInitialized) return;
+
     try {
+      // 检查剪贴板权限（使用缓存，避免重复弹框）
+      final permissionStatus = await PermissionService.instance.checkPermission(
+        PermissionType.clipboard,
+      );
+
+      if (permissionStatus != PermissionStatus.granted) {
+        await Log.d(
+          'Clipboard access denied, skipping change handling',
+          tag: 'clipboard_service',
+        );
+        return;
+      }
+
       // 使用处理器处理剪贴板内容
       final clipItem = await _processor.processClipboardContent();
 
@@ -192,7 +221,8 @@ class ClipboardService {
         final isAbsoluteUnix = filePath.startsWith('/');
         final isAbsoluteWin = RegExp(r'^[A-Za-z]:\\').hasMatch(filePath);
         if (!isAbsoluteUnix && !isAbsoluteWin) {
-          final documentsDirectory = await getApplicationDocumentsDirectory();
+          final documentsDirectory = await PathService.instance
+              .getDocumentsDirectory();
           normalizedPath = p.join(documentsDirectory.path, filePath);
         }
       }
@@ -245,6 +275,19 @@ class ClipboardService {
   /// 获取当前剪贴板内容类型
   Future<ClipType?> getCurrentClipboardType() async {
     try {
+      // 检查剪贴板权限
+      final permissionStatus = await PermissionService.instance.checkPermission(
+        PermissionType.clipboard,
+      );
+
+      if (permissionStatus != PermissionStatus.granted) {
+        await Log.d(
+          'Clipboard access denied for type check',
+          tag: 'clipboard_service',
+        );
+        return null;
+      }
+
       const platform = MethodChannel('clipboard_service');
       final result = await platform.invokeMethod<Map<Object?, Object?>>(
         'getClipboardData',
@@ -267,6 +310,19 @@ class ClipboardService {
   /// 检查剪贴板是否有内容
   Future<bool> hasClipboardContent() async {
     try {
+      // 检查剪贴板权限
+      final permissionStatus = await PermissionService.instance.checkPermission(
+        PermissionType.clipboard,
+      );
+
+      if (permissionStatus != PermissionStatus.granted) {
+        await Log.d(
+          'Clipboard access denied for content check',
+          tag: 'clipboard_service',
+        );
+        return false;
+      }
+
       const platform = MethodChannel('clipboard_service');
       final result = await platform.invokeMethod<bool>('hasClipboardContent');
       return result ?? false;

@@ -368,9 +368,11 @@ fi
 # 5. 查找并重命名文件
 echo -e "${YELLOW}📦 准备发布文件...${NC}"
 
+# 定义构建目录
+BUILD_DIR="$PROJECT_ROOT/build"
+
 # 查找 DMG 文件（统一命名后无需重命名）
 if [ "$CREATE_DMG" = true ]; then
-    BUILD_DIR="$PROJECT_ROOT/build"
     TARGET_DMG="$BUILD_DIR/ClipFlowPro-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
     if [ -f "$TARGET_DMG" ]; then
         echo -e "${GREEN}✅ 找到 DMG 文件: $TARGET_DMG${NC}"
