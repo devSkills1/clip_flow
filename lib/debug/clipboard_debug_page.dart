@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/debug/clipboard_debug.dart';
+import 'package:clip_flow_pro/debug/ocr_demo.dart';
 import 'package:flutter/material.dart';
 
 /// 剪贴板调试页面
@@ -123,6 +124,25 @@ class _ClipboardDebugPageState extends State<ClipboardDebugPage> {
                   ),
                 ),
               ],
+            ),
+
+            const SizedBox(height: 8),
+
+            // OCR测试按钮
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => const OcrDemoPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.text_fields),
+              label: const Text('OCR功能测试'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
             ),
 
             const SizedBox(height: 16),

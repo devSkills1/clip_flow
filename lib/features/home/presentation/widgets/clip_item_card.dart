@@ -390,46 +390,63 @@ class ClipItemCard extends StatelessWidget {
                 );
         }
 
-        return wantOriginal
-            ? FutureBuilder<String?>(
-                future: _resolveAbsoluteImagePath(rawPath),
-                builder: (context, snapshot) {
-                  final abs = snapshot.data;
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return buildThumbFallback();
-                  }
-                  if (abs == null) {
-                    return buildThumbFallback();
-                  }
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      ClipConstants.cardBorderRadius,
-                    ),
-                    child: SizedBox(
-                      height: _imageViewportHeight(),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SingleChildScrollView(
-                            //scrollDirection: Axis.vertical,
-                            physics: const ClampingScrollPhysics(),
-                            child: Image.file(
-                              File(abs),
-                              width: constraints.maxWidth,
-                              fit: BoxFit.fitWidth,
-                              filterQuality: FilterQuality.high,
-                              cacheWidth: 1024, // 更高缓存解码宽度以提升清晰度
-                              errorBuilder: (context, error, stackTrace) {
-                                return buildThumbFallback();
-                              },
-                            ),
-                          );
-                        },
+        Widget buildImageWidget() {
+          return wantOriginal
+              ? FutureBuilder<String?>(
+                  future: _resolveAbsoluteImagePath(rawPath),
+                  builder: (context, snapshot) {
+                    final abs = snapshot.data;
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return buildThumbFallback();
+                    }
+                    if (abs == null) {
+                      return buildThumbFallback();
+                    }
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        ClipConstants.cardBorderRadius,
                       ),
-                    ),
-                  );
-                },
-              )
-            : buildThumbFallback();
+                      child: SizedBox(
+                        height: _imageViewportHeight(),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              //scrollDirection: Axis.vertical,
+                              physics: const ClampingScrollPhysics(),
+                              child: Image.file(
+                                File(abs),
+                                width: constraints.maxWidth,
+                                fit: BoxFit.fitWidth,
+                                filterQuality: FilterQuality.high,
+                                cacheWidth: 1024, // 更高缓存解码宽度以提升清晰度
+                                errorBuilder: (context, error, stackTrace) {
+                                  return buildThumbFallback();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : buildThumbFallback();
+        }
+
+        // 构建包含OCR文本的完整预览
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 图片预览
+            buildImageWidget(),
+
+            // OCR文本显示
+            if (item.ocrText != null && item.ocrText!.isNotEmpty) ...[
+              const SizedBox(height: Spacing.s8),
+              _buildOcrTextPreview(context),
+            ],
+          ],
+        );
       },
     );
   }
@@ -653,6 +670,175 @@ class ClipItemCard extends StatelessWidget {
     }
     final gbValue = (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1);
     return '$gbValue ${AppStrings.unitGB}';
+  }
+
+  /// 构建OCR文本预览组件
+  Widget _buildOcrTextPreview(BuildContext context) {
+    final ocrText = item.ocrText ?? '';
+    if (ocrText.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final ocrConfidence = item.metadata['ocrConfidence'] as double?;
+
+    return Container(
+      padding: const EdgeInsets.all(Spacing.s12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
+        borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+        border: Border.all(
+          color: theme.colorScheme.outline.withAlpha(77),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // OCR标题和置信度
+          Row(
+            children: [
+              Icon(
+                Icons.text_fields,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: Spacing.s4),
+              Text(
+                'OCR识别文本',
+                style: TextStyle(
+                  fontSize: ClipConstants.captionFontSize,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              if (ocrConfidence != null) ...[
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.s4,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getConfidenceColor(ocrConfidence).withAlpha(51),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${(ocrConfidence * 100).round()}%',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: _getConfidenceColor(ocrConfidence),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: Spacing.s4),
+
+          // OCR文本内容
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 80),
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: _buildOcrTextContent(context, ocrText),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建OCR文本内容，支持搜索高亮
+  Widget _buildOcrTextContent(BuildContext context, String ocrText) {
+    final theme = Theme.of(context);
+    final textStyle = TextStyle(
+      fontSize: ClipConstants.captionFontSize,
+      color: theme.colorScheme.onSurfaceVariant,
+      height: 1.3,
+    );
+
+    if (searchQuery == null || searchQuery!.isEmpty) {
+      return Text(ocrText, style: textStyle);
+    }
+
+    // 检查是否匹配搜索查询
+    if (!ocrText.toLowerCase().contains(searchQuery!.toLowerCase())) {
+      return Text(ocrText, style: textStyle);
+    }
+
+    // 构建高亮文本
+    final spans = _buildHighlightedSpans(
+      context,
+      ocrText,
+      searchQuery!,
+      textStyle,
+    );
+    return RichText(
+      text: TextSpan(children: spans),
+    );
+  }
+
+  /// 构建高亮文本片段（用于OCR文本）
+  List<TextSpan> _buildHighlightedSpans(
+    BuildContext context,
+    String text,
+    String query,
+    TextStyle baseStyle,
+  ) {
+    final spans = <TextSpan>[];
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+
+    var start = 0;
+    var index = lowerText.indexOf(lowerQuery);
+
+    while (index != -1) {
+      // 添加匹配前的普通文本
+      if (index > start) {
+        spans.add(
+          TextSpan(
+            text: text.substring(start, index),
+            style: baseStyle,
+          ),
+        );
+      }
+
+      // 添加高亮的匹配文本
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style: baseStyle.copyWith(
+            backgroundColor: const Color(0xFFFFEB3B).withAlpha(77),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+
+      start = index + query.length;
+      index = lowerText.indexOf(lowerQuery, start);
+    }
+
+    // 添加剩余的普通文本
+    if (start < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(start),
+          style: baseStyle,
+        ),
+      );
+    }
+
+    return spans;
+  }
+
+  /// 根据置信度获取颜色
+  Color _getConfidenceColor(double confidence) {
+    if (confidence >= 0.8) {
+      return const Color(0xFF4CAF50); // 绿色 - 高置信度
+    } else if (confidence >= 0.6) {
+      return const Color(0xFFFF9800); // 橙色 - 中等置信度
+    } else {
+      return const Color(0xFFF44336); // 红色 - 低置信度
+    }
   }
 
   String _getTimeAgo(BuildContext context) {

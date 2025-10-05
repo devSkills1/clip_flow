@@ -17,17 +17,25 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
-  // 使用Sentry包装整个应用
-  await SentryFlutter.init(
-    (options) {
-      options
-        ..dsn = const String.fromEnvironment('SENTRY_DSN')
-        ..environment = const bool.fromEnvironment('dart.vm.product')
-            ? 'production'
-            : 'development';
-    },
-    appRunner: _runApp,
-  );
+  // 检查是否配置了Sentry DSN
+  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
+
+  if (sentryDsn.isNotEmpty) {
+    // 只有在配置了DSN时才初始化Sentry
+    await SentryFlutter.init(
+      (options) {
+        options
+          ..dsn = sentryDsn
+          ..environment = const bool.fromEnvironment('dart.vm.product')
+              ? 'production'
+              : 'development';
+      },
+      appRunner: _runApp,
+    );
+  } else {
+    // 开发模式下直接运行应用，不使用Sentry
+    await _runApp();
+  }
 }
 
 Future<void> _runApp() async {
@@ -36,18 +44,7 @@ Future<void> _runApp() async {
   // 初始化全局错误处理器
   ErrorHandler.initialize();
 
-  // 初始化崩溃监控服务
-  try {
-    await CrashService().initialize();
-  } on Exception catch (e, stackTrace) {
-    // 如果崩溃监控初始化失败，不阻止应用启动
-    // 此时日志系统还未初始化，所以暂时忽略错误
-    await CrashService.reportError(
-      e,
-      stackTrace,
-      context: 'Failed to initialize CrashService',
-    );
-  }
+  // 注意：Sentry已在main()中初始化，这里不再重复初始化CrashService
 
   // 初始化窗口管理
   await windowManager.ensureInitialized();
