@@ -1,9 +1,12 @@
 import 'dart:async';
-// ignore_for_file: public_member_api_docs
-// 忽略公共成员API文档要求，因为这是内部服务，不需要对外暴露API文档
+import 'dart:io';
 
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+// ignore_for_file: public_member_api_docs
+// 忽略公共成员API文档要求，因为这是内部服务，不需要对外暴露API文档
+
+import 'package:flutter/services.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -166,14 +169,66 @@ class TrayService with TrayListener {
   Future<void> toggleWindow() async {
     try {
       final isVisible = await windowManager.isVisible();
-      if (isVisible) {
+      final isMinimized = await windowManager.isMinimized();
+
+      await Log.i(
+        'toggleWindow called',
+        tag: 'TrayService',
+        fields: {
+          'isVisible': isVisible,
+          'isMinimized': isMinimized,
+        },
+      );
+
+      if (isVisible && !isMinimized) {
+        // 窗口可见且未最小化，则隐藏窗口
+        await Log.i('Hiding window', tag: 'TrayService');
         await hideWindow();
       } else {
+        // 窗口隐藏或最小化，则显示并聚焦窗口
+        await Log.i('Showing window', tag: 'TrayService');
+
+        // 先取消最小化状态（如果是最小化状态）
+        if (isMinimized) {
+          await Log.i('Restoring minimized window', tag: 'TrayService');
+          await windowManager.restore();
+        }
+
+        // 显示窗口
         await showWindow();
+
+        // 尝试多种方法确保窗口在前台
+        await Log.i('Attempting to bring window to front', tag: 'TrayService');
+        await windowManager.focus();
+
+        // 在macOS上，使用原生API激活应用
+        if (Platform.isMacOS) {
+          await Log.i('Activating application on macOS', tag: 'TrayService');
+          try {
+            // 使用延迟确保窗口操作完成
+            await Future.delayed(const Duration(milliseconds: 100));
+
+            // 调用原生方法激活应用
+            const channel = MethodChannel('clipboard_service');
+            await channel.invokeMethod<bool>('activateApp');
+
+            await Log.i('App activation completed', tag: 'TrayService');
+          } on Exception catch (e) {
+            await Log.w(
+              'Failed to activate app via native method: $e',
+              tag: 'TrayService',
+            );
+
+            // 回退到窗口管理器方法
+            await windowManager.focus();
+            await windowManager.show();
+          }
+        }
       }
     } on Exception catch (e, stackTrace) {
       await Log.e(
         'Failed to toggle window: $e',
+        tag: 'TrayService',
         error: e,
         stackTrace: stackTrace,
       );

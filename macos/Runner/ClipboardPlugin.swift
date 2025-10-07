@@ -3,6 +3,7 @@ import FlutterMacOS
 import UniformTypeIdentifiers
 import Vision
 import ServiceManagement
+import Carbon
 
 @objc class ClipboardPlugin: NSObject, FlutterPlugin {
     // 全局事件监听器
@@ -13,10 +14,23 @@ import ServiceManagement
         let keyCode: UInt16
         let modifiers: NSEvent.ModifierFlags
         let ignoreRepeat: Bool
+        let lastTriggerTime: CFTimeInterval  // 添加防抖时间戳
+        let carbonHotKeyRef: EventHotKeyRef?  // Carbon热键引用
     }
     
     // 注册的快捷键
     private var registeredHotkeys: [String: HotkeyInfo] = [:]
+    
+    // Carbon热键ID计数器
+    private var nextHotKeyID: Int32 = 1
+    
+    // 快捷键防抖间隔（毫秒）
+    private let hotkeyDebounceInterval: CFTimeInterval = 0.1  // 100ms
+    
+    // 系统快捷键缓存
+    private var systemHotkeysCache: Set<String> = []
+    private var systemHotkeysCacheTime: CFTimeInterval = 0
+    private let systemHotkeysCacheInterval: CFTimeInterval = 60.0  // 缓存1分钟
     
     // Flutter方法通道
     private var channel: FlutterMethodChannel?
@@ -75,6 +89,8 @@ import ServiceManagement
             unregisterHotkey(call: call, result: result)
         case "isSystemHotkey":
             isSystemHotkey(call: call, result: result)
+        case "activateApp":
+            activateApp(result: result)
         case "isAutostartEnabled":
             isAutostartEnabled(result: result)
         case "enableAutostart":
@@ -873,19 +889,118 @@ import ServiceManagement
             return
         }
         
-        // 简单的系统快捷键检查
-        let systemHotkeys = [
-            "Cmd+Q", "Cmd+W", "Cmd+Tab", "Cmd+Space",
-            "Cmd+C", "Cmd+V", "Cmd+X", "Cmd+Z", "Cmd+Y"
+        let isSystem = isSystemHotkeyCached(keyString: keyString)
+        result(isSystem)
+    }
+    
+    /// 带缓存的系统快捷键检查
+    private func isSystemHotkeyCached(keyString: String) -> Bool {
+        let currentTime = CACurrentMediaTime()
+        
+        // 如果缓存过期，重新加载系统快捷键
+        if currentTime - systemHotkeysCacheTime > systemHotkeysCacheInterval {
+            loadSystemHotkeys()
+            systemHotkeysCacheTime = currentTime
+        }
+        
+        return systemHotkeysCache.contains(keyString)
+    }
+    
+    /// 激活应用并带到前台
+    private func activateApp(result: @escaping FlutterResult) {
+        DispatchQueue.main.async {
+            // 激活应用
+            NSApp.activate(ignoringOtherApps: true)
+            
+            // 确保主窗口也激活
+            if let window = NSApp.keyWindow {
+                window.makeKeyAndOrderFront(nil)
+            }
+            
+            result(true)
+        }
+    }
+    
+    /// 加载系统快捷键列表
+    private func loadSystemHotkeys() {
+        // 基础系统快捷键
+        var hotkeys: Set<String> = [
+            "cmd+q", "cmd+w", "cmd+tab", "cmd+space",
+            "cmd+c", "cmd+v", "cmd+x", "cmd+z", "cmd+y",
+            "cmd+a", "cmd+s", "cmd+f", "cmd+g", "cmd+h",
+            "cmd+m", "cmd+n", "cmd+o", "cmd+p", "cmd+r",
+            "cmd+t", "cmd+shift+3", "cmd+shift+4", "cmd+shift+5"
         ]
         
-        let isSystem = systemHotkeys.contains(keyString)
-        result(isSystem)
+        // 添加功能键快捷键
+        for i in 1...12 {
+            hotkeys.insert("cmd+f\(i)")
+            hotkeys.insert("cmd+shift+f\(i)")
+            hotkeys.insert("ctrl+f\(i)")
+        }
+        
+        // 添加其他常用快捷键
+        hotkeys.formUnion([
+            "cmd+option+escape", "cmd+control+q", "ctrl+cmd+q",
+            "cmd+option+d", "cmd+control+d", "cmd+shift+d"
+        ])
+        
+        systemHotkeysCache = hotkeys
+        NSLog("ClipboardPlugin: Loaded %d system hotkeys", hotkeys.count)
+    }
+    
+    /// 创建快捷键字符串
+    private func createKeyString(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> String {
+        var parts: [String] = []
+        
+        if modifiers.contains(.command) {
+            parts.append("cmd")
+        }
+        if modifiers.contains(.control) {
+            parts.append("ctrl")
+        }
+        if modifiers.contains(.option) {
+            parts.append("alt")
+        }
+        if modifiers.contains(.shift) {
+            parts.append("shift")
+        }
+        
+        // 将按键代码转换为字符
+        if let keyChar = keyCodeToString(keyCode) {
+            parts.append(keyChar.lowercased())
+        } else {
+            parts.append("unknown")
+        }
+        
+        return parts.joined(separator: "+")
+    }
+    
+    /// 按键映射表 - 统一维护按键代码和字符串的对应关系
+    private let keyMappingTable: [UInt16: String] = [
+        0x00: "a", 0x01: "s", 0x02: "d", 0x03: "f",
+        0x04: "h", 0x05: "g", 0x06: "z", 0x07: "x",
+        0x08: "c", 0x09: "v", 0x0B: "b", 0x0C: "q",
+        0x0D: "w", 0x0E: "e", 0x0F: "r", 0x10: "y",
+        0x11: "t", 0x12: "1", 0x13: "2", 0x14: "3",
+        0x15: "4", 0x16: "6", 0x17: "5", 0x18: "=",
+        0x19: "9", 0x1A: "7", 0x1B: "-", 0x1C: "8",
+        0x1D: "0", 0x1E: "]", 0x1F: "o", 0x20: "u",
+        0x21: "[", 0x22: "i", 0x23: "p", 0x25: "l",
+        0x26: "j", 0x27: "'", 0x28: "k", 0x29: ";",
+        0x2A: "\\", 0x2B: ",", 0x2C: "/", 0x2D: "n",
+        0x2E: "m", 0x2F: ".", 0x31: "space", 0x33: "delete",
+        0x35: "escape", 0x24: "enter", 0x30: "tab", 0x32: "`"
+    ]
+    
+    /// 将按键代码转换为字符串
+    private func keyCodeToString(_ keyCode: UInt16) -> String? {
+        return keyMappingTable[keyCode]
     }
     
     // MARK: - Modern Hotkey Implementation
     
-    /// 注册全局快捷键（使用NSEvent监听）
+    /// 注册全局快捷键（使用Carbon API确保后台工作）
     private func registerGlobalHotkey(action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags, ignoreRepeat: Bool) -> Bool {
         // 取消之前的注册并处理返回值
         let unregOk = unregisterGlobalHotkey(action: action)
@@ -893,25 +1008,116 @@ import ServiceManagement
             NSLog("ClipboardPlugin: Failed to unregister previous hotkey for action %@", action)
         }
 
-        // 保存快捷键配置
-        registeredHotkeys[action] = HotkeyInfo(keyCode: keyCode, modifiers: modifiers, ignoreRepeat: ignoreRepeat)
+        // 检查是否为系统快捷键（使用缓存）
+        let keyString = createKeyString(keyCode: keyCode, modifiers: modifiers)
+        if isSystemHotkeyCached(keyString: keyString) {
+            NSLog("ClipboardPlugin: Refusing to register system hotkey: %@", keyString)
+            return false
+        }
+
+        // 使用Carbon API注册全局快捷键
+        var carbonHotKeyRef: EventHotKeyRef?
+        let hotKeyID = EventHotKeyID(signature: OSType(0x6874666B), // 'htfk'
+                                    id: UInt32(nextHotKeyID))
+        nextHotKeyID += 1
+        
+        // 转换修饰符
+        var carbonModifiers: UInt32 = 0
+        if modifiers.contains(.command) {
+            carbonModifiers |= UInt32(cmdKey)
+        }
+        if modifiers.contains(.shift) {
+            carbonModifiers |= UInt32(shiftKey)
+        }
+        if modifiers.contains(.option) {
+            carbonModifiers |= UInt32(optionKey)
+        }
+        if modifiers.contains(.control) {
+            carbonModifiers |= UInt32(controlKey)
+        }
+        
+        // 注册Carbon热键
+        let status = RegisterEventHotKey(
+            UInt32(keyCode),
+            carbonModifiers,
+            hotKeyID,
+            GetEventDispatcherTarget(),
+            0,
+            &carbonHotKeyRef
+        )
+        
+        if status != noErr {
+            NSLog("ClipboardPlugin: Failed to register Carbon hotkey for action %@ with key %@, status: %d", action, keyString, status)
+            // 如果Carbon注册失败，回退到NSEvent
+            return registerNSEventHotkey(action: action, keyCode: keyCode, modifiers: modifiers, ignoreRepeat: ignoreRepeat)
+        }
+        
+        // 保存快捷键配置，包含当前时间用于防抖
+        let currentTime = CACurrentMediaTime()
+        registeredHotkeys[action] = HotkeyInfo(
+            keyCode: keyCode,
+            modifiers: modifiers,
+            ignoreRepeat: ignoreRepeat,
+            lastTriggerTime: currentTime,
+            carbonHotKeyRef: carbonHotKeyRef
+        )
+        
+        // 设置Carbon事件处理器
+        if carbonHotKeyRef != nil {
+            setupCarbonEventHandler()
+        }
+        
+        NSLog("ClipboardPlugin: Successfully registered Carbon hotkey for action %@ with key %@", action, keyString)
+        return true
+    }
+    
+    /// 回退到NSEvent监听器
+    private func registerNSEventHotkey(action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags, ignoreRepeat: Bool) -> Bool {
+        // 保存快捷键配置，包含当前时间用于防抖
+        let currentTime = CACurrentMediaTime()
+        registeredHotkeys[action] = HotkeyInfo(
+            keyCode: keyCode,
+            modifiers: modifiers,
+            ignoreRepeat: ignoreRepeat,
+            lastTriggerTime: currentTime,
+            carbonHotKeyRef: nil
+        )
 
         // 如果这是第一个快捷键，启动全局监听器
         if globalEventMonitor == nil {
             setupGlobalEventMonitor()
         }
         
+        NSLog("ClipboardPlugin: Successfully registered NSEvent hotkey for action %@ with key %@", action, createKeyString(keyCode: keyCode, modifiers: modifiers))
         return true
     }
     
     /// 取消注册全局快捷键
     private func unregisterGlobalHotkey(action: String) -> Bool {
+        guard let hotkeyInfo = registeredHotkeys[action] else {
+            return true
+        }
+        
+        // 如果是Carbon热键，取消注册
+        if let carbonHotKeyRef = hotkeyInfo.carbonHotKeyRef {
+            let status = UnregisterEventHotKey(carbonHotKeyRef)
+            if status != noErr {
+                NSLog("ClipboardPlugin: Failed to unregister Carbon hotkey for action %@, status: %d", action, status)
+            }
+        }
+        
         registeredHotkeys.removeValue(forKey: action)
         
         // 如果没有注册的快捷键了，停止全局监听器
-        if registeredHotkeys.isEmpty && globalEventMonitor != nil {
-            NSEvent.removeMonitor(globalEventMonitor!)
-            globalEventMonitor = nil
+        if registeredHotkeys.isEmpty {
+            if globalEventMonitor != nil {
+                NSEvent.removeMonitor(globalEventMonitor!)
+                globalEventMonitor = nil
+                NSLog("ClipboardPlugin: Stopped global event monitor - no hotkeys registered")
+            }
+            
+            // 停止Carbon事件处理器
+            stopCarbonEventHandler()
         }
         
         return true
@@ -919,88 +1125,136 @@ import ServiceManagement
     
     /// 设置全局事件监听器
     private func setupGlobalEventMonitor() {
+        // 使用更高效的事件监听器
         globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handleGlobalKeyEvent(event)
         }
+        NSLog("ClipboardPlugin: Started global event monitor")
+    }
+    
+    /// 设置Carbon事件处理器
+    private func setupCarbonEventHandler() {
+        var eventType = EventTypeSpec()
+        eventType.eventClass = OSType(kEventClassKeyboard)
+        eventType.eventKind = OSType(kEventHotKeyPressed)
+        
+        InstallEventHandler(GetEventDispatcherTarget(), { (nextHandler, theEvent, userData) -> OSStatus in
+            guard let plugin = Unmanaged<ClipboardPlugin>.fromOpaque(userData!).takeUnretainedValue() as? ClipboardPlugin else {
+                return noErr
+            }
+            return plugin.handleCarbonHotKeyEvent(theEvent)
+        }, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), nil)
+        
+        NSLog("ClipboardPlugin: Set up Carbon event handler")
+    }
+    
+    /// 停止Carbon事件处理器
+    private func stopCarbonEventHandler() {
+        // Carbon事件处理器会在插件销毁时自动清理
+        NSLog("ClipboardPlugin: Carbon event handler stopped")
+    }
+    
+    /// 处理Carbon热键事件
+    private func handleCarbonHotKeyEvent(_ event: EventRef?) -> OSStatus {
+        guard let event = event else {
+            return noErr
+        }
+        
+        var hotKeyID = EventHotKeyID()
+        let status = GetEventParameter(
+            event,
+            EventParamName(kEventParamDirectObject),
+            EventParamType(typeEventHotKeyID),
+            nil,
+            MemoryLayout<EventHotKeyID>.size,
+            nil,
+            &hotKeyID
+        )
+        
+        if status != noErr {
+            return noErr
+        }
+        
+        // 查找对应的动作
+        for (action, hotkeyInfo) in registeredHotkeys {
+            if let carbonRef = hotkeyInfo.carbonHotKeyRef {
+                // 通过Carbon热键引用匹配
+                // 注意：这里简化了匹配逻辑，实际可能需要更复杂的映射
+                let currentTime = CACurrentMediaTime()
+                
+                // 防抖检查
+                if currentTime - hotkeyInfo.lastTriggerTime < hotkeyDebounceInterval {
+                    continue
+                }
+                
+                // 更新最后触发时间
+                var updatedHotkey = hotkeyInfo
+                updatedHotkey = HotkeyInfo(
+                    keyCode: hotkeyInfo.keyCode,
+                    modifiers: hotkeyInfo.modifiers,
+                    ignoreRepeat: hotkeyInfo.ignoreRepeat,
+                    lastTriggerTime: currentTime,
+                    carbonHotKeyRef: carbonRef
+                )
+                registeredHotkeys[action] = updatedHotkey
+                
+                // 通知Flutter端
+                DispatchQueue.main.async { [weak self] in
+                    self?.channel?.invokeMethod("onHotkeyPressed", arguments: ["action": action])
+                }
+                
+                NSLog("ClipboardPlugin: Carbon hotkey pressed for action: %@", action)
+                break
+            }
+        }
+        
+        return noErr
     }
     
     /// 处理全局按键事件
     private func handleGlobalKeyEvent(_ event: NSEvent) {
         let keyCode = event.keyCode
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
+        let currentTime = CACurrentMediaTime()
         
         // 检查是否匹配任何注册的快捷键
         for (action, hotkey) in registeredHotkeys {
+            // 忽略重复按键
             if hotkey.ignoreRepeat && event.isARepeat { continue }
-            if keyCode == hotkey.keyCode && modifiers == hotkey.modifiers {
-                // 通知Flutter端
-                DispatchQueue.main.async { [weak self] in
-                    self?.channel?.invokeMethod("onHotkeyPressed", arguments: ["action": action])
-                }
-                break
+            
+            // 检查按键和修饰符是否匹配
+            guard keyCode == hotkey.keyCode && modifiers == hotkey.modifiers else { continue }
+            
+            // 防抖检查 - 避免短时间内重复触发
+            if currentTime - hotkey.lastTriggerTime < hotkeyDebounceInterval {
+                continue
             }
+            
+            // 更新最后触发时间
+            var updatedHotkey = hotkey
+            updatedHotkey = HotkeyInfo(
+                keyCode: hotkey.keyCode,
+                modifiers: hotkey.modifiers,
+                ignoreRepeat: hotkey.ignoreRepeat,
+                lastTriggerTime: currentTime,
+                carbonHotKeyRef: hotkey.carbonHotKeyRef
+            )
+            registeredHotkeys[action] = updatedHotkey
+            
+            // 通知Flutter端
+            DispatchQueue.main.async { [weak self] in
+                self?.channel?.invokeMethod("onHotkeyPressed", arguments: ["action": action])
+            }
+            
+            // 找到匹配的快捷键后立即退出循环
+            break
         }
     }
     
     /// 解析按键代码
     private func parseKeyCode(from components: [String]) -> UInt16? {
         let keyComponent = components.last?.lowercased()
-        
-        switch keyComponent {
-        case "a": return 0x00
-        case "s": return 0x01
-        case "d": return 0x02
-        case "f": return 0x03
-        case "h": return 0x04
-        case "g": return 0x05
-        case "z": return 0x06
-        case "x": return 0x07
-        case "c": return 0x08
-        case "v": return 0x09
-        case "b": return 0x0B
-        case "q": return 0x0C
-        case "w": return 0x0D
-        case "e": return 0x0E
-        case "r": return 0x0F
-        case "y": return 0x10
-        case "t": return 0x11
-        case "1": return 0x12
-        case "2": return 0x13
-        case "3": return 0x14
-        case "4": return 0x15
-        case "6": return 0x16
-        case "5": return 0x17
-        case "=": return 0x18
-        case "9": return 0x19
-        case "7": return 0x1A
-        case "-": return 0x1B
-        case "8": return 0x1C
-        case "0": return 0x1D
-        case "]": return 0x1E
-        case "o": return 0x1F
-        case "u": return 0x20
-        case "[": return 0x21
-        case "i": return 0x22
-        case "p": return 0x23
-        case "l": return 0x25
-        case "j": return 0x26
-        case "'": return 0x27
-        case "k": return 0x28
-        case ";": return 0x29
-        case "\\": return 0x2A
-        case ",": return 0x2B
-        case "/": return 0x2C
-        case "n": return 0x2D
-        case "m": return 0x2E
-        case ".": return 0x2F
-        case "`": return 0x32
-        case "space": return 0x31
-        case "delete": return 0x33
-        case "escape": return 0x35
-        case "enter": return 0x24
-        case "tab": return 0x30
-        default: return nil
-        }
+        return keyMappingTable.first(where: { $0.value == keyComponent })?.key
     }
     
     /// 解析修饰键

@@ -102,6 +102,12 @@ class HotkeyService {
   /// 是否支持全局快捷键
   bool _isSupported = false;
 
+  /// 快捷键注册重试计数器
+  final Map<HotkeyAction, int> _registrationRetryCount = {};
+
+  /// 最大重试次数
+  static const int _maxRetryCount = 3;
+
   /// 初始化快捷键服务
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -179,7 +185,7 @@ class HotkeyService {
               (a) => a.name == actionName,
               orElse: () => throw ArgumentError('Unknown action: $actionName'),
             );
-            await _handleHotkeyPressed(action);
+            await handleHotkeyPressed(action);
           } else {
             await Log.w(
               '快捷键回调参数无效',
@@ -206,13 +212,15 @@ class HotkeyService {
   }
 
   /// 处理快捷键按下事件
-  Future<void> _handleHotkeyPressed(HotkeyAction action) async {
+  Future<void> handleHotkeyPressed(HotkeyAction action) async {
     try {
-      await Log.d('快捷键被按下', tag: _tag, fields: {'action': action.name});
+      await Log.i('快捷键被按下', tag: _tag, fields: {'action': action.name});
 
       final callback = _actionCallbacks[action];
       if (callback != null) {
+        await Log.i('执行快捷键回调', tag: _tag, fields: {'action': action.name});
         callback();
+        await Log.i('快捷键回调执行完成', tag: _tag, fields: {'action': action.name});
       } else {
         await Log.w('未找到快捷键动作回调', tag: _tag, fields: {'action': action.name});
       }
@@ -267,30 +275,43 @@ class HotkeyService {
         await _unregisterHotkey(config.action);
       }
 
-      // 调用平台通道注册快捷键
-      final result = await _channel.invokeMethod<bool>('registerHotkey', {
-        'action': config.action.name,
-        'key': config.systemKeyString,
-        'enabled': config.enabled,
-        'ignoreRepeat': config.ignoreRepeat,
-      });
+      // 使用公共注册方法
+      final result = await _registerHotkeyWithChannel(config);
 
-      if (result ?? false) {
-        _registeredHotkeys[config.action] = config;
-        await _saveHotkeyConfigs();
-
-        await Log.i(
-          '快捷键注册成功',
-          tag: _tag,
-          fields: {
-            'action': config.action.name,
-            'key': config.displayString,
-          },
-        );
-
+      if (result) {
+        // 清除重试计数器
+        _registrationRetryCount.remove(config.action);
         return HotkeyRegistrationResult.success();
       } else {
-        return HotkeyRegistrationResult.failure('系统注册失败');
+        // 注册失败，检查是否需要重试
+        final retryCount = _registrationRetryCount[config.action] ?? 0;
+        if (retryCount < _maxRetryCount) {
+          _registrationRetryCount[config.action] = retryCount + 1;
+          await Log.w(
+            '快捷键注册失败，准备重试',
+            tag: _tag,
+            fields: {
+              'action': config.action.name,
+              'key': config.displayString,
+              'retryCount': retryCount + 1,
+            },
+          );
+
+          // 延迟重试
+          await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+          return registerHotkey(config);
+        } else {
+          await Log.e(
+            '快捷键注册失败，已达到最大重试次数',
+            tag: _tag,
+            fields: {
+              'action': config.action.name,
+              'key': config.displayString,
+              'retryCount': retryCount,
+            },
+          );
+          return HotkeyRegistrationResult.failure('系统注册失败，已达到最大重试次数');
+        }
       }
     } on Exception catch (e) {
       await Log.e(
@@ -303,6 +324,54 @@ class HotkeyService {
         },
       );
       return HotkeyRegistrationResult.failure('注册失败: $e');
+    }
+  }
+
+  /// 通过通道注册快捷键的公共方法
+  Future<bool> _registerHotkeyWithChannel(
+    HotkeyConfig config, {
+    bool saveConfig = true,
+  }) async {
+    try {
+      // 调用平台通道注册快捷键
+      final result = await _channel.invokeMethod<bool>('registerHotkey', {
+        'action': config.action.name,
+        'key': config.systemKeyString,
+        'enabled': config.enabled,
+        'ignoreRepeat': config.ignoreRepeat,
+      });
+
+      if (result ?? false) {
+        _registeredHotkeys[config.action] = config;
+
+        if (saveConfig) {
+          await _saveHotkeyConfigs();
+        }
+
+        await Log.i(
+          '快捷键注册成功',
+          tag: _tag,
+          fields: {
+            'action': config.action.name,
+            'key': config.displayString,
+          },
+        );
+
+        return true;
+      } else {
+        return false;
+      }
+    } on Exception catch (e) {
+      await Log.e(
+        '通过通道注册快捷键失败',
+        tag: _tag,
+        error: e,
+        fields: {
+          'action': config.action.name,
+          'key': config.displayString,
+        },
+      );
+      return false;
     }
   }
 
@@ -388,7 +457,7 @@ class HotkeyService {
       }
     }
 
-    // 检查系统快捷键冲突（简化实现）
+    // 检查系统快捷键冲突（直接调用原生方法）
     if (await _isSystemHotkey(config)) {
       conflicts.add(
         HotkeyConflict(
@@ -402,7 +471,7 @@ class HotkeyService {
     return conflicts;
   }
 
-  /// 检查是否为系统快捷键
+  /// 检查是否为系统快捷键（直接调用原生方法）
   Future<bool> _isSystemHotkey(HotkeyConfig config) async {
     try {
       final result = await _channel.invokeMethod<bool>('isSystemHotkey', {
@@ -442,16 +511,21 @@ class HotkeyService {
             configJson as Map<String, dynamic>,
           );
           if (config.enabled) {
-            // 直接注册到系统，不通过registerHotkey方法避免重复保存
-            final result = await _channel.invokeMethod<bool>('registerHotkey', {
-              'action': config.action.name,
-              'key': config.systemKeyString,
-              'enabled': config.enabled,
-              'ignoreRepeat': config.ignoreRepeat,
-            });
+            // 使用公共注册方法，不保存配置（避免重复保存）
+            final result = await _registerHotkeyWithChannel(
+              config,
+              saveConfig: false,
+            );
 
-            if (result ?? false) {
-              _registeredHotkeys[config.action] = config;
+            if (!result) {
+              await Log.w(
+                '加载快捷键配置时注册失败',
+                tag: _tag,
+                fields: {
+                  'action': config.action.name,
+                  'key': config.displayString,
+                },
+              );
             }
           }
         }
@@ -539,6 +613,9 @@ class HotkeyService {
 
       // 清理回调
       _actionCallbacks.clear();
+
+      // 清理缓存
+      _registrationRetryCount.clear();
 
       _isInitialized = false;
 
