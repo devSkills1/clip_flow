@@ -206,7 +206,7 @@ class TrayService with TrayListener {
           await Log.i('Activating application on macOS', tag: 'TrayService');
           try {
             // 使用延迟确保窗口操作完成
-            await Future.delayed(const Duration(milliseconds: 100));
+            await Future<void>.delayed(const Duration(milliseconds: 100));
 
             // 调用原生方法激活应用
             const channel = MethodChannel('clipboard_service');

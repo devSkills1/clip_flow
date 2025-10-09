@@ -1,14 +1,14 @@
+import Carbon
 import Cocoa
 import FlutterMacOS
+import ServiceManagement
 import UniformTypeIdentifiers
 import Vision
-import ServiceManagement
-import Carbon
 
 @objc class ClipboardPlugin: NSObject, FlutterPlugin {
     // 全局事件监听器
     private var globalEventMonitor: Any?
-    
+
     // 快捷键信息结构
     private struct HotkeyInfo {
         let keyCode: UInt16
@@ -17,39 +17,40 @@ import Carbon
         let lastTriggerTime: CFTimeInterval  // 添加防抖时间戳
         let carbonHotKeyRef: EventHotKeyRef?  // Carbon热键引用
     }
-    
+
     // 注册的快捷键
     private var registeredHotkeys: [String: HotkeyInfo] = [:]
-    
+
     // Carbon热键ID计数器
     private var nextHotKeyID: Int32 = 1
-    
+
     // 快捷键防抖间隔（毫秒）
     private let hotkeyDebounceInterval: CFTimeInterval = 0.1  // 100ms
-    
+
     // 系统快捷键缓存
     private var systemHotkeysCache: Set<String> = []
     private var systemHotkeysCacheTime: CFTimeInterval = 0
     private let systemHotkeysCacheInterval: CFTimeInterval = 60.0  // 缓存1分钟
-    
+
     // Flutter方法通道
     private var channel: FlutterMethodChannel?
-    
+
     // Security-Scoped Bookmarks 访问缓存
     private var accessingBookmarks: [String: URL] = [:]
-    
+
     // 权限缓存机制
     private var lastClipboardSequence: Int = -1
     private var lastSequenceCheckTime: Date = Date.distantPast
-    private let sequenceCacheInterval: TimeInterval = 0.5 // 500ms 缓存间隔
-    
+    private let sequenceCacheInterval: TimeInterval = 0.5  // 500ms 缓存间隔
+
     // 类型缓存机制
     private var lastClipboardType: [String: Any]?
     private var lastTypeCheckTime: Date = Date.distantPast
     private var lastTypeSequence: Int = -1
-    
+
     static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "clipboard_service", binaryMessenger: registrar.messenger)
+        let channel = FlutterMethodChannel(
+            name: "clipboard_service", binaryMessenger: registrar.messenger)
         let instance = ClipboardPlugin()
         instance.channel = channel
         registrar.addMethodCallDelegate(instance, channel: channel)
@@ -59,6 +60,8 @@ import Carbon
         switch call.method {
         case "test":
             result("ClipboardPlugin is working on macOS")
+        case "getClipboardFormats":
+            getClipboardFormats(result: result)
         case "getClipboardType":
             getClipboardType(result: result)
         case "getClipboardSequence":
@@ -110,184 +113,224 @@ import Carbon
         }
     }
 
-    private func getClipboardType(result: @escaping FlutterResult) {
+    private func getClipboardFormats(result: @escaping FlutterResult) {
         let pasteboard = NSPasteboard.general
+        let types = pasteboard.types ?? []
+        var availableFormats: [String: Any] = [:]
+
+        // 获取序列号
+        let sequence = pasteboard.changeCount
+
+        // 获取时间戳
+        let timestamp = Date()
+
+        NSLog("ClipboardPlugin: Available pasteboard types: %@", types.map { $0.rawValue })
+
+        // 检查文件格式 - 使用正确的方法
+        if types.contains(.fileURL) {
+            NSLog("ClipboardPlugin: Found .fileURL type, checking for files...")
+            if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [NSURL] {
+                let filePaths = fileURLs.compactMap { $0.path }
+                if !filePaths.isEmpty {
+                    availableFormats["files"] = filePaths
+                    NSLog("ClipboardPlugin: Found %d files: %@", filePaths.count, filePaths)
+                } else {
+                    NSLog("ClipboardPlugin: No file paths found from NSURLs")
+                }
+            } else {
+                NSLog("ClipboardPlugin: Failed to read file URLs")
+            }
+        } else {
+            NSLog("ClipboardPlugin: No .fileURL type found")
+        }
+
+        // 检查图片格式
+        let imageTypes: [NSPasteboard.PasteboardType] = [
+            .png, .tiff,
+            NSPasteboard.PasteboardType("public.jpeg"),
+            NSPasteboard.PasteboardType("public.image"),
+            NSPasteboard.PasteboardType("com.compuserve.gif"),
+            NSPasteboard.PasteboardType("com.microsoft.bmp"),
+            NSPasteboard.PasteboardType("org.webmproject.webp"),
+            NSPasteboard.PasteboardType("public.heic"),
+            NSPasteboard.PasteboardType("public.heif")
+        ]
+
+        for imageType in imageTypes {
+            if types.contains(imageType) {
+                if let imageData = pasteboard.data(forType: imageType) {
+                    // 将图片数据转换为字节数组
+                    let byteArray = [UInt8](imageData)
+                    availableFormats["image"] = byteArray
+                    break
+                }
+            }
+        }
+
+        // 检查RTF格式
+        if types.contains(.rtf) {
+            if let rtfData = pasteboard.data(forType: .rtf),
+               let rtfString = String(data: rtfData, encoding: .utf8) {
+                availableFormats["rtf"] = rtfString
+            }
+        }
+
+        // 检查HTML格式
+        if types.contains(.html) {
+            if let htmlData = pasteboard.data(forType: .html),
+               let htmlString = String(data: htmlData, encoding: .utf8) {
+                availableFormats["html"] = htmlString
+            }
+        }
+
+        // 检查文本格式
+        if types.contains(.string) {
+            if let text = pasteboard.string(forType: .string) {
+                availableFormats["text"] = text
+            }
+        }
+
+        // 如果没有找到任何格式，尝试获取纯文本作为备用
+        if availableFormats.isEmpty {
+            if let text = pasteboard.string(forType: .string) {
+                availableFormats["text"] = text
+            }
+        }
+
+        let clipboardInfo: [String: Any] = [
+            "sequence": sequence,
+            "formats": availableFormats,
+            "timestamp": timestamp.timeIntervalSince1970 * 1000, // 转换为毫秒
+            "availableTypes": types.map { $0.rawValue }
+        ]
+
+        NSLog("ClipboardPlugin: Returning %d formats: %@", availableFormats.keys.count, Array(availableFormats.keys))
+        result(clipboardInfo)
+    }
+
+    private func getClipboardType(result: @escaping FlutterResult) {
+        let pasteboard: NSPasteboard = NSPasteboard.general
         let currentSequence = pasteboard.changeCount
         let now = Date()
-        
+
         // 如果剪贴板内容没有变化且缓存有效，直接返回缓存
         if let cachedType = lastClipboardType,
-           currentSequence == lastTypeSequence,
-           now.timeIntervalSince(lastTypeCheckTime) < sequenceCacheInterval {
+            currentSequence == lastTypeSequence,
+            now.timeIntervalSince(lastTypeCheckTime) < sequenceCacheInterval
+        {
             result(cachedType)
             return
         }
 
-        // 检查可用的类型
-        let types = pasteboard.types ?? []
-
-        var clipboardInfo: [String: Any] = [:]
-
-        // 按优先级检查类型 - 富文本优先
-        if types.contains(.rtf) {
-            // RTF 富文本类型 - 最高优先级
-            if let rtfData = pasteboard.data(forType: .rtf) {
-                if let rtfString = String(data: rtfData, encoding: .utf8) {
-                    clipboardInfo = [
-                        "type": "rtf",
-                        "content": rtfString,
-                        "size": rtfData.count,
-                        "hasData": true,
-                        "priority": "high"
-                    ]
-                } else {
-                    clipboardInfo = [
-                        "type": "rtf",
-                        "size": rtfData.count,
-                        "hasData": true,
-                        "priority": "high"
-                    ]
-                }
-            }
-        } else if types.contains(.html) {
-            // HTML 类型 - 第二优先级
-            if let htmlData = pasteboard.data(forType: .html) {
-                if let htmlString = String(data: htmlData, encoding: .utf8) {
-                    clipboardInfo = [
-                        "type": "html",
-                        "content": htmlString,
-                        "size": htmlData.count,
-                        "hasData": true,
-                        "priority": "high"
-                    ]
-                } else {
-                    clipboardInfo = [
-                        "type": "html",
-                        "size": htmlData.count,
-                        "hasData": true,
-                        "priority": "high"
-                    ]
-                }
-            }
-        } else if types.contains(.fileURL) {
-            // 文件类型 - 第三优先级
-            if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)
-                as? [NSURL]
-            {
-                let filePaths = fileURLs.compactMap { $0.path }
-                if !filePaths.isEmpty {
-                    let firstPath = filePaths[0]
-                    let _ = detectFileType(path: firstPath)
-                    clipboardInfo = [
-                        "type": "file",
-                        "content": filePaths,
-                        "primaryPath": firstPath,
-                        "hasData": true,
-                        "priority": "medium"
-                    ]
-                }
-            }
-        } else if types.contains(.tiff) || types.contains(.png)
-            || types.contains(NSPasteboard.PasteboardType("public.jpeg"))
-            || types.contains(NSPasteboard.PasteboardType("public.image"))
-            || types.contains(NSPasteboard.PasteboardType("com.compuserve.gif"))
-            || types.contains(NSPasteboard.PasteboardType("com.microsoft.bmp"))
-            || types.contains(NSPasteboard.PasteboardType("org.webmproject.webp"))
-            || types.contains(NSPasteboard.PasteboardType("public.heic"))
-            || types.contains(NSPasteboard.PasteboardType("public.heif"))
-            || _hasAnyImageType(types: types)
-        {
-            // 图片类型
-            var imageData: Data?
-            var imageFormat = "unknown"
-
-            if let pngData = pasteboard.data(forType: .png) {
-                imageData = pngData
-                imageFormat = "png"
-            } else if let tiffData = pasteboard.data(forType: .tiff) {
-                imageData = tiffData
-                imageFormat = "tiff"
-            } else if let jpegData = pasteboard.data(
-                forType: NSPasteboard.PasteboardType("public.jpeg"))
-            {
-                imageData = jpegData
-                imageFormat = "jpeg"
-            } else if let gifData = pasteboard.data(
-                forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
-            {
-                imageData = gifData
-                imageFormat = "gif"
-            } else if let bmpData = pasteboard.data(
-                forType: NSPasteboard.PasteboardType("com.microsoft.bmp"))
-            {
-                imageData = bmpData
-                imageFormat = "bmp"
-            } else if let webpData = pasteboard.data(
-                forType: NSPasteboard.PasteboardType("org.webmproject.webp"))
-            {
-                imageData = webpData
-                imageFormat = "webp"
-            } else if let heicData = pasteboard.data(
-                forType: NSPasteboard.PasteboardType("public.heic"))
-            {
-                imageData = heicData
-                imageFormat = "heic"
-            } else if let heifData = pasteboard.data(
-                forType: NSPasteboard.PasteboardType("public.heif"))
-            {
-                imageData = heifData
-                imageFormat = "heif"
-            }
-
-            if let data = imageData {
-                clipboardInfo = [
-                    "type": "image",
-                    "size": data.count,
-                    "format": imageFormat,
-                    "hasData": true,
-                    "priority": "medium"
-                ]
-            }
-        } else if types.contains(.string) {
-            // 文本类型 - 最低优先级（细分判定交由 Dart 层处理）
-            if let string = pasteboard.string(forType: .string) {
-                clipboardInfo = [
-                    "type": "text",
-                    "length": string.count,
-                    "hasData": true,
-                    "priority": "low"
-                ]
-            }
-        } else {
-            // 未知类型
-            clipboardInfo = [
-                "type": "unknown",
-                "availableTypes": types.map { $0.rawValue },
-            ]
-        }
+        // 使用新的多格式检测方法
+        let clipboardInfo = getClipboardFormats(pasteboard: pasteboard, sequence: currentSequence, timestamp: now)
 
         // 更新缓存
         lastClipboardType = clipboardInfo
         lastTypeCheckTime = now
         lastTypeSequence = currentSequence
-        
+
         result(clipboardInfo)
+    }
+
+    /// 新的多格式检测方法 - 检测所有可用格式，不优先选择
+    private func getClipboardFormats(pasteboard: NSPasteboard, sequence: Int, timestamp: Date) -> [String: Any] {
+        let types = pasteboard.types ?? []
+        var availableFormats: [String: Any] = [:]
+
+        NSLog("ClipboardPlugin: Checking available formats: %@", types.map { $0.rawValue })
+
+        // 检查 RTF 格式
+        if types.contains(.rtf) {
+            if let rtfData = pasteboard.data(forType: .rtf) {
+                if let rtfString = String(data: rtfData, encoding: .utf8) {
+                    availableFormats["rtf"] = rtfString
+                    NSLog("ClipboardPlugin: Found RTF data (%d bytes)", rtfData.count)
+                }
+            }
+        }
+
+        // 检查 HTML 格式
+        if types.contains(.html) {
+            if let htmlData = pasteboard.data(forType: .html) {
+                if let htmlString = String(data: htmlData, encoding: .utf8) {
+                    availableFormats["html"] = htmlString
+                    NSLog("ClipboardPlugin: Found HTML data (%d bytes)", htmlData.count)
+                }
+            }
+        }
+
+        // 检查文件格式
+        if types.contains(.fileURL) {
+            if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [NSURL] {
+                let filePaths = fileURLs.compactMap { $0.path }
+                if !filePaths.isEmpty {
+                    availableFormats["files"] = filePaths
+                    NSLog("ClipboardPlugin: Found %d files", filePaths.count)
+                }
+            }
+        }
+
+        // 检查图片格式
+        let imageTypes: [NSPasteboard.PasteboardType] = [
+            .png, .tiff,
+            NSPasteboard.PasteboardType("public.jpeg"),
+            NSPasteboard.PasteboardType("public.image"),
+            NSPasteboard.PasteboardType("com.compuserve.gif"),
+            NSPasteboard.PasteboardType("com.microsoft.bmp"),
+            NSPasteboard.PasteboardType("org.webmproject.webp"),
+            NSPasteboard.PasteboardType("public.heic"),
+            NSPasteboard.PasteboardType("public.heif")
+        ]
+
+        for imageType in imageTypes {
+            if types.contains(imageType) {
+                if let imageData = pasteboard.data(forType: imageType) {
+                    // 将图片数据转换为字节数组
+                    let byteArray = [UInt8](imageData)
+                    availableFormats["image"] = byteArray
+                    NSLog("ClipboardPlugin: Found image data (%d bytes)", imageData.count)
+                    break
+                }
+            }
+        }
+
+        // 检查文本格式
+        if types.contains(.string) {
+            if let string = pasteboard.string(forType: .string) {
+                availableFormats["text"] = string
+                NSLog("ClipboardPlugin: Found text data (%d characters)", string.count)
+            }
+        }
+
+        // 构建返回信息
+        let clipboardInfo: [String: Any] = [
+            "sequence": sequence,
+            "formats": availableFormats,
+            "timestamp": timestamp.timeIntervalSince1970,
+            "availableTypes": types.map { $0.rawValue }
+        ]
+
+        NSLog("ClipboardPlugin: Found \(availableFormats.keys.count) formats: \(availableFormats.keys)")
+        return clipboardInfo
     }
 
     private func getClipboardSequence(result: @escaping FlutterResult) {
         let now = Date()
-        
+
         // 如果距离上次检查时间小于缓存间隔，直接返回缓存的值
-        if now.timeIntervalSince(lastSequenceCheckTime) < sequenceCacheInterval && lastClipboardSequence != -1 {
+        if now.timeIntervalSince(lastSequenceCheckTime) < sequenceCacheInterval
+            && lastClipboardSequence != -1
+        {
             result(lastClipboardSequence)
             return
         }
-        
+
         // 更新缓存
         let pasteboard = NSPasteboard.general
         lastClipboardSequence = pasteboard.changeCount
         lastSequenceCheckTime = now
-        
+
         result(lastClipboardSequence)
     }
 
@@ -694,30 +737,39 @@ import Carbon
         NSLog("ClipboardPlugin: No additional image types found")
         return nil
     }
-    
+
     // MARK: - OCR Methods
-    
+
     private func performOCR(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let imageData = args["imageData"] as? FlutterStandardTypedData else {
-            result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing imageData parameter", details: nil))
+            let imageData = args["imageData"] as? FlutterStandardTypedData
+        else {
+            result(
+                FlutterError(
+                    code: "INVALID_ARGUMENT", message: "Missing imageData parameter", details: nil))
             return
         }
 
         NSLog("ClipboardPlugin: Starting OCR on image data (%d bytes)", imageData.data.count)
-        
+
         // 创建NSImage
         guard let nsImage = NSImage(data: imageData.data) else {
-            result(FlutterError(code: "INVALID_IMAGE", message: "Cannot create NSImage from data", details: nil))
+            result(
+                FlutterError(
+                    code: "INVALID_IMAGE", message: "Cannot create NSImage from data", details: nil)
+            )
             return
         }
-        
+
         // 转换为CGImage
         guard let cgImage = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            result(FlutterError(code: "INVALID_IMAGE", message: "Cannot create CGImage from NSImage", details: nil))
+            result(
+                FlutterError(
+                    code: "INVALID_IMAGE", message: "Cannot create CGImage from NSImage",
+                    details: nil))
             return
         }
-        
+
         // 可选的最小置信度过滤（需在闭包外声明以便捕获）
         let minConfidence = (args["minConfidence"] as? Double) ?? 0.0
 
@@ -726,21 +778,23 @@ import Carbon
             DispatchQueue.main.async {
                 if let error = error {
                     NSLog("ClipboardPlugin: OCR error: %@", error.localizedDescription)
-                    result(FlutterError(code: "OCR_ERROR", message: error.localizedDescription, details: nil))
+                    result(
+                        FlutterError(
+                            code: "OCR_ERROR", message: error.localizedDescription, details: nil))
                     return
                 }
-                
+
                 guard let observations = request.results as? [VNRecognizedTextObservation] else {
                     NSLog("ClipboardPlugin: No text observations found")
                     result(["text": "", "confidence": 0.0])
                     return
                 }
-                
+
                 var recognizedText = ""
                 var totalConfidence: Float = 0.0
                 var observationCount = 0
                 let threshold: Float = Float(minConfidence)
-                
+
                 for observation in observations {
                     guard let topCandidate = observation.topCandidates(1).first else { continue }
                     // 置信度过滤
@@ -748,31 +802,35 @@ import Carbon
                         recognizedText += topCandidate.string + "\n"
                         totalConfidence += topCandidate.confidence
                         observationCount += 1
-                        NSLog("ClipboardPlugin: Recognized text: '%@' (confidence: %.2f)", 
-                              topCandidate.string, topCandidate.confidence)
+                        NSLog(
+                            "ClipboardPlugin: Recognized text: '%@' (confidence: %.2f)",
+                            topCandidate.string, topCandidate.confidence)
                     } else {
-                        NSLog("ClipboardPlugin: Skipped low-confidence text: '%.2f' < '%.2f'", 
-                              topCandidate.confidence, threshold)
+                        NSLog(
+                            "ClipboardPlugin: Skipped low-confidence text: '%.2f' < '%.2f'",
+                            topCandidate.confidence, threshold)
                     }
                 }
-                
+
                 // 移除最后的换行符
                 if recognizedText.hasSuffix("\n") {
                     recognizedText = String(recognizedText.dropLast())
                 }
-                
-                let averageConfidence = observationCount > 0 ? totalConfidence / Float(observationCount) : 0.0
-                
-                NSLog("ClipboardPlugin: OCR completed. Text: '%@', Average confidence: %.2f", 
-                      recognizedText, averageConfidence)
-                
+
+                let averageConfidence =
+                    observationCount > 0 ? totalConfidence / Float(observationCount) : 0.0
+
+                NSLog(
+                    "ClipboardPlugin: OCR completed. Text: '%@', Average confidence: %.2f",
+                    recognizedText, averageConfidence)
+
                 result([
                     "text": recognizedText,
-                    "confidence": Double(averageConfidence)
+                    "confidence": Double(averageConfidence),
                 ])
             }
         }
-        
+
         // 配置OCR请求
         request.recognitionLevel = .accurate
         // 处理语言参数
@@ -783,17 +841,19 @@ import Carbon
             request.recognitionLanguages = [langParam]
         }
         request.usesLanguageCorrection = true
-        
+
         // 执行OCR请求
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        
+
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 try handler.perform([request])
             } catch {
                 DispatchQueue.main.async {
                     NSLog("ClipboardPlugin: Failed to perform OCR: %@", error.localizedDescription)
-                    result(FlutterError(code: "OCR_FAILED", message: error.localizedDescription, details: nil))
+                    result(
+                        FlutterError(
+                            code: "OCR_FAILED", message: error.localizedDescription, details: nil))
                 }
             }
         }
@@ -814,113 +874,127 @@ import Carbon
             do {
                 var langs: [String]
                 if #available(macOS 11.0, *) {
-                    langs = try VNRecognizeTextRequest.supportedRecognitionLanguages(for: .accurate, revision: VNRecognizeTextRequestRevision2)
+                    langs = try VNRecognizeTextRequest.supportedRecognitionLanguages(
+                        for: .accurate, revision: VNRecognizeTextRequestRevision2)
                 } else {
                     // 在 macOS 10.15 上使用 Revision1 以避免可用性编译错误
-                    langs = try VNRecognizeTextRequest.supportedRecognitionLanguages(for: .accurate, revision: VNRecognizeTextRequestRevision1)
+                    langs = try VNRecognizeTextRequest.supportedRecognitionLanguages(
+                        for: .accurate, revision: VNRecognizeTextRequestRevision1)
                 }
                 result(langs)
             } catch {
-                result(FlutterError(code: "LANG_QUERY_FAILED", message: error.localizedDescription, details: nil))
+                result(
+                    FlutterError(
+                        code: "LANG_QUERY_FAILED", message: error.localizedDescription, details: nil
+                    ))
             }
         } else {
-            result(["en-US", "zh-Hans", "zh-Hant"]) // 基本回退
+            result(["en-US", "zh-Hans", "zh-Hant"])  // 基本回退
         }
     }
-    
+
     // MARK: - Hotkey Support
-    
+
     /// 检查是否支持全局快捷键
     private func isHotkeySupported(result: @escaping FlutterResult) {
         // macOS 支持全局快捷键
         result(true)
     }
-    
+
     /// 注册快捷键
     private func registerHotkey(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let action = args["action"] as? String,
-              let keyString = args["key"] as? String else {
-            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid arguments", details: nil))
+            let action = args["action"] as? String,
+            let keyString = args["key"] as? String
+        else {
+            result(
+                FlutterError(code: "INVALID_ARGUMENT", message: "Invalid arguments", details: nil))
             return
         }
         let ignoreRepeat = (args["ignoreRepeat"] as? Bool) ?? true
-        
+
         // 解析快捷键字符串 (例如: "Cmd+Shift+C")
         let components = keyString.components(separatedBy: "+")
-        
+
         // 校验仅存在一个主键
         let modifierSet: Set<String> = ["cmd", "ctrl", "alt", "shift", "meta", "option"]
         let mainKeys = components.filter { !modifierSet.contains($0.lowercased()) }
         guard mainKeys.count == 1 else {
-            result(FlutterError(code: "INVALID_KEY", message: "Invalid key combination", details: ["mainKeys": mainKeys]))
+            result(
+                FlutterError(
+                    code: "INVALID_KEY", message: "Invalid key combination",
+                    details: ["mainKeys": mainKeys]))
             return
         }
-        
+
         guard let keyCode = parseKeyCode(from: components) else {
             result(FlutterError(code: "INVALID_KEY", message: "Invalid key code", details: nil))
             return
         }
-        
+
         let modifiers = parseModifiers(from: components)
-        
+
         // 注册快捷键
-        let success = registerGlobalHotkey(action: action, keyCode: keyCode, modifiers: modifiers, ignoreRepeat: ignoreRepeat)
+        let success = registerGlobalHotkey(
+            action: action, keyCode: keyCode, modifiers: modifiers, ignoreRepeat: ignoreRepeat)
         result(success)
     }
-    
+
     /// 取消注册快捷键
     private func unregisterHotkey(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let action = args["action"] as? String else {
+            let action = args["action"] as? String
+        else {
             result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid action", details: nil))
             return
         }
-        
+
         let success = unregisterGlobalHotkey(action: action)
         result(success)
     }
-    
+
     /// 检查是否为系统快捷键
     private func isSystemHotkey(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let keyString = args["key"] as? String else {
-            result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid key string", details: nil))
+            let keyString = args["key"] as? String
+        else {
+            result(
+                FlutterError(code: "INVALID_ARGUMENT", message: "Invalid key string", details: nil))
             return
         }
-        
+
         let isSystem = isSystemHotkeyCached(keyString: keyString)
         result(isSystem)
     }
-    
+
     /// 带缓存的系统快捷键检查
     private func isSystemHotkeyCached(keyString: String) -> Bool {
         let currentTime = CACurrentMediaTime()
-        
+
         // 如果缓存过期，重新加载系统快捷键
         if currentTime - systemHotkeysCacheTime > systemHotkeysCacheInterval {
             loadSystemHotkeys()
             systemHotkeysCacheTime = currentTime
         }
-        
+
         return systemHotkeysCache.contains(keyString)
     }
-    
+
     /// 激活应用并带到前台
     private func activateApp(result: @escaping FlutterResult) {
         DispatchQueue.main.async {
             // 激活应用
             NSApp.activate(ignoringOtherApps: true)
-            
+
             // 确保主窗口也激活
             if let window = NSApp.keyWindow {
                 window.makeKeyAndOrderFront(nil)
             }
-            
+
             result(true)
         }
     }
-    
+
     /// 加载系统快捷键列表
     private func loadSystemHotkeys() {
         // 基础系统快捷键
@@ -929,30 +1003,30 @@ import Carbon
             "cmd+c", "cmd+v", "cmd+x", "cmd+z", "cmd+y",
             "cmd+a", "cmd+s", "cmd+f", "cmd+g", "cmd+h",
             "cmd+m", "cmd+n", "cmd+o", "cmd+p", "cmd+r",
-            "cmd+t", "cmd+shift+3", "cmd+shift+4", "cmd+shift+5"
+            "cmd+t", "cmd+shift+3", "cmd+shift+4", "cmd+shift+5",
         ]
-        
+
         // 添加功能键快捷键
         for i in 1...12 {
             hotkeys.insert("cmd+f\(i)")
             hotkeys.insert("cmd+shift+f\(i)")
             hotkeys.insert("ctrl+f\(i)")
         }
-        
+
         // 添加其他常用快捷键
         hotkeys.formUnion([
             "cmd+option+escape", "cmd+control+q", "ctrl+cmd+q",
-            "cmd+option+d", "cmd+control+d", "cmd+shift+d"
+            "cmd+option+d", "cmd+control+d", "cmd+shift+d",
         ])
-        
+
         systemHotkeysCache = hotkeys
         NSLog("ClipboardPlugin: Loaded %d system hotkeys", hotkeys.count)
     }
-    
+
     /// 创建快捷键字符串
     private func createKeyString(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> String {
         var parts: [String] = []
-        
+
         if modifiers.contains(.command) {
             parts.append("cmd")
         }
@@ -965,17 +1039,17 @@ import Carbon
         if modifiers.contains(.shift) {
             parts.append("shift")
         }
-        
+
         // 将按键代码转换为字符
         if let keyChar = keyCodeToString(keyCode) {
             parts.append(keyChar.lowercased())
         } else {
             parts.append("unknown")
         }
-        
+
         return parts.joined(separator: "+")
     }
-    
+
     /// 按键映射表 - 统一维护按键代码和字符串的对应关系
     private let keyMappingTable: [UInt16: String] = [
         0x00: "a", 0x01: "s", 0x02: "d", 0x03: "f",
@@ -990,18 +1064,20 @@ import Carbon
         0x26: "j", 0x27: "'", 0x28: "k", 0x29: ";",
         0x2A: "\\", 0x2B: ",", 0x2C: "/", 0x2D: "n",
         0x2E: "m", 0x2F: ".", 0x31: "space", 0x33: "delete",
-        0x35: "escape", 0x24: "enter", 0x30: "tab", 0x32: "`"
+        0x35: "escape", 0x24: "enter", 0x30: "tab", 0x32: "`",
     ]
-    
+
     /// 将按键代码转换为字符串
     private func keyCodeToString(_ keyCode: UInt16) -> String? {
         return keyMappingTable[keyCode]
     }
-    
+
     // MARK: - Modern Hotkey Implementation
-    
+
     /// 注册全局快捷键（使用Carbon API确保后台工作）
-    private func registerGlobalHotkey(action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags, ignoreRepeat: Bool) -> Bool {
+    private func registerGlobalHotkey(
+        action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags, ignoreRepeat: Bool
+    ) -> Bool {
         // 取消之前的注册并处理返回值
         let unregOk = unregisterGlobalHotkey(action: action)
         if !unregOk {
@@ -1017,10 +1093,11 @@ import Carbon
 
         // 使用Carbon API注册全局快捷键
         var carbonHotKeyRef: EventHotKeyRef?
-        let hotKeyID = EventHotKeyID(signature: OSType(0x6874666B), // 'htfk'
-                                    id: UInt32(nextHotKeyID))
+        let hotKeyID = EventHotKeyID(
+            signature: OSType(0x6874_666B),  // 'htfk'
+            id: UInt32(nextHotKeyID))
         nextHotKeyID += 1
-        
+
         // 转换修饰符
         var carbonModifiers: UInt32 = 0
         if modifiers.contains(.command) {
@@ -1035,7 +1112,7 @@ import Carbon
         if modifiers.contains(.control) {
             carbonModifiers |= UInt32(controlKey)
         }
-        
+
         // 注册Carbon热键
         let status = RegisterEventHotKey(
             UInt32(keyCode),
@@ -1045,13 +1122,16 @@ import Carbon
             0,
             &carbonHotKeyRef
         )
-        
+
         if status != noErr {
-            NSLog("ClipboardPlugin: Failed to register Carbon hotkey for action %@ with key %@, status: %d", action, keyString, status)
+            NSLog(
+                "ClipboardPlugin: Failed to register Carbon hotkey for action %@ with key %@, status: %d",
+                action, keyString, status)
             // 如果Carbon注册失败，回退到NSEvent
-            return registerNSEventHotkey(action: action, keyCode: keyCode, modifiers: modifiers, ignoreRepeat: ignoreRepeat)
+            return registerNSEventHotkey(
+                action: action, keyCode: keyCode, modifiers: modifiers, ignoreRepeat: ignoreRepeat)
         }
-        
+
         // 保存快捷键配置，包含当前时间用于防抖
         let currentTime = CACurrentMediaTime()
         registeredHotkeys[action] = HotkeyInfo(
@@ -1061,18 +1141,22 @@ import Carbon
             lastTriggerTime: currentTime,
             carbonHotKeyRef: carbonHotKeyRef
         )
-        
+
         // 设置Carbon事件处理器
         if carbonHotKeyRef != nil {
             setupCarbonEventHandler()
         }
-        
-        NSLog("ClipboardPlugin: Successfully registered Carbon hotkey for action %@ with key %@", action, keyString)
+
+        NSLog(
+            "ClipboardPlugin: Successfully registered Carbon hotkey for action %@ with key %@",
+            action, keyString)
         return true
     }
-    
+
     /// 回退到NSEvent监听器
-    private func registerNSEventHotkey(action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags, ignoreRepeat: Bool) -> Bool {
+    private func registerNSEventHotkey(
+        action: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags, ignoreRepeat: Bool
+    ) -> Bool {
         // 保存快捷键配置，包含当前时间用于防抖
         let currentTime = CACurrentMediaTime()
         registeredHotkeys[action] = HotkeyInfo(
@@ -1087,27 +1171,31 @@ import Carbon
         if globalEventMonitor == nil {
             setupGlobalEventMonitor()
         }
-        
-        NSLog("ClipboardPlugin: Successfully registered NSEvent hotkey for action %@ with key %@", action, createKeyString(keyCode: keyCode, modifiers: modifiers))
+
+        NSLog(
+            "ClipboardPlugin: Successfully registered NSEvent hotkey for action %@ with key %@",
+            action, createKeyString(keyCode: keyCode, modifiers: modifiers))
         return true
     }
-    
+
     /// 取消注册全局快捷键
     private func unregisterGlobalHotkey(action: String) -> Bool {
         guard let hotkeyInfo = registeredHotkeys[action] else {
             return true
         }
-        
+
         // 如果是Carbon热键，取消注册
         if let carbonHotKeyRef = hotkeyInfo.carbonHotKeyRef {
             let status = UnregisterEventHotKey(carbonHotKeyRef)
             if status != noErr {
-                NSLog("ClipboardPlugin: Failed to unregister Carbon hotkey for action %@, status: %d", action, status)
+                NSLog(
+                    "ClipboardPlugin: Failed to unregister Carbon hotkey for action %@, status: %d",
+                    action, status)
             }
         }
-        
+
         registeredHotkeys.removeValue(forKey: action)
-        
+
         // 如果没有注册的快捷键了，停止全局监听器
         if registeredHotkeys.isEmpty {
             if globalEventMonitor != nil {
@@ -1115,51 +1203,53 @@ import Carbon
                 globalEventMonitor = nil
                 NSLog("ClipboardPlugin: Stopped global event monitor - no hotkeys registered")
             }
-            
+
             // 停止Carbon事件处理器
             stopCarbonEventHandler()
         }
-        
+
         return true
     }
-    
+
     /// 设置全局事件监听器
     private func setupGlobalEventMonitor() {
         // 使用更高效的事件监听器
-        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) {
+            [weak self] event in
             self?.handleGlobalKeyEvent(event)
         }
         NSLog("ClipboardPlugin: Started global event monitor")
     }
-    
+
     /// 设置Carbon事件处理器
     private func setupCarbonEventHandler() {
         var eventType = EventTypeSpec()
         eventType.eventClass = OSType(kEventClassKeyboard)
         eventType.eventKind = OSType(kEventHotKeyPressed)
-        
-        InstallEventHandler(GetEventDispatcherTarget(), { (nextHandler, theEvent, userData) -> OSStatus in
-            guard let plugin = Unmanaged<ClipboardPlugin>.fromOpaque(userData!).takeUnretainedValue() as? ClipboardPlugin else {
-                return noErr
-            }
-            return plugin.handleCarbonHotKeyEvent(theEvent)
-        }, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), nil)
-        
+
+        InstallEventHandler(
+            GetEventDispatcherTarget(),
+            { (nextHandler, theEvent, userData) -> OSStatus in
+                let plugin = Unmanaged<ClipboardPlugin>.fromOpaque(userData!)
+                    .takeUnretainedValue()
+                return plugin.handleCarbonHotKeyEvent(theEvent)
+            }, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), nil)
+
         NSLog("ClipboardPlugin: Set up Carbon event handler")
     }
-    
+
     /// 停止Carbon事件处理器
     private func stopCarbonEventHandler() {
         // Carbon事件处理器会在插件销毁时自动清理
         NSLog("ClipboardPlugin: Carbon event handler stopped")
     }
-    
+
     /// 处理Carbon热键事件
     private func handleCarbonHotKeyEvent(_ event: EventRef?) -> OSStatus {
         guard let event = event else {
             return noErr
         }
-        
+
         var hotKeyID = EventHotKeyID()
         let status = GetEventParameter(
             event,
@@ -1170,23 +1260,23 @@ import Carbon
             nil,
             &hotKeyID
         )
-        
+
         if status != noErr {
             return noErr
         }
-        
+
         // 查找对应的动作
         for (action, hotkeyInfo) in registeredHotkeys {
             if let carbonRef = hotkeyInfo.carbonHotKeyRef {
                 // 通过Carbon热键引用匹配
                 // 注意：这里简化了匹配逻辑，实际可能需要更复杂的映射
                 let currentTime = CACurrentMediaTime()
-                
+
                 // 防抖检查
                 if currentTime - hotkeyInfo.lastTriggerTime < hotkeyDebounceInterval {
                     continue
                 }
-                
+
                 // 更新最后触发时间
                 var updatedHotkey = hotkeyInfo
                 updatedHotkey = HotkeyInfo(
@@ -1197,39 +1287,39 @@ import Carbon
                     carbonHotKeyRef: carbonRef
                 )
                 registeredHotkeys[action] = updatedHotkey
-                
+
                 // 通知Flutter端
                 DispatchQueue.main.async { [weak self] in
                     self?.channel?.invokeMethod("onHotkeyPressed", arguments: ["action": action])
                 }
-                
+
                 NSLog("ClipboardPlugin: Carbon hotkey pressed for action: %@", action)
                 break
             }
         }
-        
+
         return noErr
     }
-    
+
     /// 处理全局按键事件
     private func handleGlobalKeyEvent(_ event: NSEvent) {
         let keyCode = event.keyCode
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
         let currentTime = CACurrentMediaTime()
-        
+
         // 检查是否匹配任何注册的快捷键
         for (action, hotkey) in registeredHotkeys {
             // 忽略重复按键
             if hotkey.ignoreRepeat && event.isARepeat { continue }
-            
+
             // 检查按键和修饰符是否匹配
             guard keyCode == hotkey.keyCode && modifiers == hotkey.modifiers else { continue }
-            
+
             // 防抖检查 - 避免短时间内重复触发
             if currentTime - hotkey.lastTriggerTime < hotkeyDebounceInterval {
                 continue
             }
-            
+
             // 更新最后触发时间
             var updatedHotkey = hotkey
             updatedHotkey = HotkeyInfo(
@@ -1240,27 +1330,27 @@ import Carbon
                 carbonHotKeyRef: hotkey.carbonHotKeyRef
             )
             registeredHotkeys[action] = updatedHotkey
-            
+
             // 通知Flutter端
             DispatchQueue.main.async { [weak self] in
                 self?.channel?.invokeMethod("onHotkeyPressed", arguments: ["action": action])
             }
-            
+
             // 找到匹配的快捷键后立即退出循环
             break
         }
     }
-    
+
     /// 解析按键代码
     private func parseKeyCode(from components: [String]) -> UInt16? {
         let keyComponent = components.last?.lowercased()
         return keyMappingTable.first(where: { $0.value == keyComponent })?.key
     }
-    
+
     /// 解析修饰键
     private func parseModifiers(from components: [String]) -> NSEvent.ModifierFlags {
         var modifiers: NSEvent.ModifierFlags = []
-        
+
         for component in components {
             switch component.lowercased() {
             case "cmd", "command": modifiers.insert(.command)
@@ -1270,12 +1360,12 @@ import Carbon
             default: break
             }
         }
-        
+
         return modifiers
     }
-    
+
     // MARK: - 开机自启动功能
-    
+
     /// 检查是否启用了开机自启动
     private func isAutostartEnabled(result: @escaping FlutterResult) {
         if #available(macOS 13.0, *) {
@@ -1291,7 +1381,7 @@ import Carbon
         let isEnabled = FileManager.default.fileExists(atPath: plistPath.path)
         result(isEnabled)
     }
-    
+
     /// 启用开机自启动
     private func enableAutostart(result: @escaping FlutterResult) {
         if #available(macOS 13.0, *) {
@@ -1301,7 +1391,10 @@ import Carbon
                 return
             } catch {
                 NSLog("SMAppService register failed: %@", error.localizedDescription)
-                result(FlutterError(code: "SM_REGISTER_FAILED", message: error.localizedDescription, details: nil))
+                result(
+                    FlutterError(
+                        code: "SM_REGISTER_FAILED", message: error.localizedDescription,
+                        details: nil))
                 return
             }
         }
@@ -1311,31 +1404,35 @@ import Carbon
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
         do {
-            try FileManager.default.createDirectory(at: launchAgentsPath, withIntermediateDirectories: true, attributes: nil)
+            try FileManager.default.createDirectory(
+                at: launchAgentsPath, withIntermediateDirectories: true, attributes: nil)
         } catch {
             NSLog("创建 LaunchAgents 目录失败: %@", error.localizedDescription)
-            result(FlutterError(code: "LAUNCH_AGENTS_DIR_FAILED", message: error.localizedDescription, details: nil))
+            result(
+                FlutterError(
+                    code: "LAUNCH_AGENTS_DIR_FAILED", message: error.localizedDescription,
+                    details: nil))
             return
         }
         let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")
         let plistContent = """
-        <?xml version=\"1.0\" encoding=\"UTF-8\"?>
-        <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-        <plist version=\"1.0\">
-        <dict>
-            <key>Label</key>
-            <string>\(bundleIdentifier)</string>
-            <key>ProgramArguments</key>
-            <array>
-                <string>\(appPath)/Contents/MacOS/clip_flow_pro</string>
-            </array>
-            <key>RunAtLoad</key>
-            <true/>
-            <key>KeepAlive</key>
-            <false/>
-        </dict>
-        </plist>
-        """
+            <?xml version=\"1.0\" encoding=\"UTF-8\"?>
+            <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+            <plist version=\"1.0\">
+            <dict>
+                <key>Label</key>
+                <string>\(bundleIdentifier)</string>
+                <key>ProgramArguments</key>
+                <array>
+                    <string>\(appPath)/Contents/MacOS/clip_flow_pro</string>
+                </array>
+                <key>RunAtLoad</key>
+                <true/>
+                <key>KeepAlive</key>
+                <false/>
+            </dict>
+            </plist>
+            """
         do {
             try plistContent.write(to: plistPath, atomically: true, encoding: .utf8)
             let task = Process()
@@ -1346,20 +1443,27 @@ import Carbon
             if task.terminationStatus == 0 {
                 result(true)
             } else {
-                result(FlutterError(code: "LAUNCHCTL_LOAD_FAILED", message: "launchctl load failed", details: task.terminationStatus))
+                result(
+                    FlutterError(
+                        code: "LAUNCHCTL_LOAD_FAILED", message: "launchctl load failed",
+                        details: task.terminationStatus))
             }
         } catch {
             NSLog("创建开机自启动配置失败: %@", error.localizedDescription)
-            result(FlutterError(code: "CREATE_PLIST_FAILED", message: error.localizedDescription, details: nil))
+            result(
+                FlutterError(
+                    code: "CREATE_PLIST_FAILED", message: error.localizedDescription, details: nil))
         }
     }
 
     // MARK: - Files & Folders 权限：安全书签
 
     /// 让用户选择目录并创建持久化安全书签（需要 entitlements: app-scope bookmarks）
-    private func pickDirectoryForBookmark(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    private func pickDirectoryForBookmark(call: FlutterMethodCall, result: @escaping FlutterResult)
+    {
         guard let args = call.arguments as? [String: Any],
-              let key = args["key"] as? String else {
+            let key = args["key"] as? String
+        else {
             result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing 'key'", details: nil))
             return
         }
@@ -1373,12 +1477,17 @@ import Carbon
             let response = panel.runModal()
             if response == .OK, let url = panel.url {
                 do {
-                    let bookmark = try url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+                    let bookmark = try url.bookmarkData(
+                        options: [.withSecurityScope], includingResourceValuesForKeys: nil,
+                        relativeTo: nil)
                     UserDefaults.standard.set(bookmark, forKey: "bookmark.\(key)")
                     UserDefaults.standard.synchronize()
                     result(["key": key, "path": url.path])
                 } catch {
-                    result(FlutterError(code: "BOOKMARK_FAILED", message: error.localizedDescription, details: nil))
+                    result(
+                        FlutterError(
+                            code: "BOOKMARK_FAILED", message: error.localizedDescription,
+                            details: nil))
                 }
             } else {
                 result(nil)
@@ -1389,36 +1498,52 @@ import Carbon
     /// 开始访问指定安全书签（解析并 startAccessingSecurityScopedResource）
     private func startBookmarkAccess(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let key = args["key"] as? String else {
+            let key = args["key"] as? String
+        else {
             result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing 'key'", details: nil))
             return
         }
         guard let data = UserDefaults.standard.data(forKey: "bookmark.\(key)") else {
-            result(FlutterError(code: "BOOKMARK_NOT_FOUND", message: "Bookmark not found for key: \(key)", details: nil))
+            result(
+                FlutterError(
+                    code: "BOOKMARK_NOT_FOUND", message: "Bookmark not found for key: \(key)",
+                    details: nil))
             return
         }
         var isStale = false
         do {
-            let url = try URL(resolvingBookmarkData: data, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &isStale)
+            let url = try URL(
+                resolvingBookmarkData: data, options: [.withSecurityScope], relativeTo: nil,
+                bookmarkDataIsStale: &isStale)
             if isStale {
-                let newData = try url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+                let newData = try url.bookmarkData(
+                    options: [.withSecurityScope], includingResourceValuesForKeys: nil,
+                    relativeTo: nil)
                 UserDefaults.standard.set(newData, forKey: "bookmark.\(key)")
             }
             if url.startAccessingSecurityScopedResource() {
                 accessingBookmarks[key] = url
                 result(["key": key, "path": url.path])
             } else {
-                result(FlutterError(code: "BOOKMARK_ACCESS_DENIED", message: "Failed to start accessing bookmark for key: \(key)", details: nil))
+                result(
+                    FlutterError(
+                        code: "BOOKMARK_ACCESS_DENIED",
+                        message: "Failed to start accessing bookmark for key: \(key)", details: nil)
+                )
             }
         } catch {
-            result(FlutterError(code: "BOOKMARK_RESOLVE_FAILED", message: error.localizedDescription, details: nil))
+            result(
+                FlutterError(
+                    code: "BOOKMARK_RESOLVE_FAILED", message: error.localizedDescription,
+                    details: nil))
         }
     }
 
     /// 停止访问指定安全书签
     private func stopBookmarkAccess(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let key = args["key"] as? String else {
+            let key = args["key"] as? String
+        else {
             result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing 'key'", details: nil))
             return
         }
@@ -1433,7 +1558,8 @@ import Carbon
     /// 删除已保存的安全书签
     private func removeBookmark(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let key = args["key"] as? String else {
+            let key = args["key"] as? String
+        else {
             result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing 'key'", details: nil))
             return
         }
@@ -1443,7 +1569,7 @@ import Carbon
         UserDefaults.standard.removeObject(forKey: "bookmark.\(key)")
         result(true)
     }
-    
+
     /// 禁用开机自启动
     private func disableAutostart(result: @escaping FlutterResult) {
         if #available(macOS 13.0, *) {
@@ -1453,7 +1579,10 @@ import Carbon
                 return
             } catch {
                 NSLog("SMAppService unregister failed: %@", error.localizedDescription)
-                result(FlutterError(code: "SM_UNREGISTER_FAILED", message: error.localizedDescription, details: nil))
+                result(
+                    FlutterError(
+                        code: "SM_UNREGISTER_FAILED", message: error.localizedDescription,
+                        details: nil))
                 return
             }
         }
@@ -1472,7 +1601,10 @@ import Carbon
                 result(true)
             } catch {
                 NSLog("删除开机自启动配置失败: %@", error.localizedDescription)
-                result(FlutterError(code: "REMOVE_PLIST_FAILED", message: error.localizedDescription, details: nil))
+                result(
+                    FlutterError(
+                        code: "REMOVE_PLIST_FAILED", message: error.localizedDescription,
+                        details: nil))
             }
         } else {
             result(true)

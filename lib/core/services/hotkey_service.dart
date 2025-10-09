@@ -298,7 +298,9 @@ class HotkeyService {
           );
 
           // 延迟重试
-          await Future.delayed(Duration(milliseconds: 500 * (retryCount + 1)));
+          await Future<void>.delayed(
+            Duration(milliseconds: 500 * (retryCount + 1)),
+          );
           return registerHotkey(config);
         } else {
           await Log.e(

@@ -27,6 +27,9 @@ class ClipboardPlugin : public flutter::Plugin {
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
   // Method implementations
+  void GetClipboardFormats(
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+
   void GetClipboardType(
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   

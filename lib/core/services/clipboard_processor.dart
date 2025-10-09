@@ -1,17 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/clipboard_data.dart';
 import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
 import 'package:clip_flow_pro/core/services/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/ocr_service.dart';
 import 'package:clip_flow_pro/core/services/path_service.dart';
 import 'package:clip_flow_pro/core/services/preferences_service.dart';
+import 'package:clip_flow_pro/core/services/universal_clipboard_detector.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' as flutter;
 
 /// 剪贴板内容处理器
 ///
@@ -22,11 +25,13 @@ import 'package:flutter/services.dart';
 /// - 图片处理和缩略图生成
 /// - 富文本内容处理
 class ClipboardProcessor {
-  static const MethodChannel _platformChannel = MethodChannel(
+  static const flutter.MethodChannel _platformChannel = flutter.MethodChannel(
     'clipboard_service',
   );
 
   final ClipboardDetector _detector = ClipboardDetector();
+  final UniversalClipboardDetector _universalDetector =
+      UniversalClipboardDetector();
 
   // 缓存配置
   static const int _maxCacheSize = 100;
@@ -48,105 +53,476 @@ class ClipboardProcessor {
   Future<ClipItem?> processClipboardContent() async {
     try {
       // 获取原生剪贴板数据
-      final nativeData = await _getNativeClipboardData();
-      if (nativeData == null) return null;
+      final clipboardData = await _getNativeClipboardData();
+      if (clipboardData == null) return null;
 
       // 检查缓存
-      final contentHash = _calculateContentHash(nativeData);
+      final contentHash = _calculateContentHash(clipboardData);
       if (_isCached(contentHash)) {
         return null; // 内容未变化
       }
 
-      // 处理不同类型的内容
-      ClipItem? item;
+      // 使用通用检测器检测内容类型
+      final detectionResult = await _universalDetector.detect(clipboardData);
 
-      if (nativeData.containsKey('image')) {
-        item = await _processImageContent(nativeData, contentHash);
-      } else if (nativeData.containsKey('files')) {
-        item = await _processFileContent(nativeData, contentHash);
-      } else if (nativeData.containsKey('rtf')) {
-        item = await _processRichTextContent(nativeData, contentHash);
-      } else if (nativeData.containsKey('html')) {
-        item = await _processHtmlContent(nativeData, contentHash);
-      } else if (nativeData.containsKey('text')) {
-        item = await _processTextContent(nativeData, contentHash);
+      // 创建 ClipItem
+      final item = detectionResult.createClipItem(id: contentHash);
+
+      // 特殊处理某些类型的内容
+      ClipItem? processedItem;
+      switch (detectionResult.detectedType) {
+        case ClipType.image:
+          processedItem = await _processImageData(detectionResult, contentHash);
+        case ClipType.file:
+        case ClipType.audio:
+        case ClipType.video:
+          processedItem = await _processFileData(detectionResult, contentHash);
+        default:
+          processedItem = item;
       }
 
-      if (item != null) {
-        _updateCache(contentHash, item);
+      if (processedItem != null) {
+        _updateCache(contentHash, processedItem);
       }
 
-      return item;
-    } on Exception catch (_) {
+      return processedItem;
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to process clipboard content',
+        tag: 'ClipboardProcessor',
+        error: e,
+      );
       return null;
     }
   }
 
   /// 获取原生剪贴板数据
-  Future<Map<String, dynamic>?> _getNativeClipboardData() async {
+  Future<ClipboardData?> _getNativeClipboardData() async {
     try {
-      // 使用现有的平台方法获取剪贴板类型和数据
-      final typeResult = await _platformChannel
-          .invokeMethod<Map<Object?, Object?>>('getClipboardType');
-      if (typeResult == null) return null;
+      // 初始化通用检测器
+      _universalDetector.initialize();
 
-      final typeData = typeResult.cast<String, dynamic>();
-      final clipboardType = typeData['type'] as String?;
+      // 使用新的平台方法获取所有格式的剪贴板数据
+      final formatsResult = await _platformChannel
+          .invokeMethod<Map<Object?, Object?>>('getClipboardFormats');
+      if (formatsResult == null) return null;
 
-      if (clipboardType == null) return null;
+      final formatsData = formatsResult.cast<String, dynamic>();
 
-      // 根据类型获取相应的数据
-      final result = <String, dynamic>{'type': clipboardType};
+      // 创建 ClipboardData 对象
+      final sequence =
+          formatsData['sequence'] as int? ??
+          DateTime.now().millisecondsSinceEpoch;
 
-      switch (clipboardType) {
-        case 'image':
-          final imageData = await _platformChannel.invokeMethod<Uint8List>(
-            'getClipboardImageData',
-          );
-          if (imageData != null) {
-            result['image'] = imageData;
+      // 处理时间戳 - macOS 返回的是 double 类型（秒数），需要转换为 int（毫秒数）
+      int timestamp;
+      final timestampValue = formatsData['timestamp'];
+      if (timestampValue is double) {
+        timestamp = (timestampValue * 1000).round();
+      } else if (timestampValue is int) {
+        timestamp = timestampValue;
+      } else {
+        timestamp = DateTime.now().millisecondsSinceEpoch;
+      }
+      final formats = <ClipboardFormat, dynamic>{};
+
+      // 先处理嵌套的 formats 字段（macOS 特有）
+      if (formatsData.containsKey('formats') && formatsData['formats'] is Map) {
+        final nestedFormats = formatsData['formats'] as Map<Object?, Object?>;
+
+        // 解析嵌套格式中的文件
+        if (nestedFormats.containsKey('files') &&
+            nestedFormats['files'] != null) {
+          final filesData = nestedFormats['files'] as List<dynamic>?;
+          if (filesData != null && filesData.isNotEmpty) {
+            formats[ClipboardFormat.files] = filesData.cast<String>();
+            await Log.i(
+              'Found files in nested formats',
+              tag: 'ClipboardProcessor',
+              fields: {
+                'fileCount': filesData.length,
+                'files': filesData.take(3).toList(), // 只记录前3个文件路径
+              },
+            );
           }
+        }
 
-        case 'file':
-          final filePaths = await _platformChannel.invokeMethod<List<dynamic>>(
-            'getClipboardFilePaths',
+        // 解析嵌套格式中的图片
+        if (nestedFormats.containsKey('image') &&
+            nestedFormats['image'] != null) {
+          final imageData = nestedFormats['image'];
+          await Log.i(
+            'Checking nested image data',
+            tag: 'ClipboardProcessor',
+            fields: {
+              'imageDataType': imageData.runtimeType.toString(),
+              'imageDataIsNull': imageData == null,
+              'imageDataLength': imageData is List ? imageData.length : 'N/A',
+              'isUint8List': imageData is Uint8List,
+            },
           );
-          if (filePaths != null && filePaths.isNotEmpty) {
-            result['files'] = filePaths;
-          }
-
-        case 'rtf':
-          final rtfData = await _platformChannel
-              .invokeMethod<Map<Object?, Object?>>('getRichTextData');
-          if (rtfData != null) {
-            final rtfMap = rtfData.cast<String, dynamic>();
-            result['rtf'] = rtfMap['rtf'];
-            if (rtfMap.containsKey('text')) {
-              result['text'] = rtfMap['text'];
+          if (imageData is Uint8List && imageData.isNotEmpty) {
+            formats[ClipboardFormat.image] = imageData;
+            await Log.i(
+              'Found image in nested formats',
+              tag: 'ClipboardProcessor',
+              fields: {'imageSize': imageData.length},
+            );
+          } else if (imageData is List && imageData.isNotEmpty) {
+            // 尝试将 List<dynamic> 转换为 Uint8List
+            try {
+              final uint8List = Uint8List.fromList(imageData.cast<int>());
+              formats[ClipboardFormat.image] = uint8List;
+              await Log.i(
+                'Converted List to Uint8List in nested formats',
+                tag: 'ClipboardProcessor',
+                fields: {'imageSize': uint8List.length},
+              );
+            } catch (e) {
+              await Log.e(
+                'Failed to convert nested image data',
+                tag: 'ClipboardProcessor',
+                error: e,
+              );
             }
           }
+        }
 
-        case 'html':
-          // HTML 内容通过 typeData 中的 content 字段获取
-          if (typeData.containsKey('content')) {
-            result['html'] = typeData['content'];
-          }
+        // 解析嵌套格式中的RTF
+        if (nestedFormats.containsKey('rtf') && nestedFormats['rtf'] != null) {
+          formats[ClipboardFormat.rtf] = nestedFormats['rtf'];
+        }
 
-        default:
-          // 对于文本类型，使用 Flutter 的 Clipboard API
-          final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-          if (clipboardData?.text != null) {
-            result['text'] = clipboardData!.text;
-          }
+        // 解析嵌套格式中的HTML
+        if (nestedFormats.containsKey('html') &&
+            nestedFormats['html'] != null) {
+          formats[ClipboardFormat.html] = nestedFormats['html'];
+        }
+
+        // 解析嵌套格式中的文本
+        if (nestedFormats.containsKey('text') &&
+            nestedFormats['text'] != null) {
+          formats[ClipboardFormat.text] = nestedFormats['text'];
+        }
       }
 
-      return result;
-    } on Exception catch (_) {
+      // 解析各种格式（直接格式，用于其他平台）
+      if (formatsData.containsKey('rtf') && formatsData['rtf'] != null) {
+        formats[ClipboardFormat.rtf] = formatsData['rtf'];
+      }
+
+      if (formatsData.containsKey('html') && formatsData['html'] != null) {
+        formats[ClipboardFormat.html] = formatsData['html'];
+      }
+
+      if (formatsData.containsKey('files') && formatsData['files'] != null) {
+        final filesData = formatsData['files'] as List<dynamic>?;
+        if (filesData != null && filesData.isNotEmpty) {
+          formats[ClipboardFormat.files] = filesData.cast<String>();
+          await Log.i(
+            'Found files in direct format',
+            tag: 'ClipboardProcessor',
+            fields: {
+              'fileCount': filesData.length,
+              'files': filesData.take(3).toList(), // 只记录前3个文件路径
+            },
+          );
+        }
+      }
+
+      if (formatsData.containsKey('image') && formatsData['image'] != null) {
+        final imageData = formatsData['image'];
+        await Log.i(
+          'Checking direct image data',
+          tag: 'ClipboardProcessor',
+          fields: {
+            'imageDataType': imageData.runtimeType.toString(),
+            'imageDataIsNull': imageData == null,
+            'imageDataLength': imageData is List ? imageData.length : 'N/A',
+            'isUint8List': imageData is Uint8List,
+          },
+        );
+
+        if (imageData is Uint8List && imageData.isNotEmpty) {
+          formats[ClipboardFormat.image] = imageData;
+          await Log.i(
+            'Found image in direct format',
+            tag: 'ClipboardProcessor',
+            fields: {'imageSize': imageData.length},
+          );
+        } else if (imageData is List && imageData.isNotEmpty) {
+          // 尝试将 List<dynamic> 转换为 Uint8List
+          try {
+            final uint8List = Uint8List.fromList(imageData.cast<int>());
+            formats[ClipboardFormat.image] = uint8List;
+            await Log.i(
+              'Converted List to Uint8List in direct format',
+              tag: 'ClipboardProcessor',
+              fields: {'imageSize': uint8List.length},
+            );
+          } catch (e) {
+            await Log.e(
+              'Failed to convert direct image data',
+              tag: 'ClipboardProcessor',
+              error: e,
+            );
+          }
+        }
+      }
+
+      if (formatsData.containsKey('text') && formatsData['text'] != null) {
+        formats[ClipboardFormat.text] = formatsData['text'];
+      }
+
+      // 如果没有任何格式，尝试获取基本文本
+      if (formats.isEmpty) {
+        final clipboardData = await flutter.Clipboard.getData(
+          flutter.Clipboard.kTextPlain,
+        );
+        if (clipboardData?.text != null) {
+          formats[ClipboardFormat.text] = clipboardData!.text;
+        }
+      }
+
+      if (formats.isEmpty) return null;
+
+      return ClipboardData(
+        sequence: sequence,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
+        formats: formats,
+      );
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to get native clipboard data',
+        tag: 'ClipboardProcessor',
+        error: e,
+      );
       return null;
     }
   }
 
-  /// 处理图片内容
+  /// 处理图片数据（新版本）
+  Future<ClipItem?> _processImageData(
+    ClipboardDetectionResult detectionResult,
+    String contentHash,
+  ) async {
+    try {
+      final imageData = detectionResult.originalData.getFormat<Uint8List>(
+        ClipboardFormat.image,
+      );
+      if (imageData == null || imageData.isEmpty) return null;
+
+      // 限制图片大小
+      if (imageData.length > _maxContentLength) {
+        return null;
+      }
+
+      // 保存图片到磁盘
+      final extension = _inferImageExtension(imageData);
+      final relativePath = await _saveMediaToDisk(
+        bytes: imageData,
+        type: 'image',
+        suggestedExt: extension,
+      );
+
+      if (relativePath.isEmpty) return null;
+
+      // 生成缩略图
+      final thumbnail = await _generateThumbnail(imageData);
+
+      // 提取元数据
+      final metadata = await _extractImageMetadata(imageData);
+
+      // OCR文字识别
+      String? ocrText;
+      await Log.i(
+        'Starting OCR processing for image',
+        tag: 'ClipboardProcessor',
+        fields: {
+          'imageSize': imageData.length,
+          'contentHash': contentHash,
+        },
+      );
+
+      try {
+        // 加载用户偏好以获取 OCR 语言与置信度阈值
+        final prefs = await PreferencesService().loadPreferences();
+
+        // 如果未启用OCR，跳过识别
+        if (!prefs.enableOCR) {
+          await Log.d(
+            'OCR disabled by user preferences',
+            tag: 'ClipboardProcessor',
+          );
+        } else {
+          final ocrService = OcrServiceFactory.getInstance();
+          final ocrResult = await ocrService.recognizeText(
+            imageData,
+            language: prefs.ocrLanguage,
+            minConfidence: prefs.ocrMinConfidence,
+          );
+
+          if (ocrResult != null && ocrResult.text.isNotEmpty) {
+            ocrText = ocrResult.text;
+            // 将OCR置信度添加到元数据中
+            metadata['ocrConfidence'] = ocrResult.confidence;
+
+            await Log.i(
+              'OCR processing completed successfully',
+              tag: 'ClipboardProcessor',
+              fields: {
+                'textLength': ocrText.length,
+                'confidence': ocrResult.confidence,
+                'contentHash': contentHash,
+              },
+            );
+          } else {
+            await Log.w(
+              'OCR processing returned no text',
+              tag: 'ClipboardProcessor',
+              fields: {
+                'contentHash': contentHash,
+                'resultNull': ocrResult == null,
+                'textEmpty': ocrResult?.text.isEmpty ?? true,
+              },
+            );
+          }
+        }
+      } on Exception catch (e) {
+        // OCR失败不影响图片保存
+        metadata['ocrError'] = e.toString();
+
+        await Log.e(
+          'OCR processing failed',
+          tag: 'ClipboardProcessor',
+          error: e,
+          fields: {
+            'contentHash': contentHash,
+            'imageSize': imageData.length,
+          },
+        );
+      }
+
+      // 创建新的检测结果，包含OCR文本
+      final updatedDetectionResult = ClipboardDetectionResult(
+        detectedType: detectionResult.detectedType,
+        contentToSave: detectionResult.contentToSave,
+        originalData: detectionResult.originalData,
+        confidence: detectionResult.confidence,
+        formatAnalysis: detectionResult.formatAnalysis,
+        shouldSaveOriginal: detectionResult.shouldSaveOriginal,
+        ocrText: ocrText,
+      );
+
+      return updatedDetectionResult.createClipItem(id: contentHash);
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to process image data',
+        tag: 'ClipboardProcessor',
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  /// 处理文件数据（新版本）
+  Future<ClipItem?> _processFileData(
+    ClipboardDetectionResult detectionResult,
+    String contentHash,
+  ) async {
+    try {
+      final files = detectionResult.originalData.getFormat<List<String>>(
+        ClipboardFormat.files,
+      );
+      if (files == null || files.isEmpty) return null;
+
+      final filePath = files.first;
+      final file = File(filePath);
+
+      if (!file.existsSync()) return null;
+
+      // 检测文件类型
+      final fileType = _detector.detectFileType(filePath);
+
+      // 保存到应用沙盒（统一管理文件），并保留原始扩展名与原始文件名
+      String? relativePath;
+      try {
+        final bytes = await file.readAsBytes();
+        final ext = file.path.split('.').length > 1
+            ? file.path.split('.').last.toLowerCase()
+            : null;
+
+        // 获取原始文件名（不包含路径）
+        final originalFileName = file.path.split('/').last;
+
+        relativePath = await _saveMediaToDisk(
+          bytes: bytes,
+          type: 'file',
+          suggestedExt: ext,
+          // 传入原始文件名，保留原始名称
+          originalName: originalFileName,
+          keepOriginalName: true,
+        );
+      } on Exception catch (e) {
+        await Log.e(
+          'Failed to save file data',
+          tag: 'ClipboardProcessor',
+          error: e,
+        );
+        // 如果保存失败，继续使用原始路径，但这可能导致沙盒不可见
+      }
+
+      // 提取元数据（补充文件名与原始路径）
+      final metadata = await _extractFileMetadata(file, fileType);
+      final fileName = file.path.split('/').last;
+      metadata['fileName'] = fileName;
+      metadata['originalPath'] = file.path;
+
+      // 处理图片文件的缩略图
+      List<int>? thumbnail;
+      if (fileType == ClipType.image) {
+        // 优先使用保存后的文件生成缩略图
+        try {
+          if (relativePath != null && relativePath.isNotEmpty) {
+            final documentsDirectory = await PathService.instance
+                .getDocumentsDirectory();
+            final savedFile = File('${documentsDirectory.path}/$relativePath');
+            if (savedFile.existsSync()) {
+              thumbnail = await _generateFileThumbnail(savedFile);
+            } else {
+              thumbnail = await _generateFileThumbnail(file);
+            }
+          } else {
+            thumbnail = await _generateFileThumbnail(file);
+          }
+        } on Exception catch (_) {
+          // 缩略图生成失败不影响创建条目
+        }
+      }
+
+      return ClipItem(
+        type: fileType,
+        content: '',
+        filePath: (relativePath != null && relativePath.isNotEmpty)
+            ? relativePath
+            : filePath,
+        thumbnail: thumbnail,
+        metadata: metadata,
+        id: contentHash,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to process file data',
+        tag: 'ClipboardProcessor',
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  /// 处理图片内容（旧版本，保留兼容性）
   Future<ClipItem?> _processImageContent(
     Map<String, dynamic> data,
     String contentHash,
@@ -397,6 +773,16 @@ class ClipboardProcessor {
         return _processCodeContent(plainText, contentHash);
       }
 
+      // 如果没有plainText，从HTML中提取纯文本并检查是否为代码
+      if (plainText == null || plainText.isEmpty) {
+        // 尝试从HTML中提取纯文本
+        final extractedText = _extractTextFromHtml(htmlContent);
+        if (extractedText.isNotEmpty &&
+            _detector.detectContentType(extractedText) == ClipType.code) {
+          return _processCodeContent(extractedText, contentHash);
+        }
+      }
+
       // 提取元数据
       final metadata = await _extractTextMetadata(htmlContent, ClipType.html);
 
@@ -411,6 +797,59 @@ class ClipboardProcessor {
     } on Exception catch (_) {
       return null;
     }
+  }
+
+  /// 从HTML中提取纯文本（保留代码格式）
+  String _extractTextFromHtml(String htmlContent) {
+    // 改进的HTML文本提取，保留代码缩进和换行
+    var text = htmlContent;
+
+    // 处理代码块 - 保留<pre>标签内的内容
+    final codeBlockPattern = RegExp('<pre[^>]*>(.*?)</pre>', dotAll: true);
+    final codeBlocks = <String>[];
+    var blockIndex = 0;
+
+    // 暂时替换代码块为占位符
+    text = text.replaceAllMapped(codeBlockPattern, (match) {
+      final codeContent = match.group(1)!;
+      // 保留代码内容，只移除HTML标签但保留空白字符
+      final cleanCode = codeContent
+          .replaceAll(RegExp('<[^>]*>'), '')
+          .replaceAll(RegExp('&lt;'), '<')
+          .replaceAll(RegExp('&gt;'), '>')
+          .replaceAll(RegExp('&amp;'), '&')
+          .replaceAll(RegExp('&nbsp;'), ' ')
+          .replaceAll(RegExp('&quot;'), '"');
+
+      codeBlocks.add(cleanCode);
+      return '__CODE_BLOCK_${blockIndex++}__';
+    });
+
+    // 处理一般文本 - 移除HTML标签但保留基本的换行
+    text = text
+        .replaceAll(
+          RegExp('<br[^>]*>', caseSensitive: false),
+          '\n',
+        ) // <br> 转换为换行
+        .replaceAll(RegExp('</p>', caseSensitive: false), '\n\n') // </p> 转换为双换行
+        .replaceAll(
+          RegExp('</div>', caseSensitive: false),
+          '\n',
+        ) // </div> 转换为换行
+        .replaceAll(RegExp('<[^>]*>'), '') // 移除其他HTML标签
+        .replaceAll(RegExp('&lt;'), '<')
+        .replaceAll(RegExp('&gt;'), '>')
+        .replaceAll(RegExp('&amp;'), '&')
+        .replaceAll(RegExp('&nbsp;'), ' ')
+        .replaceAll(RegExp('&quot;'), '"')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n'); // 压缩多个换行
+
+    // 恢复代码块
+    for (var i = 0; i < codeBlocks.length; i++) {
+      text = text.replaceFirst('__CODE_BLOCK_${i}__', codeBlocks[i]);
+    }
+
+    return text.trim();
   }
 
   /// 处理文本内容
@@ -518,8 +957,12 @@ class ClipboardProcessor {
   }
 
   /// 计算内容哈希
-  String _calculateContentHash(Map<String, dynamic> data) {
-    final content = json.encode(data);
+  String _calculateContentHash(ClipboardData data) {
+    final contentMap = {
+      'sequence': data.sequence,
+      'formats': data.formats.map((k, v) => MapEntry(k.value, v.toString())),
+    };
+    final content = json.encode(contentMap);
     return sha256.convert(utf8.encode(content)).toString().substring(0, 16);
   }
 

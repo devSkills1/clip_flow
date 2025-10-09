@@ -9,6 +9,7 @@
 #include <memory>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -43,8 +44,10 @@ ClipboardPlugin::~ClipboardPlugin() {}
 void ClipboardPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue>& method_call,
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-  
-  if (method_call.method_name().compare("getClipboardType") == 0) {
+
+  if (method_call.method_name().compare("getClipboardFormats") == 0) {
+    GetClipboardFormats(std::move(result));
+  } else if (method_call.method_name().compare("getClipboardType") == 0) {
     GetClipboardType(std::move(result));
   } else if (method_call.method_name().compare("getClipboardSequence") == 0) {
     GetClipboardSequence(std::move(result));
@@ -57,6 +60,130 @@ void ClipboardPlugin::HandleMethodCall(
   } else {
     result->NotImplemented();
   }
+}
+
+void ClipboardPlugin::GetClipboardFormats(
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+
+  if (!OpenClipboard(nullptr)) {
+    result->Error("CLIPBOARD_ERROR", "Failed to open clipboard");
+    return;
+  }
+
+  flutter::EncodableMap formats_data;
+
+  // 添加序列号和时间戳
+  DWORD sequence = GetClipboardSequenceNumber();
+  auto now = std::chrono::system_clock::now();
+  auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+      now.time_since_epoch()).count();
+
+  formats_data[flutter::EncodableValue("sequence")] = flutter::EncodableValue(static_cast<int64_t>(sequence));
+  formats_data[flutter::EncodableValue("timestamp")] = flutter::EncodableValue(static_cast<int64_t>(timestamp));
+
+  // 检查并收集所有可用格式
+
+  // RTF 格式
+  if (IsClipboardFormatAvailable(RegisterClipboardFormatW(L"Rich Text Format"))) {
+    HANDLE hData = GetClipboardData(RegisterClipboardFormatW(L"Rich Text Format"));
+    if (hData != nullptr) {
+      char* pszText = static_cast<char*>(GlobalLock(hData));
+      if (pszText != nullptr) {
+        std::string rtfText(pszText);
+        formats_data[flutter::EncodableValue("rtf")] = flutter::EncodableValue(rtfText);
+        GlobalUnlock(hData);
+      }
+    }
+  }
+
+  // HTML 格式
+  if (IsClipboardFormatAvailable(RegisterClipboardFormatW(L"HTML Format"))) {
+    HANDLE hData = GetClipboardData(RegisterClipboardFormatW(L"HTML Format"));
+    if (hData != nullptr) {
+      char* pszText = static_cast<char*>(GlobalLock(hData));
+      if (pszText != nullptr) {
+        std::string htmlText(pszText);
+        formats_data[flutter::EncodableValue("html")] = flutter::EncodableValue(htmlText);
+        GlobalUnlock(hData);
+      }
+    }
+  }
+
+  // 文件格式
+  if (IsClipboardFormatAvailable(CF_HDROP)) {
+    HANDLE hData = GetClipboardData(CF_HDROP);
+    if (hData != nullptr) {
+      HDROP hDrop = static_cast<HDROP>(hData);
+      UINT fileCount = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+
+      std::vector<flutter::EncodableValue> file_paths;
+      wchar_t filePath[MAX_PATH];
+
+      for (UINT i = 0; i < fileCount; i++) {
+        if (DragQueryFileW(hDrop, i, filePath, MAX_PATH)) {
+          std::wstring ws(filePath);
+          std::string path(ws.begin(), ws.end());
+          file_paths.push_back(flutter::EncodableValue(path));
+        }
+      }
+
+      if (!file_paths.empty()) {
+        formats_data[flutter::EncodableValue("files")] = flutter::EncodableValue(file_paths);
+      }
+    }
+  }
+
+  // 图片格式 (DIB)
+  if (IsClipboardFormatAvailable(CF_DIB)) {
+    HANDLE hData = GetClipboardData(CF_DIB);
+    if (hData != nullptr) {
+      BITMAPINFO* pBitmapInfo = static_cast<BITMAPINFO*>(GlobalLock(hData));
+      if (pBitmapInfo != nullptr) {
+        SIZE_T dataSize = GlobalSize(hData);
+        std::vector<uint8_t> image_data(dataSize);
+        memcpy(image_data.data(), pBitmapInfo, dataSize);
+
+        // 转换为 Flutter EncodableList
+        std::vector<flutter::EncodableValue> image_vector;
+        image_vector.reserve(image_data.size());
+        for (const auto& byte : image_data) {
+          image_vector.push_back(flutter::EncodableValue(static_cast<int>(byte)));
+        }
+
+        formats_data[flutter::EncodableValue("image")] = flutter::EncodableValue(image_vector);
+        GlobalUnlock(hData);
+      }
+    }
+  }
+
+  // 文本格式 (Unicode)
+  if (IsClipboardFormatAvailable(CF_UNICODETEXT)) {
+    HANDLE hData = GetClipboardData(CF_UNICODETEXT);
+    if (hData != nullptr) {
+      wchar_t* pszText = static_cast<wchar_t*>(GlobalLock(hData));
+      if (pszText != nullptr) {
+        std::wstring ws(pszText);
+        std::string text(ws.begin(), ws.end());
+        formats_data[flutter::EncodableValue("text")] = flutter::EncodableValue(text);
+        GlobalUnlock(hData);
+      }
+    }
+  }
+  // 备用文本格式 (ANSI)
+  else if (IsClipboardFormatAvailable(CF_TEXT)) {
+    HANDLE hData = GetClipboardData(CF_TEXT);
+    if (hData != nullptr) {
+      char* pszText = static_cast<char*>(GlobalLock(hData));
+      if (pszText != nullptr) {
+        std::string text(pszText);
+        formats_data[flutter::EncodableValue("text")] = flutter::EncodableValue(text);
+        GlobalUnlock(hData);
+      }
+    }
+  }
+
+  CloseClipboard();
+  result->Success(flutter::EncodableValue(formats_data));
 }
 
 void ClipboardPlugin::GetClipboardType(

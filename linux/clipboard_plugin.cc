@@ -24,6 +24,7 @@ struct _ClipboardPlugin {
 G_DEFINE_TYPE(ClipboardPlugin, clipboard_plugin, g_object_get_type())
 
 // Forward declarations
+static void get_clipboard_formats(FlMethodCall* method_call);
 static void clipboard_plugin_handle_method_call(
     ClipboardPlugin* self,
     FlMethodCall* method_call);
@@ -487,13 +488,122 @@ static void perform_ocr(FlMethodCall* method_call) {
   }
 }
 
+static void get_clipboard_formats(FlMethodCall* method_call) {
+  GtkClipboard* clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+
+  g_autoptr(FlValue) result_map = fl_value_new_map();
+
+  // 添加序列号和时间戳
+  static gint64 last_sequence = 0;
+  last_sequence++;
+  gint64 timestamp = g_get_real_time() / 1000; // 转换为毫秒
+
+  fl_value_set_string_take(result_map, "sequence", fl_value_new_int(last_sequence));
+  fl_value_set_string_take(result_map, "timestamp", fl_value_new_int(timestamp));
+
+  // 检查并收集所有可用格式
+
+  // RTF 格式
+  if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/rtf", FALSE))) {
+    GtkSelectionData* selection_data = gtk_clipboard_wait_for_contents(clipboard, gdk_atom_intern("text/rtf", FALSE));
+    if (selection_data != nullptr) {
+      const guchar* data = gtk_selection_data_get_data(selection_data);
+      gint length = gtk_selection_data_get_length(selection_data);
+      if (data != nullptr && length > 0) {
+        gchar* rtf_text = g_strndup((const gchar*)data, length);
+        fl_value_set_string_take(result_map, "rtf", fl_value_new_string(rtf_text));
+        g_free(rtf_text);
+      }
+      gtk_selection_data_free(selection_data);
+    }
+  }
+
+  // HTML 格式
+  if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/html", FALSE))) {
+    GtkSelectionData* selection_data = gtk_clipboard_wait_for_contents(clipboard, gdk_atom_intern("text/html", FALSE));
+    if (selection_data != nullptr) {
+      const guchar* data = gtk_selection_data_get_data(selection_data);
+      gint length = gtk_selection_data_get_length(selection_data);
+      if (data != nullptr && length > 0) {
+        gchar* html_text = g_strndup((const gchar*)data, length);
+        fl_value_set_string_take(result_map, "html", fl_value_new_string(html_text));
+        g_free(html_text);
+      }
+      gtk_selection_data_free(selection_data);
+    }
+  }
+
+  // 文件格式
+  if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("text/uri-list", FALSE))) {
+    GtkSelectionData* selection_data = gtk_clipboard_wait_for_contents(clipboard, gdk_atom_intern("text/uri-list", FALSE));
+    if (selection_data != nullptr) {
+      const guchar* data = gtk_selection_data_get_data(selection_data);
+      gint length = gtk_selection_data_get_length(selection_data);
+      if (data != nullptr && length > 0) {
+        gchar* uris_text = g_strndup((const gchar*)data, length);
+        std::string uris_str(uris_text);
+        std::istringstream iss(uris_str);
+        std::string line;
+        g_autoptr(FlValue) paths_list = fl_value_new_list();
+
+        while (std::getline(iss, line)) {
+          if (!line.empty() && line.find("file://") == 0) {
+            std::string path = line.substr(7); // Remove "file://"
+            fl_value_append_take(paths_list, fl_value_new_string(path.c_str()));
+          }
+        }
+
+        if (fl_value_get_length(paths_list) > 0) {
+          fl_value_set_string_take(result_map, "files", fl_value_ref(paths_list));
+        }
+
+        g_free(uris_text);
+      }
+      gtk_selection_data_free(selection_data);
+    }
+  }
+
+  // 图片格式
+  if (gtk_clipboard_wait_is_image_available(clipboard)) {
+    GdkPixbuf* pixbuf = gtk_clipboard_wait_for_image(clipboard);
+    if (pixbuf != nullptr) {
+      // 将 GdkPixbuf 转换为 PNG 字节数组
+      gchar* buffer;
+      gsize buffer_size;
+      GError* error = nullptr;
+
+      if (gdk_pixbuf_save_to_buffer(pixbuf, &buffer, &buffer_size, "png", &error, nullptr)) {
+        g_autoptr(FlValue) image_list = fl_value_new_uint8_list(
+            reinterpret_cast<const uint8_t*>(buffer), buffer_size);
+        fl_value_set_string_take(result_map, "image", fl_value_ref(image_list));
+        g_free(buffer);
+      }
+
+      g_object_unref(pixbuf);
+    }
+  }
+
+  // 文本格式
+  if (gtk_clipboard_wait_is_text_available(clipboard)) {
+    gchar* text = gtk_clipboard_wait_for_text(clipboard);
+    if (text != nullptr) {
+      fl_value_set_string_take(result_map, "text", fl_value_new_string(text));
+      g_free(text);
+    }
+  }
+
+  fl_method_call_respond_success(method_call, result_map, nullptr);
+}
+
 static void clipboard_plugin_handle_method_call(
     ClipboardPlugin* self,
     FlMethodCall* method_call) {
-  
+
   const gchar* method = fl_method_call_get_name(method_call);
-  
-  if (strcmp(method, "getClipboardType") == 0) {
+
+  if (strcmp(method, "getClipboardFormats") == 0) {
+    get_clipboard_formats(method_call);
+  } else if (strcmp(method, "getClipboardType") == 0) {
     get_clipboard_type(method_call);
   } else if (strcmp(method, "getClipboardSequence") == 0) {
     get_clipboard_sequence(method_call);

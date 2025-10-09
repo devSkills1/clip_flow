@@ -63,6 +63,7 @@ class DatabaseService {
         file_path TEXT,
         thumbnail BLOB,
         metadata TEXT NOT NULL DEFAULT '{}',
+        ocr_text TEXT,
         is_favorite INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
