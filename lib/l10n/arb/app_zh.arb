@@ -588,7 +588,7 @@
   "@feedbackDialogTitle": {"description": "反馈对话框标题"},
   "feedbackEmailTitle": "发送邮件",
   "@feedbackEmailTitle": {"description": "邮件反馈标题"},
-  "feedbackEmailAddress": "feedback@clipflowpro.com",
+  "feedbackEmailAddress": "jr.lu.jobs@gmail.com",
   "@feedbackEmailAddress": {"description": "反馈邮箱地址"},
   "feedbackIssueTitle": "提交问题",
   "@feedbackIssueTitle": {"description": "问题报告标题"},

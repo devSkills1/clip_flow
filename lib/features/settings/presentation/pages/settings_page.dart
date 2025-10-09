@@ -1050,7 +1050,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       I18nFallbacks.settings.feedbackEmailTitle,
                 ),
                 subtitle: Text(
-                  l10n?.feedbackEmailAddress ?? 'feedback@clipflowpro.com',
+                  l10n?.feedbackEmailAddress ?? ClipConstants.feedbackEmail,
                 ),
                 onTap: () {
                   Navigator.of(context).pop();

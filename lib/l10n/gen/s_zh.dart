@@ -567,7 +567,7 @@ class SZh extends S {
   String get feedbackEmailTitle => '发送邮件';
 
   @override
-  String get feedbackEmailAddress => 'feedback@clipflowpro.com';
+  String get feedbackEmailAddress => 'jr.lu.jobs@gmail.com';
 
   @override
   String get feedbackIssueTitle => '提交问题';

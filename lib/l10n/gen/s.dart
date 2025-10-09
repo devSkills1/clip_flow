@@ -1114,7 +1114,7 @@ abstract class S {
   /// Feedback email address
   ///
   /// In en, this message translates to:
-  /// **'feedback@clipflowpro.com'**
+  /// **'jr.lu.jobs@gmail.com'**
   String get feedbackEmailAddress;
 
   /// Issue report title

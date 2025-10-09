@@ -589,7 +589,7 @@ class SEn extends S {
   String get feedbackEmailTitle => 'Send Email';
 
   @override
-  String get feedbackEmailAddress => 'feedback@clipflowpro.com';
+  String get feedbackEmailAddress => 'jr.lu.jobs@gmail.com';
 
   @override
   String get feedbackIssueTitle => 'Submit Issue';

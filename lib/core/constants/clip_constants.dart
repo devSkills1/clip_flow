@@ -119,6 +119,9 @@ class ClipConstants {
   /// 错误色数值
   static const int errorColorValue = 0xFFB00020;
 
+  /// 反馈邮箱
+  static const String feedbackEmail = 'jr.lu.jobs@gmail.com';
+
   /// 全局快捷键默认值（平台：macOS）
   static const String defaultGlobalHotkey = 'cmd+shift+v';
 
