@@ -136,6 +136,96 @@ class DatabaseService {
     );
   }
 
+  /// 批量插入剪贴项记录
+  ///
+  /// 参数：
+  /// - items：要插入的剪贴项列表
+  /// - useTransaction：是否使用事务（默认true）
+  Future<void> batchInsertClipItems(
+    List<ClipItem> items, {
+    bool useTransaction = true,
+  }) async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+    if (items.isEmpty) return;
+
+    final stopwatch = Stopwatch()..start();
+
+    await Log.i(
+      'Starting batch insert',
+      tag: 'DatabaseService',
+      fields: {
+        'count': items.length,
+        'useTransaction': useTransaction,
+      },
+    );
+
+    try {
+      if (useTransaction) {
+        await _database!.transaction((txn) async {
+          final batch = txn.batch();
+
+          for (final item in items) {
+            batch.insert(
+              ClipConstants.clipItemsTable,
+              {
+                'id': item.id,
+                'type': item.type.name,
+                'content': item.content is String
+                    ? item.content
+                    : (item.content?.toString() ?? ''),
+                'file_path': item.filePath,
+                'thumbnail': item.thumbnail,
+                'metadata': jsonEncode(item.metadata),
+                'ocr_text': item.ocrText,
+                'is_favorite': item.isFavorite ? 1 : 0,
+                'created_at': item.createdAt.toIso8601String(),
+                'updated_at': item.updatedAt.toIso8601String(),
+                'schema_version': 1,
+              },
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+
+          await batch.commit();
+        });
+      } else {
+        // 不使用事务，单独插入
+        for (final item in items) {
+          await insertClipItem(item);
+        }
+      }
+
+      stopwatch.stop();
+
+      await Log.i(
+        'Batch insert completed successfully',
+        tag: 'DatabaseService',
+        fields: {
+          'count': items.length,
+          'duration': stopwatch.elapsedMilliseconds,
+          'avgTimePerItem': stopwatch.elapsedMilliseconds / items.length,
+          'useTransaction': useTransaction,
+        },
+      );
+    } on Exception catch (e) {
+      stopwatch.stop();
+
+      await Log.e(
+        'Batch insert failed',
+        tag: 'DatabaseService',
+        error: e,
+        fields: {
+          'count': items.length,
+          'duration': stopwatch.elapsedMilliseconds,
+          'useTransaction': useTransaction,
+        },
+      );
+
+      rethrow;
+    }
+  }
+
   /// 更新一条剪贴项记录
   ///
   /// 参数：

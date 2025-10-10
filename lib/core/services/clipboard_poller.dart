@@ -16,22 +16,25 @@ class ClipboardPoller {
     'clipboard_service',
   );
 
-  // 轮询间隔配置 - 优化以减少权限请求
-  static const Duration _minInterval = Duration(milliseconds: 500); // 增加最小间隔
-  static const Duration _maxInterval = Duration(milliseconds: 5000); // 增加最大间隔
+  // 轮询间隔配置 - 优化快速复制检测
+  static const Duration _minInterval = Duration(
+    milliseconds: 100,
+  ); // 快速模式下的最小间隔
+  static const Duration _maxInterval = Duration(milliseconds: 3000); // 减少最大间隔
   static const Duration _defaultInterval = Duration(
-    milliseconds: 1000,
-  ); // 增加默认间隔
+    milliseconds: 300,
+  ); // 提高默认频率
   static const Duration _idleInterval = Duration(
-    milliseconds: 10000,
-  ); // 空闲时的长间隔
+    milliseconds: 8000,
+  ); // 空闲时的间隔
 
-  // 自适应调整参数 - 更保守的设置
-  static const double _speedUpFactor = 0.9; // 减少加速幅度
-  static const double _slowDownFactor = 1.5; // 增加减速幅度
-  static const int _consecutiveNoChangeThreshold = 3; // 更快进入慢速模式
-  static const int _recentChangeWindow = 5; // 减少监控窗口
-  static const int _idleThreshold = 20; // 更快进入空闲模式
+  // 自适应调整参数 - 优化快速复制场景
+  static const double _speedUpFactor = 0.7; // 更快的加速
+  static const double _slowDownFactor = 1.3; // 较缓的减速
+  static const int _consecutiveNoChangeThreshold = 5; // 延迟进入慢速模式
+  static const int _recentChangeWindow = 8; // 扩大监控窗口
+  static const int _idleThreshold = 30; // 延迟进入空闲模式
+  static const int _rapidCopyThreshold = 3; // 快速复制检测阈值
 
   Timer? _pollingTimer;
   Duration _currentInterval = _defaultInterval;
@@ -43,6 +46,12 @@ class ClipboardPoller {
   int _lastClipboardSequence = -1;
   int _consecutiveNoChangeCount = 0;
   final List<DateTime> _recentChanges = [];
+
+  // 快速复制检测和防抖
+  bool _isRapidCopyMode = false;
+  DateTime? _lastRapidCopyTime;
+  int _rapidCopyCount = 0;
+  Timer? _debounceTimer;
 
   // 性能监控
   int _totalChecks = 0;
@@ -137,6 +146,11 @@ class ClipboardPoller {
     _consecutiveNoChangeCount = 0;
     _recentChanges.clear();
     _isIdleMode = false;
+    _isRapidCopyMode = false;
+    _lastRapidCopyTime = null;
+    _rapidCopyCount = 0;
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
   }
 
   /// 调度下一次轮询（优化版本）
@@ -175,6 +189,11 @@ class ClipboardPoller {
   /// 获取智能调整后的间隔
   Duration _getSmartInterval() {
     final now = DateTime.now();
+
+    // 快速复制模式：使用最小间隔
+    if (_isRapidCopyMode) {
+      return _minInterval;
+    }
 
     // 检查是否应该进入空闲模式
     if (_consecutiveNoChangeCount > _idleThreshold) {
@@ -271,7 +290,7 @@ class ClipboardPoller {
     }
   }
 
-  /// 记录剪贴板变化
+  /// 记录剪贴板变化（增强版本）
   void _recordChange() {
     final now = DateTime.now();
     _recentChanges
@@ -282,6 +301,42 @@ class ClipboardPoller {
       );
 
     _consecutiveNoChangeCount = 0;
+
+    // 检测快速复制模式
+    _detectRapidCopyMode(now);
+  }
+
+  /// 检测快速复制模式
+  void _detectRapidCopyMode(DateTime now) {
+    // 如果有上次的快速复制时间，检查间隔
+    if (_lastRapidCopyTime != null) {
+      final timeSinceLastCopy = now.difference(_lastRapidCopyTime!);
+
+      // 如果间隔小于1秒，认为是快速复制
+      if (timeSinceLastCopy.inMilliseconds < 1000) {
+        _rapidCopyCount++;
+
+        // 达到快速复制阈值，进入快速复制模式
+        if (_rapidCopyCount >= _rapidCopyThreshold) {
+          _isRapidCopyMode = true;
+          _lastRapidCopyTime = now;
+
+          // 设置快速复制模式的超时（5秒后自动退出）
+          _debounceTimer?.cancel();
+          _debounceTimer = Timer(const Duration(seconds: 5), () {
+            _isRapidCopyMode = false;
+            _rapidCopyCount = 0;
+          });
+
+          return;
+        }
+      } else {
+        // 间隔太长，重置快速复制计数
+        _rapidCopyCount = 0;
+      }
+    }
+
+    _lastRapidCopyTime = now;
   }
 
   /// 调整轮询间隔（增强版本）
@@ -295,16 +350,31 @@ class ClipboardPoller {
       _consecutiveNoChangeCount = 0;
       _lastChangeTime = DateTime.now();
       _isIdleMode = false; // 退出空闲模式
+
+      // 在快速复制模式下，确保使用最小间隔
+      if (_isRapidCopyMode) {
+        _currentInterval = _minInterval;
+      }
     } else {
       // 没有变化，增加计数
       _consecutiveNoChangeCount++;
 
-      // 如果连续多次没有变化，减慢轮询
-      if (_consecutiveNoChangeCount >= _consecutiveNoChangeThreshold) {
-        _currentInterval = Duration(
-          milliseconds: (_currentInterval.inMilliseconds * _slowDownFactor)
-              .round(),
-        );
+      // 在快速复制模式下，更宽容地保持快速轮询
+      if (_isRapidCopyMode) {
+        // 快速复制模式下，即使没有变化也保持较快轮询
+        if (_consecutiveNoChangeCount > _consecutiveNoChangeThreshold * 2) {
+          _currentInterval = Duration(
+            milliseconds: (_currentInterval.inMilliseconds * 1.1).round(),
+          );
+        }
+      } else {
+        // 正常模式下的调整
+        if (_consecutiveNoChangeCount >= _consecutiveNoChangeThreshold) {
+          _currentInterval = Duration(
+            milliseconds: (_currentInterval.inMilliseconds * _slowDownFactor)
+                .round(),
+          );
+        }
       }
     }
 
@@ -368,6 +438,7 @@ class ClipboardPoller {
       'isPolling': isPolling,
       'isPaused': _isPaused,
       'isIdleMode': _isIdleMode,
+      'isRapidCopyMode': _isRapidCopyMode,
       'currentInterval': _currentInterval.inMilliseconds,
       'consecutiveNoChangeCount': _consecutiveNoChangeCount,
       'recentChangesCount': _recentChanges.length,
@@ -378,10 +449,13 @@ class ClipboardPoller {
       'totalPollingTime': totalTime.inSeconds,
       'averageInterval': avgInterval.toStringAsFixed(1),
       'lastChangeTime': _lastChangeTime?.toIso8601String(),
+      'rapidCopyCount': _rapidCopyCount,
+      'lastRapidCopyTime': _lastRapidCopyTime?.toIso8601String(),
       'performance': {
         'adaptiveScheduling': true,
         'idleModeEnabled': true,
         'smartIntervalAdjustment': true,
+        'rapidCopyDetection': true,
       },
     };
   }
