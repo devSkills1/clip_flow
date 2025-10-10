@@ -119,7 +119,7 @@ class AsyncProcessingQueue {
       priority: priority,
       id: id,
     );
-    queueItem.completer = Completer<ClipItem?>();
+    final completer = queueItem.completer = Completer<ClipItem?>();
 
     // ignore: cascade_invocations - separate operations for clarity
     _pendingItems[id] = queueItem;
@@ -128,7 +128,7 @@ class AsyncProcessingQueue {
     // 防抖机制：如果短时间内有多个任务，延迟处理
     _scheduleDebouncedProcess();
 
-    return queueItem.completer!.future;
+    return completer.future;
   }
 
   /// 调度防抖处理
@@ -161,20 +161,23 @@ class AsyncProcessingQueue {
 
       // 异步处理任务
       // ignore: unawaited_futures - intentional fire-and-forget for performance
-      _processTask(queueItem)
-          .then((_) {
-            _processingIds.remove(queueItem.id);
-          })
-          .catchError((Object error) {
-            _processingIds.remove(queueItem.id);
-            _totalFailed++;
-            Log.e(
-              'Task processing failed',
-              tag: 'AsyncProcessingQueue',
-              error: error,
-              fields: {'taskId': queueItem.id},
-            );
-          });
+      unawaited(
+        _processTask(queueItem)
+            .then((_) {
+              _processingIds.remove(queueItem.id);
+            })
+            .catchError((Object error) {
+              _processingIds.remove(queueItem.id);
+              _totalFailed++;
+              // ignore: unawaited_futures - logging is fire-and-forget
+              Log.e(
+                'Task processing failed',
+                tag: 'AsyncProcessingQueue',
+                error: error,
+                fields: {'taskId': queueItem.id},
+              );
+            }),
+      );
 
       // 继续处理下一个任务
       Timer(const Duration(milliseconds: 10), _processQueue);
