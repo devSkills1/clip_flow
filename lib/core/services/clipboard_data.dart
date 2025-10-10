@@ -2,6 +2,11 @@
 ///
 /// 统一表示从各平台获取的原始剪贴板数据
 class ClipboardData {
+  /// 创建剪贴板数据实例
+  ///
+  /// [formats] 剪贴板中可用的所有格式
+  /// [sequence] 剪贴板变更序列号
+  /// [timestamp] 检测时间
   const ClipboardData({
     required this.formats,
     required this.sequence,
@@ -63,7 +68,11 @@ class ClipboardData {
 
   @override
   String toString() {
-    return 'ClipboardData(sequence: $sequence, formats: ${formats.keys}, timestamp: $timestamp)';
+    return 'ClipboardData('
+        'sequence: $sequence, '
+        'formats: ${formats.keys}, '
+        'timestamp: $timestamp'
+        ')';
   }
 }
 

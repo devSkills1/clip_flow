@@ -72,7 +72,7 @@ class UniversalClipboardDetector {
       );
 
       return result;
-    } catch (e) {
+    } on Exception catch (e) {
       await Log.e(
         'Universal clipboard detection failed',
         tag: 'UniversalClipboardDetector',
@@ -80,10 +80,10 @@ class UniversalClipboardDetector {
       );
 
       // 降级到文本类型
-      return ClipboardDetectionResult(
+      return const ClipboardDetectionResult(
         detectedType: ClipType.text,
-        contentToSave: data.bestContent.toString(),
-        originalData: data,
+        contentToSave: '',
+        originalData: null,
         confidence: 0.1,
         formatAnalysis: {},
         shouldSaveOriginal: true,
@@ -417,7 +417,15 @@ class UniversalClipboardDetector {
       case ClipType.audio:
       case ClipType.video:
         return data.getFormat<String>(ClipboardFormat.files);
-      default:
+      case ClipType.text:
+      case ClipType.rtf:
+      case ClipType.html:
+      case ClipType.color:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
         return data.bestContent;
     }
   }
@@ -508,6 +516,7 @@ class UniversalClipboardDetector {
 
 /// 格式信息
 class FormatInfo {
+  /// 构造器
   const FormatInfo({
     required this.format,
     required this.content,
@@ -515,15 +524,26 @@ class FormatInfo {
     required this.isValid,
     required this.metadata,
   });
+
+  /// 剪贴板格式类型
   final ClipboardFormat format;
+
+  /// 格式内容
   final dynamic content;
+
+  /// 内容大小
   final int size;
+
+  /// 内容是否有效
   final bool isValid;
+
+  /// 格式元数据
   final Map<String, dynamic> metadata;
 }
 
 /// 剪贴板检测结果
 class ClipboardDetectionResult {
+  /// 创建检测结果实例
   const ClipboardDetectionResult({
     required this.detectedType,
     required this.contentToSave,
@@ -533,12 +553,26 @@ class ClipboardDetectionResult {
     this.shouldSaveOriginal = false,
     this.ocrText,
   });
+
+  /// 检测到的剪贴板内容类型
   final ClipType detectedType;
+
+  /// 要保存的内容
   final dynamic contentToSave;
-  final ClipboardData originalData;
+
+  /// 原始剪贴板数据
+  final ClipboardData? originalData;
+
+  /// 检测置信度（0-1）
   final double confidence;
+
+  /// 格式分析结果
   final Map<ClipboardFormat, FormatInfo> formatAnalysis;
+
+  /// 是否保存原始数据
   final bool shouldSaveOriginal;
+
+  /// OCR识别的文本（图片类型）
   final String? ocrText;
 
   /// 创建ClipItem
@@ -571,22 +605,30 @@ class ClipboardDetectionResult {
   }
 
   String? _extractFilePath() {
+    if (originalData == null) return null;
+
     if (detectedType == ClipType.file) {
-      final files = originalData.getFormat<List<String>>(ClipboardFormat.files);
+      final files = originalData!.getFormat<List<String>>(
+        ClipboardFormat.files,
+      );
       return files?.isNotEmpty ?? false ? files!.first : null;
     }
     // 图片类型也需要从原数据中获取路径信息
     if (detectedType == ClipType.image) {
-      final files = originalData.getFormat<List<String>>(ClipboardFormat.files);
+      final files = originalData!.getFormat<List<String>>(
+        ClipboardFormat.files,
+      );
       return files?.isNotEmpty ?? false ? files!.first : null;
     }
     return null;
   }
 
   List<int>? _extractThumbnail() {
+    if (originalData == null) return null;
+
     if (detectedType == ClipType.image) {
       // 直接从原数据中获取图片数据作为缩略图
-      final imageData = originalData.getFormat<List<int>>(
+      final imageData = originalData!.getFormat<List<int>>(
         ClipboardFormat.image,
       );
       return imageData;
@@ -595,12 +637,21 @@ class ClipboardDetectionResult {
   }
 
   Map<String, dynamic> _buildMetadata() {
+    if (originalData == null) {
+      return {
+        'confidence': confidence,
+        'availableFormats': <String>[],
+        'sequence': 0,
+        'formatAnalysis': <String, dynamic>{},
+      };
+    }
+
     return {
       'confidence': confidence,
-      'availableFormats': originalData.availableFormats
+      'availableFormats': originalData!.availableFormats
           .map((f) => f.value)
           .toList(),
-      'sequence': originalData.sequence,
+      'sequence': originalData!.sequence,
       'formatAnalysis': formatAnalysis.map(
         (k, v) => MapEntry(k.value, v.metadata),
       ),
