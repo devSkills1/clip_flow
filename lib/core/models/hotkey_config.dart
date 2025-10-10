@@ -214,7 +214,12 @@ class HotkeyConfig {
 
   @override
   String toString() {
-    return 'HotkeyConfig(action: $action, key: $key, modifiers: $modifiers, enabled: $enabled)';
+    return 'HotkeyConfig('
+        'action: $action, '
+        'key: $key, '
+        'modifiers: $modifiers, '
+        'enabled: $enabled'
+        ')';
   }
 }
 

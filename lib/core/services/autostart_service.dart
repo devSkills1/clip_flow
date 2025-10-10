@@ -151,38 +151,38 @@ class AutostartService {
 
   // Windows 平台实现（占位符）
   Future<bool> _isEnabledWindows() async {
-    // TODO: 实现 Windows 平台的开机自启动检查
+    // TODO(clipflow): 实现 Windows 平台的开机自启动检查
     await Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   Future<bool> _enableWindows() async {
-    // TODO: 实现 Windows 平台的开机自启动启用
+    // TODO(clipflow): 实现 Windows 平台的开机自启动启用
     await Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   Future<bool> _disableWindows() async {
-    // TODO: 实现 Windows 平台的开机自启动禁用
+    // TODO(clipflow): 实现 Windows 平台的开机自启动禁用
     await Log.i('Windows 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   // Linux 平台实现（占位符）
   Future<bool> _isEnabledLinux() async {
-    // TODO: 实现 Linux 平台的开机自启动检查
+    // TODO(clipflow): 实现 Linux 平台的开机自启动检查
     await Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   Future<bool> _enableLinux() async {
-    // TODO: 实现 Linux 平台的开机自启动启用
+    // TODO(clipflow): 实现 Linux 平台的开机自启动启用
     await Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
 
   Future<bool> _disableLinux() async {
-    // TODO: 实现 Linux 平台的开机自启动禁用
+    // TODO(clipflow): 实现 Linux 平台的开机自启动禁用
     await Log.i('Linux 平台开机自启动功能待实现', tag: 'AutostartService');
     return false;
   }
