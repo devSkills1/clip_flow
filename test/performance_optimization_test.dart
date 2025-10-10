@@ -135,7 +135,7 @@ void main() {
     test('轮询间隔自适应测试', () async {
       poller.startPolling();
 
-      final initialInterval = poller.currentPollingInterval;
+      final initialInterval = poller.currentInterval;
       print('初始轮询间隔: ${initialInterval.inMilliseconds}ms');
 
       // 模拟连续变化
@@ -144,7 +144,7 @@ void main() {
         await poller.checkOnce();
       }
 
-      final activeInterval = poller.currentPollingInterval;
+      final activeInterval = poller.currentInterval;
       print('活跃轮询间隔: ${activeInterval.inMilliseconds}ms');
 
       // 在快速复制模式下，间隔应该减少
@@ -155,7 +155,7 @@ void main() {
 
       // 等待一段时间，检查间隔是否恢复
       await Future.delayed(Duration(seconds: 10));
-      final relaxedInterval = poller.currentPollingInterval;
+      final relaxedInterval = poller.currentInterval;
       print('放松轮询间隔: ${relaxedInterval.inMilliseconds}ms');
 
       expect(

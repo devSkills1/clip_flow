@@ -407,18 +407,22 @@ class ClipboardProcessor {
         );
       }
 
-      // 创建新的检测结果，包含OCR文本
-      final updatedDetectionResult = ClipboardDetectionResult(
-        detectedType: detectionResult.detectedType,
-        contentToSave: detectionResult.contentToSave,
-        originalData: detectionResult.originalData,
-        confidence: detectionResult.confidence,
-        formatAnalysis: detectionResult.formatAnalysis,
-        shouldSaveOriginal: detectionResult.shouldSaveOriginal,
+      // 直接创建ClipItem，确保使用保存后的文件路径
+      return ClipItem(
+        id: contentHash,
+        type: detectionResult.detectedType,
+        content: '', // 图片类型内容为空
+        filePath: relativePath, // 使用保存后的相对路径
+        thumbnail: await _generateFileThumbnail(
+          File(
+            '${(await PathService.instance.getDocumentsDirectory()).path}/$relativePath',
+          ),
+        ),
+        metadata: metadata,
         ocrText: ocrText,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
-
-      return updatedDetectionResult.createClipItem(id: contentHash);
     } on Exception catch (e) {
       await Log.e(
         'Failed to process image data',
@@ -441,9 +445,10 @@ class ClipboardProcessor {
       if (files == null || files.isEmpty) return null;
 
       final filePath = files.first;
-      final file = File(filePath);
 
-      if (!file.existsSync()) return null;
+      if (!await PathService.instance.fileExists(filePath)) return null;
+
+      final file = File(filePath);
 
       // 检测文件类型
       final fileType = _detector.detectFileType(filePath);
@@ -490,9 +495,9 @@ class ClipboardProcessor {
           if (relativePath != null && relativePath.isNotEmpty) {
             final documentsDirectory = await PathService.instance
                 .getDocumentsDirectory();
-            final savedFile = File('${documentsDirectory.path}/$relativePath');
-            if (savedFile.existsSync()) {
-              thumbnail = await _generateFileThumbnail(savedFile);
+            final savedFilePath = '${documentsDirectory.path}/$relativePath';
+            if (await PathService.instance.fileExists(savedFilePath)) {
+              thumbnail = await _generateFileThumbnail(File(savedFilePath));
             } else {
               thumbnail = await _generateFileThumbnail(file);
             }
@@ -528,10 +533,31 @@ class ClipboardProcessor {
 
   /// 计算内容哈希
   String _calculateContentHash(ClipboardData data) {
-    final contentMap = {
-      'sequence': data.sequence,
-      'formats': data.formats.map((k, v) => MapEntry(k.value, v.toString())),
-    };
+    // 创建基于内容的哈希（不包含sequence，确保相同内容产生相同哈希）
+    final contentMap = <String, dynamic>{};
+
+    // 按固定顺序添加格式数据，确保哈希一致性
+    final sortedFormats = data.formats.keys.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+
+    for (final format in sortedFormats) {
+      final content = data.formats[format];
+      if (content != null) {
+        // 对于图片数据，计算内容哈希而不是直接序列化
+        if (format == ClipboardFormat.image && content is Uint8List) {
+          final imageHash = sha256.convert(content).toString();
+          contentMap[format.value] = 'image_hash:$imageHash';
+        } else {
+          // 对于其他数据，转换为字符串并计算哈希
+          final contentStr = content.toString();
+          final contentHash = sha256
+              .convert(utf8.encode(contentStr))
+              .toString();
+          contentMap[format.value] = 'hash:$contentHash';
+        }
+      }
+    }
+
     final content = json.encode(contentMap);
     return sha256.convert(utf8.encode(content)).toString().substring(0, 16);
   }

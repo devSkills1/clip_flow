@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 /// 路径管理服务
@@ -78,5 +79,46 @@ class PathService {
       directory.createSync(recursive: true);
     }
     return directory;
+  }
+
+  /// 将相对路径转换为绝对路径
+  ///
+  /// 支持多种路径格式：
+  /// - 绝对路径（Unix: /path/to/file, Windows: C:\path\to\file）
+  /// - file:// URI
+  /// - 相对路径（media/images/file.png）
+  Future<String> resolveAbsolutePath(String path) async {
+    try {
+      // 处理 file:// URI
+      if (path.startsWith('file://')) {
+        return Uri.parse(path).toFilePath();
+      }
+
+      // 检查是否已经是绝对路径
+      final isAbsoluteUnix = path.startsWith('/');
+      final isAbsoluteWin = RegExp(r'^[A-Za-z]:\\').hasMatch(path);
+
+      if (isAbsoluteUnix || isAbsoluteWin) {
+        return path; // 已经是绝对路径，直接返回
+      }
+
+      // 相对路径：拼接应用文档目录
+      final documentsDir = await getDocumentsDirectory();
+      return p.join(documentsDir.path, path);
+    } on Exception catch (_) {
+      // 如果转换失败，返回原始路径
+      return path;
+    }
+  }
+
+  /// 检查文件是否存在（支持相对和绝对路径）
+  Future<bool> fileExists(String path) async {
+    try {
+      final absolutePath = await resolveAbsolutePath(path);
+      final file = File(absolutePath);
+      return file.existsSync();
+    } on Exception catch (_) {
+      return false;
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/database_service.dart';
+import 'package:clip_flow_pro/core/services/path_service.dart';
 import 'package:clip_flow_pro/debug/clipboard_debug_page.dart';
 import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
@@ -63,11 +64,18 @@ class _HomePageState extends ConsumerState<HomePage> {
             case ClipType.audio:
             case ClipType.video:
               // 文件类型需要验证路径有效性
-              final filePath = dbItem.filePath ?? dbItem.content;
+              var filePath = dbItem.filePath ?? dbItem.content;
+
+              // 对于图片类型，如果filePath为空，尝试从沙盒目录查找可能存在的图片文件
+              if (dbItem.type == ClipType.image &&
+                  (filePath == null || filePath.isEmpty)) {
+                filePath = await _findImageFileForItem(dbItem);
+              }
+
               if (filePath != null && await _isFileValid(filePath)) {
                 validItem = dbItem;
               } else {
-                // 文件已失效，从数据库删除
+                // 只有在确实找不到文件时才删除记录
                 await DatabaseService.instance.deleteClipItem(dbItem.id);
               }
           }
@@ -85,11 +93,42 @@ class _HomePageState extends ConsumerState<HomePage> {
   /// 检查文件路径是否有效
   Future<bool> _isFileValid(String filePath) async {
     if (filePath.isEmpty) return false;
+    return PathService.instance.fileExists(filePath);
+  }
+
+  /// 为图片记录查找可能存在的图片文件
+  Future<String?> _findImageFileForItem(ClipItem dbItem) async {
     try {
-      final file = File(filePath);
-      return file.existsSync();
-    } on FileSystemException {
-      return false;
+      // 获取媒体图片目录
+      final documentsDir = await PathService.instance.getDocumentsDirectory();
+      final mediaImagesDir = Directory('${documentsDir.path}/media/images');
+
+      if (!mediaImagesDir.existsSync()) {
+        return null;
+      }
+
+      // 根据创建时间和ID查找可能的图片文件
+      final targetTime = dbItem.createdAt;
+      final targetIdPrefix = dbItem.id.substring(0, 8); // 使用ID前缀匹配
+
+      // 查找图片目录中的文件
+      final files = await mediaImagesDir.list().toList();
+
+      for (final file in files) {
+        if (file is! File) continue;
+
+        final fileName = file.path.split('/').last;
+
+        // 检查文件名是否包含记录ID或时间戳
+        if (fileName.contains(targetIdPrefix) ||
+            fileName.contains(targetTime.millisecondsSinceEpoch.toString())) {
+          return file.path;
+        }
+      }
+
+      return null;
+    } on Exception catch (_) {
+      return null;
     }
   }
 
