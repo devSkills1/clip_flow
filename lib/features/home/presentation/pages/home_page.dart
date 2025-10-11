@@ -137,6 +137,40 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
+  /// 根据筛选选项过滤剪贴板项目
+  List<ClipItem> _filterItems(List<ClipItem> items, FilterOption filterOption) {
+    if (filterOption == FilterOption.all) return items;
+
+    return items.where((item) {
+      switch (filterOption) {
+        case FilterOption.text:
+          return item.type == ClipType.text;
+        case FilterOption.richTextUnion:
+          return item.type == ClipType.rtf ||
+              item.type == ClipType.html ||
+              item.type == ClipType.code;
+        case FilterOption.rtf:
+          return item.type == ClipType.rtf;
+        case FilterOption.html:
+          return item.type == ClipType.html;
+        case FilterOption.code:
+          return item.type == ClipType.code;
+        case FilterOption.image:
+          return item.type == ClipType.image;
+        case FilterOption.color:
+          return item.type == ClipType.color;
+        case FilterOption.file:
+          return item.type == ClipType.file;
+        case FilterOption.audio:
+          return item.type == ClipType.audio;
+        case FilterOption.video:
+          return item.type == ClipType.video;
+        case FilterOption.all:
+          return true;
+      }
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = S.of(context);
@@ -157,38 +191,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final filterOption = ref.watch(filterTypeProvider);
     final displayMode = ref.watch(displayModeProvider);
 
-    // 对于无搜索查询的情况，应用筛选器到内存中的历史记录
-    var filteredItems = clipboardHistory;
-    if (searchQuery.isEmpty && filterOption != FilterOption.all) {
-      filteredItems = filteredItems.where((item) {
-        switch (filterOption) {
-          case FilterOption.text:
-            return item.type == ClipType.text;
-          case FilterOption.richTextUnion:
-            return item.type == ClipType.rtf ||
-                item.type == ClipType.html ||
-                item.type == ClipType.code;
-          case FilterOption.rtf:
-            return item.type == ClipType.rtf;
-          case FilterOption.html:
-            return item.type == ClipType.html;
-          case FilterOption.code:
-            return item.type == ClipType.code;
-          case FilterOption.image:
-            return item.type == ClipType.image;
-          case FilterOption.color:
-            return item.type == ClipType.color;
-          case FilterOption.file:
-            return item.type == ClipType.file;
-          case FilterOption.audio:
-            return item.type == ClipType.audio;
-          case FilterOption.video:
-            return item.type == ClipType.video;
-          case FilterOption.all:
-            return true;
-        }
-      }).toList();
-    }
+    // 始终应用筛选器到内存中的历史记录，确保新添加的项目也能被正确筛选
+    final filteredItems = _filterItems(clipboardHistory, filterOption);
 
     return Scaffold(
       body: Row(
@@ -508,37 +512,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         data: (items) {
           // 应用筛选器到搜索结果
           final filterOption = ref.watch(filterTypeProvider);
-          var filtered = items;
-          if (filterOption != FilterOption.all) {
-            filtered = items.where((item) {
-              switch (filterOption) {
-                case FilterOption.text:
-                  return item.type == ClipType.text;
-                case FilterOption.richTextUnion:
-                  return item.type == ClipType.rtf ||
-                      item.type == ClipType.html ||
-                      item.type == ClipType.code;
-                case FilterOption.rtf:
-                  return item.type == ClipType.rtf;
-                case FilterOption.html:
-                  return item.type == ClipType.html;
-                case FilterOption.code:
-                  return item.type == ClipType.code;
-                case FilterOption.image:
-                  return item.type == ClipType.image;
-                case FilterOption.color:
-                  return item.type == ClipType.color;
-                case FilterOption.file:
-                  return item.type == ClipType.file;
-                case FilterOption.audio:
-                  return item.type == ClipType.audio;
-                case FilterOption.video:
-                  return item.type == ClipType.video;
-                case FilterOption.all:
-                  return true;
-              }
-            }).toList();
-          }
+          final filtered = _filterItems(items, filterOption);
 
           return filtered.isEmpty
               ? _buildEmptyState(l10n)

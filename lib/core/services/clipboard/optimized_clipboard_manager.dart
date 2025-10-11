@@ -39,6 +39,10 @@ class OptimizedClipboardManager {
 
   final DatabaseService _database = DatabaseService.instance;
 
+  // UI 流控制器
+  final StreamController<ClipItem> _uiController =
+      StreamController<ClipItem>.broadcast();
+
   // 批量写入缓存
   final List<ClipItem> _writeBuffer = [];
   Timer? _batchWriteTimer;
@@ -77,6 +81,9 @@ class OptimizedClipboardManager {
     }
   }
 
+  /// UI 层监听的剪贴板变化流
+  Stream<ClipItem> get uiStream => _uiController.stream;
+
   /// 处理剪贴板变化
   Future<void> _handleClipboardChange() async {
     try {
@@ -101,13 +108,15 @@ class OptimizedClipboardManager {
       final existingItem = await _database.getClipItemById(clipItem.id);
       if (existingItem != null) {
         await Log.d(
-          'Clip item already exists in database, skipping',
+          'Clip item already exists in database, updating UI only',
           tag: 'OptimizedClipboardManager',
           fields: {
             'id': clipItem.id,
             'type': clipItem.type.name,
           },
         );
+        // 即使数据库中已存在，仍然需要更新UI以确保该项目显示在最前面
+        _uiController.add(existingItem.copyWith(updatedAt: DateTime.now()));
         return;
       }
 
@@ -156,6 +165,8 @@ class OptimizedClipboardManager {
 
     if (processedItem != null) {
       await _addToWriteBuffer(processedItem);
+      // 向 UI 流发射事件，确保 UI 能立即响应新内容
+      _uiController.add(processedItem);
     }
   }
 
@@ -377,5 +388,6 @@ class OptimizedClipboardManager {
   Future<void> dispose() async {
     stopMonitoring();
     await flushAllBuffers();
+    await _uiController.close();
   }
 }

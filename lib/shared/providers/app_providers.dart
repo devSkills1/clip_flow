@@ -544,11 +544,12 @@ final clipboardServiceProvider = Provider<ClipboardService>((ref) {
   return service;
 });
 
-//// 剪贴板流提供者
-/// 订阅剪贴板变更事件流（ClipItem）。
+//// 优化的剪贴板流提供者
+/// 订阅 OptimizedClipboardManager 的 UI 层事件流（ClipItem）。
 final clipboardStreamProvider = StreamProvider<ClipItem>((ref) {
-  final service = ref.watch(clipboardServiceProvider);
-  return service.clipboardStream;
+  // 使用单例实例，确保与 main.dart 中初始化的是同一个实例
+  final manager = OptimizedClipboardManager();
+  return manager.uiStream;
 });
 
 //// 偏好设置服务提供者

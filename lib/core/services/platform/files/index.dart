@@ -1,3 +1,2 @@
-// 文件服务统一导出
-// 注意：path_service.dart 已移动到 storage 模块
-// 这里可以添加其他文件相关的服务
+// 文件服务模块统一导出
+export 'package:clip_flow_pro/core/services/storage/path_service.dart';
