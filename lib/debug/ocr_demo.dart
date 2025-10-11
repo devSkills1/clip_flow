@@ -1,4 +1,4 @@
-import 'package:clip_flow_pro/core/services/ocr_service.dart';
+import 'package:clip_flow_pro/core/services/platform/ocr/ocr_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

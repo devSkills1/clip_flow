@@ -7,7 +7,7 @@ import 'package:clip_flow_pro/core/constants/dimensions.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/strings.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/path_service.dart';
+import 'package:clip_flow_pro/core/services/storage/path_service.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';

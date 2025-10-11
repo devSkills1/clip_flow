@@ -1,9 +1,10 @@
 // ignore_for_file: public_member_api_docs
 // 忽略公共成员API文档要求，因为这是内部性能监控组件，不需要对外暴露API文档
 import 'dart:async';
+
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
-import 'package:clip_flow_pro/core/services/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/performance_service.dart';
+import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/performance/performance_service.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/clipboard_service.dart';
-import 'package:clip_flow_pro/core/services/database_service.dart';
-import 'package:clip_flow_pro/core/services/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/clipboard/clipboard_service.dart';
+import 'package:clip_flow_pro/core/services/storage/database_service.dart';
+import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:flutter/services.dart';
 
 /// 剪贴板调试工具
