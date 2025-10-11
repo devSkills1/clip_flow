@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:clip_flow_pro/core/models/hotkey_config.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/storage/preferences_service.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 

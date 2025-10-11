@@ -1,7 +1,6 @@
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_data.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_detector.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/clipboard/index.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
 
 /// 通用剪贴板检测器
 ///

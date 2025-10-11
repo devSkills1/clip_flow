@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

@@ -3,8 +3,8 @@
 import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/performance/performance_service.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/performance/index.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

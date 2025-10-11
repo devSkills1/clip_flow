@@ -1,5 +1,5 @@
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/analysis/content_analyzer.dart';
+import 'package:clip_flow_pro/core/services/analysis/index.dart';
 
 /// HTML 分析器
 class HtmlAnalyzer extends ContentAnalyzer {

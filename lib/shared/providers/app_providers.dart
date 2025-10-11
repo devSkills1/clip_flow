@@ -4,14 +4,10 @@ import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_service.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/platform/input/hotkey_service.dart';
-import 'package:clip_flow_pro/core/services/platform/system/autostart_service.dart';
-import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
-import 'package:clip_flow_pro/core/services/platform/ui_tray/tray_service.dart';
-import 'package:clip_flow_pro/core/services/storage/database_service.dart';
-import 'package:clip_flow_pro/core/services/storage/preferences_service.dart';
+import 'package:clip_flow_pro/core/services/clipboard/index.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/platform/index.dart';
+import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
 import 'package:clip_flow_pro/features/home/presentation/pages/home_page.dart';

@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/storage/path_service.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 

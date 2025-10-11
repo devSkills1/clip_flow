@@ -1,7 +1,7 @@
 // ignore_for_file: public_member_api_docs
 // 忽略公共成员API文档要求，因为这是内部数据仓库实现，已有类级别文档说明
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/storage/database_service.dart';
+import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
 

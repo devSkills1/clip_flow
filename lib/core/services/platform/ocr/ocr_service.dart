@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:clip_flow_pro/core/services/platform/ocr/native_ocr_impl.dart';
+import 'package:clip_flow_pro/core/services/platform/ocr/index.dart';
 
 /// OCR识别结果
 class OcrResult {

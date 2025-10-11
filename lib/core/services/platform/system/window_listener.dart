@@ -6,8 +6,8 @@
     保持字段只读于类内部，避免对外暴露不必要的读取接口造成耦合。
 */
 
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/platform/ui_tray/tray_service.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:window_manager/window_manager.dart';
 

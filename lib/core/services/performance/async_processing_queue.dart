@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
 
 /// 异步处理队列项
 class _QueueItem<T> {

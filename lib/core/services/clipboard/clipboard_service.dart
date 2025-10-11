@@ -1,14 +1,13 @@
 import 'dart:async';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/platform/system/permission_service.dart';
-import 'package:clip_flow_pro/core/services/storage/path_service.dart';
-import 'package:flutter/services.dart';
-
 import 'package:clip_flow_pro/core/services/clipboard/clipboard_detector.dart';
 import 'package:clip_flow_pro/core/services/clipboard/clipboard_poller.dart';
 import 'package:clip_flow_pro/core/services/clipboard/clipboard_processor.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/platform/system/permission_service.dart';
+import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:flutter/services.dart';
 
 /// 剪贴板服务协调器
 ///

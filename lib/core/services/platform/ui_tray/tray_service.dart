@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 // ignore_for_file: public_member_api_docs
 // 忽略公共成员API文档要求，因为这是内部服务，不需要对外暴露API文档
