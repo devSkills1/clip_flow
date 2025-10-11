@@ -43,6 +43,9 @@ class OptimizedClipboardManager {
   final StreamController<ClipItem> _uiController =
       StreamController<ClipItem>.broadcast();
 
+  // 管理器是否已销毁
+  bool _isDisposed = false;
+
   // 批量写入缓存
   final List<ClipItem> _writeBuffer = [];
   Timer? _batchWriteTimer;
@@ -84,8 +87,26 @@ class OptimizedClipboardManager {
   /// UI 层监听的剪贴板变化流
   Stream<ClipItem> get uiStream => _uiController.stream;
 
+  /// 安全地向UI流发送事件
+  void _safeAddToUiStream(ClipItem item) {
+    if (!_isDisposed && !_uiController.isClosed) {
+      try {
+        _uiController.add(item);
+      } on Exception catch (e) {
+        Log.w(
+          'Failed to add item to UI stream - controller may be closed',
+          tag: 'OptimizedClipboardManager',
+          error: e,
+          fields: {'id': item.id},
+        );
+      }
+    }
+  }
+
   /// 处理剪贴板变化
   Future<void> _handleClipboardChange() async {
+    if (_isDisposed) return;
+
     try {
       _totalClipsDetected++;
       _lastClipTime = DateTime.now();
@@ -116,7 +137,7 @@ class OptimizedClipboardManager {
           },
         );
         // 即使数据库中已存在，仍然需要更新UI以确保该项目显示在最前面
-        _uiController.add(existingItem.copyWith(updatedAt: DateTime.now()));
+        _safeAddToUiStream(existingItem.copyWith(updatedAt: DateTime.now()));
         return;
       }
 
@@ -166,7 +187,7 @@ class OptimizedClipboardManager {
     if (processedItem != null) {
       await _addToWriteBuffer(processedItem);
       // 向 UI 流发射事件，确保 UI 能立即响应新内容
-      _uiController.add(processedItem);
+      _safeAddToUiStream(processedItem);
     }
   }
 
@@ -202,7 +223,7 @@ class OptimizedClipboardManager {
 
     // 如果缓冲区满了或者这是高优先级项目，立即写入
     if (_writeBuffer.length >= 10 || item.type == ClipType.text) {
-      _scheduleBatchWrite();
+      _scheduleImmediateBatchWrite();
     } else {
       // 否则延迟批量写入
       _scheduleBatchWrite();
@@ -211,13 +232,21 @@ class OptimizedClipboardManager {
 
   /// 调度批量写入
   void _scheduleBatchWrite() {
-    _batchWriteTimer?.cancel();
+    // 如果已经有定时器在运行，不重复调度
+    if (_batchWriteTimer?.isActive ?? false) return;
+
     _batchWriteTimer = Timer(_batchWriteDelay, _flushWriteBuffer);
+  }
+
+  /// 立即调度批量写入
+  void _scheduleImmediateBatchWrite() {
+    _batchWriteTimer?.cancel();
+    _batchWriteTimer = Timer(Duration.zero, _flushWriteBuffer);
   }
 
   /// 刷新写入缓冲区
   Future<void> _flushWriteBuffer() async {
-    if (_writeBuffer.isEmpty) return;
+    if (_isDisposed || _writeBuffer.isEmpty) return;
 
     final itemsToWrite = List<ClipItem>.from(_writeBuffer);
     _writeBuffer.clear();
@@ -386,8 +415,15 @@ class OptimizedClipboardManager {
 
   /// 销毁管理器
   Future<void> dispose() async {
+    if (_isDisposed) return;
+
+    _isDisposed = true;
     stopMonitoring();
     await flushAllBuffers();
-    await _uiController.close();
+
+    // 安全关闭流控制器
+    if (!_uiController.isClosed) {
+      await _uiController.close();
+    }
   }
 }

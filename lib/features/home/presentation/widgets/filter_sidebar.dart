@@ -600,6 +600,8 @@ class _HoverScaleItemState extends State<_HoverScaleItem>
   }
 
   void _onHover(bool hovering) {
+    if (!mounted) return;
+
     setState(() {
       _isHovered = hovering;
     });
