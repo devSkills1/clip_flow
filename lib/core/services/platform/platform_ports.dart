@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 
 /// 权限服务端口接口
@@ -167,16 +165,16 @@ class OcrResult {
     this.language,
     this.metadata,
   });
-  
+
   /// 识别的文本
   final String text;
-  
+
   /// 识别置信度
   final double confidence;
-  
+
   /// 识别的语言
   final String? language;
-  
+
   /// 元数据
   final Map<String, dynamic>? metadata;
 }
@@ -185,13 +183,13 @@ class OcrResult {
 enum PermissionType {
   /// 剪贴板权限
   clipboard,
-  
+
   /// 辅助功能权限
   accessibility,
-  
+
   /// 屏幕录制权限
   screenRecording,
-  
+
   /// 文件访问权限
   files,
 }
@@ -200,13 +198,13 @@ enum PermissionType {
 enum PermissionStatus {
   /// 已授权
   granted,
-  
+
   /// 已拒绝
   denied,
-  
+
   /// 未确定
   notDetermined,
-  
+
   /// 受限制
   restricted,
 }
