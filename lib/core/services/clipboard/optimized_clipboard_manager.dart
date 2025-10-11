@@ -97,6 +97,20 @@ class OptimizedClipboardManager {
       final clipItem = await _processor.processClipboardContent();
       if (clipItem == null) return;
 
+      // 在添加到队列之前，先检查数据库中是否已存在该记录
+      final existingItem = await _database.getClipItemById(clipItem.id);
+      if (existingItem != null) {
+        await Log.d(
+          'Clip item already exists in database, skipping',
+          tag: 'OptimizedClipboardManager',
+          fields: {
+            'id': clipItem.id,
+            'type': clipItem.type.name,
+          },
+        );
+        return;
+      }
+
       _totalClipsProcessed++;
 
       // 添加到异步处理队列

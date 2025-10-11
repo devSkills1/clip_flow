@@ -97,6 +97,25 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
+    // 在插入前检查是否已存在相同ID的记录
+    final existingItem = await getClipItemById(item.id);
+    if (existingItem != null) {
+      await Log.d(
+        'Clip item already exists, updating existing record',
+        tag: 'DatabaseService',
+        fields: {
+          'id': item.id,
+          'type': item.type.name,
+          'existingCreatedAt': existingItem.createdAt.toIso8601String(),
+          'newCreatedAt': item.createdAt.toIso8601String(),
+        },
+      );
+
+      // 如果记录已存在，使用更新操作而不是插入
+      await updateClipItem(item);
+      return;
+    }
+
     await Log.i(
       'Inserting clip item with OCR data',
       tag: 'DatabaseService',
@@ -124,7 +143,7 @@ class DatabaseService {
       'created_at': item.createdAt.toIso8601String(),
       'updated_at': item.updatedAt.toIso8601String(),
       'schema_version': 1,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    }, conflictAlgorithm: ConflictAlgorithm.ignore); // 改为 ignore，避免重复插入
 
     await Log.d(
       'Clip item inserted successfully',
@@ -152,7 +171,7 @@ class DatabaseService {
     final stopwatch = Stopwatch()..start();
 
     await Log.i(
-      'Starting batch insert',
+      'Starting batch insert with duplicate checking',
       tag: 'DatabaseService',
       fields: {
         'count': items.length,
@@ -161,11 +180,44 @@ class DatabaseService {
     );
 
     try {
+      // 预先过滤掉已存在的项目，避免重复
+      final uniqueItems = <ClipItem>[];
+      final duplicateCount = <String, int>{};
+
+      for (final item in items) {
+        final existingItem = await getClipItemById(item.id);
+        if (existingItem == null) {
+          uniqueItems.add(item);
+        } else {
+          duplicateCount[item.type.name] = (duplicateCount[item.type.name] ?? 0) + 1;
+        }
+      }
+
+      if (duplicateCount.isNotEmpty) {
+        await Log.i(
+          'Filtered out duplicate items in batch insert',
+          tag: 'DatabaseService',
+          fields: {
+            'originalCount': items.length,
+            'uniqueCount': uniqueItems.length,
+            'duplicateCount': duplicateCount,
+          },
+        );
+      }
+
+      if (uniqueItems.isEmpty) {
+        await Log.d(
+          'All items were duplicates, skipping batch insert',
+          tag: 'DatabaseService',
+        );
+        return;
+      }
+
       if (useTransaction) {
         await _database!.transaction((txn) async {
           final batch = txn.batch();
 
-          for (final item in items) {
+          for (final item in uniqueItems) {
             batch.insert(
               ClipConstants.clipItemsTable,
               {
@@ -183,7 +235,7 @@ class DatabaseService {
                 'updated_at': item.updatedAt.toIso8601String(),
                 'schema_version': 1,
               },
-              conflictAlgorithm: ConflictAlgorithm.replace,
+              conflictAlgorithm: ConflictAlgorithm.ignore, // 改为 ignore
             );
           }
 
@@ -191,7 +243,7 @@ class DatabaseService {
         });
       } else {
         // 不使用事务，单独插入
-        for (final item in items) {
+        for (final item in uniqueItems) {
           await insertClipItem(item);
         }
       }
@@ -202,9 +254,11 @@ class DatabaseService {
         'Batch insert completed successfully',
         tag: 'DatabaseService',
         fields: {
-          'count': items.length,
+          'originalCount': items.length,
+          'uniqueCount': uniqueItems.length,
+          'duplicateCount': duplicateCount,
           'duration': stopwatch.elapsedMilliseconds,
-          'avgTimePerItem': stopwatch.elapsedMilliseconds / items.length,
+          'avgTimePerItem': stopwatch.elapsedMilliseconds / uniqueItems.length,
           'useTransaction': useTransaction,
         },
       );
@@ -868,6 +922,7 @@ class DatabaseService {
   /// 执行多项数据完整性检查和修复：
   /// - 清理空内容的文本数据
   /// - 清理孤儿媒体文件
+  /// - 清理重复记录（基于ID）
   /// 返回修复统计信息
   Future<Map<String, int>> validateAndRepairData() async {
     if (!_isInitialized) await initialize();
@@ -877,6 +932,9 @@ class DatabaseService {
 
     // 清理空文本内容
     stats['emptyTextItemsDeleted'] = await cleanEmptyTextItems();
+
+    // 清理重复记录
+    stats['duplicateItemsDeleted'] = await cleanDuplicateItems();
 
     // 清理孤儿媒体文件
     stats['orphanFilesDeleted'] = await cleanOrphanMediaFiles();
@@ -889,5 +947,66 @@ class DatabaseService {
 
     await Log.i('Database validation completed: $stats');
     return stats;
+  }
+
+  /// 清理重复记录（基于ID）
+  ///
+  /// 删除具有相同ID的重复记录，保留最新的一个
+  /// 返回删除的记录数量
+  Future<int> cleanDuplicateItems() async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    await Log.i('Starting to clean duplicate items', tag: 'DatabaseService');
+
+    // 查找重复记录
+    final duplicates = await _database!.rawQuery('''
+      SELECT id, COUNT(*) as count
+      FROM ${ClipConstants.clipItemsTable}
+      GROUP BY id
+      HAVING COUNT(*) > 1
+    ''');
+
+    if (duplicates.isEmpty) {
+      await Log.d('No duplicate items found', tag: 'DatabaseService');
+      return 0;
+    }
+
+    var totalDeleted = 0;
+
+    for (final duplicate in duplicates) {
+      final id = duplicate['id'] as String;
+
+      // 删除重复记录，保留最新的一个（基于created_at）
+      final deleted = await _database!.rawQuery('''
+        DELETE FROM ${ClipConstants.clipItemsTable}
+        WHERE id = ? AND rowid NOT IN (
+          SELECT rowid FROM ${ClipConstants.clipItemsTable}
+          WHERE id = ?
+          ORDER BY created_at DESC, rowid DESC
+          LIMIT 1
+        )
+      ''', [id, id]);
+
+      final deletedCount = Sqflite.firstIntValue(deleted) ?? 0;
+      totalDeleted += deletedCount;
+
+      await Log.d(
+        'Cleaned duplicates for item',
+        tag: 'DatabaseService',
+        fields: {
+          'id': id,
+          'deletedCount': deletedCount,
+        },
+      );
+    }
+
+    await Log.i(
+      'Cleaned duplicate items successfully',
+      tag: 'DatabaseService',
+      fields: {'totalDeleted': totalDeleted},
+    );
+
+    return totalDeleted;
   }
 }

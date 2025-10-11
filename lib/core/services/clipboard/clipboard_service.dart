@@ -48,7 +48,7 @@ class ClipboardService {
   bool _isShuttingDown = false;
 
   /// 初始化剪贴板服务
-  Future<void> initialize() async {
+  Future<void> initialize({bool startPolling = false}) async {
     if (_isInitialized) return;
 
     try {
@@ -67,15 +67,25 @@ class ClipboardService {
         // 即使权限未授予，也继续初始化，但会在操作时进行检查
       }
 
-      // 启动轮询器，监听剪贴板变化
-      _poller.startPolling(
-        onClipboardChanged: _handleClipboardChange,
-        onError: (error) => Log.e(
-          'ClipboardService polling error',
+      // 只在明确要求时启动轮询器，避免与 OptimizedClipboardManager 冲突
+      if (startPolling) {
+        _poller.startPolling(
+          onClipboardChanged: _handleClipboardChange,
+          onError: (error) => Log.e(
+            'ClipboardService polling error',
+            tag: 'clipboard_service',
+            error: error,
+          ),
+        );
+      } else {
+        await Log.d(
+          'ClipboardService initialized without polling',
           tag: 'clipboard_service',
-          error: error,
-        ),
-      );
+          fields: {
+            'reason': 'OptimizedClipboardManager handles monitoring',
+          },
+        );
+      }
 
       _isInitialized = true;
     } on Exception catch (e) {

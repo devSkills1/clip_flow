@@ -54,7 +54,7 @@ class ClipboardProcessor {
 
       // 检查缓存
       final contentHash = _calculateContentHash(clipboardData);
-      if (_isCached(contentHash)) {
+      if (await _isCached(contentHash)) {
         return null; // 内容未变化
       }
 
@@ -530,7 +530,7 @@ class ClipboardProcessor {
 
   /// 计算内容哈希
   String _calculateContentHash(ClipboardData data) {
-    // 创建基于内容的哈希（不包含sequence，确保相同内容产生相同哈希）
+    // 创建基于内容的哈希（不包含sequence和timestamp，确保相同内容产生相同哈希）
     final contentMap = <String, dynamic>{};
 
     // 按固定顺序添加格式数据，确保哈希一致性
@@ -555,14 +555,21 @@ class ClipboardProcessor {
       }
     }
 
+    // 不包含 timestamp 和 sequence 等易变数据，只基于内容计算哈希
     final content = json.encode(contentMap);
     return sha256.convert(utf8.encode(content)).toString().substring(0, 16);
   }
 
   /// 检查是否已缓存（优化版本）
-  bool _isCached(String contentHash) {
+  Future<bool> _isCached(String contentHash) async {
     final entry = _contentCache[contentHash];
     if (entry == null) {
+      // 检查数据库中是否已存在该记录（防止重启后的重复）
+      final exists = await _checkDatabaseExistence(contentHash);
+      if (exists) {
+        _cacheHits++;
+        return true;
+      }
       _cacheMisses++;
       return false;
     }
@@ -579,6 +586,30 @@ class ClipboardProcessor {
 
     _cacheHits++;
     return true;
+  }
+
+  /// 检查数据库中是否已存在该记录
+  Future<bool> _checkDatabaseExistence(String contentHash) async {
+    try {
+      final existingItem = await DatabaseService.instance.getClipItemById(contentHash);
+      if (existingItem != null) {
+        await Log.d(
+          'Content hash already exists in database, skipping',
+          tag: 'ClipboardProcessor',
+          fields: {'contentHash': contentHash},
+        );
+        return true;
+      }
+      return false;
+    } on Exception catch (e) {
+      await Log.w(
+        'Failed to check database existence for content hash',
+        tag: 'ClipboardProcessor',
+        error: e,
+        fields: {'contentHash': contentHash},
+      );
+      return false;
+    }
   }
 
   /// 更新缓存（优化版本）

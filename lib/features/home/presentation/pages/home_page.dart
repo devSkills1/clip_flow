@@ -4,7 +4,6 @@ import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/debug/clipboard_debug_page.dart';
-import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/filter_sidebar.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar_widget.dart';
@@ -146,23 +145,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       next.whenData((clipItem) async {
         // 1) 内存添加（UI 状态统一存 UTF-8 字节，不做双重转换）
         ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
-        // 2) 持久化保存：文本走仓库，其它类型直接写数据库
-        try {
-          if (clipItem.type == ClipType.text) {
-            final repo = ref.read(clipRepositoryProvider);
-            await repo.save(
-              ClipEntity(
-                id: clipItem.id,
-                content: clipItem.content ?? '',
-                createdAt: clipItem.createdAt,
-              ),
-            );
-          } else {
-            await DatabaseService.instance.insertClipItem(clipItem);
-          }
-        } on Exception catch (_) {
-          // 忽略存储异常，避免阻塞UI
-        }
+
+        // 2) 持久化保存：统一通过 OptimizedClipboardManager 处理，避免重复保存
+        // 这里不再直接保存到数据库，而是让 OptimizedClipboardManager 统一处理
+        // 防止与 OptimizedClipboardManager 的批量处理机制产生重复
       });
     });
 

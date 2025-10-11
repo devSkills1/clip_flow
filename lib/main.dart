@@ -72,6 +72,13 @@ Future<void> _runApp() async {
   // 初始化服务
   await DatabaseService.instance.initialize();
   await EncryptionService.instance.initialize();
+
+  // 使用优化的剪贴板管理器替代基础剪贴板服务
+  final optimizedClipboardManager = OptimizedClipboardManager();
+  await optimizedClipboardManager.initialize();
+  optimizedClipboardManager.startMonitoring();
+
+  // 为了兼容性，仍然初始化基础服务（但不再启动监控）
   await ClipboardService.instance.initialize();
 
   // 初始化快捷键服务
