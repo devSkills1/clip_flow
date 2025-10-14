@@ -229,22 +229,22 @@ class DefaultHotkeyConfigs {
   static const List<HotkeyConfig> defaults = [
     HotkeyConfig(
       action: HotkeyAction.toggleWindow,
-      key: 'v',
-      modifiers: {HotkeyModifier.command, HotkeyModifier.shift},
+      key: '`',
+      modifiers: {HotkeyModifier.command, HotkeyModifier.alt},
       description: '显示/隐藏剪贴板窗口',
       isDefault: true,
     ),
     HotkeyConfig(
       action: HotkeyAction.quickPaste,
       key: 'v',
-      modifiers: {HotkeyModifier.command, HotkeyModifier.alt},
+      modifiers: {HotkeyModifier.command, HotkeyModifier.control},
       description: '快速粘贴最近一项',
       isDefault: true,
     ),
     HotkeyConfig(
       action: HotkeyAction.showHistory,
-      key: 'h',
-      modifiers: {HotkeyModifier.command, HotkeyModifier.shift},
+      key: 'f9',
+      modifiers: {HotkeyModifier.command},
       description: '显示剪贴板历史',
       isDefault: true,
     ),
@@ -257,8 +257,8 @@ class DefaultHotkeyConfigs {
     ),
     HotkeyConfig(
       action: HotkeyAction.performOCR,
-      key: 'o',
-      modifiers: {HotkeyModifier.command, HotkeyModifier.shift},
+      key: 'f8',
+      modifiers: {HotkeyModifier.command},
       description: 'OCR文字识别',
       isDefault: true,
     ),

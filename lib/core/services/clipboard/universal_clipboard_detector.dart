@@ -229,10 +229,13 @@ class UniversalClipboardDetector {
       }
     }
 
-    // 3. 对于短文本（<20字符），只进行基本检查
+    // 3. 对于所有文本，首先检查文件路径（优先级最高）
+    final isFilePath = _isFilePath(contentToAnalyze);
+    print('File path detection: content=$contentToAnalyze, length=${contentToAnalyze.length}, isFilePath=$isFilePath');
+    if (isFilePath) return ClipType.file;
+
+    // 4. 对于短文本（<20字符），只进行基本检查
     if (contentToAnalyze.length < 20) {
-      // 检查明确的基本类型
-      if (_isFilePath(contentToAnalyze)) return ClipType.file;
       if (_isURL(contentToAnalyze)) return ClipType.url;
       if (_isEmail(contentToAnalyze)) return ClipType.email;
       if (_isColor(contentToAnalyze)) return ClipType.color;
@@ -241,7 +244,7 @@ class UniversalClipboardDetector {
       return ClipType.text;
     }
 
-    // 3. 对于中等长度文本（20-200字符），进行基本检测
+    // 5. 对于中等长度文本（20-200字符），进行基本检测
     if (content.length <= 200) {
       if (_isJSON(content)) return ClipType.json;
       if (_isXML(content)) return ClipType.xml;
@@ -256,11 +259,65 @@ class UniversalClipboardDetector {
 
   /// 检查是否为文件路径
   bool _isFilePath(String content) {
-    return content.contains('/') ||
-        content.contains(r'\') ||
-        content.startsWith('./') ||
-        content.startsWith('../') ||
-        content.contains('file://');
+    // 清理内容：移除前后空白字符
+    final cleanContent = content.trim();
+
+    // 1. 明确的路径标识符
+    if (cleanContent.contains('/') ||
+        cleanContent.contains(r'\') ||
+        cleanContent.startsWith('./') ||
+        cleanContent.startsWith('../') ||
+        cleanContent.contains('file://')) {
+      return true;
+    }
+
+    // 2. 检查是否有文件扩展名（如 .sh, .txt, .pdf, .jpg 等）
+    final extensionPattern = RegExp(r'\.[a-zA-Z0-9]{1,10}$');
+    final hasExtension = extensionPattern.hasMatch(cleanContent);
+
+    // 同步日志记录
+    print('File path detection analysis: content="$cleanContent", hasExtension=$hasExtension');
+    print('Content details: length=${cleanContent.length}, endsWith=".sh":${cleanContent.endsWith(".sh")}, endsWith=".dart":${cleanContent.endsWith(".dart")}');
+
+    if (hasExtension) {
+      // 避免误判其他带点的内容（如版本号、IP地址等）
+      final lowerContent = cleanContent.toLowerCase();
+
+      // 排除常见的非文件名模式
+      if (lowerContent.contains('http://') ||
+          lowerContent.contains('https://') ||
+          lowerContent.contains('ftp://') ||
+          lowerContent.contains('@') || // 邮箱
+          lowerContent.startsWith('192.168.') || // IP地址
+          lowerContent.startsWith('10.') || // IP地址
+          lowerContent.contains('.0.') || // 版本号模式
+          RegExp(r'^\d+\.\d+\.\d+\.\d+$').hasMatch(lowerContent)) { // 完整IP地址
+        print('Content excluded as non-file pattern: $cleanContent');
+        return false;
+      }
+
+      // 检查是否是常见的文件扩展名
+      final commonExtensions = {
+        'sh', 'bash', 'zsh', 'fish', 'py', 'js', 'ts', 'java', 'cpp', 'c', 'h',
+        'hpp', 'txt', 'md', 'doc', 'docx', 'pdf', 'rtf', 'html', 'htm', 'xml',
+        'json', 'yaml', 'yml', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg',
+        'webp', 'ico', 'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm',
+        'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'zip', 'rar', 'tar', 'gz',
+        '7z', 'bz2', 'xz', 'exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'apk',
+        'ipa', 'sql', 'db', 'sqlite', 'csv', 'xls', 'xlsx', 'ppt', 'pptx',
+        'log', 'conf', 'config', 'ini', 'env', 'gitignore', 'dockerfile',
+        'css', 'scss', 'sass', 'less', 'vue', 'jsx', 'tsx', 'svelte'
+      };
+
+      final extension = cleanContent.split('.').last.toLowerCase();
+      final isCommonExtension = commonExtensions.contains(extension);
+
+      print('File extension check result: content=$cleanContent, extension=$extension, isCommonExtension=$isCommonExtension');
+
+      return isCommonExtension;
+    }
+
+    return false;
   }
 
   /// 检查是否为URL

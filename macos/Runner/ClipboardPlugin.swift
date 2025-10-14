@@ -1006,17 +1006,53 @@ import Vision
             "cmd+t", "cmd+shift+3", "cmd+shift+4", "cmd+shift+5",
         ]
 
+        // 添加Xcode和开发工具常用快捷键
+        hotkeys.formUnion([
+            "cmd+shift+o", "cmd+j", "cmd+shift+j", "cmd+option+j",
+            "cmd+shift+b", "cmd+option+b", "cmd+control+b",
+            "cmd+shift+c", "cmd+option+c", "cmd+control+c",
+            "cmd+shift+d", "cmd+shift+e", "cmd+shift+k",
+            "cmd+shift+l", "cmd+shift+m", "cmd+shift+n",
+            "cmd+shift+p", "cmd+shift+r", "cmd+shift+u",
+            "cmd+shift+w", "cmd+shift+y", "cmd+shift+z",
+            "cmd+option+0", "cmd+option+1", "cmd+option+2",
+            "cmd+option+3", "cmd+option+4", "cmd+option+5",
+            "cmd+option+6", "cmd+option+7", "cmd+option+8",
+            "cmd+option+9", "cmd+control+0", "cmd+control+1",
+            "cmd+control+2", "cmd+control+3", "cmd+control+4",
+            "cmd+control+5", "cmd+control+6", "cmd+control+7",
+            "cmd+control+8", "cmd+control+9",
+        ])
+
+        // 添加IDE和编辑器常用快捷键
+        hotkeys.formUnion([
+            "cmd+1", "cmd+2", "cmd+3", "cmd+4", "cmd+5",
+            "cmd+6", "cmd+7", "cmd+8", "cmd+9", "cmd+0",
+            "cmd+-", "cmd+=", "cmd+[", "cmd+]", "cmd+\\",
+            "cmd+;", "cmd+'", "cmd+,", "cmd+.", "cmd+/",
+            "cmd+option+t", "cmd+option+w", "cmd+option+r",
+            "cmd+control+t", "cmd+control+w", "cmd+control+r",
+        ])
+
         // 添加功能键快捷键
         for i in 1...12 {
             hotkeys.insert("cmd+f\(i)")
             hotkeys.insert("cmd+shift+f\(i)")
+            hotkeys.insert("cmd+option+f\(i)")
+            hotkeys.insert("cmd+control+f\(i)")
             hotkeys.insert("ctrl+f\(i)")
+            hotkeys.insert("ctrl+shift+f\(i)")
+            hotkeys.insert("ctrl+option+f\(i)")
+            hotkeys.insert("ctrl+control+f\(i)")
         }
 
         // 添加其他常用快捷键
         hotkeys.formUnion([
             "cmd+option+escape", "cmd+control+q", "ctrl+cmd+q",
             "cmd+option+d", "cmd+control+d", "cmd+shift+d",
+            "cmd+option+f", "cmd+control+f", "cmd+option+h",
+            "cmd+option+i", "cmd+option+j", "cmd+option+k",
+            "cmd+option+l", "cmd+option+m", "cmd+option+n",
         ])
 
         systemHotkeysCache = hotkeys
@@ -1052,19 +1088,31 @@ import Vision
 
     /// 按键映射表 - 统一维护按键代码和字符串的对应关系
     private let keyMappingTable: [UInt16: String] = [
+        // 字母键
         0x00: "a", 0x01: "s", 0x02: "d", 0x03: "f",
         0x04: "h", 0x05: "g", 0x06: "z", 0x07: "x",
         0x08: "c", 0x09: "v", 0x0B: "b", 0x0C: "q",
         0x0D: "w", 0x0E: "e", 0x0F: "r", 0x10: "y",
-        0x11: "t", 0x12: "1", 0x13: "2", 0x14: "3",
-        0x15: "4", 0x16: "6", 0x17: "5", 0x18: "=",
-        0x19: "9", 0x1A: "7", 0x1B: "-", 0x1C: "8",
-        0x1D: "0", 0x1E: "]", 0x1F: "o", 0x20: "u",
-        0x21: "[", 0x22: "i", 0x23: "p", 0x25: "l",
-        0x26: "j", 0x27: "'", 0x28: "k", 0x29: ";",
-        0x2A: "\\", 0x2B: ",", 0x2C: "/", 0x2D: "n",
-        0x2E: "m", 0x2F: ".", 0x31: "space", 0x33: "delete",
-        0x35: "escape", 0x24: "enter", 0x30: "tab", 0x32: "`",
+        0x11: "t", 0x1F: "o", 0x20: "u", 0x22: "i",
+        0x23: "p", 0x25: "l", 0x26: "j", 0x28: "k",
+        0x2D: "n", 0x2E: "m",
+        // 数字键（主键盘）
+        0x12: "1", 0x13: "2", 0x14: "3", 0x15: "4", 0x17: "5",
+        0x16: "6", 0x1A: "7", 0x1C: "8", 0x19: "9", 0x1D: "0",
+        // 数字键（小键盘）
+        0x52: "0", 0x53: "1", 0x54: "2", 0x55: "3", 0x56: "4",
+        0x57: "5", 0x58: "6", 0x59: "7", 0x5A: "8", 0x5B: "9",
+        // 符号键
+        0x18: "=", 0x1B: "-", 0x1E: "]", 0x21: "[", 0x27: "'",
+        0x29: ";", 0x2A: "\\", 0x2B: ",", 0x2C: "/", 0x2F: ".",
+        0x32: "`",
+        // 特殊键
+        0x24: "enter", 0x30: "tab", 0x31: "space", 0x33: "delete",
+        0x35: "escape",
+        // F键
+        0x7A: "f1", 0x78: "f2", 0x63: "f3", 0x76: "f4",
+        0x60: "f5", 0x61: "f6", 0x62: "f7", 0x64: "f8",
+        0x65: "f9", 0x6D: "f10", 0x67: "f11", 0x6F: "f12",
     ]
 
     /// 将按键代码转换为字符串
@@ -1344,6 +1392,29 @@ import Vision
     /// 解析按键代码
     private func parseKeyCode(from components: [String]) -> UInt16? {
         let keyComponent = components.last?.lowercased()
+
+        // 特殊处理功能键
+        if keyComponent?.hasPrefix("f") == true {
+            let keyNumber = keyComponent?.replacingOccurrences(of: "f", with: "")
+            if let num = Int(keyNumber ?? ""), num >= 1 && num <= 12 {
+                switch num {
+                case 1: return 0x7A
+                case 2: return 0x78
+                case 3: return 0x63
+                case 4: return 0x76
+                case 5: return 0x60
+                case 6: return 0x61
+                case 7: return 0x62
+                case 8: return 0x64
+                case 9: return 0x65
+                case 10: return 0x6D
+                case 11: return 0x67
+                case 12: return 0x6F
+                default: break
+                }
+            }
+        }
+
         return keyMappingTable.first(where: { $0.value == keyComponent })?.key
     }
 

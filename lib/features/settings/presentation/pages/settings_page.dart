@@ -955,7 +955,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${S.of(context)?.updateLatestVersionPrefix ?? I18nFallbacks.settings.updateLatestVersionPrefix}${latestVersion?.version}',
+                    '${S.of(context)?.updateLatestVersionPrefix ?? 
+                    I18nFallbacks.settings.updateLatestVersionPrefix}${latestVersion?.version}',
                   ),
                   const SizedBox(height: Spacing.s8),
                   if (latestVersion?.releaseNotes.isNotEmpty ?? false) ...[

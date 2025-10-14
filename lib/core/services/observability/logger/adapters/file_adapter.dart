@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 
 /// 文件日志适配器：
 /// - Web 环境自动返回 null（通过工厂）
-/// - 非 Web：按日期滚动，每天一个文件：<logsDir>/yyyy-mm-dd.log
+/// - 非 Web：按日期滚动，每天一个文件：`logsDir`/`yyyy-mm-dd`.log
 class FileLogAdapter implements LogAdapter {
   FileLogAdapter._(this._dirPath);
 
