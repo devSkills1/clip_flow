@@ -32,6 +32,12 @@ import Vision
     private var systemHotkeysCacheTime: CFTimeInterval = 0
     private let systemHotkeysCacheInterval: CFTimeInterval = 60.0  // 缓存1分钟
 
+    // 应用感知快捷键管理
+    private var currentFrontApp: String?
+    private var lastAppCheckTime: CFTimeInterval = 0
+    private let appCheckInterval: CFTimeInterval = 1.0  // 1秒检查一次
+    private var developerModeEnabled: Bool = false
+
     // Flutter方法通道
     private var channel: FlutterMethodChannel?
 
@@ -108,6 +114,12 @@ import Vision
             stopBookmarkAccess(call: call, result: result)
         case "removeBookmark":
             removeBookmark(call: call, result: result)
+        case "setDeveloperMode":
+            setDeveloperMode(call: call, result: result)
+        case "getCurrentApp":
+            getCurrentApp(result: result)
+        case "getHotkeyStats":
+            getHotkeyStats(result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -995,6 +1007,125 @@ import Vision
         }
     }
 
+    /// 获取当前前台应用的Bundle ID
+    private func getCurrentFrontApp() -> String? {
+        let workspace = NSWorkspace.shared
+        let frontApp = workspace.frontmostApplication
+        return frontApp?.bundleIdentifier
+    }
+
+    /// 检查是否为开发应用
+    private func isDevelopmentApp(_ bundleId: String) -> Bool {
+        let devApps = [
+            "com.apple.dt.Xcode",         // Xcode
+            "com.microsoft.VSCode",       // VS Code
+            "com.jetbrains.intellij",     // IntelliJ IDEA
+            "com.jetbrains.intellij.ce",  // IntelliJ IDEA Community
+            "com.jetbrains.AppCode",      // AppCode
+            "com.jetbrains.CLion",        // CLion
+            "com.jetbrains.DataGrip",     // DataGrip
+            "com.jetbrains.PyCharm",      // PyCharm
+            "com.jetbrains.Rider",        // Rider
+            "com.jetbrains.RubyMine",     // RubyMine
+            "com.jetbrains.WebStorm",     // WebStorm
+            "com.sublimetext.3",          // Sublime Text
+            "com.sublimetext.4",          // Sublime Text 4
+            "org.vim.MacVim",            // MacVim
+            "com.googlecode.iterm2",      // iTerm2
+            "com.apple.Terminal",         // Terminal
+            "com.github.wez.wezterm",    // WezTerm
+            "io.alacritty",               // Alacritty
+            "com.microsoft.vscode",       // VS Code
+            "com.visualstudio.code.oss",  // VS Code OSS
+            "com.google.AndroidStudio",   // Android Studio
+            "com.oracle.java.jdk",        // Java tools
+            "org.eclipse.eclipse",        // Eclipse
+            "com.noodlesoft.Panini",      // Panini (Xcode extension)
+        ]
+        return devApps.contains(bundleId)
+    }
+
+    /// 检查是否为设计应用
+    private func isDesignApp(_ bundleId: String) -> Bool {
+        let designApps = [
+            "com.adobe.Photoshop",        // Photoshop
+            "com.adobe.Illustrator",      // Illustrator
+            "com.adobe.AfterEffects",     // After Effects
+            "com.adobe.PremierePro",      // Premiere Pro
+            "com.adobe.Indesign",         // InDesign
+            "com.sketch.sketch",          // Sketch
+            "com.figma.Desktop",          // Figma
+            "com.figma.agent",            // Figma Agent
+            "com.bohemiancoding.sketch3", // Sketch 3
+            "com.adobe.xd",               // Adobe XD
+            "com.seriflabs.affinitydesigner", // Affinity Designer
+            "com.seriflabs.affinityphoto", // Affinity Photo
+            "com.protopie.studio",        // ProtoPie
+            "com.invisionlabs.Invision",  // InVision
+            "com.axure.axure rp",         // Axure RP
+        ]
+        return designApps.contains(bundleId)
+    }
+
+    /// 获取应用类型
+    private func getAppType(_ bundleId: String) -> String {
+        if isDevelopmentApp(bundleId) {
+            return "development"
+        } else if isDesignApp(bundleId) {
+            return "design"
+        } else if bundleId.hasPrefix("com.apple.") {
+            return "system"
+        }
+        return "general"
+    }
+
+    /// 更新当前前台应用信息
+    private func updateCurrentApp() {
+        let now = CACurrentMediaTime()
+        if now - lastAppCheckTime > appCheckInterval {
+            currentFrontApp = getCurrentFrontApp()
+            lastAppCheckTime = now
+        }
+    }
+
+    /// 检查是否应该处理快捷键（基于应用感知）
+    private func shouldProcessHotkey(_ keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> Bool {
+        updateCurrentApp()
+
+        guard let bundleId = currentFrontApp else { return true }
+
+        let appType = getAppType(bundleId)
+
+        // 开发模式下，在开发应用中更严格地过滤快捷键
+        if developerModeEnabled && isDevelopmentApp(bundleId) {
+            // 只允许明确的非冲突快捷键
+            let allowedInDevMode: Set<String> = [
+                "cmd+f8", "cmd+f9", "cmd+option+`", "cmd+control+v"
+            ]
+            let keyString = createKeyString(keyCode: keyCode, modifiers: modifiers)
+            return allowedInDevMode.contains(keyString)
+        }
+
+        // 普通模式下，避开最常见的冲突快捷键
+        if isDevelopmentApp(bundleId) || isDesignApp(bundleId) {
+            let restrictedKeys: Set<String> = [
+                "cmd+shift+o", "cmd+j", "cmd+shift+j", "cmd+option+j",
+                "cmd+shift+b", "cmd+option+b", "cmd+control+b",
+                "cmd+shift+c", "cmd+option+c", "cmd+control+c",
+                "cmd+shift+d", "cmd+shift+e", "cmd+shift+k",
+                "cmd+shift+l", "cmd+shift+m", "cmd+shift+n",
+                "cmd+shift+p", "cmd+shift+r", "cmd+shift+u",
+                "cmd+shift+w", "cmd+shift+y", "cmd+shift+z",
+                "cmd+1", "cmd+2", "cmd+3", "cmd+4", "cmd+5",
+                "cmd+6", "cmd+7", "cmd+8", "cmd+9", "cmd+0",
+            ]
+            let keyString = createKeyString(keyCode: keyCode, modifiers: modifiers)
+            return !restrictedKeys.contains(keyString)
+        }
+
+        return true
+    }
+
     /// 加载系统快捷键列表
     private func loadSystemHotkeys() {
         // 基础系统快捷键
@@ -1355,6 +1486,12 @@ import Vision
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
         let currentTime = CACurrentMediaTime()
 
+        // 应用感知快捷键过滤
+        guard shouldProcessHotkey(keyCode, modifiers: modifiers) else {
+            NSLog("ClipboardPlugin: Skipping hotkey due to app conflict prevention")
+            return
+        }
+
         // 检查是否匹配任何注册的快捷键
         for (action, hotkey) in registeredHotkeys {
             // 忽略重复按键
@@ -1378,6 +1515,8 @@ import Vision
                 carbonHotKeyRef: hotkey.carbonHotKeyRef
             )
             registeredHotkeys[action] = updatedHotkey
+
+            NSLog("ClipboardPlugin: Hotkey triggered for action: %@, app: %@", action, currentFrontApp ?? "unknown")
 
             // 通知Flutter端
             DispatchQueue.main.async { [weak self] in
@@ -1680,5 +1819,64 @@ import Vision
         } else {
             result(true)
         }
+    }
+
+    /// 设置开发模式
+    private func setDeveloperMode(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let enabled = args["enabled"] as? Bool else {
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing enabled parameter", details: nil))
+            return
+        }
+
+        developerModeEnabled = enabled
+        NSLog("ClipboardPlugin: Developer mode \(enabled ? "enabled" : "disabled")")
+        result(true)
+    }
+
+    /// 获取当前应用信息
+    private func getCurrentApp(result: @escaping FlutterResult) {
+        updateCurrentApp()
+
+        let appInfo: [String: Any] = [
+            "bundleId": currentFrontApp ?? "",
+            "appName": getAppNameFromBundleId(currentFrontApp ?? ""),
+            "appType": currentFrontApp != nil ? getAppType(currentFrontApp!) : "unknown",
+            "developerMode": developerModeEnabled,
+            "isDevelopmentApp": currentFrontApp != nil ? isDevelopmentApp(currentFrontApp!) : false,
+            "isDesignApp": currentFrontApp != nil ? isDesignApp(currentFrontApp!) : false,
+        ]
+
+        result(appInfo)
+    }
+
+    /// 获取应用名称
+    private func getAppNameFromBundleId(_ bundleId: String) -> String {
+        let workspace = NSWorkspace.shared
+        if let appUrl = workspace.urlForApplication(withBundleIdentifier: bundleId) {
+            return appUrl.deletingPathExtension().lastPathComponent
+        }
+        return bundleId
+    }
+
+    /// 获取快捷键统计信息
+    private func getHotkeyStats(result: @escaping FlutterResult) {
+        // 创建一个简化的动作列表，因为Swift端无法直接访问Dart的枚举
+        let supportedActions: [String] = [
+            "toggleWindow", "quickPaste", "showHistory", "clearHistory",
+            "search", "performOCR", "toggleMonitoring"
+        ]
+
+        let stats: [String: Any] = [
+            "registeredHotkeys": registeredHotkeys.count,
+            "systemHotkeys": systemHotkeysCache.count,
+            "developerMode": developerModeEnabled,
+            "currentApp": currentFrontApp ?? "",
+            "debounceInterval": hotkeyDebounceInterval,
+            "appCheckInterval": appCheckInterval,
+            "supportedActions": supportedActions,
+        ]
+
+        result(stats)
     }
 }
