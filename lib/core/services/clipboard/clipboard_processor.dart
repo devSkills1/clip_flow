@@ -591,7 +591,8 @@ class ClipboardProcessor {
   /// 检查数据库中是否已存在该记录
   Future<bool> _checkDatabaseExistence(String contentHash) async {
     try {
-      final existingItem = await DatabaseService.instance.getClipItemById(contentHash);
+      final existingItem =
+          await DatabaseService.instance.getClipItemById(contentHash);
       if (existingItem != null) {
         await Log.d(
           'Content hash already exists in database, skipping',

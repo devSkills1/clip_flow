@@ -1,12 +1,15 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:math';
 
 import 'package:clip_flow_pro/core/models/hotkey_config.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:flutter/services.dart';
+import 'package:meta/meta.dart';
 
-// unawaited helper function
+/// Marks a future as intentionally not awaited.
+///
+/// This helper function is used for fire-and-forget operations where
+/// we don't want to wait for the completion and don't care about the result.
 void unawaited(Future<void> future) {
   // Intentionally unawaited
 }
@@ -22,18 +25,6 @@ class HotkeyUsageStats {
     required this.averageInterval,
   });
 
-  /// 动作
-  final HotkeyAction action;
-
-  /// 使用次数
-  final int count;
-
-  /// 最后使用时间
-  final DateTime lastUsed;
-
-  /// 平均使用间隔（分钟）
-  final double averageInterval;
-
   /// 从JSON创建
   factory HotkeyUsageStats.fromJson(Map<String, dynamic> json) {
     return HotkeyUsageStats(
@@ -45,6 +36,18 @@ class HotkeyUsageStats {
       averageInterval: (json['averageInterval'] as num).toDouble(),
     );
   }
+
+  /// 动作
+  final HotkeyAction action;
+
+  /// 使用次数
+  final int count;
+
+  /// 最后使用时间
+  final DateTime lastUsed;
+
+  /// 平均使用间隔（分钟）
+  final double averageInterval;
 
   /// 转换为JSON
   Map<String, dynamic> toJson() {
@@ -84,6 +87,11 @@ class HotkeyRecommendation {
     required this.reason,
   });
 
+  /// 计算推荐优先级
+  double get priority {
+    return (usageFrequency * 0.6) + ((1.0 - conflictProbability) * 0.4);
+  }
+
   /// 动作
   final HotkeyAction action;
 
@@ -98,11 +106,6 @@ class HotkeyRecommendation {
 
   /// 推荐原因
   final String reason;
-
-  /// 计算推荐优先级
-  double get priority {
-    return (usageFrequency * 0.6) + ((1.0 - conflictProbability) * 0.4);
-  }
 }
 
 /// 智能快捷键推荐服务
@@ -163,13 +166,14 @@ class HotkeyRecommendationService {
           action: action,
           count: 1,
           lastUsed: now,
-          averageInterval: 0.0,
+          averageInterval: 0,
         );
       } else {
-        final interval = now.difference(existing.lastUsed).inMinutes();
+        final interval = now.difference(existing.lastUsed).inMinutes;
         final newAverageInterval = existing.count == 1
             ? interval.toDouble()
-            : (existing.averageInterval * (existing.count - 1) + interval) / existing.count;
+            : (existing.averageInterval * (existing.count - 1) + interval) /
+                existing.count;
 
         _usageStats[action] = HotkeyUsageStats(
           action: action,
@@ -218,13 +222,19 @@ class HotkeyRecommendationService {
               currentApp: currentApp,
             );
 
-            recommendations.add(HotkeyRecommendation(
-              action: action,
-              recommendedKeys: recommendedKeys,
-              conflictProbability: conflictProbability,
-              usageFrequency: usageFrequency,
-              reason: _generateRecommendationReason(action, usage, conflictProbability),
-            ));
+            recommendations.add(
+              HotkeyRecommendation(
+                action: action,
+                recommendedKeys: recommendedKeys,
+                conflictProbability: conflictProbability,
+                usageFrequency: usageFrequency,
+                reason: _generateRecommendationReason(
+                  action,
+                  usage,
+                  conflictProbability,
+                ),
+              ),
+            );
           }
         }
       }
@@ -233,20 +243,22 @@ class HotkeyRecommendationService {
       recommendations.sort((a, b) => b.priority.compareTo(a.priority));
       return recommendations;
     } on Exception catch (e) {
-      await Log.e('获取推荐快捷键失败', tag: _tag, error: e));
+      await Log.e('获取推荐快捷键失败', tag: _tag, error: e);
       return [];
     }
   }
 
   /// 获取个性化快捷键配置
-  Future<HotkeyConfig?> getPersonalizedConfig(HotkeyAction action, {
+  Future<HotkeyConfig?> getPersonalizedConfig(
+    HotkeyAction action, {
     String? currentApp,
   }) async {
     if (!_isInitialized) await initialize();
 
     try {
       // 检查应用特定偏好
-      if (currentApp != null && _appSpecificPreferences.containsKey(currentApp)) {
+      if (currentApp != null &&
+          _appSpecificPreferences.containsKey(currentApp)) {
         final appPrefs = _appSpecificPreferences[currentApp]!;
         if (appPrefs.containsKey(action)) {
           final keyString = appPrefs[action]!;
@@ -283,8 +295,8 @@ class HotkeyRecommendationService {
         'efficiencyScore': 0.0,
       };
 
-      int conflictCount = 0;
-      int efficientActions = 0;
+      var conflictCount = 0;
+      var efficientActions = 0;
 
       for (final entry in currentConfig.entries) {
         final action = entry.key;
@@ -293,7 +305,9 @@ class HotkeyRecommendationService {
         // 检查冲突
         final conflictLevel = await _checkConflictLevel(config);
         if (conflictLevel > 0.7) {
-          analysis['highConflicts'].add({
+          final highConflicts =
+              analysis['highConflicts'] as List<Map<String, dynamic>>;
+          highConflicts.add({
             'action': action.name,
             'key': config.displayString,
             'conflictLevel': conflictLevel,
@@ -304,7 +318,8 @@ class HotkeyRecommendationService {
         // 检查使用情况
         final usage = _usageStats[action];
         if (usage == null || usage.count < 5) {
-          analysis['unusedActions'].add(action);
+          final unusedActions = analysis['unusedActions'] as List<HotkeyAction>;
+          unusedActions.add(action);
         } else if (conflictLevel < 0.3) {
           efficientActions++;
         }
@@ -345,9 +360,12 @@ class HotkeyRecommendationService {
         await _saveAppSpecificPreferences();
       }
 
-      await Log.d('学习用户偏好: ${action.name} -> ${config.displayString}', tag: _tag);
+      await Log.d(
+        '学习用户偏好: ${action.name} -> ${config.displayString}',
+        tag: _tag,
+      );
     } on Exception catch (e) {
-      await Log.e('学习用户偏好失败', tag: _tag, error: e));
+      await Log.e('学习用户偏好失败', tag: _tag, error: e);
     }
   }
 
@@ -362,7 +380,7 @@ class HotkeyRecommendationService {
 
       await Log.i('重置学习数据完成', tag: _tag);
     } on Exception catch (e) {
-      await Log.e('重置学习数据失败', tag: _tag, error: e));
+      await Log.e('重置学习数据失败', tag: _tag, error: e);
     }
   }
 
@@ -370,16 +388,21 @@ class HotkeyRecommendationService {
 
   /// 计算使用频率评分
   double _calculateUsageFrequency(HotkeyUsageStats? usage) {
-    if (usage == null) return 0.0;
+    if (usage == null) return 0;
 
     final now = DateTime.now();
     final daysSinceLastUsed = now.difference(usage.lastUsed).inDays;
-    final recencyFactor = max(0.0, 1.0 - (daysSinceLastUsed / 30.0)); // 30天衰减
+    final recencyFactor = max(0, 1.0 - (daysSinceLastUsed / 30.0)); // 30天衰减
 
-    final frequencyFactor = min(1.0, usage.count / 50.0); // 50次使用为满分
-    final intervalFactor = min(1.0, 60.0 / max(1.0, usage.averageInterval)); // 1小时间隔为满分
+    final frequencyFactor = min(1, usage.count / 50.0); // 50次使用为满分
+    final intervalFactor = min(
+      1,
+      60.0 / max(1.0, usage.averageInterval),
+    ); // 1小时间隔为满分
 
-    return (frequencyFactor * 0.4) + (recencyFactor * 0.3) + (intervalFactor * 0.3);
+    return (frequencyFactor * 0.4) +
+        (recencyFactor * 0.3) +
+        (intervalFactor * 0.3);
   }
 
   /// 生成推荐快捷键
@@ -407,7 +430,6 @@ class HotkeyRecommendationService {
             description: '显示/隐藏剪贴板窗口',
           ),
         ]);
-        break;
       case HotkeyAction.quickPaste:
         candidates.addAll([
           const HotkeyConfig(
@@ -423,7 +445,6 @@ class HotkeyRecommendationService {
             description: '快速粘贴最近一项',
           ),
         ]);
-        break;
       case HotkeyAction.showHistory:
         candidates.addAll([
           const HotkeyConfig(
@@ -439,7 +460,6 @@ class HotkeyRecommendationService {
             description: '显示剪贴板历史',
           ),
         ]);
-        break;
       case HotkeyAction.search:
         candidates.addAll([
           const HotkeyConfig(
@@ -455,7 +475,6 @@ class HotkeyRecommendationService {
             description: '搜索剪贴板内容',
           ),
         ]);
-        break;
       case HotkeyAction.performOCR:
         candidates.addAll([
           const HotkeyConfig(
@@ -471,9 +490,36 @@ class HotkeyRecommendationService {
             description: 'OCR文字识别',
           ),
         ]);
-        break;
-      default:
-        break;
+      case HotkeyAction.clearHistory:
+        candidates.addAll([
+          const HotkeyConfig(
+            action: HotkeyAction.clearHistory,
+            key: 'delete',
+            modifiers: {HotkeyModifier.command, HotkeyModifier.shift},
+            description: '清空剪贴板历史',
+          ),
+          const HotkeyConfig(
+            action: HotkeyAction.clearHistory,
+            key: 'backspace',
+            modifiers: {HotkeyModifier.command, HotkeyModifier.alt},
+            description: '清空剪贴板历史',
+          ),
+        ]);
+      case HotkeyAction.toggleMonitoring:
+        candidates.addAll([
+          const HotkeyConfig(
+            action: HotkeyAction.toggleMonitoring,
+            key: 'p',
+            modifiers: {HotkeyModifier.command, HotkeyModifier.alt},
+            description: '暂停/恢复剪贴板监听',
+          ),
+          const HotkeyConfig(
+            action: HotkeyAction.toggleMonitoring,
+            key: 'pause',
+            modifiers: {HotkeyModifier.command},
+            description: '暂停/恢复剪贴板监听',
+          ),
+        ]);
     }
 
     // 过滤掉已知冲突的快捷键
@@ -486,18 +532,20 @@ class HotkeyRecommendationService {
 
   /// 计算冲突概率
   Future<double> _calculateConflictProbability(
-    List<HotkeyConfig> configs,
+    List<HotkeyConfig> configs, {
     String? currentApp,
-  ) async {
+  }) async {
     if (configs.isEmpty) return 0.0;
 
-    double totalConflict = 0.0;
+    double totalConflict = 0;
 
     for (final config in configs) {
       try {
-        final isSystem = await _channel.invokeMethod<bool>('isSystemHotkey', {
-          'key': config.systemKeyString,
-        }) ?? false;
+        final isSystem =
+            await _channel.invokeMethod<bool>('isSystemHotkey', {
+              'key': config.systemKeyString,
+            }) ??
+            false;
 
         if (isSystem) {
           totalConflict += 1.0;
@@ -531,7 +579,8 @@ class HotkeyRecommendationService {
 
     if (highConflictCombos.contains(modifiers)) {
       return 0.6;
-    } else if (modifiers.contains(HotkeyModifier.command) && modifiers.length == 2) {
+    } else if (modifiers.contains(HotkeyModifier.command) &&
+        modifiers.length == 2) {
       return 0.4;
     } else {
       return 0.2;
@@ -559,22 +608,28 @@ class HotkeyRecommendationService {
     switch (action) {
       case HotkeyAction.toggleWindow:
         parts.add('建议使用易于记忆的组合');
-        break;
       case HotkeyAction.quickPaste:
         parts.add('推荐使用快速访问的组合');
-        break;
+      case HotkeyAction.showHistory:
+        parts.add('适合使用易于访问的组合');
+      case HotkeyAction.clearHistory:
+        parts.add('建议使用不易误触的组合');
+      case HotkeyAction.search:
+        parts.add('推荐使用搜索相关的组合');
       case HotkeyAction.performOCR:
         parts.add('适合使用功能键组合');
-        break;
-      default:
-        break;
+      case HotkeyAction.toggleMonitoring:
+        parts.add('建议使用简单的开关组合');
     }
 
     return parts.join('，');
   }
 
   /// 推荐更容易触发的快捷键
-  HotkeyConfig _recommendEasierKeyForAction(HotkeyAction action, String? currentApp) {
+  HotkeyConfig _recommendEasierKeyForAction(
+    HotkeyAction action,
+    String? currentApp,
+  ) {
     // 根据使用频率推荐更容易触发的组合
     switch (action) {
       case HotkeyAction.toggleWindow:
@@ -592,8 +647,9 @@ class HotkeyRecommendationService {
           description: '快速粘贴最近一项',
         );
       default:
-        return DefaultHotkeyConfigs.defaults
-            .firstWhere((config) => config.action == action);
+        return DefaultHotkeyConfigs.defaults.firstWhere(
+          (config) => config.action == action,
+        );
     }
   }
 
@@ -608,18 +664,14 @@ class HotkeyRecommendationService {
         case 'cmd':
         case 'command':
           modifiers.add(HotkeyModifier.command);
-          break;
         case 'shift':
           modifiers.add(HotkeyModifier.shift);
-          break;
         case 'alt':
         case 'option':
           modifiers.add(HotkeyModifier.alt);
-          break;
         case 'ctrl':
         case 'control':
           modifiers.add(HotkeyModifier.control);
-          break;
       }
     }
 
@@ -634,14 +686,16 @@ class HotkeyRecommendationService {
   /// 检查冲突级别
   Future<double> _checkConflictLevel(HotkeyConfig config) async {
     try {
-      final isSystem = await _channel.invokeMethod<bool>('isSystemHotkey', {
-        'key': config.systemKeyString,
-      }) ?? false;
+      final isSystem =
+          await _channel.invokeMethod<bool>('isSystemHotkey', {
+            'key': config.systemKeyString,
+          }) ??
+          false;
 
       if (isSystem) return 1.0;
       if (_knownConflicts.contains(config.systemKeyString)) return 0.8;
       return _calculateModifierConflictScore(config);
-    } on Exception catch (e) {
+    } on Exception {
       return 0.5;
     }
   }
@@ -695,12 +749,12 @@ class HotkeyRecommendationService {
       // 初始化常见冲突快捷键
       _knownConflicts.addAll([
         'cmd+shift+o', // Xcode Open Quickly
-        'cmd+j',       // Xcode Show Navigator
-        'cmd+b',       // Build
-        'cmd+r',       // Run
-        'cmd+t',       // New Tab
-        'cmd+w',       // Close Window
-        'cmd+q',       // Quit
+        'cmd+j', // Xcode Show Navigator
+        'cmd+b', // Build
+        'cmd+r', // Run
+        'cmd+t', // New Tab
+        'cmd+w', // Close Window
+        'cmd+q', // Quit
       ]);
 
       await Log.d('加载冲突数据库: ${_knownConflicts.length} 个冲突项', tag: _tag);
@@ -728,5 +782,18 @@ class HotkeyRecommendationService {
       await Log.e('保存应用特定偏好失败', tag: _tag, error: e);
     }
   }
+
+  /// 清理资源
+  Future<void> dispose() async {
+    try {
+      _usageStats.clear();
+      _appSpecificPreferences.clear();
+      _isInitialized = false;
+      await Log.d('推荐服务已清理', tag: _tag);
+    } on Exception catch (e) {
+      await Log.e('推荐服务清理失败', tag: _tag, error: e);
+    }
+  }
 }
+
 

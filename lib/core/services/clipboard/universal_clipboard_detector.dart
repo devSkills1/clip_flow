@@ -231,7 +231,10 @@ class UniversalClipboardDetector {
 
     // 3. 对于所有文本，首先检查文件路径（优先级最高）
     final isFilePath = _isFilePath(contentToAnalyze);
-    print('File path detection: content=$contentToAnalyze, length=${contentToAnalyze.length}, isFilePath=$isFilePath');
+    Log.d(
+      'File path detection: content=$contentToAnalyze, length=${contentToAnalyze.length}, isFilePath=$isFilePath',
+      tag: 'UniversalClipboardDetector',
+    );
     if (isFilePath) return ClipType.file;
 
     // 4. 对于短文本（<20字符），只进行基本检查
@@ -276,8 +279,14 @@ class UniversalClipboardDetector {
     final hasExtension = extensionPattern.hasMatch(cleanContent);
 
     // 同步日志记录
-    print('File path detection analysis: content="$cleanContent", hasExtension=$hasExtension');
-    print('Content details: length=${cleanContent.length}, endsWith=".sh":${cleanContent.endsWith(".sh")}, endsWith=".dart":${cleanContent.endsWith(".dart")}');
+    Log.d(
+      'File path detection analysis: content="$cleanContent", hasExtension=$hasExtension',
+      tag: 'UniversalClipboardDetector',
+    );
+    Log.d(
+      'Content details: length=${cleanContent.length}, endsWith=".sh":${cleanContent.endsWith(".sh")}, endsWith=".dart":${cleanContent.endsWith(".dart")}',
+      tag: 'UniversalClipboardDetector',
+    );
 
     if (hasExtension) {
       // 避免误判其他带点的内容（如版本号、IP地址等）
@@ -292,7 +301,10 @@ class UniversalClipboardDetector {
           lowerContent.startsWith('10.') || // IP地址
           lowerContent.contains('.0.') || // 版本号模式
           RegExp(r'^\d+\.\d+\.\d+\.\d+$').hasMatch(lowerContent)) { // 完整IP地址
-        print('Content excluded as non-file pattern: $cleanContent');
+        Log.d(
+      'Content excluded as non-file pattern: $cleanContent',
+      tag: 'UniversalClipboardDetector',
+    );
         return false;
       }
 
@@ -312,7 +324,10 @@ class UniversalClipboardDetector {
       final extension = cleanContent.split('.').last.toLowerCase();
       final isCommonExtension = commonExtensions.contains(extension);
 
-      print('File extension check result: content=$cleanContent, extension=$extension, isCommonExtension=$isCommonExtension');
+      Log.d(
+      'File extension check result: content=$cleanContent, extension=$extension, isCommonExtension=$isCommonExtension',
+      tag: 'UniversalClipboardDetector',
+    );
 
       return isCommonExtension;
     }

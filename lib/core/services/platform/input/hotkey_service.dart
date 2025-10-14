@@ -9,8 +9,8 @@ import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 
-// unawaited helper function
-void unawaited(Future<void> future) {
+// unawaited helper function for this file
+void _unawaited(Future<void> future) {
   // Intentionally unawaited
 }
 
@@ -232,7 +232,7 @@ class HotkeyService {
       await Log.i('快捷键被按下', tag: _tag, fields: {'action': action.name});
 
       // 记录使用统计
-      unawaited(_recordUsage(action));
+      _unawaited(_recordUsage(action));
 
       final callback = _actionCallbacks[action];
       if (callback != null) {
