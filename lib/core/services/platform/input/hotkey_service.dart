@@ -4,9 +4,15 @@ import 'dart:io';
 
 import 'package:clip_flow_pro/core/models/hotkey_config.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/platform/input/hotkey_recommendation_service.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
+
+// unawaited helper function
+void unawaited(Future<void> future) {
+  // Intentionally unawaited
+}
 
 /// 快捷键冲突类型
 enum HotkeyConflictType {
@@ -107,6 +113,15 @@ class HotkeyService {
 
   /// 最大重试次数
   static const int _maxRetryCount = 3;
+
+  /// 推荐服务
+  HotkeyRecommendationService? _recommendationService;
+
+  /// 当前前台应用
+  String? _currentFrontApp;
+
+  /// 开发模式状态
+  bool _developerMode = false;
 
   /// 初始化快捷键服务
   Future<void> initialize() async {
@@ -216,6 +231,9 @@ class HotkeyService {
     try {
       await Log.i('快捷键被按下', tag: _tag, fields: {'action': action.name});
 
+      // 记录使用统计
+      unawaited(_recordUsage(action));
+
       final callback = _actionCallbacks[action];
       if (callback != null) {
         await Log.i('执行快捷键回调', tag: _tag, fields: {'action': action.name});
@@ -234,6 +252,22 @@ class HotkeyService {
         },
       );
     }
+  }
+
+  /// 记录使用统计
+  Future<void> _recordUsage(HotkeyAction action) async {
+    try {
+      final recommendationService = _getRecommendationService();
+      await recommendationService.recordUsage(action);
+    } on Exception catch (e) {
+      await Log.e('记录使用统计失败', tag: _tag, error: e);
+    }
+  }
+
+  /// 获取推荐服务
+  HotkeyRecommendationService _getRecommendationService() {
+    _recommendationService ??= HotkeyRecommendationService(_channel);
+    return _recommendationService!;
   }
 
   /// 注册快捷键动作回调
@@ -619,6 +653,9 @@ class HotkeyService {
       // 清理缓存
       _registrationRetryCount.clear();
 
+      // 清理推荐服务
+      await _recommendationService?.dispose();
+
       _isInitialized = false;
 
       await Log.i('快捷键服务清理完成', tag: _tag);
@@ -626,4 +663,199 @@ class HotkeyService {
       await Log.e('清理快捷键服务失败', tag: _tag, error: e);
     }
   }
+
+  // 智能功能方法
+
+  /// 获取智能推荐快捷键
+  Future<List<HotkeyRecommendation>> getRecommendations({
+    Set<HotkeyAction>? excludeActions,
+  }) async {
+    try {
+      final recommendationService = _getRecommendationService();
+      return await recommendationService.getRecommendations(
+        currentApp: _currentFrontApp,
+        developerMode: _developerMode,
+        excludeActions: excludeActions,
+      );
+    } on Exception catch (e) {
+      await Log.e('获取推荐快捷键失败', tag: _tag, error: e);
+      return [];
+    }
+  }
+
+  /// 获取个性化快捷键配置
+  Future<HotkeyConfig?> getPersonalizedConfig(HotkeyAction action) async {
+    try {
+      final recommendationService = _getRecommendationService();
+      return await recommendationService.getPersonalizedConfig(
+        action,
+        currentApp: _currentFrontApp,
+      );
+    } on Exception catch (e) {
+      await Log.e('获取个性化配置失败', tag: _tag, error: e);
+      return null;
+    }
+  }
+
+  /// 分析当前快捷键配置
+  Future<Map<String, dynamic>> analyzeConfiguration() async {
+    try {
+      final recommendationService = _getRecommendationService();
+      return await recommendationService.analyzeConfiguration(_registeredHotkeys);
+    } on Exception catch (e) {
+      await Log.e('分析快捷键配置失败', tag: _tag, error: e);
+      return {};
+    }
+  }
+
+  /// 学习用户偏好
+  Future<void> learnUserPreference(HotkeyAction action, HotkeyConfig config) async {
+    try {
+      final recommendationService = _getRecommendationService();
+      await recommendationService.learnUserPreference(
+        action,
+        config,
+        _currentFrontApp,
+      );
+      await Log.i('学习用户偏好: ${action.name} -> ${config.displayString}', tag: _tag);
+    } on Exception catch (e) {
+      await Log.e('学习用户偏好失败', tag: _tag, error: e);
+    }
+  }
+
+  /// 设置开发模式
+  Future<void> setDeveloperMode(bool enabled) async {
+    try {
+      _developerMode = enabled;
+      await _channel.invokeMethod('setDeveloperMode', {'enabled': enabled});
+      await Log.i('开发模式${enabled ? "开启" : "关闭"}', tag: _tag);
+    } on Exception catch (e) {
+      await Log.e('设置开发模式失败', tag: _tag, error: e);
+    }
+  }
+
+  /// 获取当前应用信息
+  Future<Map<String, dynamic>?> getCurrentAppInfo() async {
+    try {
+      return await _channel.invokeMethod('getCurrentApp');
+    } on Exception catch (e) {
+      await Log.e('获取当前应用信息失败', tag: _tag, error: e);
+      return null;
+    }
+  }
+
+  /// 更新当前应用信息
+  Future<void> updateCurrentApp() async {
+    try {
+      final appInfo = await getCurrentAppInfo();
+      if (appInfo != null) {
+        _currentFrontApp = appInfo['bundleId'] as String?;
+        await Log.d('当前应用更新: $_currentFrontApp', tag: _tag);
+      }
+    } on Exception catch (e) {
+      await Log.e('更新当前应用信息失败', tag: _tag, error: e);
+    }
+  }
+
+  /// 获取快捷键统计信息
+  Future<Map<String, dynamic>?> getHotkeyStats() async {
+    try {
+      return await _channel.invokeMethod('getHotkeyStats');
+    } on Exception catch (e) {
+      await Log.e('获取快捷键统计失败', tag: _tag, error: e);
+      return null;
+    }
+  }
+
+  /// 重置学习数据
+  Future<void> resetLearningData() async {
+    try {
+      final recommendationService = _getRecommendationService();
+      await recommendationService.resetLearningData();
+      await Log.i('重置学习数据完成', tag: _tag);
+    } on Exception catch (e) {
+      await Log.e('重置学习数据失败', tag: _tag, error: e);
+    }
+  }
+
+  /// 智能优化快捷键配置
+  Future<List<HotkeyConfig>> optimizeConfiguration() async {
+    try {
+      final recommendations = await getRecommendations();
+      final optimizedConfigs = <HotkeyConfig>[];
+
+      // 保留现有配置
+      optimizedConfigs.addAll(_registeredHotkeys.values);
+
+      // 为高频未配置的动作添加推荐配置
+      for (final recommendation in recommendations.take(3)) { // 只取前3个推荐
+        if (!_registeredHotkeys.containsKey(recommendation.action) &&
+            recommendation.priority > 0.6) {
+          optimizedConfigs.add(recommendation.recommendedKeys.first);
+        }
+      }
+
+      return optimizedConfigs;
+    } on Exception catch (e) {
+      await Log.e('优化快捷键配置失败', tag: _tag, error: e);
+      return _registeredHotkeys.values.toList();
+    }
+  }
+
+  /// 导出快捷键配置
+  Future<Map<String, dynamic>> exportConfiguration() async {
+    try {
+      final configData = {
+        'version': '1.0',
+        'exportTime': DateTime.now().toIso8601String(),
+        'hotkeys': _registeredHotkeys.values.map((config) => config.toJson()).toList(),
+        'developerMode': _developerMode,
+        'stats': await getHotkeyStats(),
+      };
+
+      await Log.i('导出快捷键配置', tag: _tag);
+      return configData;
+    } on Exception catch (e) {
+      await Log.e('导出快捷键配置失败', tag: _tag, error: e);
+      return {};
+    }
+  }
+
+  /// 导入快捷键配置
+  Future<bool> importConfiguration(Map<String, dynamic> configData) async {
+    try {
+      if (!configData.containsKey('hotkeys')) {
+        await Log.w('配置数据格式无效', tag: _tag);
+        return false;
+      }
+
+      final hotkeysList = configData['hotkeys'] as List<dynamic>;
+      var successCount = 0;
+
+      for (final hotkeyData in hotkeysList) {
+        try {
+          final config = HotkeyConfig.fromJson(hotkeyData as Map<String, dynamic>);
+          final result = await registerHotkey(config);
+          if (result.success) {
+            successCount++;
+            await learnUserPreference(config.action, config);
+          }
+        } on Exception catch (e) {
+          await Log.e('导入单个快捷键失败', tag: _tag, error: e);
+        }
+      }
+
+      await Log.i('导入快捷键配置完成: $successCount/${hotkeysList.length}', tag: _tag);
+      return successCount > 0;
+    } on Exception catch (e) {
+      await Log.e('导入快捷键配置失败', tag: _tag, error: e);
+      return false;
+    }
+  }
+
+  /// 获取开发模式状态
+  bool get developerMode => _developerMode;
+
+  /// 获取当前前台应用
+  String? get currentFrontApp => _currentFrontApp;
 }
