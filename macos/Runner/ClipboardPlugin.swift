@@ -1094,19 +1094,18 @@ import Vision
 
         guard let bundleId = currentFrontApp else { return true }
 
-        let appType = getAppType(bundleId)
-
-        // 开发模式下，在开发应用中更严格地过滤快捷键
+        // 开发模式下，在开发应用中允许更多非冲突快捷键
         if developerModeEnabled && isDevelopmentApp(bundleId) {
-            // 只允许明确的非冲突快捷键
+            // 扩展开发模式下的白名单，包含所有默认快捷键配置
             let allowedInDevMode: Set<String> = [
-                "cmd+f8", "cmd+f9", "cmd+option+`", "cmd+control+v"
+                "cmd+f8", "cmd+f9", "cmd+option+`", "cmd+control+v",  // 原有的
+                "cmd+shift+f"  // 添加search动作的快捷键
             ]
             let keyString = createKeyString(keyCode: keyCode, modifiers: modifiers)
             return allowedInDevMode.contains(keyString)
         }
 
-        // 普通模式下，避开最常见的冲突快捷键
+        // 普通模式下，避开最常见的冲突快捷键，但允许应用的默认快捷键
         if isDevelopmentApp(bundleId) || isDesignApp(bundleId) {
             let restrictedKeys: Set<String> = [
                 "cmd+shift+o", "cmd+j", "cmd+shift+j", "cmd+option+j",
@@ -1119,8 +1118,12 @@ import Vision
                 "cmd+1", "cmd+2", "cmd+3", "cmd+4", "cmd+5",
                 "cmd+6", "cmd+7", "cmd+8", "cmd+9", "cmd+0",
             ]
+            // 允许应用的默认快捷键，即使在开发应用中
+            let allowedAppKeys: Set<String> = [
+                "cmd+option+`", "cmd+control+v", "cmd+f9", "cmd+f8", "cmd+shift+f"
+            ]
             let keyString = createKeyString(keyCode: keyCode, modifiers: modifiers)
-            return !restrictedKeys.contains(keyString)
+            return !restrictedKeys.contains(keyString) || allowedAppKeys.contains(keyString)
         }
 
         return true
