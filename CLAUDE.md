@@ -2,6 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Sub-Agent Usage Guidelines
+
+**Default Behavior**: Always prefer using specialized sub-agents for task execution rather than handling tasks directly. Sub-agents should be the default approach for:
+
+- Code development and implementation
+- Architecture and design tasks
+- Testing and quality assurance
+- Documentation and analysis
+- Performance optimization
+- Security reviews
+
+**When to Use Sub-Agents**:
+- Any complex multi-step task requiring specialized expertise
+- Tasks matching specific agent descriptions (flutter-expert, dart-pro, backend-architect, etc.)
+- Code reviews, security audits, performance analysis
+- Feature implementation, bug fixes, refactoring
+- Testing strategy and implementation
+
+**Exception**: Only handle tasks directly when they are simple, informational queries or when the task scope is too small to warrant agent delegation.
+
 ## Development Commands
 
 ### Environment Setup
@@ -150,6 +170,7 @@ lib/features/[feature]/
 - **Error Handling**: Force `try on Exception catch (e)` - no generic catch blocks
 - **Logging**: Use `lib/core/services/logger` - never use `print()` or `debugPrint()`
 - **Async**: Prefer async/await over then(), handle exceptions properly
+- **Git Commits**: Commit messages must not contain any Claude, AI, or automated tool references. Focus on the actual changes made.
 
 ### Testing Strategy
 - Target coverage: 70% global, 80% for core modules
