@@ -724,7 +724,7 @@ class HotkeyService {
   }
 
   /// 设置开发模式
-  Future<void> setDeveloperMode(bool enabled) async {
+  Future<void> setDeveloperMode({required bool enabled}) async {
     try {
       _developerMode = enabled;
       await _channel.invokeMethod('setDeveloperMode', {'enabled': enabled});
@@ -782,10 +782,11 @@ class HotkeyService {
   Future<List<HotkeyConfig>> optimizeConfiguration() async {
     try {
       final recommendations = await getRecommendations();
-      final optimizedConfigs = <HotkeyConfig>[];
 
-      // 保留现有配置
-      optimizedConfigs.addAll(_registeredHotkeys.values);
+      // 初始化配置列表，包含现有配置
+      final optimizedConfigs = [
+        ..._registeredHotkeys.values,
+      ];
 
       // 为高频未配置的动作添加推荐配置
       for (final recommendation in recommendations.take(3)) { // 只取前3个推荐

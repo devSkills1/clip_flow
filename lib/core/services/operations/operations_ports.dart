@@ -27,7 +27,7 @@ abstract class UpdateServicePort {
   UpdateStatus get updateStatus;
 
   /// 设置自动检查更新
-  Future<void> setAutoCheckEnabled(bool enabled);
+  Future<void> setAutoCheckEnabled({required bool enabled});
 
   /// 获取更新设置
   Future<Map<String, dynamic>> getUpdateSettings();

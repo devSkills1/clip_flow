@@ -646,9 +646,40 @@ class HotkeyRecommendationService {
           modifiers: {HotkeyModifier.command, HotkeyModifier.control},
           description: '快速粘贴最近一项',
         );
-      default:
-        return DefaultHotkeyConfigs.defaults.firstWhere(
-          (config) => config.action == action,
+      case HotkeyAction.showHistory:
+        return const HotkeyConfig(
+          action: HotkeyAction.showHistory,
+          key: 'f9',
+          modifiers: {HotkeyModifier.command},
+          description: '显示剪贴板历史',
+        );
+      case HotkeyAction.clearHistory:
+        return const HotkeyConfig(
+          action: HotkeyAction.clearHistory,
+          key: 'Delete',
+          modifiers: {HotkeyModifier.command, HotkeyModifier.shift},
+          description: '清空剪贴板历史',
+        );
+      case HotkeyAction.search:
+        return const HotkeyConfig(
+          action: HotkeyAction.search,
+          key: 'f',
+          modifiers: {HotkeyModifier.command, HotkeyModifier.shift},
+          description: '搜索剪贴板内容',
+        );
+      case HotkeyAction.performOCR:
+        return const HotkeyConfig(
+          action: HotkeyAction.performOCR,
+          key: 'f8',
+          modifiers: {HotkeyModifier.command},
+          description: 'OCR文字识别',
+        );
+      case HotkeyAction.toggleMonitoring:
+        return const HotkeyConfig(
+          action: HotkeyAction.toggleMonitoring,
+          key: 'm',
+          modifiers: {HotkeyModifier.command, HotkeyModifier.alt},
+          description: '暂停/恢复剪贴板监听',
         );
     }
   }
@@ -795,5 +826,3 @@ class HotkeyRecommendationService {
     }
   }
 }
-
-

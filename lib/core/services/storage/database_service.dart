@@ -975,7 +975,16 @@ class DatabaseService {
     var totalDeleted = 0;
 
     for (final duplicate in duplicates) {
-      final id = duplicate['id'] as String;
+      final id = duplicate['id'] as String?;
+
+      // 跳过 id 为 null 的记录
+      if (id == null) {
+        await Log.w(
+          'Found duplicate item with null id, skipping',
+          tag: 'DatabaseService',
+        );
+        continue;
+      }
 
       // 删除重复记录，保留最新的一个（基于created_at）
       final deleted = await _database!.rawQuery('''
