@@ -1099,40 +1099,65 @@ class ClipItemCard extends StatelessWidget {
   Widget _buildFooter(BuildContext context) {
     final tags = item.metadata['tags'] as List<dynamic>? ?? [];
     final timeAgo = _getTimeAgo(context);
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          timeAgo,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+        // 时间显示区域
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
+          ),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.access_time,
+                size: 12,
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.7,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                timeAgo,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              // 添加绝对时间提示
+              const SizedBox(width: 8),
+              MouseRegion(
+                cursor: SystemMouseCursors.help,
+                child: Icon(
+                  Icons.info_outline,
+                  size: 12,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
+        
         if (tags.isNotEmpty) ...[
           const SizedBox(height: ClipConstants.smallPadding / 2),
-          Wrap(
-            spacing: ClipConstants.smallPadding / 2,
-            children: tags.take(3).map((tag) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(AppColors.blue100),
-                  borderRadius: BorderRadius.circular(
-                    ClipConstants.smallPadding / 2,
-                  ),
-                ),
-                child: Text(
-                  tag.toString(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: Dimensions.fontSizeXSmall,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+          _buildTagsSection(context, tags),
         ],
+        
+        // 显示更多元数据
+        const SizedBox(height: ClipConstants.smallPadding / 2),
+        _buildMetadataSection(context),
       ],
     );
   }
@@ -1319,6 +1344,204 @@ class ClipItemCard extends StatelessWidget {
     }
   }
 
+  /// 构建标签区域
+  Widget _buildTagsSection(BuildContext context, List<dynamic> tags) {
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: tags.take(5).map((tag) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              width: 0.5,
+            ),
+          ),
+          child: Text(
+            tag.toString(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+              fontSize: 10,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// 构建元数据区域
+  Widget _buildMetadataSection(BuildContext context) {
+    final metadataItems = <Widget>[];
+
+    // 根据类型添加特定元数据
+    switch (item.type) {
+      case ClipType.image:
+        final width = item.metadata['width'] as int?;
+        final height = item.metadata['height'] as int?;
+        final format = item.metadata['format'] as String?;
+        final size = item.metadata['fileSize'] as int?;
+        
+        if (width != null && height != null) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.photo_size_select_large,
+            '${width}x$height',
+          ));
+        }
+        if (format != null) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.image,
+            format.toUpperCase(),
+          ));
+        }
+        if (size != null) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.storage,
+            _formatFileSize(size),
+          ));
+        }
+        break;
+        
+      case ClipType.file:
+        final fileSize = item.metadata['fileSize'] as int?;
+        final fileType = item.metadata['fileType'] as String?;
+        
+        if (fileType != null) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.description,
+            fileType,
+          ));
+        }
+        if (fileSize != null) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.storage,
+            _formatFileSize(fileSize),
+          ));
+        }
+        
+      case ClipType.text:
+      case ClipType.rtf:
+      case ClipType.code:
+        final wordCount = item.metadata['wordCount'] as int?;
+        final lineCount = item.metadata['lineCount'] as int?;
+        final charCount = item.metadata['charCount'] as int?;
+        
+        if (charCount != null) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.text_fields,
+            '$charCount 字符',
+          ));
+        }
+        if (wordCount != null) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.space_bar,
+            '$wordCount 词',
+          ));
+        }
+        if (lineCount != null && lineCount > 1) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.format_align_left,
+            '$lineCount 行',
+          ));
+        }
+        
+      case ClipType.color:
+        final colorHex = item.metadata['colorHex'] as String?;
+        if (colorHex != null) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.palette,
+            colorHex.toUpperCase(),
+          ));
+        }
+        
+      case ClipType.url:
+        final domain = _extractDomain(item.content ?? '');
+        if (domain.isNotEmpty) {
+          metadataItems.add(_buildMetadataItem(
+            context,
+            Icons.language,
+            domain,
+          ));
+        }
+        
+      case ClipType.audio:
+      case ClipType.video:
+      case ClipType.html:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+        // 这些类型暂时不显示特殊元数据
+        break;
+    }
+
+    if (metadataItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: metadataItems,
+    );
+  }
+
+  /// 构建单个元数据项
+  Widget _buildMetadataItem(
+    BuildContext context,
+    IconData icon,
+    String text,
+  ) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 10,
+            color: theme.colorScheme.onSurfaceVariant.withValues(
+              alpha: 0.7,
+            ),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            text,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getTimeAgo(BuildContext context) {
     final now = DateTime.now();
     final difference = now.difference(item.createdAt);
@@ -1333,6 +1556,16 @@ class ClipItemCard extends StatelessWidget {
       return I18nCommonUtil.getTimeDaysAgo(context, difference.inDays);
     } else {
       return DateFormat(AppStrings.timeFormatDefault).format(item.createdAt);
+    }
+  }
+
+  /// 提取域名
+  String _extractDomain(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.host.replaceAll('www.', '');
+    } on Exception {
+      return '';
     }
   }
 }
