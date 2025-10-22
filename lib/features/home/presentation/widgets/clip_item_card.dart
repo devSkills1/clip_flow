@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
@@ -13,6 +12,7 @@ import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
 import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 
@@ -49,56 +49,92 @@ class ClipItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      // 为悬停或提升时的阴影预留上下与左右间距，避免阴影顶到边框
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      clipBehavior: Clip.antiAlias,
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
-      ),
-      child: SizedBox(
-        height: _getFixedCardHeight(),
-        child: Padding(
-          padding: EdgeInsets.all(_contentPadding()),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 头部：类型图标和操作按钮
-              Row(
-                children: [
-                  _buildTypeIcon(),
-                  const SizedBox(width: Spacing.s12),
-                  Expanded(child: _buildTypeLabel()),
-                  _buildActionButtons(context),
-                ],
-              ),
-
-              const SizedBox(height: Spacing.s12),
-
-              // 内容预览 - 可滑动区域（仅内容区域可点击触发复制）
-              Expanded(
-                child: SingleChildScrollView(
-                  physics:
-                      ((displayMode == DisplayMode.preview &&
-                              item.type == ClipType.image) ||
-                          _isTextLike())
-                      ? const NeverScrollableScrollPhysics()
-                      : const ClampingScrollPhysics(),
-                  child: InkWell(
-                    onTap: onTap,
-                    borderRadius: BorderRadius.circular(
-                      ClipConstants.cardBorderRadius,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(
+            ClipConstants.cardBorderRadius,
+          ),
+          child: InkWell(
+            onTap: () {}, // 外层点击不触发复制，由内容区域处理
+            borderRadius: BorderRadius.circular(
+              ClipConstants.cardBorderRadius,
+            ),
+            splashColor: Theme.of(context).colorScheme.primary.withValues(
+              alpha: 0.1,
+            ),
+            highlightColor: Theme.of(context).colorScheme.primary.withValues(
+              alpha: 0.05,
+            ),
+            child: SizedBox(
+              height: _getFixedCardHeight(),
+              child: Padding(
+                padding: EdgeInsets.all(_contentPadding()),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 头部：类型图标和操作按钮
+                    Row(
+                      children: [
+                        _buildTypeIcon(),
+                        const SizedBox(width: Spacing.s12),
+                        Expanded(child: _buildTypeLabel()),
+                        _buildActionButtons(context),
+                      ],
                     ),
-                    child: _buildContentPreview(context),
-                  ),
+
+                    const SizedBox(height: Spacing.s12),
+
+                    // 内容预览 - 可滑动区域（仅内容区域可点击触发复制）
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics:
+                            ((displayMode == DisplayMode.preview &&
+                                    item.type == ClipType.image) ||
+                                _isTextLike())
+                                ? const NeverScrollableScrollPhysics()
+                                : const ClampingScrollPhysics(),
+                        child: InkWell(
+                          onTap: onTap,
+                          borderRadius: BorderRadius.circular(
+                            ClipConstants.cardBorderRadius,
+                          ),
+                          splashColor:
+                              Theme.of(context).colorScheme.primary.withValues(
+                            alpha: 0.2,
+                          ),
+                          highlightColor:
+                              Theme.of(context).colorScheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
+                          child: _buildContentPreview(context),
+                        ),
+                      ),
+                    ),
+
+                    // 底部：时间和标签
+                    const SizedBox(height: Spacing.s8),
+                    _buildFooter(context),
+                  ],
                 ),
               ),
-
-              // 底部：时间和标签
-              const SizedBox(height: Spacing.s8),
-              _buildFooter(context),
-            ],
+            ),
           ),
         ),
       ),
@@ -227,36 +263,54 @@ class ClipItemCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton.filledTonal(
-          onPressed: onFavorite,
-          icon: Icon(
-            item.isFavorite ? Icons.favorite : Icons.favorite_border,
-            size: 18,
-          ),
-          iconSize: 18,
-          style: IconButton.styleFrom(
-            backgroundColor: item.isFavorite
-                ? theme.colorScheme.errorContainer
-                : theme.colorScheme.surfaceContainerHighest,
-            foregroundColor: item.isFavorite
-                ? theme.colorScheme.onErrorContainer
-                : theme.colorScheme.onSurfaceVariant,
-            minimumSize: const Size(32, 32),
-            padding: EdgeInsets.zero,
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: IconButton.filledTonal(
+            onPressed: onFavorite,
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                item.isFavorite ? Icons.favorite : Icons.favorite_border,
+                key: ValueKey(item.isFavorite),
+                size: 18,
+              ),
+            ),
+            iconSize: 18,
+            style: IconButton.styleFrom(
+              backgroundColor: item.isFavorite
+                  ? theme.colorScheme.errorContainer
+                  : theme.colorScheme.surfaceContainerHighest,
+              foregroundColor: item.isFavorite
+                  ? theme.colorScheme.onErrorContainer
+                  : theme.colorScheme.onSurfaceVariant,
+              minimumSize: const Size(32, 32),
+              padding: EdgeInsets.zero,
+              elevation: 2,
+              shadowColor: Colors.black.withValues(alpha: 0.2),
+            ),
+            tooltip: item.isFavorite ? '取消收藏' : '收藏',
           ),
         ),
         const SizedBox(width: Spacing.s8),
-        IconButton.outlined(
-          onPressed: onDelete,
-          icon: const Icon(Icons.delete_outline),
-          iconSize: 18,
-          style: IconButton.styleFrom(
-            foregroundColor: theme.colorScheme.error,
-            side: BorderSide(
-              color: theme.colorScheme.outline.withValues(alpha: 0.5),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: IconButton.outlined(
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline),
+            iconSize: 18,
+            style: IconButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+              side: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.5),
+              ),
+              minimumSize: const Size(32, 32),
+              padding: EdgeInsets.zero,
+              elevation: 1,
+              shadowColor: Colors.black.withValues(alpha: 0.1),
             ),
-            minimumSize: const Size(32, 32),
-            padding: EdgeInsets.zero,
+            tooltip: '删除',
           ),
         ),
       ],
