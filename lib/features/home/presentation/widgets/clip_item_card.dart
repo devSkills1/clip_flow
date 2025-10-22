@@ -93,21 +93,27 @@ class ClipItemCard extends StatelessWidget {
                   alpha: 0.05,
                 ),
                 child: SizedBox(
-                  // 使用动态高度而非固定高度
-                  child: IntrinsicHeight(
+                  // 使用Flexible而不是IntrinsicHeight来避免溢出
+                  child: ClipRect(
                     child: Padding(
                       padding: EdgeInsets.all(_contentPadding()),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           // 头部：类型图标和操作按钮
                           _buildHeader(context),
 
                           const SizedBox(height: Spacing.s12),
 
-                          // 内容预览 - 可滑动区域（仅内容区域可点击触发复制）
-                          Expanded(
-                            child: _buildContentArea(context),
+                          // 内容预览 - 使用Flexible防止溢出
+                          Flexible(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight: _getMaxContentHeight(context),
+                              ),
+                              child: _buildContentArea(context),
+                            ),
                           ),
 
                           // 底部：时间和标签
@@ -126,26 +132,29 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  double _textViewportHeight() {
+  
+
+  /// 获取最大图片高度，防止溢出
+  double _getMaxImageHeight(BuildContext context) {
     switch (displayMode) {
       case DisplayMode.compact:
-        return 120;
+        return 80; // 紧凑模式限制图片高度
       case DisplayMode.normal:
-        return 140;
+        return 100; // 正常模式适中的图片高度
       case DisplayMode.preview:
-        return 160;
+        return 120; // 预览模式允许更大的图片
     }
   }
 
-  /// 最小文本视口高度
-  double _minTextViewportHeight() {
+  /// 获取最大内容高度，防止溢出
+  double _getMaxContentHeight(BuildContext context) {
     switch (displayMode) {
       case DisplayMode.compact:
-        return 60;
+        return 100; // 紧凑模式限制内容高度
       case DisplayMode.normal:
-        return 80;
+        return 120; // 正常模式适中的内容高度
       case DisplayMode.preview:
-        return 100;
+        return 140; // 预览模式允许更多内容
     }
   }
 
@@ -386,7 +395,19 @@ class ClipItemCard extends StatelessWidget {
 
   /// 构建内容区域
   Widget _buildContentArea(BuildContext context) {
-    return _buildContentPreview(context);
+    return ClipRect(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: constraints.maxHeight,
+              minHeight: 0,
+            ),
+            child: _buildContentPreview(context),
+          );
+        },
+      ),
+    );
   }
 
   
@@ -732,18 +753,30 @@ class ClipItemCard extends StatelessWidget {
         }
 
         // 构建包含OCR文本的完整预览
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 图片预览
-            buildImageWidget(),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 图片预览 - 使用Flexible防止溢出
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: _getMaxImageHeight(context),
+                    ),
+                    child: buildImageWidget(),
+                  ),
+                ),
 
-            // OCR文本显示
-            if (item.ocrText != null && item.ocrText!.isNotEmpty) ...[
-              const SizedBox(height: Spacing.s8),
-              _buildOcrTextPreview(context),
-            ],
-          ],
+                // OCR文本显示
+                if (item.ocrText != null && item.ocrText!.isNotEmpty) ...[
+                  const SizedBox(height: Spacing.s8),
+                  _buildOcrTextPreview(context),
+                ],
+              ],
+            );
+          },
         );
       },
     );
@@ -921,41 +954,41 @@ class ClipItemCard extends StatelessWidget {
     // 智能截断内容
     final truncatedContent = _getSmartTruncatedContent(content);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 动态高度的文本内容
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: _textViewportHeight(),
-            minHeight: _minTextViewportHeight(),
-          ),
-          child: SingleChildScrollView(
-            physics: const ClampingScrollPhysics(),
-            child: shouldPreserveWhitespace
-                // 等宽 + 保留空白的文本，支持横向滚动避免超长行溢出
-                ? SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const ClampingScrollPhysics(),
-                    child: _buildHighlightedText(
-                      context,
-                      truncatedContent,
-                      textStyle,
-                      preserveWhitespace: true,
-                    ),
-                  )
-                : _buildHighlightedText(
-                    context,
-                    truncatedContent,
-                    textStyle,
-                    preserveWhitespace: false,
-                  ),
-          ),
-        ),
-        const SizedBox(height: Spacing.s8),
-        _buildContentStats(wordCount, lineCount),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 使用Flexible而不是固定高度，防止溢出
+            Flexible(
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: shouldPreserveWhitespace
+                    // 等宽 + 保留空白的文本，支持横向滚动避免超长行溢出
+                    ? SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const ClampingScrollPhysics(),
+                        child: _buildHighlightedText(
+                          context,
+                          truncatedContent,
+                          textStyle,
+                          preserveWhitespace: true,
+                        ),
+                      )
+                    : _buildHighlightedText(
+                        context,
+                        truncatedContent,
+                        textStyle,
+                        preserveWhitespace: false,
+                      ),
+              ),
+            ),
+            const SizedBox(height: Spacing.s8),
+            _buildContentStats(wordCount, lineCount),
+          ],
+        );
+      },
     );
   }
 
