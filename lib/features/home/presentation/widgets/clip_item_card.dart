@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
@@ -134,17 +135,20 @@ class ClipItemCard extends StatelessWidget {
 
   
 
-  /// 获取最大图片高度，防止溢出
-  double _getMaxImageHeight(BuildContext context) {
+  /// 根据可用空间获取OCR文本最大高度
+  double _getMaxOcrHeight(double availableHeight) {
+    // 为OCR文本预留合理的空间，确保不会溢出
     switch (displayMode) {
       case DisplayMode.compact:
-        return 80; // 紧凑模式限制图片高度
+        return math.min(30.0, availableHeight * 0.3); // 紧凑模式限制更严格
       case DisplayMode.normal:
-        return 100; // 正常模式适中的图片高度
+        return math.min(50.0, availableHeight * 0.4); // 正常模式适中限制
       case DisplayMode.preview:
-        return 120; // 预览模式允许更大的图片
+        return math.min(60.0, availableHeight * 0.35); // 预览模式允许更多空间
     }
   }
+
+  
 
   /// 获取最大内容高度，防止溢出
   double _getMaxContentHeight(BuildContext context) {
@@ -755,6 +759,13 @@ class ClipItemCard extends StatelessWidget {
         // 构建包含OCR文本的完整预览
         return LayoutBuilder(
           builder: (context, constraints) {
+            final totalHeight = constraints.maxHeight;
+            // 为OCR文本预留空间，确保不会溢出
+            final ocrMaxHeight = item.ocrText != null && item.ocrText!.isNotEmpty
+                ? _getMaxOcrHeight(totalHeight)
+                : 0.0;
+            final imageMaxHeight = math.max(20.0, totalHeight - ocrMaxHeight - 20.0); // 预留间距
+            
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -763,15 +774,19 @@ class ClipItemCard extends StatelessWidget {
                 Flexible(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxHeight: _getMaxImageHeight(context),
+                      maxHeight: imageMaxHeight,
                     ),
-                    child: buildImageWidget(),
+                    child: ClipRect(
+                      child: buildImageWidget(),
+                    ),
                   ),
                 ),
 
-                // OCR文本显示
-                if (item.ocrText != null && item.ocrText!.isNotEmpty) ...[
-                  const SizedBox(height: Spacing.s8),
+                // OCR文本显示 - 只在有内容且空间足够时显示
+                if (item.ocrText != null && 
+                    item.ocrText!.isNotEmpty && 
+                    ocrMaxHeight > 20) ...[
+                  const SizedBox(height: Spacing.s4), // 减小间距
                   _buildOcrTextPreview(context),
                 ],
               ],
@@ -1216,70 +1231,84 @@ class ClipItemCard extends StatelessWidget {
     final theme = Theme.of(context);
     final ocrConfidence = item.metadata['ocrConfidence'] as double?;
 
-    return Container(
-      padding: const EdgeInsets.all(Spacing.s12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
-        borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
-        border: Border.all(
-          color: theme.colorScheme.outline.withAlpha(77),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // OCR标题和置信度
-          Row(
-            children: [
-              Icon(
-                Icons.text_fields,
-                size: 16,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: Spacing.s4),
-              Text(
-                'OCR识别文本',
-                style: TextStyle(
-                  fontSize: ClipConstants.captionFontSize,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 根据可用空间动态调整OCR文本的最大高度
+        final maxOcrHeight = _getMaxOcrHeight(constraints.maxHeight);
+        
+        return Container(
+          padding: const EdgeInsets.all(Spacing.s8), // 减小内边距
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
+            borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+            border: Border.all(
+              color: theme.colorScheme.outline.withAlpha(77),
+            ),
+          ),
+          child: ClipRect(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // OCR标题和置信度
+                Row(
+                  children: [
+                    Icon(
+                      Icons.text_fields,
+                      size: 14, // 减小图标尺寸
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: Spacing.s4),
+                    Text(
+                      'OCR识别文本',
+                      style: TextStyle(
+                        fontSize: 10, // 减小字体尺寸
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    if (ocrConfidence != null) ...[
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.s4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getConfidenceColor(ocrConfidence).withAlpha(51),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${(ocrConfidence * 100).round()}%',
+                          style: TextStyle(
+                            fontSize: 8, // 减小字体尺寸
+                            fontWeight: FontWeight.w600,
+                            color: _getConfidenceColor(ocrConfidence),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ),
-              if (ocrConfidence != null) ...[
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.s4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getConfidenceColor(ocrConfidence).withAlpha(51),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${(ocrConfidence * 100).round()}%',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: _getConfidenceColor(ocrConfidence),
+                const SizedBox(height: Spacing.s4),
+  
+                // OCR文本内容 - 使用Flexible防止溢出
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: maxOcrHeight,
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: _buildOcrTextContent(context, ocrText),
                     ),
                   ),
                 ),
               ],
-            ],
-          ),
-          const SizedBox(height: Spacing.s4),
-
-          // OCR文本内容
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 80),
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: _buildOcrTextContent(context, ocrText),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
