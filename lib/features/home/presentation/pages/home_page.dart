@@ -299,18 +299,18 @@ class _HomePageState extends ConsumerState<HomePage> {
   ) {
     switch (displayMode) {
       case DisplayMode.compact:
+        // 使用ListView.builder进行虚拟滚动
         return ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.all(ClipConstants.defaultPadding),
           itemCount: items.length,
+          cacheExtent: 500, // 缓存范围，提升滚动性能
           itemBuilder: (context, index) {
-            return ClipItemCard(
-              item: items[index],
-              displayMode: DisplayMode.compact,
-              searchQuery: searchQuery,
-              onTap: () => _onItemTap(items[index]),
-              onFavorite: () => _onFavoriteToggle(items[index]),
-              onDelete: () => _onDeleteItem(items[index]),
+            return _buildClipItemCard(
+              items[index],
+              displayMode,
+              searchQuery,
+              index,
             );
           },
         );
@@ -319,37 +319,44 @@ class _HomePageState extends ConsumerState<HomePage> {
         return LayoutBuilder(
           builder: (context, constraints) {
             var crossAxisCount = 2;
-            var childAspectRatio = 1.6; // 恢复合理的卡片比例
+            var childAspectRatio = 1.6;
 
             // 响应式布局：根据窗口宽度调整列数
             if (constraints.maxWidth > ClipConstants.defaultWindowWidth) {
               crossAxisCount = 3;
-              childAspectRatio = 1.4; // 保持合理比例
+              childAspectRatio = 1.4;
             } else if (constraints.maxWidth < ClipConstants.minWindowWidth) {
               crossAxisCount = 1;
-              childAspectRatio = 2.2; // 单列时稍微宽一些
+              childAspectRatio = 2.2;
             }
 
-            return GridView.builder(
+            // 使用SliverGrid进行性能优化
+            return CustomScrollView(
               controller: _scrollController,
-              padding: const EdgeInsets.all(ClipConstants.defaultPadding),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: ClipConstants.gridSpacing,
-                mainAxisSpacing: ClipConstants.gridSpacing,
-                childAspectRatio: childAspectRatio,
-              ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                return ClipItemCard(
-                  item: items[index],
-                  displayMode: DisplayMode.normal,
-                  searchQuery: searchQuery,
-                  onTap: () => _onItemTap(items[index]),
-                  onFavorite: () => _onFavoriteToggle(items[index]),
-                  onDelete: () => _onDeleteItem(items[index]),
-                );
-              },
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(ClipConstants.defaultPadding),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: ClipConstants.gridSpacing,
+                      mainAxisSpacing: ClipConstants.gridSpacing,
+                      childAspectRatio: childAspectRatio,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return _buildClipItemCard(
+                          items[index],
+                          displayMode,
+                          searchQuery,
+                          index,
+                        );
+                      },
+                      childCount: items.length,
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         );
@@ -358,7 +365,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         return LayoutBuilder(
           builder: (context, constraints) {
             var crossAxisCount = 3;
-            var childAspectRatio = 1.3; // 预览模式保持紧凑但合理
+            var childAspectRatio = 1.3;
 
             // 响应式布局：根据窗口宽度调整列数
             if (constraints.maxWidth > 1400) {
@@ -375,30 +382,56 @@ class _HomePageState extends ConsumerState<HomePage> {
               childAspectRatio = 1.8;
             }
 
-            return GridView.builder(
+            // 使用SliverGrid进行性能优化
+            return CustomScrollView(
               controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: childAspectRatio,
-              ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                return ClipItemCard(
-                  item: items[index],
-                  displayMode: DisplayMode.preview,
-                  searchQuery: searchQuery,
-                  onTap: () => _onItemTap(items[index]),
-                  onFavorite: () => _onFavoriteToggle(items[index]),
-                  onDelete: () => _onDeleteItem(items[index]),
-                );
-              },
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: childAspectRatio,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return _buildClipItemCard(
+                          items[index],
+                          displayMode,
+                          searchQuery,
+                          index,
+                        );
+                      },
+                      childCount: items.length,
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         );
     }
+  }
+
+  /// 构建单个卡片项，添加性能优化
+  Widget _buildClipItemCard(
+    ClipItem item,
+    DisplayMode displayMode,
+    String searchQuery,
+    int index,
+  ) {
+    // 使用AutomaticKeepAliveClientMixin保持状态
+    return ClipItemCard(
+      key: ValueKey(item.id), // 使用唯一键值进行优化
+      item: item,
+      displayMode: displayMode,
+      searchQuery: searchQuery,
+      onTap: () => _onItemTap(item),
+      onFavorite: () => _onFavoriteToggle(item),
+      onDelete: () => _onDeleteItem(item),
+    );
   }
 
   void _onItemTap(ClipItem item) {

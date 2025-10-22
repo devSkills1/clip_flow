@@ -518,14 +518,9 @@ class ClipItemCard extends StatelessWidget {
                   child: Image.memory(
                     Uint8List.fromList(item.thumbnail!),
                     fit: BoxFit.cover,
-                    filterQuality: FilterQuality.high,
+                    filterQuality: FilterQuality.medium, // 降低质量以提升性能
                     gaplessPlayback: true,
-                    frameBuilder: (
-                      context,
-                      child,
-                      frame,
-                      wasSynchronouslyLoaded,
-                    ) {
+                    frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                       if (wasSynchronouslyLoaded) return child;
                       return AnimatedOpacity(
                         opacity: frame == null ? 0 : 1,
@@ -558,39 +553,36 @@ class ClipItemCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(
                         ClipConstants.cardBorderRadius,
                       ),
-                      child: SizedBox(
-                        height: _imageViewportHeight(),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return SingleChildScrollView(
-                              physics: const ClampingScrollPhysics(),
-                              child: Image.file(
-                                File(abs),
-                                width: constraints.maxWidth,
-                                fit: BoxFit.fitWidth,
-                                filterQuality: FilterQuality.high,
-                                cacheWidth: 1024,
-                                frameBuilder: (
-                                  context,
-                                  child,
-                                  frame,
-                                  wasSynchronouslyLoaded,
-                                ) {
-                                  if (wasSynchronouslyLoaded) return child;
-                                  return AnimatedOpacity(
-                                    opacity: frame == null ? 0 : 1,
-                                    duration: const Duration(milliseconds: 500),
-                                    curve: Curves.easeOut,
-                                    child: child,
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return buildThumbFallback();
-                                },
-                              ),
-                            );
-                          },
-                        ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            child: Image.file(
+                              File(abs),
+                              width: constraints.maxWidth,
+                              fit: BoxFit.fitWidth,
+                              filterQuality: FilterQuality.medium, // 降低质量以提升性能
+                              cacheWidth: 512, // 降低缓存尺寸以节省内存
+                              frameBuilder: (
+                                context,
+                                child,
+                                frame,
+                                wasSynchronouslyLoaded,
+                              ) {
+                                if (wasSynchronouslyLoaded) return child;
+                                return AnimatedOpacity(
+                                  opacity: frame == null ? 0 : 1,
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeOut,
+                                  child: child,
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return buildThumbFallback();
+                              },
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
@@ -707,16 +699,7 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  double _imageViewportHeight() {
-    switch (displayMode) {
-      case DisplayMode.compact:
-        return 120;
-      case DisplayMode.normal:
-        return 140;
-      case DisplayMode.preview:
-        return 160;
-    }
-  }
+  
 
   Future<String?> _resolveAbsoluteImagePath(String relativeOrAbsolute) async {
     try {
