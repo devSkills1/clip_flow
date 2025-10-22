@@ -49,61 +49,73 @@ class ClipItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(
-            ClipConstants.cardBorderRadius,
+    return Semantics(
+      label: _getSemanticLabel(),
+      hint: '点击复制内容，长按显示更多选项',
+      button: true,
+      child: FocusableActionDetector(
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) => onTap(),
           ),
-          child: InkWell(
-            onTap: () {}, // 外层点击不触发复制，由内容区域处理
-            borderRadius: BorderRadius.circular(
-              ClipConstants.cardBorderRadius,
+        },
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            splashColor: Theme.of(context).colorScheme.primary.withValues(
-              alpha: 0.1,
-            ),
-            highlightColor: Theme.of(context).colorScheme.primary.withValues(
-              alpha: 0.05,
-            ),
-            child: SizedBox(
-              // 使用动态高度而非固定高度
-              child: IntrinsicHeight(
-                child: Padding(
-                  padding: EdgeInsets.all(_contentPadding()),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 头部：类型图标和操作按钮
-                      _buildHeader(context),
+            child: Material(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(
+                ClipConstants.cardBorderRadius,
+              ),
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(
+                  ClipConstants.cardBorderRadius,
+                ),
+                splashColor: Theme.of(context).colorScheme.primary.withValues(
+                  alpha: 0.1,
+                ),
+                highlightColor: Theme.of(context).colorScheme.primary.withValues(
+                  alpha: 0.05,
+                ),
+                child: SizedBox(
+                  // 使用动态高度而非固定高度
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: EdgeInsets.all(_contentPadding()),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 头部：类型图标和操作按钮
+                          _buildHeader(context),
 
-                      const SizedBox(height: Spacing.s12),
+                          const SizedBox(height: Spacing.s12),
 
-                      // 内容预览 - 可滑动区域（仅内容区域可点击触发复制）
-                      Expanded(
-                        child: _buildContentArea(context),
+                          // 内容预览 - 可滑动区域（仅内容区域可点击触发复制）
+                          Expanded(
+                            child: _buildContentArea(context),
+                          ),
+
+                          // 底部：时间和标签
+                          const SizedBox(height: Spacing.s8),
+                          _buildFooter(context),
+                        ],
                       ),
-
-                      // 底部：时间和标签
-                      const SizedBox(height: Spacing.s8),
-                      _buildFooter(context),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -137,83 +149,114 @@ class ClipItemCard extends StatelessWidget {
     }
   }
 
+  /// 获取语义化标签
+  String _getSemanticLabel() {
+    final typeLabel = _getTypeLabel();
+    final contentPreview = _getContentPreview();
+    final timeAgo = _getTimeAgoLabel();
+    
+    return '$typeLabel：$contentPreview，$timeAgo${item.isFavorite ? '，已收藏' : ''}';
+  }
+
+  /// 获取类型标签
+  String _getTypeLabel() {
+    switch (item.type) {
+      case ClipType.text:
+        return '文本';
+      case ClipType.rtf:
+        return '富文本';
+      case ClipType.html:
+        return 'HTML';
+      case ClipType.image:
+        return '图片';
+      case ClipType.color:
+        return '颜色';
+      case ClipType.file:
+        return '文件';
+      case ClipType.audio:
+        return '音频';
+      case ClipType.video:
+        return '视频';
+      case ClipType.url:
+        return '链接';
+      case ClipType.email:
+        return '邮箱';
+      case ClipType.json:
+        return 'JSON';
+      case ClipType.xml:
+        return 'XML';
+      case ClipType.code:
+        return '代码';
+    }
+  }
+
+  /// 获取内容预览
+  String _getContentPreview() {
+    switch (item.type) {
+      case ClipType.image:
+        final width = item.metadata['width'] as int? ?? 0;
+        final height = item.metadata['height'] as int? ?? 0;
+        return '图片 ${width}x$height';
+      case ClipType.file:
+        final fileName = item.metadata['fileName'] as String? ?? '未知文件';
+        return fileName;
+      case ClipType.color:
+        final colorHex = item.metadata['colorHex'] as String? ?? '#000000';
+        return '颜色 $colorHex';
+      case ClipType.text:
+      case ClipType.rtf:
+      case ClipType.html:
+      case ClipType.audio:
+      case ClipType.video:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
+        final content = item.content ?? '';
+        if (content.length > 50) {
+          return '${content.substring(0, 50)}...';
+        }
+        return content;
+    }
+  }
+
+  /// 获取时间标签
+  String _getTimeAgoLabel() {
+    final now = DateTime.now();
+    final difference = now.difference(item.createdAt);
+
+    if (difference.inMinutes < 1) {
+      return '刚刚';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}分钟前';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}小时前';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}天前';
+    } else {
+      return DateFormat('yyyy-MM-dd').format(item.createdAt);
+    }
+  }
+
   /// 构建卡片头部
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
         _buildTypeIcon(),
         const SizedBox(width: Spacing.s12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTypeLabel(),
-              const SizedBox(height: 2),
-              _buildContentPriority(),
-            ],
-          ),
-        ),
-        const SizedBox(width: Spacing.s8),
+        Expanded(child: _buildTypeLabel()),
         _buildActionButtons(context),
       ],
     );
   }
 
-  /// 构建内容优先级指示器
-  Widget _buildContentPriority() {
-    switch (item.type) {
-      case ClipType.image:
-        return _buildPriorityBadge('图片', const Color(0xFFE1BEE7)); // purple100
-      case ClipType.file:
-        return _buildPriorityBadge('文件', const Color(0xFFEEEEEE)); // grey100
-      case ClipType.color:
-        return _buildPriorityBadge('颜色', const Color(0xFFFFE0B2)); // orange100
-      case ClipType.url:
-        return _buildPriorityBadge('链接', const Color(0xFFBBDEFB)); // blue100
-      case ClipType.code:
-        return _buildPriorityBadge('代码', const Color(0xFFC8E6C9)); // green100
-      case ClipType.text:
-        return _buildPriorityBadge('文本', const Color(0xFFE1F5FE)); // light blue
-      case ClipType.rtf:
-      case ClipType.html:
-        return _buildPriorityBadge('富文本', const Color(0xFFF0F4C3)); // lime100
-      case ClipType.audio:
-      case ClipType.video:
-      case ClipType.email:
-      case ClipType.json:
-      case ClipType.xml:
-        return const SizedBox.shrink();
-    }
-  }
-
-  /// 构建优先级徽章
-  Widget _buildPriorityBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF424242), // grey800
-        ),
-      ),
-    );
-  }
-
   /// 构建内容区域
   Widget _buildContentArea(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // 根据内容类型和可用空间调整布局
-        return _buildContentPreview(context);
-      },
-    );
+    return _buildContentPreview(context);
   }
+
+  
 
   // 不同显示模式下的内容内边距，提升层次与紧凑度
   double _contentPadding() {
@@ -328,51 +371,63 @@ class ClipItemCard extends StatelessWidget {
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          child: IconButton.filledTonal(
-            onPressed: onFavorite,
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                item.isFavorite ? Icons.favorite : Icons.favorite_border,
-                key: ValueKey(item.isFavorite),
-                size: 18,
+          child: Semantics(
+            label: item.isFavorite ? '取消收藏' : '收藏',
+            button: true,
+            child: IconButton.filledTonal(
+              onPressed: onFavorite,
+              icon: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  item.isFavorite ? Icons.favorite : Icons.favorite_border,
+                  key: ValueKey(item.isFavorite),
+                  size: 18,
+                  semanticLabel: item.isFavorite ? '已收藏' : '未收藏',
+                ),
               ),
+              iconSize: 18,
+              style: IconButton.styleFrom(
+                backgroundColor: item.isFavorite
+                    ? theme.colorScheme.errorContainer
+                    : theme.colorScheme.surfaceContainerHighest,
+                foregroundColor: item.isFavorite
+                    ? theme.colorScheme.onErrorContainer
+                    : theme.colorScheme.onSurfaceVariant,
+                minimumSize: const Size(32, 32),
+                padding: EdgeInsets.zero,
+                elevation: 2,
+                shadowColor: Colors.black.withValues(alpha: 0.2),
+              ),
+              tooltip: item.isFavorite ? '取消收藏' : '收藏',
             ),
-            iconSize: 18,
-            style: IconButton.styleFrom(
-              backgroundColor: item.isFavorite
-                  ? theme.colorScheme.errorContainer
-                  : theme.colorScheme.surfaceContainerHighest,
-              foregroundColor: item.isFavorite
-                  ? theme.colorScheme.onErrorContainer
-                  : theme.colorScheme.onSurfaceVariant,
-              minimumSize: const Size(32, 32),
-              padding: EdgeInsets.zero,
-              elevation: 2,
-              shadowColor: Colors.black.withValues(alpha: 0.2),
-            ),
-            tooltip: item.isFavorite ? '取消收藏' : '收藏',
           ),
         ),
         const SizedBox(width: Spacing.s8),
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          child: IconButton.outlined(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline),
-            iconSize: 18,
-            style: IconButton.styleFrom(
-              foregroundColor: theme.colorScheme.error,
-              side: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.5),
+          child: Semantics(
+            label: '删除',
+            button: true,
+            child: IconButton.outlined(
+              onPressed: onDelete,
+              icon: const Icon(
+                Icons.delete_outline,
+                semanticLabel: '删除',
               ),
-              minimumSize: const Size(32, 32),
-              padding: EdgeInsets.zero,
-              elevation: 1,
-              shadowColor: Colors.black.withValues(alpha: 0.1),
+              iconSize: 18,
+              style: IconButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+                side: BorderSide(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                ),
+                minimumSize: const Size(32, 32),
+                padding: EdgeInsets.zero,
+                elevation: 1,
+                shadowColor: Colors.black.withValues(alpha: 0.1),
+              ),
+              tooltip: '删除',
             ),
-            tooltip: '删除',
           ),
         ),
       ],
@@ -410,65 +465,33 @@ class ClipItemCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 颜色预览区域
         Container(
           width: double.infinity,
           height: Dimensions.searchBarHeight,
           decoration: BoxDecoration(
             color: Color(int.parse(colorHex.replaceFirst('#', '0xFF'))),
             borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
-            border: Border.all(
-              color: const Color(AppColors.grey300),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: const Color(AppColors.grey300)),
           ),
         ),
         const SizedBox(height: ClipConstants.smallPadding),
-        
-        // 颜色信息区域
-        Container(
-          padding: const EdgeInsets.all(Spacing.s8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA), // grey50
-            borderRadius: BorderRadius.circular(
-              ClipConstants.cardBorderRadius,
-            ),
-            border: Border.all(
-              color: const Color(0xFFEEEEEE), // grey100
-              width: 0.5,
-            ),
+        Text(
+          colorHex,
+          style: const TextStyle(
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w600,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                colorHex,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                colorName,
-                style: const TextStyle(
-                  fontSize: ClipConstants.captionFontSize,
-                  color: Color(AppColors.grey600),
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-            ],
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        Text(
+          colorName,
+          style: const TextStyle(
+            fontSize: ClipConstants.captionFontSize,
+            color: Color(AppColors.grey600),
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
         ),
       ],
     );
@@ -535,36 +558,39 @@ class ClipItemCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(
                         ClipConstants.cardBorderRadius,
                       ),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SingleChildScrollView(
-                            physics: const ClampingScrollPhysics(),
-                            child: Image.file(
-                              File(abs),
-                              width: constraints.maxWidth,
-                              fit: BoxFit.fitWidth,
-                              filterQuality: FilterQuality.high,
-                              cacheWidth: 1024,
-                              frameBuilder: (
-                                context,
-                                child,
-                                frame,
-                                wasSynchronouslyLoaded,
-                              ) {
-                                if (wasSynchronouslyLoaded) return child;
-                                return AnimatedOpacity(
-                                  opacity: frame == null ? 0 : 1,
-                                  duration: const Duration(milliseconds: 500),
-                                  curve: Curves.easeOut,
-                                  child: child,
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return buildThumbFallback();
-                              },
-                            ),
-                          );
-                        },
+                      child: SizedBox(
+                        height: _imageViewportHeight(),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              physics: const ClampingScrollPhysics(),
+                              child: Image.file(
+                                File(abs),
+                                width: constraints.maxWidth,
+                                fit: BoxFit.fitWidth,
+                                filterQuality: FilterQuality.high,
+                                cacheWidth: 1024,
+                                frameBuilder: (
+                                  context,
+                                  child,
+                                  frame,
+                                  wasSynchronouslyLoaded,
+                                ) {
+                                  if (wasSynchronouslyLoaded) return child;
+                                  return AnimatedOpacity(
+                                    opacity: frame == null ? 0 : 1,
+                                    duration: const Duration(milliseconds: 500),
+                                    curve: Curves.easeOut,
+                                    child: child,
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return buildThumbFallback();
+                                },
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     );
                   },
@@ -681,7 +707,16 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  
+  double _imageViewportHeight() {
+    switch (displayMode) {
+      case DisplayMode.compact:
+        return 120;
+      case DisplayMode.normal:
+        return 140;
+      case DisplayMode.preview:
+        return 160;
+    }
+  }
 
   Future<String?> _resolveAbsoluteImagePath(String relativeOrAbsolute) async {
     try {
@@ -746,11 +781,18 @@ class ClipItemCard extends StatelessWidget {
         item.type == ClipType.html ||
         item.type == ClipType.rtf;
 
-    final baseStyle =
-        (isMonospace
+    final theme = Theme.of(context);
+    final baseStyle = (isMonospace
             ? const TextStyle(fontFamily: 'monospace')
-            : Theme.of(context).textTheme.bodyMedium) ??
+            : theme.textTheme.bodyMedium) ??
         const TextStyle();
+
+    // 确保文本颜色有足够的对比度
+    final textStyle = baseStyle.copyWith(
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.87),
+      fontSize: baseStyle.fontSize ?? 14,
+      height: 1.4,
+    );
 
     // 智能截断内容
     final truncatedContent = _getSmartTruncatedContent(content);
@@ -775,14 +817,14 @@ class ClipItemCard extends StatelessWidget {
                     child: _buildHighlightedText(
                       context,
                       truncatedContent,
-                      baseStyle.copyWith(height: 1.4),
+                      textStyle,
                       preserveWhitespace: true,
                     ),
                   )
                 : _buildHighlightedText(
                     context,
                     truncatedContent,
-                    baseStyle,
+                    textStyle,
                     preserveWhitespace: false,
                   ),
           ),
