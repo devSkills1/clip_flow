@@ -251,6 +251,139 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
+  /// 处理收藏操作，包含反馈效果
+  void _handleFavoriteWithFeedback(BuildContext context) {
+    // 触觉反馈
+    HapticFeedback.lightImpact();
+    
+    // 执行收藏操作
+    onFavorite();
+    
+    // 显示反馈提示
+    _showFloatingFeedback(
+      context,
+      item.isFavorite ? '已取消收藏' : '已收藏',
+      item.isFavorite ? Icons.favorite_border : Icons.favorite,
+    );
+  }
+
+  /// 处理删除操作，包含反馈效果
+  void _handleDeleteWithFeedback(BuildContext context) {
+    // 触觉反馈
+    HapticFeedback.mediumImpact();
+    
+    // 显示确认对话框
+    _showDeleteConfirmation(context);
+  }
+
+  /// 显示删除确认对话框
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: Text('确定要删除这个${_getTypeLabel()}吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onDelete();
+              _showFloatingFeedback(
+                context,
+                '已删除',
+                Icons.delete,
+                isError: true,
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 显示浮动反馈提示
+  void _showFloatingFeedback(
+    BuildContext context,
+    String message,
+    IconData icon, {
+    bool isError = false,
+  }) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    
+    entry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 100,
+        left: MediaQuery.of(context).size.width / 2 - 75,
+        child: Material(
+          color: Colors.transparent,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutBack,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: isError
+                    ? Theme.of(context).colorScheme.errorContainer
+                    : Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: isError
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: isError
+                          ? Theme.of(context).colorScheme.onErrorContainer
+                          : Theme.of(context).colorScheme.onPrimaryContainer,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    
+    overlay.insert(entry);
+    
+    // 3秒后自动移除
+    Future.delayed(const Duration(seconds: 3), () {
+      entry.remove();
+    });
+  }
+
   /// 构建内容区域
   Widget _buildContentArea(BuildContext context) {
     return _buildContentPreview(context);
@@ -375,9 +508,17 @@ class ClipItemCard extends StatelessWidget {
             label: item.isFavorite ? '取消收藏' : '收藏',
             button: true,
             child: IconButton.filledTonal(
-              onPressed: onFavorite,
+              onPressed: () => _handleFavoriteWithFeedback(context),
               icon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
+                duration: const Duration(milliseconds: 300),
+                switchInCurve: Curves.easeInBack,
+                switchOutCurve: Curves.easeOutBack,
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(
+                    scale: animation,
+                    child: child,
+                  );
+                },
                 child: Icon(
                   item.isFavorite ? Icons.favorite : Icons.favorite_border,
                   key: ValueKey(item.isFavorite),
@@ -410,7 +551,7 @@ class ClipItemCard extends StatelessWidget {
             label: '删除',
             button: true,
             child: IconButton.outlined(
-              onPressed: onDelete,
+              onPressed: () => _handleDeleteWithFeedback(context),
               icon: const Icon(
                 Icons.delete_outline,
                 semanticLabel: '删除',
