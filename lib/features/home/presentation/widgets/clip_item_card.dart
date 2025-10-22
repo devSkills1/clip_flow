@@ -141,6 +141,17 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
+  double _textViewportHeight() {
+    switch (displayMode) {
+      case DisplayMode.compact:
+        return 120;
+      case DisplayMode.normal:
+        return 140;
+      case DisplayMode.preview:
+        return 160;
+    }
+  }
+
   /// 获取固定的卡片高度
   double _getFixedCardHeight() {
     switch (displayMode) {
@@ -403,45 +414,26 @@ class ClipItemCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     filterQuality: FilterQuality.high,
                     gaplessPlayback: true,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest
-                              .withAlpha(77),
-                          borderRadius: BorderRadius.circular(
-                            ClipConstants.cardBorderRadius,
-                          ),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            size: 32,
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
+                    frameBuilder: (
+                      context,
+                      child,
+                      frame,
+                      wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded) return child;
+                      return AnimatedOpacity(
+                        opacity: frame == null ? 0 : 1,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOut,
+                        child: child,
                       );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildImageErrorPlaceholder(theme);
                     },
                   ),
                 )
-              : Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withAlpha(
-                      77,
-                    ),
-                    borderRadius: BorderRadius.circular(
-                      ClipConstants.cardBorderRadius,
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.image,
-                      size: 32,
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
-                );
+              : _buildImagePlaceholder(theme);
         }
 
         Widget buildImageWidget() {
@@ -451,7 +443,7 @@ class ClipItemCard extends StatelessWidget {
                   builder: (context, snapshot) {
                     final abs = snapshot.data;
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return buildThumbFallback();
+                      return _buildLoadingPlaceholder(theme);
                     }
                     if (abs == null) {
                       return buildThumbFallback();
@@ -465,14 +457,27 @@ class ClipItemCard extends StatelessWidget {
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             return SingleChildScrollView(
-                              //scrollDirection: Axis.vertical,
                               physics: const ClampingScrollPhysics(),
                               child: Image.file(
                                 File(abs),
                                 width: constraints.maxWidth,
                                 fit: BoxFit.fitWidth,
                                 filterQuality: FilterQuality.high,
-                                cacheWidth: 1024, // 更高缓存解码宽度以提升清晰度
+                                cacheWidth: 1024,
+                                frameBuilder: (
+                                  context,
+                                  child,
+                                  frame,
+                                  wasSynchronouslyLoaded,
+                                ) {
+                                  if (wasSynchronouslyLoaded) return child;
+                                  return AnimatedOpacity(
+                                    opacity: frame == null ? 0 : 1,
+                                    duration: const Duration(milliseconds: 500),
+                                    curve: Curves.easeOut,
+                                    child: child,
+                                  );
+                                },
                                 errorBuilder: (context, error, stackTrace) {
                                   return buildThumbFallback();
                                 },
@@ -502,6 +507,97 @@ class ClipItemCard extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  /// 构建图片错误占位符
+  Widget _buildImageErrorPlaceholder(ThemeData theme) {
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
+        borderRadius: BorderRadius.circular(
+          ClipConstants.cardBorderRadius,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.broken_image,
+              size: 32,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '图片加载失败',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建图片占位符
+  Widget _buildImagePlaceholder(ThemeData theme) {
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
+        borderRadius: BorderRadius.circular(
+          ClipConstants.cardBorderRadius,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.image,
+          size: 32,
+          color: theme.colorScheme.outline,
+        ),
+      ),
+    );
+  }
+
+  /// 构建加载占位符
+  Widget _buildLoadingPlaceholder(ThemeData theme) {
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
+        borderRadius: BorderRadius.circular(
+          ClipConstants.cardBorderRadius,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  theme.colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '加载中...',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -585,6 +681,9 @@ class ClipItemCard extends StatelessWidget {
             : Theme.of(context).textTheme.bodyMedium) ??
         const TextStyle();
 
+    // 智能截断内容
+    final truncatedContent = _getSmartTruncatedContent(content);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -599,43 +698,23 @@ class ClipItemCard extends StatelessWidget {
                 ? SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     physics: const ClampingScrollPhysics(),
-                    child: RichText(
-                      text: TextSpan(
-                        text: content,
-                        style: baseStyle.copyWith(height: 1.4),
-                      ),
-                      textScaler: MediaQuery.of(context).textScaler,
-                      softWrap: false,
+                    child: _buildHighlightedText(
+                      context,
+                      truncatedContent,
+                      baseStyle.copyWith(height: 1.4),
+                      preserveWhitespace: true,
                     ),
                   )
-                : Text(
-                    content,
-                    style: baseStyle,
+                : _buildHighlightedText(
+                    context,
+                    truncatedContent,
+                    baseStyle,
+                    preserveWhitespace: false,
                   ),
           ),
         ),
         const SizedBox(height: Spacing.s8),
-        Row(
-          children: [
-            Text(
-              '$wordCount ${AppStrings.unitWords}',
-              style: const TextStyle(
-                fontSize: ClipConstants.captionFontSize,
-                color: Color(AppColors.grey600),
-              ),
-            ),
-            if (lineCount > 1) ...[
-              const SizedBox(width: ClipConstants.smallPadding),
-              Text(
-                '$lineCount ${AppStrings.unitLines}',
-                style: const TextStyle(
-                  fontSize: ClipConstants.captionFontSize,
-                  color: Color(AppColors.grey600),
-                ),
-              ),
-            ],
-          ],
-        ),
+        _buildContentStats(wordCount, lineCount),
       ],
     );
   }
@@ -661,15 +740,139 @@ class ClipItemCard extends StatelessWidget {
     }
   }
 
-  double _textViewportHeight() {
-    switch (displayMode) {
-      case DisplayMode.compact:
-        return 120;
-      case DisplayMode.normal:
-        return 140;
-      case DisplayMode.preview:
-        return 160;
+  /// 智能截断内容
+  String _getSmartTruncatedContent(String content) {
+    if (content.length <= 500) return content;
+
+    // 根据显示模式调整截断长度
+    final maxLength = switch (displayMode) {
+      DisplayMode.compact => 200,
+      DisplayMode.normal => 350,
+      DisplayMode.preview => 500,
+    };
+
+    // 尝试在单词边界截断
+    if (content.length > maxLength) {
+      final truncated = content.substring(0, maxLength);
+      final lastSpaceIndex = truncated.lastIndexOf(' ');
+      final lastNewlineIndex = truncated.lastIndexOf('\n');
+      
+      var cutIndex = maxLength;
+      if (lastSpaceIndex > maxLength - 50) {
+        cutIndex = lastSpaceIndex;
+      } else if (lastNewlineIndex > maxLength - 50) {
+        cutIndex = lastNewlineIndex;
+      }
+
+      return '${content.substring(0, cutIndex)}...';
     }
+    
+    return content;
+  }
+
+  /// 构建内容统计信息
+  Widget _buildContentStats(int wordCount, int lineCount) {
+    return Row(
+      children: [
+        Text(
+          '$wordCount ${AppStrings.unitWords}',
+          style: const TextStyle(
+            fontSize: ClipConstants.captionFontSize,
+            color: Color(AppColors.grey600),
+          ),
+        ),
+        if (lineCount > 1) ...[
+          const SizedBox(width: ClipConstants.smallPadding),
+          Text(
+            '$lineCount ${AppStrings.unitLines}',
+            style: const TextStyle(
+              fontSize: ClipConstants.captionFontSize,
+              color: Color(AppColors.grey600),
+            ),
+          ),
+        ],
+        if (item.content != null && item.content!.length > 500) ...[
+          const SizedBox(width: ClipConstants.smallPadding),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 4,
+              vertical: 1,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(AppColors.blue100),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: Builder(
+              builder: (context) {
+                return Text(
+                  '已截断',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 构建高亮文本
+  Widget _buildHighlightedText(
+    BuildContext context,
+    String text,
+    TextStyle style, {
+    required bool preserveWhitespace,
+  }) {
+    if (searchQuery == null || searchQuery!.isEmpty) {
+      return preserveWhitespace
+          ? RichText(
+              text: TextSpan(
+                text: text,
+                style: style,
+              ),
+              textScaler: MediaQuery.of(context).textScaler,
+              softWrap: false,
+            )
+          : Text(
+              text,
+              style: style,
+            );
+    }
+
+    // 检查是否匹配搜索查询
+    if (!text.toLowerCase().contains(searchQuery!.toLowerCase())) {
+      return preserveWhitespace
+          ? RichText(
+              text: TextSpan(
+                text: text,
+                style: style,
+              ),
+              textScaler: MediaQuery.of(context).textScaler,
+              softWrap: false,
+            )
+          : Text(
+              text,
+              style: style,
+            );
+    }
+
+    // 构建高亮文本
+    final spans = _buildHighlightedSpans(
+      context,
+      text,
+      searchQuery!,
+      style,
+    );
+
+    return RichText(
+      text: TextSpan(children: spans),
+      textScaler: MediaQuery.of(context).textScaler,
+      softWrap: !preserveWhitespace,
+    );
   }
 
   Widget _buildFooter(BuildContext context) {
