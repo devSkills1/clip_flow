@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
@@ -147,6 +148,38 @@ class ClipItemCard extends StatelessWidget {
     }
   }
 
+  /// 获取图片最大高度限制
+  double _getMaxImageHeight() {
+    switch (displayMode) {
+      case DisplayMode.compact:
+        return 120;
+      case DisplayMode.normal:
+        return 180;
+      case DisplayMode.preview:
+        return 300;
+    }
+  }
+
+  /// 计算图片显示尺寸
+  Size _calculateImageDisplaySize(double availableWidth) {
+    final maxImageHeight = _getMaxImageHeight();
+
+    // 如果有原始尺寸信息，按比例缩放
+    final originalWidth = item.originWidth ?? (item.metadata['width'] as int?);
+    final originalHeight = item.originHeight ?? (item.metadata['height'] as int?);
+
+    if (originalWidth != null && originalHeight != null && originalWidth > 0 && originalHeight > 0) {
+      final aspectRatio = originalWidth / originalHeight;
+      final calculatedHeight = math.min(maxImageHeight, availableWidth / aspectRatio);
+      final calculatedWidth = calculatedHeight * aspectRatio;
+
+      return Size(calculatedWidth, calculatedHeight);
+    }
+
+    // 没有原始尺寸时使用默认尺寸
+    return Size(availableWidth, maxImageHeight);
+  }
+
   /// 获取语义化标签
   String _getSemanticLabel() {
     final typeLabel = _getTypeLabel();
@@ -192,9 +225,13 @@ class ClipItemCard extends StatelessWidget {
   String _getContentPreview() {
     switch (item.type) {
       case ClipType.image:
-        final width = item.metadata['width'] as int? ?? 0;
-        final height = item.metadata['height'] as int? ?? 0;
-        return '图片 ${width}x$height';
+        // 优先使用新的originWidth和originHeight字段，其次使用metadata中的尺寸
+        final width = item.originWidth ?? (item.metadata['width'] as int? ?? 0);
+        final height = item.originHeight ?? (item.metadata['height'] as int? ?? 0);
+        if (width > 0 && height > 0) {
+          return '图片 ${width}x$height';
+        }
+        return '图片';
       case ClipType.file:
         final fileName = item.metadata['fileName'] as String? ?? '未知文件';
         return fileName;
@@ -589,8 +626,8 @@ class ClipItemCard extends StatelessWidget {
   }
 
   Widget _buildImagePreview() {
-    return Builder(
-      builder: (context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
         final theme = Theme.of(context);
         final rawPath = item.filePath;
         final isImageCandidate =
@@ -600,32 +637,43 @@ class ClipItemCard extends StatelessWidget {
         final wantOriginal =
             displayMode == DisplayMode.preview && isImageCandidate;
 
+        // 根据可用空间计算图片显示尺寸
+        final imageDisplaySize = _calculateImageDisplaySize(constraints.maxWidth);
+        final maxImageHeight = _getMaxImageHeight();
+        final imageHeight = math.min(imageDisplaySize.height, maxImageHeight);
+
         Widget buildThumbFallback() {
           return (item.thumbnail != null && item.thumbnail!.isNotEmpty)
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(
                     ClipConstants.cardBorderRadius,
                   ),
-                  child: Image.memory(
-                    Uint8List.fromList(item.thumbnail!),
-                    fit: BoxFit.cover,
-                    gaplessPlayback: true,
-                    frameBuilder:
-                        (context, child, frame, wasSynchronouslyLoaded) {
-                          if (wasSynchronouslyLoaded) return child;
-                          return AnimatedOpacity(
-                            opacity: frame == null ? 0 : 1,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOut,
-                            child: child,
-                          );
-                        },
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildImageErrorPlaceholder(theme);
-                    },
+                  child: SizedBox(
+                    width: imageDisplaySize.width,
+                    height: imageHeight,
+                    child: Image.memory(
+                      Uint8List.fromList(item.thumbnail!),
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      cacheWidth: imageDisplaySize.width.round(),
+                      gaplessPlayback: true,
+                      frameBuilder:
+                          (context, child, frame, wasSynchronouslyLoaded) {
+                            if (wasSynchronouslyLoaded) return child;
+                            return AnimatedOpacity(
+                              opacity: frame == null ? 0 : 1,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                              child: child,
+                            );
+                          },
+                      errorBuilder: (context, error, stackTrace) {
+                        return _buildImageErrorPlaceholder(theme, imageDisplaySize, imageHeight);
+                      },
+                    ),
                   ),
                 )
-              : _buildImagePlaceholder(theme);
+              : _buildImagePlaceholder(theme, imageDisplaySize, imageHeight);
         }
 
         Widget buildImageWidget() {
@@ -635,7 +683,7 @@ class ClipItemCard extends StatelessWidget {
                   builder: (context, snapshot) {
                     final abs = snapshot.data;
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return _buildLoadingPlaceholder(theme);
+                      return _buildLoadingPlaceholder(theme, imageDisplaySize, imageHeight);
                     }
                     if (abs == null) {
                       return buildThumbFallback();
@@ -644,38 +692,35 @@ class ClipItemCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(
                         ClipConstants.cardBorderRadius,
                       ),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SingleChildScrollView(
-                            physics: const ClampingScrollPhysics(),
-                            child: Image.file(
-                              File(abs),
-                              width: constraints.maxWidth,
-                              fit: BoxFit.fitWidth,
-                              cacheWidth: 512, // 降低缓存尺寸以节省内存
-                              frameBuilder:
-                                  (
-                                    context,
-                                    child,
-                                    frame,
-                                    wasSynchronouslyLoaded,
-                                  ) {
-                                    if (wasSynchronouslyLoaded) return child;
-                                    return AnimatedOpacity(
-                                      opacity: frame == null ? 0 : 1,
-                                      duration: const Duration(
-                                        milliseconds: 500,
-                                      ),
-                                      curve: Curves.easeOut,
-                                      child: child,
-                                    );
-                                  },
-                              errorBuilder: (context, error, stackTrace) {
-                                return buildThumbFallback();
+                      child: SizedBox(
+                        width: imageDisplaySize.width,
+                        height: imageHeight,
+                        child: Image.file(
+                          File(abs),
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                          cacheWidth: imageDisplaySize.width.round(),
+                          frameBuilder:
+                              (
+                                context,
+                                child,
+                                frame,
+                                wasSynchronouslyLoaded,
+                              ) {
+                                if (wasSynchronouslyLoaded) return child;
+                                return AnimatedOpacity(
+                                  opacity: frame == null ? 0 : 1,
+                                  duration: const Duration(
+                                    milliseconds: 500,
+                                  ),
+                                  curve: Curves.easeOut,
+                                  child: child,
+                                );
                               },
-                            ),
-                          );
-                        },
+                          errorBuilder: (context, error, stackTrace) {
+                            return buildThumbFallback();
+                          },
+                        ),
                       ),
                     );
                   },
@@ -711,16 +756,10 @@ class ClipItemCard extends StatelessWidget {
   }
 
   /// 构建图片错误占位符
-  Widget _buildImageErrorPlaceholder(ThemeData theme) {
-    // 根据显示模式调整占位符高度
-    final placeholderHeight = switch (displayMode) {
-      DisplayMode.compact => 100,
-      DisplayMode.normal => 150,
-      DisplayMode.preview => 200,
-    };
-
+  Widget _buildImageErrorPlaceholder(ThemeData theme, Size size, double height) {
     return Container(
-      height: placeholderHeight.toDouble(),
+      width: size.width,
+      height: height,
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(
@@ -751,16 +790,10 @@ class ClipItemCard extends StatelessWidget {
   }
 
   /// 构建图片占位符
-  Widget _buildImagePlaceholder(ThemeData theme) {
-    // 根据显示模式调整占位符高度
-    final placeholderHeight = switch (displayMode) {
-      DisplayMode.compact => 100,
-      DisplayMode.normal => 150,
-      DisplayMode.preview => 200,
-    };
-
+  Widget _buildImagePlaceholder(ThemeData theme, Size size, double height) {
     return Container(
-      height: placeholderHeight.toDouble(),
+      width: size.width,
+      height: height,
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(
@@ -778,16 +811,10 @@ class ClipItemCard extends StatelessWidget {
   }
 
   /// 构建加载占位符
-  Widget _buildLoadingPlaceholder(ThemeData theme) {
-    // 根据显示模式调整占位符高度
-    final placeholderHeight = switch (displayMode) {
-      DisplayMode.compact => 100,
-      DisplayMode.normal => 150,
-      DisplayMode.preview => 200,
-    };
-
+  Widget _buildLoadingPlaceholder(ThemeData theme, Size size, double height) {
     return Container(
-      height: placeholderHeight.toDouble(),
+      width: size.width,
+      height: height,
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(

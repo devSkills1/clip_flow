@@ -1,9 +1,9 @@
 import 'dart:developer' as developer;
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:clip_flow_pro/features/home/presentation/pages/enhanced_home_page.dart';
 import 'package:clip_flow_pro/features/home/presentation/utils/performance_monitor.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 集成演示脚本 - 展示如何使用优化组件
 class IntegrationDemo extends ConsumerWidget {

@@ -232,6 +232,7 @@ class UniversalClipboardDetector {
     // 3. 对于所有文本，首先检查文件路径（优先级最高）
     final isFilePath = _isFilePath(contentToAnalyze);
     Log.d(
+      // ignore: lines_longer_than_80_chars
       'File path detection: content=$contentToAnalyze, length=${contentToAnalyze.length}, isFilePath=$isFilePath',
       tag: 'UniversalClipboardDetector',
     );

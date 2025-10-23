@@ -13,29 +13,32 @@ analyzer:
     unused_import: error
     unused_local_variable: error
     unused_element: error
-    
+
     # API 文档要求（降级为警告以减少噪音）
     public_member_api_docs: warning
-    
+
     # 安全和最佳实践
     avoid_print: error
     avoid_web_libraries_in_flutter: error
     no_logic_in_create_state: error
-    
+
     # 性能相关
     avoid_function_literals_in_foreach_calls: warning
     prefer_const_constructors: warning
     prefer_const_literals_to_create_immutables: warning
-    
+
     # 代码风格和一致性
     sort_pub_dependencies: error
     sort_constructors_first: warning
     always_declare_return_types: warning
-    
+
     # 降低噪音但保持提醒
     flutter_style_todos: info
     parameter_assignments: info
     avoid_field_initializers_in_const_classes: info
+
+    # 禁用80字符限制警告
+    lines_longer_than_80_chars: ignore
 
 linter:
   rules:
@@ -47,24 +50,24 @@ linter:
     - prefer_final_fields
     - prefer_final_in_for_each
     - prefer_final_locals
-    
+
     # 安全和最佳实践
     - avoid_print
     - avoid_web_libraries_in_flutter
     - no_logic_in_create_state
     - use_build_context_synchronously
-    
+
     # 代码组织
     - sort_constructors_first
     - sort_pub_dependencies
     - always_declare_return_types
     - always_put_required_named_parameters_first
-    
+
     # 性能优化
     - avoid_function_literals_in_foreach_calls
     - avoid_unnecessary_containers
     - sized_box_for_whitespace
-    
+
     # 可读性和维护性
     - prefer_single_quotes
     - require_trailing_commas
