@@ -1,5 +1,5 @@
 // ignore_for_file: public_member_api_docs
-// 忽略公共成员API文档要求，因为这是内部UI组件，不需要对外暴露API文档
+// 这是内部UI组件，不需要对外暴露API文档
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/dimensions.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
@@ -201,97 +201,52 @@ class FilterSidebar extends ConsumerWidget {
     required VoidCallback onTap,
   }) {
     return Builder(
-      builder: (context) => _HoverScaleItem(
+      builder: (context) => _ModernFilterItem(
         onTap: onTap,
         isSelected: isSelected,
-        child: ({required isHovered}) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: ({required bool isHovered}) => Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected
                 ? Theme.of(context).colorScheme.primaryContainer
-                    .withValues(alpha: 0.95)
-                : Theme.of(context).colorScheme.surfaceContainer
-                    .withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(16),
+                : isHovered
+                    ? Theme.of(context).colorScheme.surfaceContainer
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
             border: isSelected
-                ? Border.all(
-                    color: Theme.of(context).colorScheme.primary
-                        .withValues(alpha: 0.7),
-                    width: 2,
-                  )
+                ? null
                 : Border.all(
                     color: Theme.of(context).colorScheme.outlineVariant
-                        .withValues(alpha: isHovered ? 0.5 : 0.3),
+                        .withValues(alpha: 0.3),
                   ),
-            boxShadow: [
-              if (isSelected) ...[
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary
-                      .withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary
-                      .withValues(alpha: 0.1),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ] else ...[
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.shadow
-                      .withValues(alpha: isHovered ? 0.15 : 0.05),
-                  blurRadius: isHovered ? 8 : 4,
-                  offset: Offset(0, isHovered ? 3 : 1),
-                ),
-              ],
-            ],
           ),
           child: Row(
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
+              Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                          .withValues(alpha: 0.25)
-                      : Theme.of(context).colorScheme.surfaceContainerHighest
-                          .withValues(alpha: isHovered ? 0.8 : 0.6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                            .withValues(alpha: 0.4)
-                        : Theme.of(context).colorScheme.outlineVariant
-                            .withValues(alpha: isHovered ? 0.3 : 0.2),
-                  ),
+                  color: _getIconBackgroundColor(context, isSelected, isHovered),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
-                  size: 20,
+                  size: 18,
                   color: isSelected
-                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      ? Theme.of(context).colorScheme.primary
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontWeight: isSelected
-                        ? FontWeight.w700
-                        : FontWeight.w600,
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
                         ? Theme.of(context).colorScheme.onPrimaryContainer
                         : Theme.of(context).colorScheme.onSurface,
-                    fontSize: isSelected ? 15 : 14,
                   ),
-                  child: Text(label),
                 ),
               ),
             ],
@@ -350,110 +305,54 @@ class FilterSidebar extends ConsumerWidget {
     required DisplayMode mode,
   }) {
     final isSelected = displayMode == mode;
-    // 根据不同显示模式微调图标与文字样式，提升辨识度
-    final iconSize = switch (mode) {
-      DisplayMode.compact => 16,
-      DisplayMode.normal => 18,
-      DisplayMode.preview => 20,
-    };
 
     return Builder(
-      builder: (context) => _HoverScaleItem(
+      builder: (context) => _ModernFilterItem(
         onTap: () => onDisplayModeChanged(mode),
         isSelected: isSelected,
-        child: ({required isHovered}) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: ({required bool isHovered}) => Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected
                 ? Theme.of(context).colorScheme.primaryContainer
-                    .withValues(alpha: 0.95)
-                : Theme.of(context).colorScheme.surfaceContainer
-                    .withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(16),
+                : isHovered
+                    ? Theme.of(context).colorScheme.surfaceContainer
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
             border: isSelected
-                ? Border.all(
-                    color: Theme.of(context).colorScheme.primary
-                        .withValues(alpha: 0.7),
-                    width: 2,
-                  )
+                ? null
                 : Border.all(
                     color: Theme.of(context).colorScheme.outlineVariant
-                        .withValues(alpha: isHovered ? 0.5 : 0.3),
+                        .withValues(alpha: 0.3),
                   ),
-            boxShadow: [
-              if (isSelected) ...[
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary
-                      .withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary
-                      .withValues(alpha: 0.1),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ] else ...[
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.shadow
-                      .withValues(alpha: isHovered ? 0.15 : 0.05),
-                  blurRadius: isHovered ? 8 : 4,
-                  offset: Offset(0, isHovered ? 3 : 1),
-                ),
-              ],
-            ],
           ),
           child: Row(
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
+              Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                          .withValues(alpha: 0.25)
-                      : Theme.of(context).colorScheme.surfaceContainerHighest
-                          .withValues(alpha: isHovered ? 0.8 : 0.6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                            .withValues(alpha: 0.4)
-                        : Theme.of(context).colorScheme.outlineVariant
-                            .withValues(alpha: isHovered ? 0.3 : 0.2),
-                  ),
+                  color: _getIconBackgroundColor(context, isSelected, isHovered),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
-                  size: iconSize.toDouble(),
+                  size: 18,
                   color: isSelected
-                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      ? Theme.of(context).colorScheme.primary
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontWeight: isSelected
-                        ? FontWeight.w700
-                        : FontWeight.w600,
-                    // 预览模式的标签稍大一点，便于强调
-                    fontSize: switch (mode) {
-                      DisplayMode.compact => 13,
-                      DisplayMode.normal => 14,
-                      DisplayMode.preview => 15,
-                    },
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
                         ? Theme.of(context).colorScheme.onPrimaryContainer
                         : Theme.of(context).colorScheme.onSurface,
                   ),
-                  child: Text(label),
                 ),
               ),
             ],
@@ -461,6 +360,21 @@ class FilterSidebar extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// 获取图标背景颜色
+  Color _getIconBackgroundColor(
+    BuildContext context,
+    bool isSelected,
+    bool isHovered,
+  ) {
+    if (isSelected) {
+      return Theme.of(context).colorScheme.primary.withValues(alpha: 0.15);
+    }
+    if (isHovered) {
+      return Theme.of(context).colorScheme.surfaceContainerHighest;
+    }
+    return Theme.of(context).colorScheme.surfaceContainer;
   }
 
   Widget _buildBottomActions(BuildContext context, WidgetRef ref) {
@@ -555,9 +469,10 @@ class FilterSidebar extends ConsumerWidget {
   }
 }
 
-/// 带有悬停放大效果的组件
-class _HoverScaleItem extends StatefulWidget {
-  const _HoverScaleItem({
+/// 现代简洁的筛选项交互效果
+/// 实现平滑的悬停和点击反馈，符合 Material Design 3 规范
+class _ModernFilterItem extends StatefulWidget {
+  const _ModernFilterItem({
     required this.onTap,
     required this.isSelected,
     required this.child,
@@ -568,47 +483,96 @@ class _HoverScaleItem extends StatefulWidget {
   final Widget Function({required bool isHovered}) child;
 
   @override
-  State<_HoverScaleItem> createState() => _HoverScaleItemState();
+  State<_ModernFilterItem> createState() => _ModernFilterItemState();
 }
 
-class _HoverScaleItemState extends State<_HoverScaleItem>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+class _ModernFilterItemState extends State<_ModernFilterItem>
+    with TickerProviderStateMixin {
+  late final AnimationController _animationController;
   late final Animation<double> _scaleAnimation;
+  late final Animation<double> _opacityAnimation;
+
   bool _isHovered = false;
+  bool _isPressed = false;
+  bool _disposed = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    _animationController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
+
     _scaleAnimation = Tween<double>(
       begin: 1,
-      end: 1.05,
+      end: 1.02,
     ).animate(CurvedAnimation(
-      parent: _controller,
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _opacityAnimation = Tween<double>(
+      begin: 0,
+      end: 0.04,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
       curve: Curves.easeOutCubic,
     ));
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _disposed = true;
+
+    // 安全停止动画并释放控制器
+    try {
+      if (_animationController.isAnimating) {
+        _animationController.stop();
+      }
+      _animationController.dispose();
+    } on Exception {
+      // 忽略 dispose 过程中的异常，避免崩溃
+      // 这里可以添加日志记录
+    }
+
     super.dispose();
   }
 
-  void _onHover(bool hovering) {
-    if (!mounted) return;
+  void _updateAnimation() {
+    if (_disposed || !mounted) return;
 
-    setState(() {
-      _isHovered = hovering;
-    });
-    if (hovering) {
-      _controller.forward();
-    } else {
-      _controller.reverse();
+    try {
+      if (_isHovered || _isPressed) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    } on Exception {
+      // 忽略动画更新异常，避免在卸载过程中崩溃
+    }
+  }
+
+  void _onHover(bool hovering) {
+    if (_disposed || !mounted) return;
+
+    if (_isHovered != hovering) {
+      setState(() {
+        _isHovered = hovering;
+      });
+      _updateAnimation();
+    }
+  }
+
+  void _onPressedChange(bool pressed) {
+    if (_disposed || !mounted) return;
+
+    if (_isPressed != pressed) {
+      setState(() {
+        _isPressed = pressed;
+      });
+      _updateAnimation();
     }
   }
 
@@ -620,12 +584,23 @@ class _HoverScaleItemState extends State<_HoverScaleItem>
       onExit: (_) => _onHover(false),
       child: GestureDetector(
         onTap: widget.onTap,
+        onTapDown: (_) => _onPressedChange(true),
+        onTapUp: (_) => _onPressedChange(false),
+        onTapCancel: () => _onPressedChange(false),
         child: AnimatedBuilder(
-          animation: _scaleAnimation,
+          animation: _animationController,
           builder: (context, child) {
             return Transform.scale(
               scale: _scaleAnimation.value,
-              child: widget.child(isHovered: _isHovered),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.black.withValues(
+                    alpha: _opacityAnimation.value,
+                  ),
+                ),
+                child: widget.child(isHovered: _isHovered),
+              ),
             );
           },
         ),

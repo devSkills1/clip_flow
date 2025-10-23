@@ -6,7 +6,8 @@
       "Bash(flutter run:*)",
       "Bash(nc:*)",
       "Bash(pbcopy:*)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Bash(flutter pub get:*)"
     ],
     "deny": [],
     "ask": []
