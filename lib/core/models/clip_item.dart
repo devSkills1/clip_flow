@@ -62,6 +62,8 @@ class ClipItem {
     this.thumbnail,
     this.isFavorite = false,
     this.ocrText,
+    this.originWidth,
+    this.originHeight,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : id = id ?? const Uuid().v4(),
@@ -80,6 +82,8 @@ class ClipItem {
     final createdAtRaw = json['createdAt'];
     final updatedAtRaw = json['updatedAt'];
     final ocrTextRaw = json['ocrText'];
+    final originWidthRaw = json['originWidth'];
+    final originHeightRaw = json['originHeight'];
 
     return ClipItem(
       id: id,
@@ -97,6 +101,8 @@ class ClipItem {
                 : <String, dynamic>{}),
       isFavorite: isFavRaw is bool ? isFavRaw : (isFavRaw == 1),
       ocrText: ocrTextRaw is String ? ocrTextRaw : null,
+      originWidth: originWidthRaw is num ? originWidthRaw.toInt() : null,
+      originHeight: originHeightRaw is num ? originHeightRaw.toInt() : null,
       createdAt: createdAtRaw is String
           ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
           : (createdAtRaw is DateTime ? createdAtRaw : DateTime.now()),
@@ -130,6 +136,12 @@ class ClipItem {
   /// OCR识别的文本内容：用于图片中的文字搜索
   final String? ocrText;
 
+  /// 图片原始宽度（像素）：用于图片尺寸计算和布局
+  final int? originWidth;
+
+  /// 图片原始高度（像素）：用于图片尺寸计算和布局
+  final int? originHeight;
+
   /// 创建时间：该条目首次创建的时间
   final DateTime createdAt;
 
@@ -146,6 +158,8 @@ class ClipItem {
     Map<String, dynamic>? metadata,
     bool? isFavorite,
     String? ocrText,
+    int? originWidth,
+    int? originHeight,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -158,6 +172,8 @@ class ClipItem {
       metadata: metadata ?? this.metadata,
       isFavorite: isFavorite ?? this.isFavorite,
       ocrText: ocrText ?? this.ocrText,
+      originWidth: originWidth ?? this.originWidth,
+      originHeight: originHeight ?? this.originHeight,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -174,6 +190,8 @@ class ClipItem {
       'metadata': metadata,
       'isFavorite': isFavorite,
       'ocrText': ocrText,
+      'originWidth': originWidth,
+      'originHeight': originHeight,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

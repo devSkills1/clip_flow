@@ -364,22 +364,25 @@ class _HomePageState extends ConsumerState<HomePage> {
       case DisplayMode.preview:
         return LayoutBuilder(
           builder: (context, constraints) {
-            var crossAxisCount = 3;
-            var childAspectRatio = 1.3;
+            var crossAxisCount = 2;
+            var childAspectRatio = 1.0; // 更大的纵横比，减少压缩
 
-            // 响应式布局：根据窗口宽度调整列数
-            if (constraints.maxWidth > 1400) {
-              crossAxisCount = 4;
-              childAspectRatio = 1.2;
-            } else if (constraints.maxWidth > 900) {
+            // 响应式布局：根据窗口宽度调整列数，优化图片显示
+            if (constraints.maxWidth > 1600) {
               crossAxisCount = 3;
-              childAspectRatio = 1.3;
-            } else if (constraints.maxWidth > 600) {
+              childAspectRatio = 0.9; // 更接近正方形，减少压缩
+            } else if (constraints.maxWidth > 1200) {
               crossAxisCount = 2;
+              childAspectRatio = 1.0;
+            } else if (constraints.maxWidth > 800) {
+              crossAxisCount = 2;
+              childAspectRatio = 1.1;
+            } else if (constraints.maxWidth > 600) {
+              crossAxisCount = 1;
               childAspectRatio = 1.4;
             } else {
               crossAxisCount = 1;
-              childAspectRatio = 1.8;
+              childAspectRatio = 1.6;
             }
 
             // 使用SliverGrid进行性能优化
@@ -429,7 +432,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       displayMode: displayMode,
       searchQuery: searchQuery,
       onTap: () => _onItemTap(item),
-      onFavorite: () => _onFavoriteToggle(item),
+      onFavorite: () {}, // 空实现，移除收藏功能
       onDelete: () => _onDeleteItem(item),
     );
   }
@@ -450,9 +453,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  void _onFavoriteToggle(ClipItem item) {
-    ref.read(clipboardHistoryProvider.notifier).toggleFavorite(item.id);
-  }
+  // 收藏功能已移除
 
   void _onDeleteItem(ClipItem item) {
     showDialog<void>(
