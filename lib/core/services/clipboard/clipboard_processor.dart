@@ -64,14 +64,32 @@ class ClipboardProcessor {
       // 创建 ClipItem
       final item = detectionResult.createClipItem(id: contentHash);
 
+      // 增加详细的调试日志
+      await Log.d(
+        'Created ClipItem from detection result',
+        tag: 'ClipboardProcessor',
+        fields: {
+          'detectedType': detectionResult.detectedType.toString(),
+          'contentLength': item.content?.length ?? 0,
+          'contentPreview': item.content != null && item.content!.length > 50
+              ? '${item.content!.substring(0, 50)}...'
+              : item.content,
+          'filePath': item.filePath,
+          'hasContent': item.content != null && item.content!.isNotEmpty,
+          'hasFilePath': item.filePath != null && item.filePath!.isNotEmpty,
+        },
+      );
+
       // 检查是否为空内容，如果为空则直接返回null，不记录到剪贴历史
       if (_isEmptyContent(item)) {
-        await Log.d(
+        await Log.w(
           'Empty clipboard content detected, skipping recording',
           tag: 'ClipboardProcessor',
           fields: {
             'detectedType': detectionResult.detectedType.toString(),
             'contentLength': item.content?.length ?? 0,
+            'filePath': item.filePath,
+            'isEmptyReason': _getEmptyReason(item),
           },
         );
         return null;
@@ -962,7 +980,55 @@ class ClipboardProcessor {
       case ClipType.audio:
       case ClipType.video:
         // 文件类型检查文件路径是否存在
+        // 如果有文本内容，即使没有文件路径也不应该被认为是空的
+        if (item.content != null && item.content!.trim().isNotEmpty) {
+          return false;
+        }
         return item.filePath?.isEmpty ?? true;
+    }
+  }
+
+  /// 获取空内容的原因
+  String _getEmptyReason(ClipItem item) {
+    switch (item.type) {
+      case ClipType.text:
+      case ClipType.code:
+      case ClipType.color:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.html:
+      case ClipType.rtf:
+        final content = item.content ?? '';
+        if (content.isEmpty) {
+          return 'content_is_null_or_empty';
+        } else if (content.trim().isEmpty) {
+          return 'content_is_whitespace_only';
+        }
+        return 'content_unknown_reason';
+
+      case ClipType.image:
+        if (item.filePath == null) {
+          return 'file_path_is_null';
+        } else if (item.filePath!.isEmpty) {
+          return 'file_path_is_empty';
+        }
+        return 'image_unknown_reason';
+
+      case ClipType.file:
+      case ClipType.audio:
+      case ClipType.video:
+        if (item.content == null) {
+          return 'content_is_null';
+        } else if (item.content!.trim().isEmpty) {
+          return 'content_is_empty';
+        } else if (item.filePath == null) {
+          return 'file_path_is_null';
+        } else if (item.filePath!.isEmpty) {
+          return 'file_path_is_empty';
+        }
+        return 'file_unknown_reason';
     }
   }
 }

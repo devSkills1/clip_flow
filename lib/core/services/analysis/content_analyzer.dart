@@ -221,6 +221,15 @@ class FilePathAnalyzer extends ContentAnalyzer {
     double confidence = 0;
     final metadata = <String, dynamic>{};
 
+    // 首先检查是否为代码内容 - 代码内容不应该被认为是文件路径
+    if (_isCodeContent(trimmed)) {
+      return AnalysisResult(
+        type: supportedType,
+        confidence: 0,
+        metadata: {'reason': 'detected_as_code'},
+      );
+    }
+
     // file:// 协议 - 最高置信度
     if (trimmed.startsWith('file://')) {
       confidence = 1;
@@ -229,16 +238,42 @@ class FilePathAnalyzer extends ContentAnalyzer {
     // 绝对路径模式
     else if (RegExp(r'^[A-Za-z]:\\').hasMatch(trimmed) ||
         trimmed.startsWith('/')) {
-      confidence = 0.9;
-      metadata['pathType'] = 'absolute';
+      // 验证路径结构是否合理
+      if (_isValidPath(trimmed)) {
+        confidence = 0.9;
+        metadata['pathType'] = 'absolute';
+      } else {
+        confidence = 0.2; // 如果包含代码特征，大幅降低置信度
+        metadata['pathType'] = 'absolute_invalid';
+      }
     }
     // 相对路径模式
     else if (trimmed.startsWith('./') || trimmed.startsWith('../')) {
-      confidence = 0.8;
-      metadata['pathType'] = 'relative';
+      if (_isValidPath(trimmed)) {
+        confidence = 0.8;
+        metadata['pathType'] = 'relative';
+      } else {
+        confidence = 0.2;
+        metadata['pathType'] = 'relative_invalid';
+      }
     }
     // 包含文件扩展名
     else if (RegExp(r'\.[a-zA-Z0-9]{1,10}$').hasMatch(trimmed)) {
+      final extension = trimmed.split('.').last.toLowerCase();
+
+      // 对于代码文件扩展名，需要更严格的检查
+      final codeExtensions = ['dart', 'js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'h', 'hpp'];
+      if (codeExtensions.contains(extension)) {
+        // 如果有代码特征，直接返回0置信度
+        if (_hasCodeFeatures(trimmed)) {
+          return AnalysisResult(
+            type: supportedType,
+            confidence: 0,
+            metadata: {'reason': 'code_with_extension', 'extension': extension},
+          );
+        }
+      }
+
       // 检查是否真实存在
       try {
         final file = File(trimmed);
@@ -246,12 +281,18 @@ class FilePathAnalyzer extends ContentAnalyzer {
           confidence = 0.95;
           metadata['exists'] = true;
         } else if (trimmed.contains('/') || trimmed.contains(r'\')) {
-          confidence = 0.7;
+          confidence = _isValidPath(trimmed) ? 0.7 : 0.3;
           metadata['exists'] = false;
+        } else {
+          // 对于没有路径分隔符的内容，降低置信度
+          confidence = 0.4;
+          metadata['hasPathSeparator'] = false;
         }
       } on FileSystemException catch (_) {
         if (trimmed.contains('/') || trimmed.contains(r'\')) {
-          confidence = 0.6;
+          confidence = _isValidPath(trimmed) ? 0.6 : 0.2;
+        } else {
+          confidence = 0.1;
         }
       }
     }
@@ -261,6 +302,59 @@ class FilePathAnalyzer extends ContentAnalyzer {
       confidence: confidence,
       metadata: metadata,
     );
+  }
+
+  /// 检查是否为代码内容
+  bool _isCodeContent(String content) {
+    return _hasCodeFeatures(content);
+  }
+
+  /// 检查内容是否包含代码特征
+  bool _hasCodeFeatures(String content) {
+    // 常见的代码关键字和模式
+    final codePatterns = [
+      // 编程语言关键字
+      RegExp(r'\b(import|export|from|as|function|class|const|let|var|def|if|else|for|while|return|public|private|static|async|await|try|catch|throw|new|this|super)\b'),
+      // 函数定义模式
+      RegExp(r'\w+\s*\([^)]*\)\s*[{=>]'),
+      // 类定义模式
+      RegExp(r'\bclass\s+\w+'),
+      // 导入语句
+      RegExp(r'''import\s+['"][^'"]*['"]'''),
+      // 注释
+      RegExp(r'//.*$|/\*[\s\S]*?\*/'),
+      // 字符串字面量
+      RegExp(r'''['"][^'"]*['"]'''),
+      // 代码块特征
+      RegExp(r'[{}[\]()]'),
+      // 赋值操作
+      RegExp(r'\w+\s*=\s*[^;]'),
+    ];
+
+    int codeFeatureCount = 0;
+    for (final pattern in codePatterns) {
+      if (pattern.hasMatch(content)) {
+        codeFeatureCount++;
+      }
+    }
+
+    // 如果匹配超过2个代码特征，认为是代码
+    return codeFeatureCount >= 2;
+  }
+
+  /// 验证路径是否有效
+  bool _isValidPath(String path) {
+    // 路径不应该包含代码特有的字符
+    if (path.contains(RegExp(r'[{}[\]();=<>]'))) {
+      return false;
+    }
+
+    // 检查路径长度
+    if (path.length > 1000) {
+      return false;
+    }
+
+    return true;
   }
 }
 

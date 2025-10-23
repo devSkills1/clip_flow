@@ -265,13 +265,24 @@ class UniversalClipboardDetector {
     // 清理内容：移除前后空白字符
     final cleanContent = content.trim();
 
+    // 0. 首先排除明显的代码内容
+    if (_isCodeContent(cleanContent)) {
+      Log.d(
+        'Content detected as code, not file path',
+        tag: 'UniversalClipboardDetector',
+        fields: {'content': cleanContent.length > 100 ? '${cleanContent.substring(0, 100)}...' : cleanContent},
+      );
+      return false;
+    }
+
     // 1. 明确的路径标识符
     if (cleanContent.contains('/') ||
         cleanContent.contains(r'\') ||
         cleanContent.startsWith('./') ||
         cleanContent.startsWith('../') ||
         cleanContent.contains('file://')) {
-      return true;
+      // 对于包含路径分隔符的内容，进一步验证
+      return _isValidPathStructure(cleanContent);
     }
 
     // 2. 检查是否有文件扩展名（如 .sh, .txt, .pdf, .jpg 等）
@@ -404,10 +415,80 @@ class UniversalClipboardDetector {
         tag: 'UniversalClipboardDetector',
       );
 
+      // 附加验证：对于代码文件扩展名，需要更严格的检查
+      if (['dart', 'js', 'ts', 'py', 'java', 'cpp', 'c', 'h', 'hpp', 'jsx', 'tsx'].contains(extension)) {
+        // 如果内容包含代码特征，不认为是文件路径
+        if (_hasCodeFeatures(cleanContent)) {
+          Log.d(
+            'Content has code features, not treating as file path: $cleanContent',
+            tag: 'UniversalClipboardDetector',
+          );
+          return false;
+        }
+      }
+
       return isCommonExtension;
     }
 
     return false;
+  }
+
+  /// 检查是否为代码内容
+  bool _isCodeContent(String content) {
+    // 检查是否包含代码特征
+    return _hasCodeFeatures(content);
+  }
+
+  /// 检查内容是否包含代码特征
+  bool _hasCodeFeatures(String content) {
+    // 常见的代码关键字和模式
+    final codePatterns = [
+      // 编程语言关键字
+      RegExp(r'\b(import|export|from|as|function|class|const|let|var|def|if|else|for|while|return|public|private|static|async|await|try|catch|throw|new|this|super)\b'),
+      // 函数定义模式
+      RegExp(r'\w+\s*\([^)]*\)\s*[{=>]'),
+      // 类定义模式
+      RegExp(r'\bclass\s+\w+'),
+      // 导入语句
+      RegExp(r'''import\s+['"][^'"]*['"]'''),
+      // 注释
+      RegExp(r'//.*$|/\*[\s\S]*?\*/'),
+      // 字符串字面量
+      RegExp(r'''['"][^'"]*['"]'''),
+      // 代码块特征
+      RegExp(r'[{}[\]()]'),
+      // 赋值操作
+      RegExp(r'\w+\s*=\s*[^;]'),
+    ];
+
+    int codeFeatureCount = 0;
+    for (final pattern in codePatterns) {
+      if (pattern.hasMatch(content)) {
+        codeFeatureCount++;
+      }
+    }
+
+    // 如果匹配超过2个代码特征，认为是代码
+    return codeFeatureCount >= 2;
+  }
+
+  /// 验证路径结构是否有效
+  bool _isValidPathStructure(String content) {
+    // 检查是否看起来像有效的路径
+    // 不应该包含代码特有的字符
+    if (content.contains(RegExp(r'[{}[\]();=<>]'))) {
+      return false;
+    }
+
+    // 如果包含路径分隔符，检查是否有合理的结构
+    final parts = content.split(RegExp(r'[\\/]'));
+
+    // 路径不应该太短（防止误判单个单词）
+    if (parts.length < 2 && content.length < 10) {
+      return false;
+    }
+
+    return true;
   }
 
   /// 检查是否为URL
@@ -521,7 +602,33 @@ class UniversalClipboardDetector {
     ClipType detectedType,
     Map<ClipboardFormat, FormatInfo> formatAnalysis,
   ) {
-    // 对于非文本类型，直接保存原始内容
+    // 对于文件类型，需要特殊处理
+    if (detectedType == ClipType.file) {
+      // 检查是否真的有文件数据
+      if (formatAnalysis.containsKey(ClipboardFormat.files)) {
+        final files = formatAnalysis[ClipboardFormat.files]!.content;
+        if (files is List && files.isNotEmpty) {
+          return files;
+        }
+      }
+
+      // 如果没有真实的文件数据，可能是误判，尝试获取文本内容
+      if (formatAnalysis.containsKey(ClipboardFormat.text)) {
+        final textContent = formatAnalysis[ClipboardFormat.text]!.content;
+        if (textContent != null && textContent.toString().isNotEmpty) {
+          Log.w(
+            'File type detected but no file data found, falling back to text content',
+            tag: 'UniversalClipboardDetector',
+          );
+          return textContent;
+        }
+      }
+
+      // 最后降级到最佳内容
+      return data.bestContent?.toString() ?? '';
+    }
+
+    // 对于其他非文本类型，直接保存原始内容
     if (detectedType != ClipType.text &&
         detectedType != ClipType.code &&
         detectedType != ClipType.html &&
@@ -549,7 +656,7 @@ class UniversalClipboardDetector {
     }
 
     // 降级处理
-    return data.bestContent.toString();
+    return data.bestContent?.toString() ?? '';
   }
 
   /// 获取原始内容（非文本类型）

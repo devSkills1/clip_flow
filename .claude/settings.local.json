@@ -9,7 +9,8 @@
       "Bash(dart analyze:*)",
       "Bash(flutter pub get:*)",
       "Bash(find:*)",
-      "Bash(dart format:*)"
+      "Bash(dart format:*)",
+      "Bash(flutter test:*)"
     ],
     "deny": [],
     "ask": []
