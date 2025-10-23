@@ -1,0 +1,1642 @@
+import 'dart:io';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow_pro/core/constants/colors.dart';
+import 'package:clip_flow_pro/core/constants/dimensions.dart';
+import 'package:clip_flow_pro/core/constants/spacing.dart';
+import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
+import 'package:clip_flow_pro/core/utils/image_utils.dart';
+import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+
+/// 现代化的剪贴项卡片组件 - 解决布局溢出和性能问题
+class ModernClipItemCard extends StatefulWidget {
+  /// 剪贴项卡片组件
+  const ModernClipItemCard({
+    required this.item,
+    required this.displayMode,
+    required this.onTap,
+    required this.onDelete,
+    super.key,
+    this.searchQuery,
+  });
+
+  /// 剪贴项
+  final ClipItem item;
+
+  /// 显示模式
+  final DisplayMode displayMode;
+
+  /// 点击回调
+  final VoidCallback onTap;
+
+  /// 删除回调
+  final VoidCallback onDelete;
+
+  /// 搜索关键词
+  final String? searchQuery;
+
+  @override
+  State<ModernClipItemCard> createState() => _ModernClipItemCardState();
+}
+
+class _ModernClipItemCardState extends State<ModernClipItemCard>
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _elevationAnimation;
+
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation =
+        Tween<double>(
+          begin: 1.0,
+          end: 0.98,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOut,
+          ),
+        );
+    _elevationAnimation =
+        Tween<double>(
+          begin: 2.0,
+          end: 8.0,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOut,
+          ),
+        );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    setState(() => _isPressed = true);
+    _animationController.forward();
+    HapticFeedback.lightImpact();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    setState(() => _isPressed = false);
+    _animationController.reverse();
+  }
+
+  void _handleTapCancel() {
+    setState(() => _isPressed = false);
+    _animationController.reverse();
+  }
+
+  void _handleMouseEnter(PointerEnterEvent event) {
+    setState(() => _isHovered = true);
+  }
+
+  void _handleMouseExit(PointerExitEvent event) {
+    setState(() => _isHovered = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+
+    return Semantics(
+      label: _getSemanticLabel(),
+      hint: '点击复制内容，长按显示更多选项',
+      button: true,
+      child: FocusableActionDetector(
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) => widget.onTap(),
+          ),
+        },
+        child: MouseRegion(
+          onEnter: _handleMouseEnter,
+          onExit: _handleMouseExit,
+          cursor: SystemMouseCursors.click,
+          child: AnimatedBuilder(
+            animation: _animationController,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _scaleAnimation.value,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  margin: _getCardMargin(),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(_getBorderRadius()),
+                    color: Theme.of(context).colorScheme.surface,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: _getShadowAlpha(),
+                        ),
+                        blurRadius: _elevationAnimation.value,
+                        offset: Offset(0, _getShadowOffset()),
+                        spreadRadius: _isHovered ? 1 : 0,
+                      ),
+                    ],
+                    border: Border.all(
+                      color: _getBorderColor(context),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(_getBorderRadius()),
+                    child: InkWell(
+                      onTapDown: _handleTapDown,
+                      onTapUp: _handleTapUp,
+                      onTapCancel: _handleTapCancel,
+                      onTap: widget.onTap,
+                      borderRadius: BorderRadius.circular(_getBorderRadius()),
+                      splashColor: Theme.of(context).colorScheme.primary
+                          .withValues(
+                            alpha: 0.1,
+                          ),
+                      highlightColor: Theme.of(context).colorScheme.primary
+                          .withValues(
+                            alpha: 0.05,
+                          ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: _getMaxCardHeight(context),
+                          minHeight: _getMinCardHeight(context),
+                        ),
+                        child: _buildCardContent(context),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardContent(BuildContext context) {
+    return Padding(
+      padding: _getContentPadding(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 头部：类型图标和操作按钮
+          _buildHeader(context),
+
+          SizedBox(height: _getVerticalSpacing()),
+
+          // 内容预览 - 使用Flexible确保不溢出
+          Flexible(
+            child: _buildContentArea(context),
+          ),
+
+          SizedBox(height: _getVerticalSpacing()),
+
+          // 底部：时间和元数据
+          _buildFooter(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        _buildTypeIcon(context),
+        const SizedBox(width: Spacing.s12),
+        Expanded(
+          child: _buildTypeLabel(context),
+        ),
+        _buildActionButtons(context),
+      ],
+    );
+  }
+
+  Widget _buildTypeIcon(BuildContext context) {
+    final theme = Theme.of(context);
+    final iconConfig = _getIconConfig();
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: iconConfig.color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: iconConfig.color.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Icon(
+        iconConfig.icon,
+        size: 16,
+        color: iconConfig.color,
+      ),
+    );
+  }
+
+  Widget _buildTypeLabel(BuildContext context) {
+    final theme = Theme.of(context);
+    final typeLabel = _getTypeLabel();
+
+    return Text(
+      typeLabel,
+      style: theme.textTheme.labelMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.87),
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AnimatedOpacity(
+      opacity: _isHovered ? 1.0 : 0.7,
+      duration: const Duration(milliseconds: 200),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildDeleteButton(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeleteButton(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Semantics(
+      label: '删除',
+      button: true,
+      child: IconButton.outlined(
+        onPressed: () => _handleDeleteWithFeedback(context),
+        icon: Icon(
+          Icons.delete_outline,
+          size: 18,
+          color: theme.colorScheme.error,
+        ),
+        style: IconButton.styleFrom(
+          foregroundColor: theme.colorScheme.error,
+          side: BorderSide(
+            color: theme.colorScheme.error.withValues(alpha: 0.5),
+          ),
+          minimumSize: const Size(32, 32),
+          padding: EdgeInsets.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        tooltip: '删除',
+      ),
+    );
+  }
+
+  Widget _buildContentArea(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: constraints.maxWidth,
+            maxHeight: constraints.maxHeight,
+          ),
+          child: _buildContentPreview(context, constraints.maxWidth),
+        );
+      },
+    );
+  }
+
+  Widget _buildContentPreview(BuildContext context, double availableWidth) {
+    switch (widget.item.type) {
+      case ClipType.color:
+        return _buildColorPreview(context);
+      case ClipType.image:
+        return _buildImagePreview(context, availableWidth);
+      case ClipType.file:
+        return _buildFilePreview(context);
+      case ClipType.text:
+      case ClipType.rtf:
+      case ClipType.html:
+      case ClipType.audio:
+      case ClipType.video:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
+        return _buildTextPreview(context, availableWidth);
+    }
+  }
+
+  Widget _buildColorPreview(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorHex =
+        widget.item.metadata['colorHex'] as String? ??
+        AppColors.defaultColorHex;
+    final colorName = ColorUtils.getColorName(colorHex);
+    final color = Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
+
+    return Container(
+      width: double.infinity,
+      height: _getColorPreviewHeight(),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              colorHex.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          if (colorName.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                colorName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePreview(BuildContext context, double availableWidth) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 图片预览
+        Flexible(
+          child: _buildImageWidget(context, availableWidth),
+        ),
+
+        // OCR文本显示（如果有的话）
+        if (widget.item.ocrText != null && widget.item.ocrText!.isNotEmpty) ...[
+          SizedBox(height: _getVerticalSpacing()),
+          _buildOcrTextPreview(context),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildImageWidget(BuildContext context, double availableWidth) {
+    final theme = Theme.of(context);
+    final rawPath = widget.item.filePath;
+    final imageDisplaySize = _calculateImageDisplaySize(availableWidth);
+
+    return Container(
+      width: imageDisplaySize.width,
+      height: imageDisplaySize.height,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: _buildImageContent(context, imageDisplaySize),
+      ),
+    );
+  }
+
+  Widget _buildImageContent(BuildContext context, Size displaySize) {
+    // 优先使用缩略图
+    if (widget.item.thumbnail != null && widget.item.thumbnail!.isNotEmpty) {
+      return Image.memory(
+        Uint8List.fromList(widget.item.thumbnail!),
+        width: displaySize.width,
+        height: displaySize.height,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        cacheWidth: displaySize.width.round(),
+        gaplessPlayback: true,
+        semanticLabel: '图片预览',
+        errorBuilder: (context, error, stackTrace) {
+          return _buildImageErrorPlaceholder(context, displaySize);
+        },
+      );
+    }
+
+    // 尝试加载原图
+    if (widget.item.filePath != null && widget.item.filePath!.isNotEmpty) {
+      return FutureBuilder<String?>(
+        future: _resolveAbsoluteImagePath(widget.item.filePath!),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return _buildLoadingPlaceholder(context, displaySize);
+          }
+
+          if (snapshot.hasData && snapshot.data != null) {
+            return Image.file(
+              File(snapshot.data!),
+              width: displaySize.width,
+              height: displaySize.height,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              cacheWidth: displaySize.width.round(),
+              semanticLabel: '图片预览',
+              errorBuilder: (context, error, stackTrace) {
+                return _buildImageErrorPlaceholder(context, displaySize);
+              },
+            );
+          }
+
+          return _buildImagePlaceholder(context, displaySize);
+        },
+      );
+    }
+
+    return _buildImagePlaceholder(context, displaySize);
+  }
+
+  Widget _buildImageErrorPlaceholder(BuildContext context, Size size) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: size.width,
+      height: size.height,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.broken_image,
+              size: 32,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '图片加载失败',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.error,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder(BuildContext context, Size size) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: size.width,
+      height: size.height,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          size: 32,
+          color: theme.colorScheme.outline,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingPlaceholder(BuildContext context, Size size) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: size.width,
+      height: size.height,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  theme.colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '加载中...',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOcrTextPreview(BuildContext context) {
+    final theme = Theme.of(context);
+    final ocrText = widget.item.ocrText ?? '';
+    final ocrConfidence = widget.item.metadata['ocrConfidence'] as double?;
+
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(
+        maxHeight: _getOcrTextMaxHeight(),
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // OCR标题栏
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.text_fields,
+                  size: 12,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'OCR识别文本',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (ocrConfidence != null) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getConfidenceColor(
+                        ocrConfidence,
+                      ).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${(ocrConfidence * 100).round()}%',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w600,
+                        color: _getConfidenceColor(ocrConfidence),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // OCR文本内容
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(8),
+              physics: const ClampingScrollPhysics(),
+              child: _buildOcrTextContent(context, ocrText),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOcrTextContent(BuildContext context, String ocrText) {
+    final theme = Theme.of(context);
+    final textStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+      height: 1.3,
+    );
+
+    if (widget.searchQuery == null || widget.searchQuery!.isEmpty) {
+      return Text(ocrText, style: textStyle);
+    }
+
+    // 搜索高亮
+    final spans = _buildHighlightedSpans(
+      context,
+      ocrText,
+      widget.searchQuery!,
+      textStyle ?? TextStyle(),
+    );
+
+    return RichText(
+      text: TextSpan(children: spans),
+    );
+  }
+
+  Widget _buildFilePreview(BuildContext context) {
+    final theme = Theme.of(context);
+    final fileName =
+        widget.item.metadata['fileName'] as String? ?? AppStrings.unknownFile;
+    final fileSize = widget.item.metadata['fileSize'] as int? ?? 0;
+    final fileIcon = _getFileIcon();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: fileIcon.color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              fileIcon.icon,
+              size: 32,
+              color: fileIcon.color,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            fileName,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _formatFileSize(fileSize),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextPreview(BuildContext context, double availableWidth) {
+    final content = widget.item.content ?? '';
+    final theme = Theme.of(context);
+
+    // 计算统计信息
+    final charCount = content.length;
+    final wordCount = _calculateWordCount(content);
+    final lineCount = content.split('\n').length;
+
+    final isMonospace =
+        widget.item.type == ClipType.code ||
+        widget.item.type == ClipType.json ||
+        widget.item.type == ClipType.xml;
+
+    final baseStyle = isMonospace
+        ? theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')
+        : theme.textTheme.bodyMedium;
+
+    final textStyle = baseStyle?.copyWith(
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.87),
+      height: 1.4,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Container(
+            width: double.infinity,
+            constraints: BoxConstraints(
+              maxHeight: _getTextMaxHeight(),
+            ),
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: _buildTextContent(context, content, textStyle),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // 内容统计信息
+        _buildContentStats(context, charCount, wordCount, lineCount),
+      ],
+    );
+  }
+
+  Widget _buildTextContent(
+    BuildContext context,
+    String content,
+    TextStyle? style,
+  ) {
+    if (widget.searchQuery == null || widget.searchQuery!.isEmpty) {
+      return Text(content, style: style);
+    }
+
+    // 搜索高亮
+    if (!content.toLowerCase().contains(widget.searchQuery!.toLowerCase())) {
+      return Text(content, style: style);
+    }
+
+    final spans = _buildHighlightedSpans(
+      context,
+      content,
+      widget.searchQuery!,
+      style ?? TextStyle(),
+    );
+
+    return RichText(
+      text: TextSpan(children: spans),
+    );
+  }
+
+  Widget _buildContentStats(
+    BuildContext context,
+    int charCount,
+    int wordCount,
+    int lineCount,
+  ) {
+    final theme = Theme.of(context);
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        _buildStatChip(context, Icons.text_fields, '$charCount 字符'),
+        if (wordCount > 0)
+          _buildStatChip(context, Icons.space_bar, '$wordCount 词'),
+        if (lineCount > 1)
+          _buildStatChip(context, Icons.format_align_left, '$lineCount 行'),
+      ],
+    );
+  }
+
+  Widget _buildStatChip(BuildContext context, IconData icon, String text) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 12,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context) {
+    final theme = Theme.of(context);
+    final timeAgo = _getTimeAgo(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 时间显示
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.access_time,
+                size: 12,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  timeAgo,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Tooltip(
+                message: DateFormat(
+                  'yyyy-MM-dd HH:mm:ss',
+                ).format(widget.item.createdAt),
+                child: Icon(
+                  Icons.info_outline,
+                  size: 12,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 元数据信息
+        if (_shouldShowMetadata()) ...[
+          const SizedBox(height: 8),
+          _buildMetadataSection(context),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMetadataSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final metadataItems = <Widget>[];
+
+    switch (widget.item.type) {
+      case ClipType.image:
+        final width =
+            widget.item.originWidth ?? widget.item.metadata['width'] as int?;
+        final height =
+            widget.item.originHeight ?? widget.item.metadata['height'] as int?;
+        final format = widget.item.metadata['format'] as String?;
+        final size = widget.item.metadata['fileSize'] as int?;
+
+        if (width != null && height != null) {
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.photo_size_select_large,
+              '${width}×$height',
+            ),
+          );
+        }
+        if (format != null) {
+          metadataItems.add(
+            _buildMetadataItem(context, Icons.image, format.toUpperCase()),
+          );
+        }
+        if (size != null) {
+          metadataItems.add(
+            _buildMetadataItem(context, Icons.storage, _formatFileSize(size)),
+          );
+        }
+        break;
+
+      case ClipType.file:
+        final fileSize = widget.item.metadata['fileSize'] as int?;
+        final fileType = widget.item.metadata['fileType'] as String?;
+
+        if (fileType != null) {
+          metadataItems.add(
+            _buildMetadataItem(context, Icons.description, fileType),
+          );
+        }
+        if (fileSize != null) {
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.storage,
+              _formatFileSize(fileSize),
+            ),
+          );
+        }
+        break;
+
+      case ClipType.color:
+        final colorHex = widget.item.metadata['colorHex'] as String?;
+        if (colorHex != null) {
+          metadataItems.add(
+            _buildMetadataItem(context, Icons.palette, colorHex.toUpperCase()),
+          );
+        }
+        break;
+
+      case ClipType.url:
+        final domain = _extractDomain(widget.item.content ?? '');
+        if (domain.isNotEmpty) {
+          metadataItems.add(
+            _buildMetadataItem(context, Icons.language, domain),
+          );
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    if (metadataItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: metadataItems,
+    );
+  }
+
+  Widget _buildMetadataItem(BuildContext context, IconData icon, String text) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 10,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            text,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 辅助方法和配置
+
+  EdgeInsets _getCardMargin() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return const EdgeInsets.symmetric(vertical: 4, horizontal: 8);
+      case DisplayMode.normal:
+        return const EdgeInsets.symmetric(vertical: 6, horizontal: 10);
+      case DisplayMode.preview:
+        return const EdgeInsets.symmetric(vertical: 8, horizontal: 12);
+    }
+  }
+
+  double _getBorderRadius() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 8;
+      case DisplayMode.normal:
+        return 12;
+      case DisplayMode.preview:
+        return 16;
+    }
+  }
+
+  EdgeInsets _getContentPadding() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return const EdgeInsets.all(12);
+      case DisplayMode.normal:
+        return const EdgeInsets.all(16);
+      case DisplayMode.preview:
+        return const EdgeInsets.all(20);
+    }
+  }
+
+  double _getMaxCardHeight(BuildContext context) {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 200;
+      case DisplayMode.normal:
+        return 300;
+      case DisplayMode.preview:
+        return 500;
+    }
+  }
+
+  double _getMinCardHeight(BuildContext context) {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 120;
+      case DisplayMode.normal:
+        return 180;
+      case DisplayMode.preview:
+        return 250;
+    }
+  }
+
+  double _getShadowAlpha() {
+    if (_isPressed) return 0.3;
+    if (_isHovered) return 0.15;
+    return 0.08;
+  }
+
+  double _getShadowOffset() {
+    if (_isPressed) return 1;
+    if (_isHovered) return 4;
+    return 2;
+  }
+
+  Color _getBorderColor(BuildContext context) {
+    final theme = Theme.of(context);
+    if (_isHovered) {
+      return theme.colorScheme.primary.withValues(alpha: 0.3);
+    }
+    return theme.colorScheme.outline.withValues(alpha: 0.2);
+  }
+
+  double _getVerticalSpacing() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 8;
+      case DisplayMode.normal:
+        return 12;
+      case DisplayMode.preview:
+        return 16;
+    }
+  }
+
+  IconConfig _getIconConfig() {
+    switch (widget.item.type) {
+      case ClipType.text:
+        return IconConfig(
+          Icons.text_fields,
+          Color(AppColors.iconColors['blue']!),
+        );
+      case ClipType.rtf:
+      case ClipType.html:
+        return IconConfig(
+          Icons.description,
+          Color(AppColors.iconColors['green']!),
+        );
+      case ClipType.image:
+        return IconConfig(Icons.image, Color(AppColors.iconColors['purple']!));
+      case ClipType.color:
+        return IconConfig(
+          Icons.palette,
+          Color(AppColors.iconColors['orange']!),
+        );
+      case ClipType.file:
+        return IconConfig(
+          Icons.insert_drive_file,
+          Color(AppColors.iconColors['grey']!),
+        );
+      case ClipType.audio:
+        return IconConfig(
+          Icons.audiotrack,
+          Color(AppColors.iconColors['red']!),
+        );
+      case ClipType.video:
+        return IconConfig(Icons.videocam, Color(AppColors.iconColors['pink']!));
+      case ClipType.url:
+        return IconConfig(Icons.link, Color(AppColors.iconColors['blue']!));
+      case ClipType.email:
+        return IconConfig(Icons.email, Color(AppColors.iconColors['green']!));
+      case ClipType.json:
+        return IconConfig(
+          Icons.data_object,
+          Color(AppColors.iconColors['orange']!),
+        );
+      case ClipType.xml:
+        return IconConfig(Icons.code, Color(AppColors.iconColors['purple']!));
+      case ClipType.code:
+        return IconConfig(Icons.terminal, Color(AppColors.iconColors['grey']!));
+    }
+  }
+
+  double _getColorPreviewHeight() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 60;
+      case DisplayMode.normal:
+        return 80;
+      case DisplayMode.preview:
+        return 100;
+    }
+  }
+
+  double _getTextMaxHeight() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 80;
+      case DisplayMode.normal:
+        return 120;
+      case DisplayMode.preview:
+        return 200;
+    }
+  }
+
+  double _getOcrTextMaxHeight() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 60;
+      case DisplayMode.normal:
+        return 80;
+      case DisplayMode.preview:
+        return 120;
+    }
+  }
+
+  Size _calculateImageDisplaySize(double availableWidth) {
+    final maxWidth = math.min(
+      switch (widget.displayMode) {
+        DisplayMode.compact => availableWidth * 0.8,
+        DisplayMode.normal => availableWidth * 0.7,
+        DisplayMode.preview => availableWidth * 0.9,
+      },
+      switch (widget.displayMode) {
+        DisplayMode.compact => 150.0,
+        DisplayMode.normal => 250.0,
+        DisplayMode.preview => 400.0,
+      },
+    );
+
+    if (widget.item.originWidth == null || widget.item.originHeight == null) {
+      return Size(maxWidth, maxWidth * 0.75); // 默认4:3比例
+    }
+
+    final originWidth = widget.item.originWidth!.toDouble();
+    final originHeight = widget.item.originHeight!.toDouble();
+    final aspectRatio = originWidth / originHeight;
+
+    final displayWidth = math.min(maxWidth, originWidth);
+    final displayHeight = displayWidth / aspectRatio;
+
+    return Size(displayWidth, displayHeight);
+  }
+
+  Future<String?> _resolveAbsoluteImagePath(String path) async {
+    try {
+      final isAbsolute =
+          path.startsWith('/') || RegExp('^[A-Za-z]:').hasMatch(path);
+      if (isAbsolute) {
+        final file = File(path);
+        return file.existsSync() ? path : null;
+      }
+
+      final dir = await PathService.instance.getDocumentsDirectory();
+      final abs = p.join(dir.path, path);
+      final file = File(abs);
+      return file.existsSync() ? abs : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  FileIconConfig _getFileIcon() {
+    final fileName = widget.item.metadata['fileName'] as String? ?? '';
+    final extension = p.extension(fileName).toLowerCase();
+
+    switch (extension) {
+      case '.pdf':
+        return FileIconConfig(Icons.picture_as_pdf, Colors.red);
+      case '.doc':
+      case '.docx':
+        return FileIconConfig(Icons.description, Colors.blue);
+      case '.xls':
+      case '.xlsx':
+        return FileIconConfig(Icons.table_chart, Colors.green);
+      case '.ppt':
+      case '.pptx':
+        return FileIconConfig(Icons.slideshow, Colors.orange);
+      case '.zip':
+      case '.rar':
+      case '.7z':
+        return FileIconConfig(Icons.archive, Colors.purple);
+      case '.mp4':
+      case '.avi':
+      case '.mov':
+        return FileIconConfig(Icons.video_file, Colors.red);
+      case '.mp3':
+      case '.wav':
+      case '.flac':
+        return FileIconConfig(Icons.audio_file, Colors.pink);
+      default:
+        return FileIconConfig(Icons.insert_drive_file, Colors.grey);
+    }
+  }
+
+  String _getTypeLabel() {
+    switch (widget.item.type) {
+      case ClipType.text:
+        return I18nCommonUtil.getClipTypeText(context);
+      case ClipType.rtf:
+        return I18nCommonUtil.getClipTypeRichText(context);
+      case ClipType.html:
+        return I18nCommonUtil.getClipTypeHtml(context);
+      case ClipType.image:
+        return I18nCommonUtil.getClipTypeImage(context);
+      case ClipType.color:
+        return I18nCommonUtil.getClipTypeColor(context);
+      case ClipType.file:
+        return I18nCommonUtil.getClipTypeFile(context);
+      case ClipType.audio:
+        return I18nCommonUtil.getClipTypeAudio(context);
+      case ClipType.video:
+        return I18nCommonUtil.getClipTypeVideo(context);
+      case ClipType.url:
+        return 'URL';
+      case ClipType.email:
+        return 'Email';
+      case ClipType.json:
+        return 'JSON';
+      case ClipType.xml:
+        return 'XML';
+      case ClipType.code:
+        return 'Code';
+    }
+  }
+
+  String _getSemanticLabel() {
+    final typeLabel = _getTypeLabel();
+    final contentPreview = _getContentPreview();
+    final timeAgo = _getTimeAgo(context);
+
+    return '$typeLabel：$contentPreview，$timeAgo';
+  }
+
+  String _getContentPreview() {
+    switch (widget.item.type) {
+      case ClipType.image:
+        final width =
+            widget.item.originWidth ??
+            widget.item.metadata['width'] as int? ??
+            0;
+        final height =
+            widget.item.originHeight ??
+            widget.item.metadata['height'] as int? ??
+            0;
+        return width > 0 && height > 0 ? '图片 ${width}×$height' : '图片';
+      case ClipType.file:
+        final fileName = widget.item.metadata['fileName'] as String? ?? '未知文件';
+        return fileName;
+      case ClipType.color:
+        final colorHex =
+            widget.item.metadata['colorHex'] as String? ?? '#000000';
+        return '颜色 $colorHex';
+      default:
+        final content = widget.item.content ?? '';
+        if (content.length > 50) {
+          return '${content.substring(0, 50)}...';
+        }
+        return content;
+    }
+  }
+
+  String _getTimeAgo(BuildContext context) {
+    final now = DateTime.now();
+    final difference = now.difference(widget.item.createdAt);
+
+    if (difference.inMinutes < 1) {
+      return I18nCommonUtil.getTimeJustNow(context);
+    } else if (difference.inMinutes < 60) {
+      return I18nCommonUtil.getTimeMinutesAgo(context, difference.inMinutes);
+    } else if (difference.inHours < 24) {
+      return I18nCommonUtil.getTimeHoursAgo(context, difference.inHours);
+    } else if (difference.inDays < 7) {
+      return I18nCommonUtil.getTimeDaysAgo(context, difference.inDays);
+    } else {
+      return DateFormat('yyyy-MM-dd').format(widget.item.createdAt);
+    }
+  }
+
+  bool _shouldShowMetadata() {
+    switch (widget.item.type) {
+      case ClipType.image:
+      case ClipType.file:
+      case ClipType.color:
+      case ClipType.url:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  int _calculateWordCount(String content) {
+    if (content.isEmpty) return 0;
+
+    final hasChineseChars = RegExp(r'[\u4e00-\u9fff]').hasMatch(content);
+    if (hasChineseChars) {
+      return RegExp(r'\S').allMatches(content).length;
+    }
+
+    final words = content.trim().split(RegExp(r'\s+'));
+    return words.where((word) => word.isNotEmpty).length;
+  }
+
+  String _extractDomain(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.host.replaceAll('www.', '');
+    } catch (e) {
+      return '';
+    }
+  }
+
+  List<TextSpan> _buildHighlightedSpans(
+    BuildContext context,
+    String text,
+    String query,
+    TextStyle baseStyle,
+  ) {
+    final spans = <TextSpan>[];
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+
+    var start = 0;
+    var index = lowerText.indexOf(lowerQuery);
+
+    while (index != -1) {
+      if (index > start) {
+        spans.add(
+          TextSpan(
+            text: text.substring(start, index),
+            style: baseStyle,
+          ),
+        );
+      }
+
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style: baseStyle.copyWith(
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.3),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+
+      start = index + query.length;
+      index = lowerText.indexOf(lowerQuery, start);
+    }
+
+    if (start < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(start),
+          style: baseStyle,
+        ),
+      );
+    }
+
+    return spans;
+  }
+
+  Color _getConfidenceColor(double confidence) {
+    if (confidence >= 0.8) {
+      return Colors.green;
+    } else if (confidence >= 0.6) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
+  }
+
+  void _handleDeleteWithFeedback(BuildContext context) {
+    HapticFeedback.mediumImpact();
+
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('确认删除'),
+        content: Text('确定要删除这个${_getTypeLabel()}吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              widget.onDelete();
+              _showFloatingFeedback(
+                context,
+                '已删除',
+                Icons.delete,
+                isError: true,
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFloatingFeedback(
+    BuildContext context,
+    String message,
+    IconData icon, {
+    bool isError = false,
+  }) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 100,
+        left: MediaQuery.of(context).size.width / 2 - 75,
+        child: Material(
+          color: Colors.transparent,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutBack,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isError
+                    ? Theme.of(context).colorScheme.errorContainer
+                    : Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: isError
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: isError
+                          ? Theme.of(context).colorScheme.onErrorContainer
+                          : Theme.of(context).colorScheme.onPrimaryContainer,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(entry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      entry.remove();
+    });
+  }
+}
+
+// 配置类
+
+/// 图标配置类
+class IconConfig {
+  /// 创建图标配置
+  const IconConfig(this.icon, this.color);
+
+  /// 图标数据
+  final IconData icon;
+
+  /// 图标颜色
+  final Color color;
+}
+
+/// 文件图标配置类
+class FileIconConfig {
+  /// 创建文件图标配置
+  const FileIconConfig(this.icon, this.color);
+
+  /// 图标数据
+  final IconData icon;
+
+  /// 图标颜色
+  final Color color;
+}

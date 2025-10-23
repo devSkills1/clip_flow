@@ -7,7 +7,9 @@
       "Bash(nc:*)",
       "Bash(pbcopy:*)",
       "Bash(dart analyze:*)",
-      "Bash(flutter pub get:*)"
+      "Bash(flutter pub get:*)",
+      "Bash(find:*)",
+      "Bash(dart format:*)"
     ],
     "deny": [],
     "ask": []
