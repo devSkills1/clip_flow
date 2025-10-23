@@ -23,14 +23,19 @@ lib/
 ├── core/                           # 核心功能层
 │   ├── constants/                  # 常量定义
 │   ├── models/                     # 数据模型
-│   ├── services/                   # 模块化服务层
-│   │   ├── clipboard/              # 剪贴板模块
-│   │   ├── analysis/               # 内容分析模块
-│   │   ├── storage/                # 存储模块
-│   │   ├── platform/               # 平台特定模块
-│   │   ├── performance/            # 性能监控模块
-│   │   ├── observability/          # 可观测性模块
-│   │   └── operations/             # 操作模块
+│   ├── services/                  # 模块化服务层
+│   │   ├── analysis/              # 内容分析模块
+│   │   ├── clipboard/             # 剪贴板模块
+│   │   ├── observability/         # 可观测性模块
+│   │   ├── operations/            # 操作模块
+│   │   ├── performance/           # 性能监控模块
+│   │   ├── platform/              # 平台特定模块
+│   │   │   ├── files/             # 文件服务
+│   │   │   ├── input/             # 输入服务
+│   │   │   ├── ocr/               # OCR 服务
+│   │   │   ├── system/            # 系统服务
+│   │   │   └── ui_tray/           # 托盘服务
+│   │   └── storage/               # 存储模块
 │   └── utils/                      # 工具类
 ├── features/                       # 功能模块层
 │   ├── home/                       # 主界面功能
@@ -55,13 +60,47 @@ lib/
 │   ├── clipboard_service.dart      # 服务协调器
 │   ├── clipboard_processor.dart    # 内容处理器
 │   ├── clipboard_poller.dart      # 轮询器
+│   ├── clipboard_detector.dart    # 内容检测器
+│   ├── universal_clipboard_detector.dart # 通用剪贴板检测器
 │   └── optimized_clipboard_manager.dart # 优化管理器
 ├── 🔍 analysis/      # 内容分析和语义识别  
+│   ├── analysis_ports.dart         # 分析服务接口定义
+│   ├── content_analyzer.dart       # 内容分析器基类
+│   ├── html_analyzer.dart          # HTML 分析器
+│   └── code_analyzer.dart          # 代码分析器
 ├── 💾 storage/       # 数据存储和管理
+│   ├── storage_ports.dart          # 存储服务接口定义
+│   ├── database_service.dart       # 数据库服务
+│   ├── encryption_service.dart     # 加密服务
+│   ├── preferences_service.dart    # 偏好设置服务
+│   └── path_service.dart           # 路径服务
 ├── 🖥️ platform/     # 平台特定系统集成
+│   ├── platform_ports.dart         # 平台服务接口定义
+│   ├── system/                     # 系统服务
+│   │   ├── permission_service.dart # 权限服务
+│   │   ├── autostart_service.dart  # 自启动服务
+│   │   ├── finder_service.dart     # Finder 服务
+│   │   └── window_listener.dart    # 窗口监听
+│   ├── input/                      # 输入服务
+│   │   └── hotkey_service.dart     # 热键服务
+│   ├── ocr/                        # OCR 服务
+│   │   ├── ocr_service.dart        # OCR 接口
+│   │   └── native_ocr_impl.dart    # 原生实现
+│   ├── ui_tray/                    # 托盘服务
+│   │   └── tray_service.dart       # 系统托盘
+│   └── files/                      # 文件服务
 ├── ⚡ performance/   # 性能监控和优化
+│   ├── performance_ports.dart      # 性能服务接口定义
+│   ├── performance_service.dart    # 性能监控服务
+│   └── async_processing_queue.dart # 异步处理队列
 ├── 📊 observability/ # 错误处理和日志记录
+│   ├── observability_ports.dart    # 可观测性服务接口定义
+│   ├── error_handler.dart          # 错误处理器
+│   ├── crash_service.dart          # 崩溃监控服务
+│   └── logger/                     # 日志系统
 └── 🔧 operations/    # 跨域业务操作
+    ├── operations_ports.dart       # 操作服务接口定义
+    └── update_service.dart         # 更新服务
 ```
 
 ## 构建和运行
@@ -179,6 +218,7 @@ await CrashService.reportError(error, stackTrace);
 - `ClipboardDetector`: 内容类型检测
 - `ClipboardProcessor`: 内容处理和格式化
 - `ClipboardPoller`: 剪贴板轮询监听
+- `UniversalClipboardDetector`: 通用剪贴板检测器
 
 ### 存储服务
 
@@ -187,6 +227,7 @@ await CrashService.reportError(error, stackTrace);
 - `DatabaseService`: SQLite 数据库操作
 - `EncryptionService`: AES-256 数据加密
 - `PreferencesService`: 用户偏好设置
+- `PathService`: 路径管理服务
 
 ### 平台服务
 
@@ -196,6 +237,17 @@ await CrashService.reportError(error, stackTrace);
 - `TrayService`: 系统托盘
 - `OcrService`: OCR 文字识别
 - `PermissionService`: 权限管理
+- `AutostartService`: 开机自启服务
+
+### 分析服务
+
+内容分析功能：
+
+- `ContentAnalyzer`: 内容分析器基类
+- `CodeAnalyzer`: 代码分析器
+- `HtmlAnalyzer`: HTML 分析器
+- `JsonAnalyzer`: JSON 分析器
+- `UrlAnalyzer`: URL 分析器
 
 ## 国际化
 
@@ -214,6 +266,7 @@ await CrashService.reportError(error, stackTrace);
 - 批量数据库操作
 - 内存使用监控
 - 性能指标追踪
+- 自适应轮询间隔
 
 ## 错误监控
 
