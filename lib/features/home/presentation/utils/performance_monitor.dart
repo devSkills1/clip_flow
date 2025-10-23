@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+// Public member documentation is handled inline for clarity.
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:ui' as ui;
@@ -8,14 +10,14 @@ import 'package:flutter/services.dart';
 
 /// 性能监控工具 - 用于检测和解决性能问题
 class PerformanceMonitor {
-  /// 单例实例
-  static final PerformanceMonitor _instance = PerformanceMonitor._internal();
-
   /// 获取单例实例
   factory PerformanceMonitor() => _instance;
 
   /// 私有构造函数
   PerformanceMonitor._internal();
+
+  /// 单例实例
+  static final PerformanceMonitor _instance = PerformanceMonitor._internal();
 
   final Map<String, DateTime> _startTimes = {};
   final Map<String, List<Duration>> _durations = {};
@@ -110,8 +112,8 @@ class PerformanceMonitor {
 
     for (final timing in timings) {
       final totalDuration = timing.totalSpan.inMicroseconds;
-      final buildDuration = timing.buildSpan.inMicroseconds;
-      final rasterDuration = timing.rasterSpan.inMicroseconds;
+      final buildDuration = timing.buildDuration.inMicroseconds;
+      final rasterDuration = timing.rasterDuration.inMicroseconds;
 
       // 如果帧时间超过16ms（60fps），记录警告
       if (totalDuration > 16000) {
@@ -180,9 +182,9 @@ class PerformanceMonitor {
 
 /// 内存优化工具
 class MemoryOptimizer {
-  static final MemoryOptimizer _instance = MemoryOptimizer._internal();
   factory MemoryOptimizer() => _instance;
   MemoryOptimizer._internal();
+  static final MemoryOptimizer _instance = MemoryOptimizer._internal();
 
   final List<VoidCallback> _cleanupCallbacks = [];
   Timer? _cleanupTimer;
@@ -213,7 +215,7 @@ class MemoryOptimizer {
       for (final callback in _cleanupCallbacks) {
         try {
           callback();
-        } catch (e) {
+        } on Exception catch (e) {
           developer.log(
             'Error in cleanup callback: $e',
             name: 'MemoryOptimizer',
@@ -231,7 +233,7 @@ class MemoryOptimizer {
         'Memory cleanup completed',
         name: 'MemoryOptimizer',
       );
-    } catch (e) {
+    } on Exception catch (e) {
       developer.log(
         'Error during memory cleanup: $e',
         name: 'MemoryOptimizer',
@@ -378,9 +380,9 @@ class _PerformanceOptimizedGridViewState<T>
 
 /// 图片内存管理工具
 class ImageMemoryManager {
-  static final ImageMemoryManager _instance = ImageMemoryManager._internal();
   factory ImageMemoryManager() => _instance;
   ImageMemoryManager._internal();
+  static final ImageMemoryManager _instance = ImageMemoryManager._internal();
 
   final Map<String, ui.Image> _imageCache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
@@ -397,11 +399,8 @@ class ImageMemoryManager {
     _imageCache[key] = image;
     _cacheTimestamps[key] = DateTime.now();
 
-    // 监听图片释放
-    image.addListener(() {
-      _imageCache.remove(key);
-      _cacheTimestamps.remove(key);
-    });
+    // Note: ui.Image doesn't have addListener in Flutter
+    // Cache will be cleaned up manually or when cache is full
   }
 
   /// 获取缓存的图片
@@ -437,9 +436,9 @@ class ImageMemoryManager {
     var oldestTime = _cacheTimestamps[oldestKey]!;
 
     for (final entry in _cacheTimestamps.entries) {
-      if (entry.value!.isBefore(oldestTime)) {
+      if (entry.value.isBefore(oldestTime)) {
         oldestKey = entry.key;
-        oldestTime = entry.value!;
+        oldestTime = entry.value;
       }
     }
 

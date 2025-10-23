@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs
 // 忽略公共成员API文档要求，因为这是内部性能监控组件，不需要对外暴露API文档
+// Internal performance monitoring component that doesn't require public API
+// documentation.
 import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';

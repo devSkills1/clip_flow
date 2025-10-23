@@ -40,7 +40,7 @@ abstract class HotkeyServicePort {
   Future<Map<String, String>> getRegisteredHotkeys();
 
   /// 启用/禁用热键服务
-  Future<void> setEnabled(bool enabled);
+  Future<void> setEnabled({required bool enabled});
 
   /// 获取热键服务状态
   bool get isEnabled;

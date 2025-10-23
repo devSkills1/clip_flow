@@ -44,22 +44,22 @@ class UpdateInfo {
     required this.releaseDate,
     required this.isForced,
   });
-  
+
   /// 版本号
   final String version;
-  
+
   /// 下载地址
   final String downloadUrl;
-  
+
   /// 发布说明
   final String releaseNotes;
-  
+
   /// 文件大小
   final int fileSize;
-  
+
   /// 发布日期
   final DateTime releaseDate;
-  
+
   /// 是否强制更新
   final bool isForced;
 }
@@ -68,22 +68,22 @@ class UpdateInfo {
 enum UpdateStatus {
   /// 空闲状态
   idle,
-  
+
   /// 正在检查
   checking,
-  
+
   /// 有可用更新
   available,
-  
+
   /// 正在下载
   downloading,
-  
+
   /// 准备安装
   ready,
-  
+
   /// 正在安装
   installing,
-  
+
   /// 错误
   error,
 }

@@ -300,34 +300,109 @@ class UniversalClipboardDetector {
           lowerContent.startsWith('192.168.') || // IP地址
           lowerContent.startsWith('10.') || // IP地址
           lowerContent.contains('.0.') || // 版本号模式
-          RegExp(r'^\d+\.\d+\.\d+\.\d+$').hasMatch(lowerContent)) { // 完整IP地址
+          RegExp(r'^\d+\.\d+\.\d+\.\d+$').hasMatch(lowerContent)) {
+        // 完整IP地址
         Log.d(
-      'Content excluded as non-file pattern: $cleanContent',
-      tag: 'UniversalClipboardDetector',
-    );
+          'Content excluded as non-file pattern: $cleanContent',
+          tag: 'UniversalClipboardDetector',
+        );
         return false;
       }
 
       // 检查是否是常见的文件扩展名
       final commonExtensions = {
-        'sh', 'bash', 'zsh', 'fish', 'py', 'js', 'ts', 'java', 'cpp', 'c', 'h',
-        'hpp', 'txt', 'md', 'doc', 'docx', 'pdf', 'rtf', 'html', 'htm', 'xml',
-        'json', 'yaml', 'yml', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg',
-        'webp', 'ico', 'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm',
-        'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'zip', 'rar', 'tar', 'gz',
-        '7z', 'bz2', 'xz', 'exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'apk',
-        'ipa', 'sql', 'db', 'sqlite', 'csv', 'xls', 'xlsx', 'ppt', 'pptx',
-        'log', 'conf', 'config', 'ini', 'env', 'gitignore', 'dockerfile',
-        'css', 'scss', 'sass', 'less', 'vue', 'jsx', 'tsx', 'svelte'
+        'sh',
+        'bash',
+        'zsh',
+        'fish',
+        'py',
+        'js',
+        'ts',
+        'java',
+        'cpp',
+        'c',
+        'h',
+        'hpp',
+        'txt',
+        'md',
+        'doc',
+        'docx',
+        'pdf',
+        'rtf',
+        'html',
+        'htm',
+        'xml',
+        'json',
+        'yaml',
+        'yml',
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'bmp',
+        'svg',
+        'webp',
+        'ico',
+        'mp4',
+        'avi',
+        'mkv',
+        'mov',
+        'wmv',
+        'flv',
+        'webm',
+        'mp3',
+        'wav',
+        'flac',
+        'aac',
+        'ogg',
+        'm4a',
+        'zip',
+        'rar',
+        'tar',
+        'gz',
+        '7z',
+        'bz2',
+        'xz',
+        'exe',
+        'msi',
+        'dmg',
+        'pkg',
+        'deb',
+        'rpm',
+        'apk',
+        'ipa',
+        'sql',
+        'db',
+        'sqlite',
+        'csv',
+        'xls',
+        'xlsx',
+        'ppt',
+        'pptx',
+        'log',
+        'conf',
+        'config',
+        'ini',
+        'env',
+        'gitignore',
+        'dockerfile',
+        'css',
+        'scss',
+        'sass',
+        'less',
+        'vue',
+        'jsx',
+        'tsx',
+        'svelte',
       };
 
       final extension = cleanContent.split('.').last.toLowerCase();
       final isCommonExtension = commonExtensions.contains(extension);
 
       Log.d(
-      'File extension check result: content=$cleanContent, extension=$extension, isCommonExtension=$isCommonExtension',
-      tag: 'UniversalClipboardDetector',
-    );
+        'File extension check result: content=$cleanContent, extension=$extension, isCommonExtension=$isCommonExtension',
+        tag: 'UniversalClipboardDetector',
+      );
 
       return isCommonExtension;
     }

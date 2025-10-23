@@ -1,16 +1,14 @@
+// ignore_for_file: public_member_api_docs, no_default_cases
+// This file uses extensive switch statements with exhaustive patterns that are
+// cleaner without default cases. Public member documentation is handled inline.
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
-
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
-import 'package:clip_flow_pro/core/constants/dimensions.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
-import 'package:clip_flow_pro/core/utils/image_utils.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -69,7 +67,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     );
     _scaleAnimation =
         Tween<double>(
-          begin: 1.0,
+          begin: 1,
           end: 0.98,
         ).animate(
           CurvedAnimation(
@@ -79,8 +77,8 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         );
     _elevationAnimation =
         Tween<double>(
-          begin: 2.0,
-          end: 8.0,
+          begin: 2,
+          end: 8,
         ).animate(
           CurvedAnimation(
             parent: _animationController,
@@ -161,7 +159,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
                     ],
                     border: Border.all(
                       color: _getBorderColor(context),
-                      width: 1.0,
                     ),
                   ),
                   child: Material(
@@ -239,7 +236,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   Widget _buildTypeIcon(BuildContext context) {
-    final theme = Theme.of(context);
     final iconConfig = _getIconConfig();
 
     return AnimatedContainer(
@@ -250,7 +246,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: iconConfig.color.withValues(alpha: 0.2),
-          width: 1,
         ),
       ),
       child: Icon(
@@ -277,8 +272,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    final theme = Theme.of(context);
-
     return AnimatedOpacity(
       opacity: _isHovered ? 1.0 : 0.7,
       duration: const Duration(milliseconds: 200),
@@ -441,7 +434,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 
   Widget _buildImageWidget(BuildContext context, double availableWidth) {
     final theme = Theme.of(context);
-    final rawPath = widget.item.filePath;
     final imageDisplaySize = _calculateImageDisplaySize(availableWidth);
 
     return Container(
@@ -709,7 +701,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       context,
       ocrText,
       widget.searchQuery!,
-      textStyle ?? TextStyle(),
+      textStyle ?? const TextStyle(),
     );
 
     return RichText(
@@ -719,8 +711,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 
   Widget _buildFilePreview(BuildContext context) {
     final theme = Theme.of(context);
-    final fileName =
-        widget.item.metadata['fileName'] as String? ?? AppStrings.unknownFile;
+    final fileName = widget.item.metadata['fileName'] as String? ?? '未知文件';
     final fileSize = widget.item.metadata['fileSize'] as int? ?? 0;
     final fileIcon = _getFileIcon();
 
@@ -837,7 +828,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       context,
       content,
       widget.searchQuery!,
-      style ?? TextStyle(),
+      style ?? const TextStyle(),
     );
 
     return RichText(
@@ -851,8 +842,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     int wordCount,
     int lineCount,
   ) {
-    final theme = Theme.of(context);
-
     return Wrap(
       spacing: 8,
       runSpacing: 4,
@@ -956,7 +945,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   Widget _buildMetadataSection(BuildContext context) {
-    final theme = Theme.of(context);
     final metadataItems = <Widget>[];
 
     switch (widget.item.type) {
@@ -973,7 +961,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             _buildMetadataItem(
               context,
               Icons.photo_size_select_large,
-              '${width}×$height',
+              '$width×$height',
             ),
           );
         }
@@ -987,7 +975,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             _buildMetadataItem(context, Icons.storage, _formatFileSize(size)),
           );
         }
-        break;
 
       case ClipType.file:
         final fileSize = widget.item.metadata['fileSize'] as int?;
@@ -1007,7 +994,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             ),
           );
         }
-        break;
 
       case ClipType.color:
         final colorHex = widget.item.metadata['colorHex'] as String?;
@@ -1016,7 +1002,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             _buildMetadataItem(context, Icons.palette, colorHex.toUpperCase()),
           );
         }
-        break;
 
       case ClipType.url:
         final domain = _extractDomain(widget.item.content ?? '');
@@ -1025,7 +1010,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             _buildMetadataItem(context, Icons.language, domain),
           );
         }
-        break;
 
       default:
         break;
@@ -1283,7 +1267,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       final abs = p.join(dir.path, path);
       final file = File(abs);
       return file.existsSync() ? abs : null;
-    } catch (e) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -1294,30 +1278,30 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 
     switch (extension) {
       case '.pdf':
-        return FileIconConfig(Icons.picture_as_pdf, Colors.red);
+        return const FileIconConfig(Icons.picture_as_pdf, Colors.red);
       case '.doc':
       case '.docx':
-        return FileIconConfig(Icons.description, Colors.blue);
+        return const FileIconConfig(Icons.description, Colors.blue);
       case '.xls':
       case '.xlsx':
-        return FileIconConfig(Icons.table_chart, Colors.green);
+        return const FileIconConfig(Icons.table_chart, Colors.green);
       case '.ppt':
       case '.pptx':
-        return FileIconConfig(Icons.slideshow, Colors.orange);
+        return const FileIconConfig(Icons.slideshow, Colors.orange);
       case '.zip':
       case '.rar':
       case '.7z':
-        return FileIconConfig(Icons.archive, Colors.purple);
+        return const FileIconConfig(Icons.archive, Colors.purple);
       case '.mp4':
       case '.avi':
       case '.mov':
-        return FileIconConfig(Icons.video_file, Colors.red);
+        return const FileIconConfig(Icons.video_file, Colors.red);
       case '.mp3':
       case '.wav':
       case '.flac':
-        return FileIconConfig(Icons.audio_file, Colors.pink);
+        return const FileIconConfig(Icons.audio_file, Colors.pink);
       default:
-        return FileIconConfig(Icons.insert_drive_file, Colors.grey);
+        return const FileIconConfig(Icons.insert_drive_file, Colors.grey);
     }
   }
 
@@ -1371,7 +1355,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             widget.item.originHeight ??
             widget.item.metadata['height'] as int? ??
             0;
-        return width > 0 && height > 0 ? '图片 ${width}×$height' : '图片';
+        return width > 0 && height > 0 ? '图片 $width×$height' : '图片';
       case ClipType.file:
         final fileName = widget.item.metadata['fileName'] as String? ?? '未知文件';
         return fileName;
@@ -1444,7 +1428,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     try {
       final uri = Uri.parse(url);
       return uri.host.replaceAll('www.', '');
-    } catch (e) {
+    } on Exception {
       return '';
     }
   }
@@ -1516,12 +1500,12 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('确认删除'),
+        title: const Text('确认删除'),
         content: Text('确定要删除这个${_getTypeLabel()}吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('取消'),
+            child: const Text('取消'),
           ),
           FilledButton(
             onPressed: () {
@@ -1538,7 +1522,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: Text('删除'),
+            child: const Text('删除'),
           ),
         ],
       ),

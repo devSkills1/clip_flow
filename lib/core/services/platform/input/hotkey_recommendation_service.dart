@@ -173,7 +173,7 @@ class HotkeyRecommendationService {
         final newAverageInterval = existing.count == 1
             ? interval.toDouble()
             : (existing.averageInterval * (existing.count - 1) + interval) /
-                existing.count;
+                  existing.count;
 
         _usageStats[action] = HotkeyUsageStats(
           action: action,
@@ -305,9 +305,7 @@ class HotkeyRecommendationService {
         // 检查冲突
         final conflictLevel = await _checkConflictLevel(config);
         if (conflictLevel > 0.7) {
-          final highConflicts =
-              analysis['highConflicts'] as List<Map<String, dynamic>>;
-          highConflicts.add({
+          (analysis['highConflicts'] as List<Map<String, dynamic>>).add({
             'action': action.name,
             'key': config.displayString,
             'conflictLevel': conflictLevel,
@@ -318,8 +316,7 @@ class HotkeyRecommendationService {
         // 检查使用情况
         final usage = _usageStats[action];
         if (usage == null || usage.count < 5) {
-          final unusedActions = analysis['unusedActions'] as List<HotkeyAction>;
-          unusedActions.add(action);
+          (analysis['unusedActions'] as List<HotkeyAction>).add(action);
         } else if (conflictLevel < 0.3) {
           efficientActions++;
         }

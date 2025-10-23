@@ -1,10 +1,12 @@
+// ignore_for_file: public_member_api_docs
+// Enhanced search bar widget with inline documentation for clarity.
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// 增强的搜索栏组件 - Material Design 3风格
 class EnhancedSearchBar extends StatefulWidget {
+  /// Creates an enhanced search bar.
   const EnhancedSearchBar({
     required this.controller,
     required this.onChanged,
@@ -14,7 +16,7 @@ class EnhancedSearchBar extends StatefulWidget {
     this.suggestions = const [],
     this.onSuggestionSelected,
     this.isLoading = false,
-    this autofocus = false,
+    this.autofocus = false,
     super.key,
   });
 
@@ -65,10 +67,10 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
     );
 
@@ -77,8 +79,9 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar>
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -140,14 +143,16 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar>
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
+                          valueColor: AlwaysStoppedAnimation(
                             theme.colorScheme.primary,
                           ),
                         ),
                       )
                     : Icon(
                         Icons.search,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
               ),
               suffixIcon: widget.controller.text.isNotEmpty
@@ -158,7 +163,9 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar>
                       },
                       icon: Icon(
                         Icons.clear,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: .7,
+                        ),
                       ),
                       tooltip: '清除',
                     )
@@ -259,6 +266,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar>
 
 /// 快速筛选按钮组
 class QuickFilterChips extends StatelessWidget {
+  /// Creates quick filter chips.
   const QuickFilterChips({
     required this.filters,
     required this.selectedFilter,
@@ -312,7 +320,6 @@ class QuickFilterChips extends StatelessWidget {
               color: isSelected
                   ? theme.colorScheme.primary
                   : theme.colorScheme.outline.withValues(alpha: 0.3),
-              width: 1,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
@@ -325,72 +332,120 @@ class QuickFilterChips extends StatelessWidget {
 }
 
 /// 筛选选项
+@immutable
 class FilterOption {
+  /// Creates a filter option.
   const FilterOption({
     required this.value,
     required this.label,
     required this.icon,
   });
 
+  /// The filter value.
   final String value;
+
+  /// The display label.
   final String label;
+
+  /// The icon to display.
   final IconData icon;
 
-  // 预定义的筛选选项
+  /// 预定义的筛选选项
   static const all = FilterOption(
     value: 'all',
     label: '全部',
     icon: Icons.apps,
   );
+
+  /// All text filter option.
   static const text = FilterOption(
     value: 'text',
     label: '文本',
     icon: Icons.text_fields,
   );
+
+  /// Rich text filter option.
   static const richTextUnion = FilterOption(
     value: 'rich',
     label: '富文本',
     icon: Icons.description,
   );
+
+  /// RTF filter option.
   static const rtf = FilterOption(
     value: 'rtf',
     label: 'RTF',
     icon: Icons.description,
   );
+
+  /// HTML filter option.
   static const html = FilterOption(
     value: 'html',
     label: 'HTML',
     icon: Icons.code,
   );
+
+  /// Code filter option.
   static const code = FilterOption(
     value: 'code',
     label: '代码',
     icon: Icons.terminal,
   );
+
+  /// Image filter option.
   static const image = FilterOption(
     value: 'image',
     label: '图片',
     icon: Icons.image,
   );
+
+  /// Color filter option.
   static const color = FilterOption(
     value: 'color',
     label: '颜色',
     icon: Icons.palette,
   );
+
+  /// File filter option.
   static const file = FilterOption(
     value: 'file',
     label: '文件',
     icon: Icons.insert_drive_file,
   );
+
+  /// Audio filter option.
   static const audio = FilterOption(
     value: 'audio',
     label: '音频',
     icon: Icons.audiotrack,
   );
+
+  /// Video filter option.
   static const video = FilterOption(
     value: 'video',
     label: '视频',
     icon: Icons.videocam,
+  );
+
+  /// Recent filter option.
+  static const recent = FilterOption(
+    value: 'recent',
+    label: '最近',
+    icon: Icons.access_time,
+  );
+
+  /// Favorites filter option.
+  static const favorites = FilterOption(
+    value: 'favorites',
+    label: '收藏',
+    icon: Icons.favorite,
+  );
+
+  /// Images filter option.
+  static const images = FilterOption(
+    value: 'images',
+    label: '图片',
+    icon: Icons.image,
   );
 
   @override
@@ -406,6 +461,7 @@ class FilterOption {
 
 /// 显示模式切换器
 class DisplayModeToggle extends StatelessWidget {
+  /// Creates a display mode toggle.
   const DisplayModeToggle({
     required this.displayMode,
     required this.onModeChanged,
@@ -487,6 +543,7 @@ class DisplayModeToggle extends StatelessWidget {
 
 /// 高级筛选面板
 class AdvancedFilterPanel extends StatefulWidget {
+  /// Creates an advanced filter panel.
   const AdvancedFilterPanel({
     required this.selectedTypes,
     required this.onTypesChanged,
@@ -572,7 +629,7 @@ class _AdvancedFilterPanelState extends State<AdvancedFilterPanel>
             trailing: AnimatedRotation(
               turns: _isExpanded ? 0.5 : 0,
               duration: const Duration(milliseconds: 300),
-              child: Icon(Icons.expand_more),
+              child: const Icon(Icons.expand_more),
             ),
             onTap: _toggleExpanded,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -638,7 +695,7 @@ class _AdvancedFilterPanelState extends State<AdvancedFilterPanel>
 
   Widget _buildTypeFilter(BuildContext context) {
     final theme = Theme.of(context);
-    final allTypes = ClipType.values;
+    const allTypes = ClipType.values;
 
     return Wrap(
       spacing: 8,
@@ -682,17 +739,28 @@ class _AdvancedFilterPanelState extends State<AdvancedFilterPanel>
         OutlinedButton.icon(
           onPressed: _selectDateRange,
           icon: const Icon(Icons.date_range),
-          label: Text(widget.dateRange != null
-              ? '${_formatDate(widget.dateRange!.start)} - ${_formatDate(widget.dateRange!.end)}'
-              : '选择日期范围'),
+          label: Text(
+            widget.dateRange != null
+                ? '${_formatDate(widget.dateRange!.start)} - '
+                      '${_formatDate(widget.dateRange!.end)}'
+                : '选择日期范围',
+          ),
         ),
         if (widget.dateRange != null) ...[
           const SizedBox(height: 8),
-          Text(
-            '范围: ${_calculateDaysBetween(widget.dateRange!.start, widget.dateRange!.end)} 天',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          Builder(
+            builder: (context) {
+              final days = _calculateDaysBetween(
+                widget.dateRange!.start,
+                widget.dateRange!.end,
+              );
+              return Text(
+                '范围: $days 天',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              );
+            },
           ),
         ],
       ],
@@ -702,31 +770,31 @@ class _AdvancedFilterPanelState extends State<AdvancedFilterPanel>
   ClipTypeInfo _getClipTypeInfo(ClipType type) {
     switch (type) {
       case ClipType.text:
-        return ClipTypeInfo('文本', Icons.text_fields);
+        return const ClipTypeInfo('文本', Icons.text_fields);
       case ClipType.rtf:
-        return ClipTypeInfo('富文本', Icons.description);
+        return const ClipTypeInfo('富文本', Icons.description);
       case ClipType.html:
-        return ClipTypeInfo('HTML', Icons.code);
+        return const ClipTypeInfo('HTML', Icons.code);
       case ClipType.image:
-        return ClipTypeInfo('图片', Icons.image);
+        return const ClipTypeInfo('图片', Icons.image);
       case ClipType.color:
-        return ClipTypeInfo('颜色', Icons.palette);
+        return const ClipTypeInfo('颜色', Icons.palette);
       case ClipType.file:
-        return ClipTypeInfo('文件', Icons.insert_drive_file);
+        return const ClipTypeInfo('文件', Icons.insert_drive_file);
       case ClipType.audio:
-        return ClipTypeInfo('音频', Icons.audiotrack);
+        return const ClipTypeInfo('音频', Icons.audiotrack);
       case ClipType.video:
-        return ClipTypeInfo('视频', Icons.videocam);
+        return const ClipTypeInfo('视频', Icons.videocam);
       case ClipType.url:
-        return ClipTypeInfo('链接', Icons.link);
+        return const ClipTypeInfo('链接', Icons.link);
       case ClipType.email:
-        return ClipTypeInfo('邮箱', Icons.email);
+        return const ClipTypeInfo('邮箱', Icons.email);
       case ClipType.json:
-        return ClipTypeInfo('JSON', Icons.data_object);
+        return const ClipTypeInfo('JSON', Icons.data_object);
       case ClipType.xml:
-        return ClipTypeInfo('XML', Icons.code);
+        return const ClipTypeInfo('XML', Icons.code);
       case ClipType.code:
-        return ClipTypeInfo('代码', Icons.terminal);
+        return const ClipTypeInfo('代码', Icons.terminal);
     }
   }
 
@@ -743,8 +811,8 @@ class _AdvancedFilterPanelState extends State<AdvancedFilterPanel>
     widget.onDateRangeChanged(null);
   }
 
-  void _selectDateRange() async {
-    final DateTimeRange? picked = await showDateRangePicker(
+  Future<void> _selectDateRange() async {
+    final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now(),
@@ -764,8 +832,14 @@ class _AdvancedFilterPanelState extends State<AdvancedFilterPanel>
   }
 }
 
+/// Information about a clip type.
 class ClipTypeInfo {
+  /// Creates clip type information.
   const ClipTypeInfo(this.label, this.icon);
+
+  /// The display label.
   final String label;
+
+  /// The icon to display.
   final IconData icon;
 }

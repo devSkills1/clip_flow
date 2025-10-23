@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 // 忽略公共成员API文档要求，因为这是内部设置页面，不需要对外暴露API文档
+// Internal settings page that doesn't require public API documentation.
 import 'dart:async';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
@@ -243,15 +244,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Expanded(
-                          child: Slider(
-                            value: preferences.ocrMinConfidence,
-                            divisions: 20,
-                            label:
-                                '${(preferences.ocrMinConfidence * 100).round()}%',
-                            onChanged: (v) {
-                              ref
-                                  .read(userPreferencesProvider.notifier)
-                                  .setOcrMinConfidence(v);
+                          child: Builder(
+                            builder: (context) {
+                              final percentage =
+                                  (preferences.ocrMinConfidence * 100).round();
+                              return Slider(
+                                value: preferences.ocrMinConfidence,
+                                divisions: 20,
+                                label: '$percentage%',
+                                onChanged: (v) {
+                                  ref
+                                      .read(userPreferencesProvider.notifier)
+                                      .setOcrMinConfidence(v);
+                                },
+                              );
                             },
                           ),
                         ),
@@ -954,9 +960,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${S.of(context)?.updateLatestVersionPrefix ?? 
-                    I18nFallbacks.settings.updateLatestVersionPrefix}${latestVersion?.version}',
+                  Builder(
+                    builder: (context) {
+                      final prefix =
+                          S.of(context)?.updateLatestVersionPrefix ??
+                          I18nFallbacks.settings.updateLatestVersionPrefix;
+                      return Text('$prefix${latestVersion?.version}');
+                    },
                   ),
                   const SizedBox(height: Spacing.s8),
                   if (latestVersion?.releaseNotes.isNotEmpty ?? false) ...[

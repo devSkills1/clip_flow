@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 // 这是内部UI组件，不需要对外暴露API文档
+// Internal UI component that doesn't require public API documentation.
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/dimensions.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
@@ -211,14 +212,15 @@ class FilterSidebar extends ConsumerWidget {
             color: isSelected
                 ? Theme.of(context).colorScheme.primaryContainer
                 : isHovered
-                    ? Theme.of(context).colorScheme.surfaceContainer
-                    : Colors.transparent,
+                ? Theme.of(context).colorScheme.surfaceContainer
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: isSelected
                 ? null
                 : Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant
-                        .withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.3),
                   ),
           ),
           child: Row(
@@ -226,7 +228,11 @@ class FilterSidebar extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getIconBackgroundColor(context, isSelected, isHovered),
+                  color: _getIconBackgroundColor(
+                    context,
+                    isSelected,
+                    isHovered,
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -317,14 +323,15 @@ class FilterSidebar extends ConsumerWidget {
             color: isSelected
                 ? Theme.of(context).colorScheme.primaryContainer
                 : isHovered
-                    ? Theme.of(context).colorScheme.surfaceContainer
-                    : Colors.transparent,
+                ? Theme.of(context).colorScheme.surfaceContainer
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: isSelected
                 ? null
                 : Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant
-                        .withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.3),
                   ),
           ),
           child: Row(
@@ -332,7 +339,11 @@ class FilterSidebar extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getIconBackgroundColor(context, isSelected, isHovered),
+                  color: _getIconBackgroundColor(
+                    context,
+                    isSelected,
+                    isHovered,
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -505,21 +516,27 @@ class _ModernFilterItemState extends State<_ModernFilterItem>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 1,
-      end: 1.02,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _scaleAnimation =
+        Tween<double>(
+          begin: 1,
+          end: 1.02,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
-    _opacityAnimation = Tween<double>(
-      begin: 0,
-      end: 0.04,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _opacityAnimation =
+        Tween<double>(
+          begin: 0,
+          end: 0.04,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
   }
 
   @override

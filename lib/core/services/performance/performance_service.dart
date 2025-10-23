@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
 // ignore_for_file: public_member_api_docs
+// Performance service internal methods that don't require public API
+// documentation.
 
 /// 性能监控服务
 /// 提供实时性能指标收集，包括FPS、内存、CPU等

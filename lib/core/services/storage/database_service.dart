@@ -189,7 +189,8 @@ class DatabaseService {
         if (existingItem == null) {
           uniqueItems.add(item);
         } else {
-          duplicateCount[item.type.name] = (duplicateCount[item.type.name] ?? 0) + 1;
+          duplicateCount[item.type.name] =
+              (duplicateCount[item.type.name] ?? 0) + 1;
         }
       }
 
@@ -987,7 +988,8 @@ class DatabaseService {
       }
 
       // 删除重复记录，保留最新的一个（基于created_at）
-      final deleted = await _database!.rawQuery('''
+      final deleted = await _database!.rawQuery(
+        '''
         DELETE FROM ${ClipConstants.clipItemsTable}
         WHERE id = ? AND rowid NOT IN (
           SELECT rowid FROM ${ClipConstants.clipItemsTable}
@@ -995,7 +997,9 @@ class DatabaseService {
           ORDER BY created_at DESC, rowid DESC
           LIMIT 1
         )
-      ''', [id, id]);
+      ''',
+        [id, id],
+      );
 
       final deletedCount = Sqflite.firstIntValue(deleted) ?? 0;
       totalDeleted += deletedCount;

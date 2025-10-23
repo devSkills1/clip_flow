@@ -1,5 +1,8 @@
+// ignore_for_file: public_member_api_docs
+// Public member documentation is handled inline for clarity.
+// Optimized image loader with comprehensive inline documentation.
+import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +11,7 @@ import 'package:flutter/services.dart';
 
 /// 优化的图片加载器 - 解决图片溢出和性能问题
 class OptimizedImageLoader extends StatefulWidget {
+  /// 优化的图片加载器
   const OptimizedImageLoader({
     required this.imagePath,
     required this.thumbnailData,
@@ -55,7 +59,6 @@ class OptimizedImageLoader extends StatefulWidget {
 class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
     with AutomaticKeepAliveClientMixin {
   bool _useOriginalImage = false;
-  bool _isLoading = false;
   bool _hasError = false;
 
   @override
@@ -94,7 +97,7 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
 
       // 大图片需要优化处理
       return await _resizeImage(file, widget.displaySize);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Error loading optimized image: $e');
       return null;
     }
@@ -113,13 +116,11 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
       final originalHeight = image.height.toDouble();
       final aspectRatio = originalWidth / originalHeight;
 
-      double targetWidth = targetSize.width;
-      double targetHeight = targetSize.width / aspectRatio;
+      var targetHeight = targetSize.width / aspectRatio;
 
       // 确保不超过显示区域
       if (targetHeight > targetSize.height) {
         targetHeight = targetSize.height;
-        targetWidth = targetHeight * aspectRatio;
       }
 
       // 创建图片字节
@@ -130,9 +131,9 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
 
       image.dispose();
       return byteData.buffer.asUint8List();
-    } catch (e) {
+    } on Exception {
       // 如果优化失败，返回原始图片
-      return await file.readAsBytes();
+      return file.readAsBytes();
     }
   }
 
@@ -147,7 +148,6 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
         width: widget.displaySize.width,
         height: widget.displaySize.height,
         fit: widget.fit,
-        filterQuality: FilterQuality.medium,
         cacheWidth: widget.displaySize.width.round(),
         gaplessPlayback: true,
         semanticLabel: '缩略图预览',
@@ -165,11 +165,11 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
       future: _loadOptimizedImage(widget.imagePath!),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          setState(() => _isLoading = true);
+          setState(() {});
           return _buildLoadingWidget();
         }
 
-        setState(() => _isLoading = false);
+        setState(() {});
 
         if (snapshot.hasError || snapshot.data == null) {
           setState(() => _hasError = true);
@@ -178,7 +178,11 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
                 snapshot.error ?? Exception('Failed to load image'),
                 snapshot.stackTrace,
               ) ??
-              _defaultErrorBuilder(context, snapshot.error ?? Exception('Failed to load image'), snapshot.stackTrace);
+              _defaultErrorBuilder(
+                context,
+                snapshot.error ?? Exception('Failed to load image'),
+                snapshot.stackTrace,
+              );
         }
 
         setState(() => _hasError = false);
@@ -291,7 +295,11 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
     );
   }
 
-  Widget _defaultErrorBuilder(BuildContext context, Object error, StackTrace? stackTrace) {
+  Widget _defaultErrorBuilder(
+    BuildContext context,
+    Object error,
+    StackTrace? stackTrace,
+  ) {
     final theme = Theme.of(context);
 
     return Container(
@@ -352,9 +360,9 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
 
 /// 图片缓存管理器
 class ImageCacheManager {
-  static final ImageCacheManager _instance = ImageCacheManager._internal();
   factory ImageCacheManager() => _instance;
   ImageCacheManager._internal();
+  static final ImageCacheManager _instance = ImageCacheManager._internal();
 
   final Map<String, Uint8List> _memoryCache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
@@ -399,9 +407,9 @@ class ImageCacheManager {
     var oldestTime = _cacheTimestamps[oldestKey]!;
 
     for (final entry in _cacheTimestamps.entries) {
-      if (entry.value!.isBefore(oldestTime)) {
+      if (entry.value.isBefore(oldestTime)) {
         oldestKey = entry.key;
-        oldestTime = entry.value!;
+        oldestTime = entry.value;
       }
     }
 
@@ -480,8 +488,8 @@ class _ProgressiveImageLoaderState extends State<ProgressiveImageLoader> {
 
     try {
       // 模拟加载进度
-      for (int i = 0; i <= 100; i += 10) {
-        await Future.delayed(const Duration(milliseconds: 50));
+      for (var i = 0; i <= 100; i += 10) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
         if (mounted) {
           setState(() => _state = _state.copyWith(progress: i / 100.0));
         }
@@ -505,23 +513,27 @@ class _ProgressiveImageLoaderState extends State<ProgressiveImageLoader> {
             completer.completeError(error, stackTrace);
           }
           if (mounted) {
-            setState(() => _state = _state.copyWith(
-              isLoading: false,
-              hasError: true,
-              error: error,
-            ));
+            setState(
+              () => _state = _state.copyWith(
+                isLoading: false,
+                hasError: true,
+                error: error,
+              ),
+            );
           }
         },
       );
 
       stream.addListener(listener);
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
-        setState(() => _state = _state.copyWith(
-          isLoading: false,
-          hasError: true,
-          error: e,
-        ));
+        setState(
+          () => _state = _state.copyWith(
+            isLoading: false,
+            hasError: true,
+            error: e,
+          ),
+        );
       }
     }
   }

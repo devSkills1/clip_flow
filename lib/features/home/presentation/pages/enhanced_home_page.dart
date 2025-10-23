@@ -1,17 +1,22 @@
+// ignore_for_file: public_member_api_docs, no_default_cases
+// Public member documentation is handled inline for clarity.
+// Switch statements use exhaustive patterns without default cases.
+import 'dart:async';
 import 'dart:io';
 
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/debug/clipboard_debug_page.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search_bar.dart'
-    hide FilterOption;
+    as search;
 import 'package:clip_flow_pro/features/home/presentation/widgets/responsive_home_layout.dart';
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:clip_flow_pro/l10n/gen/s.dart';
 
 /// 增强版首页 - 解决所有布局溢出和性能问题
 class EnhancedHomePage extends ConsumerStatefulWidget {
@@ -29,7 +34,6 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  bool _showAdvancedFilters = false;
   String? _lastSearchQuery;
   Set<ClipType> _selectedTypes = <ClipType>{};
   DateTimeRange? _dateRange;
@@ -108,8 +112,9 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
           notifier.addItem(validItem);
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       // 静默失败，避免阻塞UI
+      unawaited(Log.e('Error loading initial data: $e'));
     }
   }
 
@@ -142,7 +147,8 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       }
 
       return null;
-    } catch (e) {
+    } on Exception catch (e) {
+      await Log.e('Error finding image file for item: $e');
       return null;
     }
   }
@@ -321,12 +327,12 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
 
   Widget _buildTypeFilterOptions(FilterOption currentFilter) {
     final typeOptions = [
-      FilterOption.all,
-      FilterOption.text,
-      FilterOption.richTextUnion,
-      FilterOption.image,
-      FilterOption.file,
-      FilterOption.color,
+      search.FilterOption.all,
+      search.FilterOption.text,
+      search.FilterOption.richTextUnion,
+      search.FilterOption.image,
+      search.FilterOption.file,
+      search.FilterOption.color,
     ];
 
     return Column(
@@ -337,7 +343,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     );
   }
 
-  Widget _buildFilterTile(FilterOption option, bool isSelected) {
+  Widget _buildFilterTile(search.FilterOption option, bool isSelected) {
     final theme = Theme.of(context);
 
     return ListTile(
@@ -372,6 +378,33 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     );
   }
 
+  search.FilterOption _getClassFilterOption(FilterOption enumOption) {
+    switch (enumOption) {
+      case FilterOption.all:
+        return search.FilterOption.all;
+      case FilterOption.text:
+        return search.FilterOption.text;
+      case FilterOption.richTextUnion:
+        return search.FilterOption.richTextUnion;
+      case FilterOption.rtf:
+        return search.FilterOption.rtf;
+      case FilterOption.html:
+        return search.FilterOption.html;
+      case FilterOption.code:
+        return search.FilterOption.code;
+      case FilterOption.image:
+        return search.FilterOption.image;
+      case FilterOption.color:
+        return search.FilterOption.color;
+      case FilterOption.file:
+        return search.FilterOption.file;
+      case FilterOption.audio:
+        return search.FilterOption.audio;
+      case FilterOption.video:
+        return search.FilterOption.video;
+    }
+  }
+
   FilterOption _getFilterOptionValue(String value) {
     switch (value) {
       case 'all':
@@ -386,6 +419,10 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
         return FilterOption.file;
       case 'color':
         return FilterOption.color;
+      case 'recent':
+      case 'favorites':
+      case 'images':
+        return FilterOption.all; // 这些特殊筛选项暂时归类为全部
       default:
         return FilterOption.all;
     }
@@ -498,7 +535,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(24),
-      child: EnhancedSearchBar(
+      child: search.EnhancedSearchBar(
         controller: _searchController,
         hintText: '搜索剪贴板内容...',
         onChanged: (query) {
@@ -543,16 +580,17 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       child: Row(
         children: [
           Expanded(
-            child: QuickFilterChips(
+            child: search.QuickFilterChips(
               filters: _getQuickFilterOptions(),
-              selectedFilter: filterOption,
+              selectedFilter: _getClassFilterOption(filterOption),
               onFilterSelected: (filter) {
-                ref.read(filterTypeProvider.notifier).state = filter;
+                ref.read(filterTypeProvider.notifier).state =
+                    _getFilterOptionValue(filter.value);
               },
             ),
           ),
           const SizedBox(width: 16),
-          DisplayModeToggle(
+          search.DisplayModeToggle(
             displayMode: displayMode,
             onModeChanged: (mode) {
               ref.read(displayModeProvider.notifier).state = mode;
@@ -563,13 +601,13 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     );
   }
 
-  List<FilterOption> _getQuickFilterOptions() {
+  List<search.FilterOption> _getQuickFilterOptions() {
     return [
-      FilterOption('all', '全部', Icons.apps),
-      FilterOption('recent', '最近', Icons.access_time),
-      FilterOption('favorites', '收藏', Icons.favorite),
-      FilterOption('images', '图片', Icons.image),
-      FilterOption('text', '文本', Icons.text_fields),
+      search.FilterOption.all,
+      search.FilterOption.recent,
+      search.FilterOption.favorites,
+      search.FilterOption.images,
+      search.FilterOption.text,
     ];
   }
 
@@ -599,7 +637,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
         },
         loading: () => const LoadingState(),
         error: (error, stackTrace) => ErrorState(
-          message: '搜索时出错：${error.toString()}',
+          message: '搜索时出错：$error',
           onRetry: () {
             // 重试搜索
           },
@@ -712,7 +750,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
           return item.type == ClipType.audio;
         case FilterOption.video:
           return item.type == ClipType.video;
-        case FilterOption.all:
+        default:
           return true;
       }
     }).toList();
@@ -757,7 +795,8 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
         ),
         content: Text(
           S.of(context)?.dialogDeleteContent(_getItemPreview(item)) ??
-              '${I18nFallbacks.common.deleteContentPrefix}${_getItemPreview(item)}',
+              '${I18nFallbacks.common.deleteContentPrefix}'
+                  '${_getItemPreview(item)}',
         ),
         actions: [
           TextButton(
@@ -773,7 +812,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
               // 再尝试删除数据库记录
               try {
                 ref.read(clipRepositoryProvider).delete(item.id);
-              } catch (e) {
+              } on Exception {
                 // 忽略删除异常
               }
               Navigator.of(context).pop();

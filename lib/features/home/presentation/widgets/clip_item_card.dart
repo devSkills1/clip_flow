@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
@@ -68,7 +67,9 @@ class ClipItemCard extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
+              borderRadius: BorderRadius.circular(
+                ClipConstants.cardBorderRadius,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.1),
@@ -90,17 +91,15 @@ class ClipItemCard extends StatelessWidget {
                 splashColor: Theme.of(context).colorScheme.primary.withValues(
                   alpha: 0.1,
                 ),
-                highlightColor: Theme.of(context).colorScheme.primary.withValues(
-                  alpha: 0.05,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(_contentPadding()),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: _getMaxCardHeight(context),
+                highlightColor: Theme.of(context).colorScheme.primary
+                    .withValues(
+                      alpha: 0.05,
                     ),
-                    child: SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
+                child: SizedBox(
+                  // 使用Flexible而不是IntrinsicHeight来避免溢出
+                  child: ClipRect(
+                    child: Padding(
+                      padding: EdgeInsets.all(_contentPadding()),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
@@ -110,8 +109,15 @@ class ClipItemCard extends StatelessWidget {
 
                           const SizedBox(height: Spacing.s12),
 
-                          // 内容预览 - 不再需要Flexible，使用滚动容器
-                          _buildContentArea(context),
+                          // 内容预览 - 使用Flexible防止溢出
+                          Flexible(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight: _getMaxContentHeight(context),
+                              ),
+                              child: _buildContentArea(context),
+                            ),
+                          ),
 
                           // 底部：时间和标签
                           const SizedBox(height: Spacing.s8),
@@ -129,41 +135,15 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  
-
-  /// 获取卡片最大高度限制，防止无限增长
-  double _getMaxCardHeight(BuildContext context) {
+  /// 获取最大内容高度，防止溢出
+  double _getMaxContentHeight(BuildContext context) {
     switch (displayMode) {
       case DisplayMode.compact:
-        return 250;
+        return 150; // 增加紧凑模式内容高度
       case DisplayMode.normal:
-        return 350;
+        return 200; // 增加正常模式内容高度
       case DisplayMode.preview:
-        return 450;
-    }
-  }
-
-  /// 获取图片最大高度限制
-  double _getMaxImageHeight() {
-    switch (displayMode) {
-      case DisplayMode.compact:
-        return 120;
-      case DisplayMode.normal:
-        return 180;
-      case DisplayMode.preview:
-        return 300;
-    }
-  }
-
-  /// 获取文本最大高度限制
-  double _getMaxTextHeight() {
-    switch (displayMode) {
-      case DisplayMode.compact:
-        return 100;
-      case DisplayMode.normal:
-        return 150;
-      case DisplayMode.preview:
-        return 200;
+        return 250; // 增加预览模式内容高度
     }
   }
 
@@ -172,7 +152,7 @@ class ClipItemCard extends StatelessWidget {
     final typeLabel = _getTypeLabel();
     final contentPreview = _getContentPreview();
     final timeAgo = _getTimeAgoLabel();
-    
+
     return '$typeLabel：$contentPreview，$timeAgo${item.isFavorite ? '，已收藏' : ''}';
   }
 
@@ -212,13 +192,9 @@ class ClipItemCard extends StatelessWidget {
   String _getContentPreview() {
     switch (item.type) {
       case ClipType.image:
-        // 优先使用新的originWidth和originHeight字段，其次使用metadata中的尺寸
-        final width = item.originWidth ?? (item.metadata['width'] as int? ?? 0);
-        final height = item.originHeight ?? (item.metadata['height'] as int? ?? 0);
-        if (width > 0 && height > 0) {
-          return '图片 ${width}x$height';
-        }
-        return '图片';
+        final width = item.metadata['width'] as int? ?? 0;
+        final height = item.metadata['height'] as int? ?? 0;
+        return '图片 ${width}x$height';
       case ClipType.file:
         final fileName = item.metadata['fileName'] as String? ?? '未知文件';
         return fileName;
@@ -279,7 +255,7 @@ class ClipItemCard extends StatelessWidget {
   void _handleDeleteWithFeedback(BuildContext context) {
     // 触觉反馈
     HapticFeedback.mediumImpact();
-    
+
     // 显示确认对话框
     _showDeleteConfirmation(context);
   }
@@ -327,7 +303,7 @@ class ClipItemCard extends StatelessWidget {
   }) {
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
-    
+
     entry = OverlayEntry(
       builder: (context) => Positioned(
         top: 100,
@@ -383,9 +359,9 @@ class ClipItemCard extends StatelessWidget {
         ),
       ),
     );
-    
+
     overlay.insert(entry);
-    
+
     // 3秒后自动移除
     Future.delayed(const Duration(seconds: 3), () {
       entry.remove();
@@ -394,23 +370,19 @@ class ClipItemCard extends StatelessWidget {
 
   /// 构建内容区域
   Widget _buildContentArea(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: ConstrainedBox(
+    return ClipRect(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return ConstrainedBox(
             constraints: BoxConstraints(
-              minWidth: constraints.maxWidth,
-              minHeight: constraints.minHeight,
+              maxHeight: constraints.maxHeight,
             ),
-            child: _buildContentPreview(context, constraints.maxWidth),
-          ),
-        );
-      },
+            child: _buildContentPreview(context),
+          );
+        },
+      ),
     );
   }
-
-  
 
   // 不同显示模式下的内容内边距，提升层次与紧凑度
   double _contentPadding() {
@@ -553,12 +525,12 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildContentPreview(BuildContext context, double availableWidth) {
+  Widget _buildContentPreview(BuildContext context) {
     switch (item.type) {
       case ClipType.color:
         return _buildColorPreview();
       case ClipType.image:
-        return _buildImagePreview(availableWidth);
+        return _buildImagePreview();
       case ClipType.file:
         return _buildFilePreview();
       case ClipType.text:
@@ -571,7 +543,7 @@ class ClipItemCard extends StatelessWidget {
       case ClipType.json:
       case ClipType.xml:
       case ClipType.code:
-        return _buildTextPreview(context, availableWidth);
+        return _buildTextPreview(context);
     }
   }
 
@@ -616,9 +588,9 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImagePreview(double availableWidth) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
+  Widget _buildImagePreview() {
+    return Builder(
+      builder: (context) {
         final theme = Theme.of(context);
         final rawPath = item.filePath;
         final isImageCandidate =
@@ -628,42 +600,32 @@ class ClipItemCard extends StatelessWidget {
         final wantOriginal =
             displayMode == DisplayMode.preview && isImageCandidate;
 
-        // 根据可用空间计算图片显示尺寸
-        final imageDisplaySize = _calculateImageDisplaySize(availableWidth);
-        final maxImageHeight = _getMaxImageHeight();
-        final imageHeight = math.min(imageDisplaySize.height, maxImageHeight);
-
         Widget buildThumbFallback() {
           return (item.thumbnail != null && item.thumbnail!.isNotEmpty)
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(
                     ClipConstants.cardBorderRadius,
                   ),
-                  child: SizedBox(
-                    width: imageDisplaySize.width,
-                    height: imageHeight,
-                    child: Image.memory(
-                      Uint8List.fromList(item.thumbnail!),
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                      cacheWidth: imageDisplaySize.width.round(),
-                      gaplessPlayback: true,
-                      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                        if (wasSynchronouslyLoaded) return child;
-                        return AnimatedOpacity(
-                          opacity: frame == null ? 0 : 1,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                          child: child,
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildImageErrorPlaceholder(theme, imageDisplaySize, imageHeight);
-                      },
-                    ),
+                  child: Image.memory(
+                    Uint8List.fromList(item.thumbnail!),
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                    frameBuilder:
+                        (context, child, frame, wasSynchronouslyLoaded) {
+                          if (wasSynchronouslyLoaded) return child;
+                          return AnimatedOpacity(
+                            opacity: frame == null ? 0 : 1,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOut,
+                            child: child,
+                          );
+                        },
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildImageErrorPlaceholder(theme);
+                    },
                   ),
                 )
-              : _buildImagePlaceholder(theme, imageDisplaySize, imageHeight);
+              : _buildImagePlaceholder(theme);
         }
 
         Widget buildImageWidget() {
@@ -673,7 +635,7 @@ class ClipItemCard extends StatelessWidget {
                   builder: (context, snapshot) {
                     final abs = snapshot.data;
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return _buildLoadingPlaceholder(theme, imageDisplaySize, imageHeight);
+                      return _buildLoadingPlaceholder(theme);
                     }
                     if (abs == null) {
                       return buildThumbFallback();
@@ -682,32 +644,38 @@ class ClipItemCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(
                         ClipConstants.cardBorderRadius,
                       ),
-                      child: SizedBox(
-                        width: imageDisplaySize.width,
-                        height: imageHeight,
-                        child: Image.file(
-                          File(abs),
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
-                          cacheWidth: imageDisplaySize.width.round(),
-                          frameBuilder: (
-                            context,
-                            child,
-                            frame,
-                            wasSynchronouslyLoaded,
-                          ) {
-                            if (wasSynchronouslyLoaded) return child;
-                            return AnimatedOpacity(
-                              opacity: frame == null ? 0 : 1,
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeOut,
-                              child: child,
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return buildThumbFallback();
-                          },
-                        ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            child: Image.file(
+                              File(abs),
+                              width: constraints.maxWidth,
+                              fit: BoxFit.fitWidth,
+                              cacheWidth: 512, // 降低缓存尺寸以节省内存
+                              frameBuilder:
+                                  (
+                                    context,
+                                    child,
+                                    frame,
+                                    wasSynchronouslyLoaded,
+                                  ) {
+                                    if (wasSynchronouslyLoaded) return child;
+                                    return AnimatedOpacity(
+                                      opacity: frame == null ? 0 : 1,
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
+                                      curve: Curves.easeOut,
+                                      child: child,
+                                    );
+                                  },
+                              errorBuilder: (context, error, stackTrace) {
+                                return buildThumbFallback();
+                              },
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
@@ -716,17 +684,25 @@ class ClipItemCard extends StatelessWidget {
         }
 
         // 构建包含OCR文本的完整预览
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+        return ListView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
-            // 图片预览 - 使用精确计算的尺寸
-            buildImageWidget(),
+            // 图片预览 - 直接使用，不要复杂约束
+            SizedBox(
+              height: 200, // 固定高度确保图片显示
+              child: ClipRect(
+                child: buildImageWidget(),
+              ),
+            ),
 
-            // OCR文本显示 - 修复约束冲突
+            // OCR文本显示 - 简化处理
             if (item.ocrText != null && item.ocrText!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              _buildOcrTextPreview(context),
+              SizedBox(
+                height: 60, // 固定高度，避免溢出
+                child: _buildOcrTextPreview(context),
+              ),
             ],
           ],
         );
@@ -735,10 +711,16 @@ class ClipItemCard extends StatelessWidget {
   }
 
   /// 构建图片错误占位符
-  Widget _buildImageErrorPlaceholder(ThemeData theme, Size size, double height) {
+  Widget _buildImageErrorPlaceholder(ThemeData theme) {
+    // 根据显示模式调整占位符高度
+    final placeholderHeight = switch (displayMode) {
+      DisplayMode.compact => 100,
+      DisplayMode.normal => 150,
+      DisplayMode.preview => 200,
+    };
+
     return Container(
-      width: size.width,
-      height: height,
+      height: placeholderHeight.toDouble(),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(
@@ -769,10 +751,16 @@ class ClipItemCard extends StatelessWidget {
   }
 
   /// 构建图片占位符
-  Widget _buildImagePlaceholder(ThemeData theme, Size size, double height) {
+  Widget _buildImagePlaceholder(ThemeData theme) {
+    // 根据显示模式调整占位符高度
+    final placeholderHeight = switch (displayMode) {
+      DisplayMode.compact => 100,
+      DisplayMode.normal => 150,
+      DisplayMode.preview => 200,
+    };
+
     return Container(
-      width: size.width,
-      height: height,
+      height: placeholderHeight.toDouble(),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(
@@ -790,10 +778,16 @@ class ClipItemCard extends StatelessWidget {
   }
 
   /// 构建加载占位符
-  Widget _buildLoadingPlaceholder(ThemeData theme, Size size, double height) {
+  Widget _buildLoadingPlaceholder(ThemeData theme) {
+    // 根据显示模式调整占位符高度
+    final placeholderHeight = switch (displayMode) {
+      DisplayMode.compact => 100,
+      DisplayMode.normal => 150,
+      DisplayMode.preview => 200,
+    };
+
     return Container(
-      width: size.width,
-      height: height,
+      height: placeholderHeight.toDouble(),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(
@@ -827,8 +821,6 @@ class ClipItemCard extends StatelessWidget {
       ),
     );
   }
-
-  
 
   Future<String?> _resolveAbsoluteImagePath(String relativeOrAbsolute) async {
     try {
@@ -879,7 +871,7 @@ class ClipItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTextPreview(BuildContext context, double availableWidth) {
+  Widget _buildTextPreview(BuildContext context) {
     final content = item.content ?? '';
 
     // 重新计算准确的字数统计
@@ -891,9 +883,14 @@ class ClipItemCard extends StatelessWidget {
         item.type == ClipType.code ||
         item.type == ClipType.json ||
         item.type == ClipType.xml;
+    final shouldPreserveWhitespace =
+        item.type == ClipType.code ||
+        item.type == ClipType.html ||
+        item.type == ClipType.rtf;
 
     final theme = Theme.of(context);
-    final baseStyle = (isMonospace
+    final baseStyle =
+        (isMonospace
             ? const TextStyle(fontFamily: 'monospace')
             : theme.textTheme.bodyMedium) ??
         const TextStyle();
@@ -905,47 +902,57 @@ class ClipItemCard extends StatelessWidget {
       height: 1.4,
     );
 
-    // 智能截断内容，考虑可用宽度
-    final truncatedContent = _getSmartTruncatedContent(content, availableWidth);
+    // 智能截断内容
+    final truncatedContent = _getSmartTruncatedContent(content);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 直接显示文本，外层已经有SingleChildScrollView处理滚动
-        Container(
-          constraints: BoxConstraints(
-            maxWidth: availableWidth,
-            minHeight: 0,
-          ),
-          child: _buildHighlightedText(
-            context,
-            truncatedContent,
-            textStyle,
-            preserveWhitespace: false, // 强制自动换行，禁用水平滚动
-          ),
-        ),
-        const SizedBox(height: Spacing.s8),
-        _buildContentStats(charCount, wordCount, lineCount),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 使用Flexible而不是固定高度，防止溢出
+            Flexible(
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: shouldPreserveWhitespace
+                    // 等宽 + 保留空白的文本，支持横向滚动避免超长行溢出
+                    ? SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const ClampingScrollPhysics(),
+                        child: _buildHighlightedText(
+                          context,
+                          truncatedContent,
+                          textStyle,
+                          preserveWhitespace: true,
+                        ),
+                      )
+                    : _buildHighlightedText(
+                        context,
+                        truncatedContent,
+                        textStyle,
+                        preserveWhitespace: false,
+                      ),
+              ),
+            ),
+            const SizedBox(height: Spacing.s8),
+            _buildContentStats(charCount, wordCount, lineCount),
+          ],
+        );
+      },
     );
   }
 
-  
-
-  /// 智能截断内容，考虑可用宽度
-  String _getSmartTruncatedContent(String content, double availableWidth) {
+  /// 智能截断内容
+  String _getSmartTruncatedContent(String content) {
     if (content.length <= 500) return content;
 
-    // 根据显示模式和可用宽度调整截断长度
-    final estimatedCharsPerLine = (availableWidth / 8.0).floor(); // 估算每行字符数
-    final maxLines = switch (displayMode) {
-      DisplayMode.compact => 3,
-      DisplayMode.normal => 5,
-      DisplayMode.preview => 8,
+    // 根据显示模式调整截断长度
+    final maxLength = switch (displayMode) {
+      DisplayMode.compact => 200,
+      DisplayMode.normal => 350,
+      DisplayMode.preview => 500,
     };
-
-    final maxLength = (estimatedCharsPerLine * maxLines).clamp(200, 800);
 
     // 尝试在单词边界截断
     if (content.length > maxLength) {
@@ -1033,24 +1040,37 @@ class ClipItemCard extends StatelessWidget {
     TextStyle style, {
     required bool preserveWhitespace,
   }) {
-    // 强制启用自动换行，禁用水平滚动
     if (searchQuery == null || searchQuery!.isEmpty) {
-      return Text(
-        text,
-        style: style,
-        softWrap: true,
-        overflow: TextOverflow.visible,
-      );
+      return preserveWhitespace
+          ? RichText(
+              text: TextSpan(
+                text: text,
+                style: style,
+              ),
+              textScaler: MediaQuery.of(context).textScaler,
+              softWrap: false,
+            )
+          : Text(
+              text,
+              style: style,
+            );
     }
 
     // 检查是否匹配搜索查询
     if (!text.toLowerCase().contains(searchQuery!.toLowerCase())) {
-      return Text(
-        text,
-        style: style,
-        softWrap: true,
-        overflow: TextOverflow.visible,
-      );
+      return preserveWhitespace
+          ? RichText(
+              text: TextSpan(
+                text: text,
+                style: style,
+              ),
+              textScaler: MediaQuery.of(context).textScaler,
+              softWrap: false,
+            )
+          : Text(
+              text,
+              style: style,
+            );
     }
 
     // 构建高亮文本
@@ -1064,8 +1084,7 @@ class ClipItemCard extends StatelessWidget {
     return RichText(
       text: TextSpan(children: spans),
       textScaler: MediaQuery.of(context).textScaler,
-      softWrap: true, // 强制自动换行
-      overflow: TextOverflow.visible,
+      softWrap: !preserveWhitespace,
     );
   }
 
@@ -1122,12 +1141,12 @@ class ClipItemCard extends StatelessWidget {
             ],
           ),
         ),
-        
+
         if (tags.isNotEmpty) ...[
           const SizedBox(height: ClipConstants.smallPadding / 2),
           _buildTagsSection(context, tags),
         ],
-        
+
         // 显示更多元数据
         const SizedBox(height: ClipConstants.smallPadding / 2),
         _buildMetadataSection(context),
@@ -1148,7 +1167,7 @@ class ClipItemCard extends StatelessWidget {
     return '$gbValue ${AppStrings.unitGB}';
   }
 
-  /// 构建OCR文本预览组件 - 修复约束冲突
+  /// 构建OCR文本预览组件
   Widget _buildOcrTextPreview(BuildContext context) {
     final ocrText = item.ocrText ?? '';
     if (ocrText.isEmpty) return const SizedBox.shrink();
@@ -1157,7 +1176,7 @@ class ClipItemCard extends StatelessWidget {
     final ocrConfidence = item.metadata['ocrConfidence'] as double?;
 
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(Spacing.s4), // 最小内边距
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
         borderRadius: BorderRadius.circular(ClipConstants.cardBorderRadius),
@@ -1169,57 +1188,57 @@ class ClipItemCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // OCR标题和置信度
-          Row(
-            children: [
-              Icon(
-                Icons.text_fields,
-                size: 12,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  'OCR识别文本',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+          // OCR标题和置信度 - 使用固定高度的行
+          SizedBox(
+            height: 16, // 固定标题行高度
+            child: Row(
+              children: [
+                Icon(
+                  Icons.text_fields,
+                  size: 10, // 最小图标尺寸
+                  color: theme.colorScheme.primary,
                 ),
-              ),
-              if (ocrConfidence != null) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getConfidenceColor(ocrConfidence).withAlpha(51),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                const SizedBox(width: 2),
+                Expanded(
                   child: Text(
-                    '${(ocrConfidence * 100).round()}%',
+                    'OCR识别文本',
                     style: TextStyle(
-                      fontSize: 8,
+                      fontSize: 8, // 最小字体尺寸
                       fontWeight: FontWeight.w600,
-                      color: _getConfidenceColor(ocrConfidence),
+                      color: theme.colorScheme.primary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                if (ocrConfidence != null) ...[
+                  const SizedBox(width: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 2,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getConfidenceColor(ocrConfidence).withAlpha(51),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: Text(
+                      '${(ocrConfidence * 100).round()}%',
+                      style: TextStyle(
+                        fontSize: 6, // 最小字体尺寸
+                        fontWeight: FontWeight.w600,
+                        color: _getConfidenceColor(ocrConfidence),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
-          ),
-          const SizedBox(height: 4),
-
-          // OCR文本内容 - 使用ConstrainedBox限制高度
-          ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxHeight: 60, // 固定最大高度，防止溢出
             ),
+          ),
+          const SizedBox(height: 2),
+
+          // OCR文本内容 - 使用Expanded确保填充剩余空间
+          Expanded(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
               child: _buildOcrTextContent(context, ocrText),
@@ -1343,7 +1362,9 @@ class ClipItemCard extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.2),
               width: 0.5,
             ),
           ),
@@ -1367,54 +1388,62 @@ class ClipItemCard extends StatelessWidget {
     // 根据类型添加特定元数据
     switch (item.type) {
       case ClipType.image:
-        // 优先使用新的originWidth和originHeight字段，其次使用metadata中的尺寸
-        final width = item.originWidth ?? (item.metadata['width'] as int?);
-        final height = item.originHeight ?? (item.metadata['height'] as int?);
+        final width = item.metadata['width'] as int?;
+        final height = item.metadata['height'] as int?;
         final format = item.metadata['format'] as String?;
         final size = item.metadata['fileSize'] as int?;
 
         if (width != null && height != null) {
-          metadataItems.add(_buildMetadataItem(
-            context,
-            Icons.photo_size_select_large,
-            '${width}x$height',
-          ));
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.photo_size_select_large,
+              '${width}x$height',
+            ),
+          );
         }
         if (format != null) {
-          metadataItems.add(_buildMetadataItem(
-            context,
-            Icons.image,
-            format.toUpperCase(),
-          ));
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.image,
+              format.toUpperCase(),
+            ),
+          );
         }
         if (size != null) {
-          metadataItems.add(_buildMetadataItem(
-            context,
-            Icons.storage,
-            _formatFileSize(size),
-          ));
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.storage,
+              _formatFileSize(size),
+            ),
+          );
         }
-        break;
-        
+
       case ClipType.file:
         final fileSize = item.metadata['fileSize'] as int?;
         final fileType = item.metadata['fileType'] as String?;
-        
+
         if (fileType != null) {
-          metadataItems.add(_buildMetadataItem(
-            context,
-            Icons.description,
-            fileType,
-          ));
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.description,
+              fileType,
+            ),
+          );
         }
         if (fileSize != null) {
-          metadataItems.add(_buildMetadataItem(
-            context,
-            Icons.storage,
-            _formatFileSize(fileSize),
-          ));
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.storage,
+              _formatFileSize(fileSize),
+            ),
+          );
         }
-        
+
       case ClipType.text:
       case ClipType.rtf:
       case ClipType.code:
@@ -1423,47 +1452,57 @@ class ClipItemCard extends StatelessWidget {
         final charCount = content.length;
         final wordCount = _calculateWordCount(content);
         final lineCount = content.split('\n').length;
-        
-        metadataItems.add(_buildMetadataItem(
-          context,
-          Icons.text_fields,
-          '$charCount 字符',
-        ));
-        if (wordCount > 0) {
-          metadataItems.add(_buildMetadataItem(
+
+        metadataItems.add(
+          _buildMetadataItem(
             context,
-            Icons.space_bar,
-            '$wordCount 词',
-          ));
+            Icons.text_fields,
+            '$charCount 字符',
+          ),
+        );
+        if (wordCount > 0) {
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.space_bar,
+              '$wordCount 词',
+            ),
+          );
         }
         if (lineCount > 1) {
-          metadataItems.add(_buildMetadataItem(
-            context,
-            Icons.format_align_left,
-            '$lineCount 行',
-          ));
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.format_align_left,
+              '$lineCount 行',
+            ),
+          );
         }
-        
+
       case ClipType.color:
         final colorHex = item.metadata['colorHex'] as String?;
         if (colorHex != null) {
-          metadataItems.add(_buildMetadataItem(
-            context,
-            Icons.palette,
-            colorHex.toUpperCase(),
-          ));
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.palette,
+              colorHex.toUpperCase(),
+            ),
+          );
         }
-        
+
       case ClipType.url:
         final domain = _extractDomain(item.content ?? '');
         if (domain.isNotEmpty) {
-          metadataItems.add(_buildMetadataItem(
-            context,
-            Icons.language,
-            domain,
-          ));
+          metadataItems.add(
+            _buildMetadataItem(
+              context,
+              Icons.language,
+              domain,
+            ),
+          );
         }
-        
+
       case ClipType.audio:
       case ClipType.video:
       case ClipType.html:
@@ -1492,7 +1531,7 @@ class ClipItemCard extends StatelessWidget {
     String text,
   ) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -1548,33 +1587,6 @@ class ClipItemCard extends StatelessWidget {
     } on Exception {
       return '';
     }
-  }
-
-  /// 计算图片显示尺寸，考虑实际可用空间
-  Size _calculateImageDisplaySize(double availableWidth) {
-    // 根据显示模式计算最大宽度，考虑可用空间
-    final maxWidth = switch (displayMode) {
-      DisplayMode.compact => math.min(120, availableWidth * 0.9),
-      DisplayMode.normal => math.min(200, availableWidth * 0.8),
-      DisplayMode.preview => math.min(availableWidth * 0.95, 400),
-    };
-
-    // 如果没有原始尺寸信息，使用默认尺寸
-    if (item.originWidth == null || item.originHeight == null) {
-      return Size(maxWidth.toDouble(), maxWidth.toDouble()); // 默认正方形
-    }
-
-    final originWidth = item.originWidth!.toDouble();
-    final originHeight = item.originHeight!.toDouble();
-    final aspectRatio = originWidth / originHeight;
-
-    // 只能缩小，不能放大
-    final displayWidth = math.min(maxWidth, originWidth).toDouble();
-
-    // 根据宽高比计算高度
-    final displayHeight = displayWidth / aspectRatio;
-
-    return Size(displayWidth, displayHeight);
   }
 
   /// 计算准确的字数统计

@@ -701,7 +701,9 @@ class HotkeyService {
   Future<Map<String, dynamic>> analyzeConfiguration() async {
     try {
       final recommendationService = _getRecommendationService();
-      return await recommendationService.analyzeConfiguration(_registeredHotkeys);
+      return await recommendationService.analyzeConfiguration(
+        _registeredHotkeys,
+      );
     } on Exception catch (e) {
       await Log.e('分析快捷键配置失败', tag: _tag, error: e);
       return {};
@@ -709,7 +711,10 @@ class HotkeyService {
   }
 
   /// 学习用户偏好
-  Future<void> learnUserPreference(HotkeyAction action, HotkeyConfig config) async {
+  Future<void> learnUserPreference(
+    HotkeyAction action,
+    HotkeyConfig config,
+  ) async {
     try {
       final recommendationService = _getRecommendationService();
       await recommendationService.learnUserPreference(
@@ -717,7 +722,10 @@ class HotkeyService {
         config,
         _currentFrontApp,
       );
-      await Log.i('学习用户偏好: ${action.name} -> ${config.displayString}', tag: _tag);
+      await Log.i(
+        '学习用户偏好: ${action.name} -> ${config.displayString}',
+        tag: _tag,
+      );
     } on Exception catch (e) {
       await Log.e('学习用户偏好失败', tag: _tag, error: e);
     }
@@ -789,7 +797,8 @@ class HotkeyService {
       ];
 
       // 为高频未配置的动作添加推荐配置
-      for (final recommendation in recommendations.take(3)) { // 只取前3个推荐
+      for (final recommendation in recommendations.take(3)) {
+        // 只取前3个推荐
         if (!_registeredHotkeys.containsKey(recommendation.action) &&
             recommendation.priority > 0.6) {
           optimizedConfigs.add(recommendation.recommendedKeys.first);
@@ -809,7 +818,9 @@ class HotkeyService {
       final configData = {
         'version': '1.0',
         'exportTime': DateTime.now().toIso8601String(),
-        'hotkeys': _registeredHotkeys.values.map((config) => config.toJson()).toList(),
+        'hotkeys': _registeredHotkeys.values
+            .map((config) => config.toJson())
+            .toList(),
         'developerMode': _developerMode,
         'stats': await getHotkeyStats(),
       };
@@ -835,7 +846,9 @@ class HotkeyService {
 
       for (final hotkeyData in hotkeysList) {
         try {
-          final config = HotkeyConfig.fromJson(hotkeyData as Map<String, dynamic>);
+          final config = HotkeyConfig.fromJson(
+            hotkeyData as Map<String, dynamic>,
+          );
           final result = await registerHotkey(config);
           if (result.success) {
             successCount++;

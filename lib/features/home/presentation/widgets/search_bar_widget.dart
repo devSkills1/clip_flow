@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 // 忽略公共成员API文档要求，因为这是内部UI组件，不需要对外暴露API文档
+// Internal UI component that doesn't require public API documentation.
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';

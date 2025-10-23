@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:clip_flow_pro/features/home/presentation/pages/enhanced_home_page.dart';
@@ -17,7 +18,6 @@ class IntegrationDemo extends ConsumerWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2196F3),
-          brightness: Brightness.light,
         ),
         // Material Design 3 配置
         cardTheme: CardThemeData(
@@ -31,15 +31,18 @@ class IntegrationDemo extends ConsumerWidget {
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.0),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
+            borderRadius: BorderRadius.circular(12),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
       ),
       home: const DemoHomePage(),
@@ -190,10 +193,30 @@ class _DemoHomePageState extends State<DemoHomePage> {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
-                    _buildImprovementItem('布局溢出', '已解决', Icons.check_circle, Colors.green),
-                    _buildImprovementItem('图片加载', '提升 50%', Icons.trending_up, Colors.green),
-                    _buildImprovementItem('内存使用', '减少 37%', Icons.trending_down, Colors.green),
-                    _buildImprovementItem('滚动性能', '提升 18%', Icons.trending_up, Colors.green),
+                    _buildImprovementItem(
+                      '布局溢出',
+                      '已解决',
+                      Icons.check_circle,
+                      Colors.green,
+                    ),
+                    _buildImprovementItem(
+                      '图片加载',
+                      '提升 50%',
+                      Icons.trending_up,
+                      Colors.green,
+                    ),
+                    _buildImprovementItem(
+                      '内存使用',
+                      '减少 37%',
+                      Icons.trending_down,
+                      Colors.green,
+                    ),
+                    _buildImprovementItem(
+                      '滚动性能',
+                      '提升 18%',
+                      Icons.trending_up,
+                      Colors.green,
+                    ),
                   ],
                 ),
               ),
@@ -269,7 +292,12 @@ class _DemoHomePageState extends State<DemoHomePage> {
     );
   }
 
-  Widget _buildImprovementItem(String label, String improvement, IconData icon, Color color) {
+  Widget _buildImprovementItem(
+    String label,
+    String improvement,
+    IconData icon,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -430,7 +458,9 @@ class _DemoHomePageState extends State<DemoHomePage> {
                 onPressed: () {
                   // 可以打开外部文档或导航到详细页面
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('请查看 UI_OPTIMIZATION_GUIDE.md 文件')),
+                    const SnackBar(
+                      content: Text('请查看 UI_OPTIMIZATION_GUIDE.md 文件'),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.description),
@@ -499,7 +529,9 @@ class _DemoHomePageState extends State<DemoHomePage> {
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -535,7 +567,9 @@ class _DemoHomePageState extends State<DemoHomePage> {
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -547,7 +581,7 @@ class _DemoHomePageState extends State<DemoHomePage> {
   }
 
   void _showIntegrationDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
