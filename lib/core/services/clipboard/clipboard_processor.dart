@@ -64,6 +64,19 @@ class ClipboardProcessor {
       // 创建 ClipItem
       final item = detectionResult.createClipItem(id: contentHash);
 
+      // 检查是否为空内容，如果为空则直接返回null，不记录到剪贴历史
+      if (_isEmptyContent(item)) {
+        await Log.d(
+          'Empty clipboard content detected, skipping recording',
+          tag: 'ClipboardProcessor',
+          fields: {
+            'detectedType': detectionResult.detectedType.toString(),
+            'contentLength': item.content?.length ?? 0,
+          },
+        );
+        return null;
+      }
+
       // 特殊处理某些类型的内容
       ClipItem? processedItem;
       switch (detectionResult.detectedType) {
@@ -919,6 +932,38 @@ class ClipboardProcessor {
         'memoryThreshold': _maxMemoryUsage,
       },
     };
+  }
+
+  /// 检查内容是否为空
+  ///
+  /// 对于文本类型，检查内容是否为空或只包含空白字符
+  /// 对于文件类型，检查文件路径是否存在
+  /// 对于图片类型，始终认为不为空（因为图片本身存在）
+  bool _isEmptyContent(ClipItem item) {
+    switch (item.type) {
+      case ClipType.text:
+      case ClipType.code:
+      case ClipType.color:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.html:
+      case ClipType.rtf:
+        // 检查文本内容是否为空或只包含空白字符
+        final content = item.content ?? '';
+        return content.trim().isEmpty;
+
+      case ClipType.image:
+        // 图片类型有数据就不为空
+        return item.filePath?.isEmpty ?? true;
+
+      case ClipType.file:
+      case ClipType.audio:
+      case ClipType.video:
+        // 文件类型检查文件路径是否存在
+        return item.filePath?.isEmpty ?? true;
+    }
   }
 }
 
