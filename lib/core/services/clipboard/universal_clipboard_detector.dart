@@ -271,7 +271,11 @@ class UniversalClipboardDetector {
       Log.d(
         'Content detected as code, not file path',
         tag: 'UniversalClipboardDetector',
-        fields: {'content': cleanContent.length > 100 ? '${cleanContent.substring(0, 100)}...' : cleanContent},
+        fields: {
+          'content': cleanContent.length > 100
+              ? '${cleanContent.substring(0, 100)}...'
+              : cleanContent,
+        },
       );
       return false;
     }
@@ -417,7 +421,19 @@ class UniversalClipboardDetector {
       );
 
       // 附加验证：对于代码文件扩展名，需要更严格的检查
-      if (['dart', 'js', 'ts', 'py', 'java', 'cpp', 'c', 'h', 'hpp', 'jsx', 'tsx'].contains(extension)) {
+      if ([
+        'dart',
+        'js',
+        'ts',
+        'py',
+        'java',
+        'cpp',
+        'c',
+        'h',
+        'hpp',
+        'jsx',
+        'tsx',
+      ].contains(extension)) {
         // 如果内容包含代码特征，不认为是文件路径
         if (_hasCodeFeatures(cleanContent)) {
           Log.d(
@@ -445,7 +461,9 @@ class UniversalClipboardDetector {
     // 常见的代码关键字和模式
     final codePatterns = [
       // 编程语言关键字
-      RegExp(r'\b(import|export|from|as|function|class|const|let|var|def|if|else|for|while|return|public|private|static|async|await|try|catch|throw|new|this|super)\b'),
+      RegExp(
+        r'\b(import|export|from|as|function|class|const|let|var|def|if|else|for|while|return|public|private|static|async|await|try|catch|throw|new|this|super)\b',
+      ),
       // 函数定义模式
       RegExp(r'\w+\s*\([^)]*\)\s*[{=>]'),
       // 类定义模式
@@ -455,14 +473,14 @@ class UniversalClipboardDetector {
       // 注释
       RegExp(r'//.*$|/\*[\s\S]*?\*/'),
       // 字符串字面量
-      RegExp(r'''['"][^'"]*['"]'''),
+      RegExp('''['"][^'"]*['"]'''),
       // 代码块特征
       RegExp(r'[{}[\]()]'),
       // 赋值操作
       RegExp(r'\w+\s*=\s*[^;]'),
     ];
 
-    int codeFeatureCount = 0;
+    var codeFeatureCount = 0;
     for (final pattern in codePatterns) {
       if (pattern.hasMatch(content)) {
         codeFeatureCount++;

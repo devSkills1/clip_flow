@@ -262,7 +262,19 @@ class FilePathAnalyzer extends ContentAnalyzer {
       final extension = trimmed.split('.').last.toLowerCase();
 
       // 对于代码文件扩展名，需要更严格的检查
-      final codeExtensions = ['dart', 'js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'h', 'hpp'];
+      final codeExtensions = [
+        'dart',
+        'js',
+        'ts',
+        'jsx',
+        'tsx',
+        'py',
+        'java',
+        'cpp',
+        'c',
+        'h',
+        'hpp',
+      ];
       if (codeExtensions.contains(extension)) {
         // 如果有代码特征，直接返回0置信度
         if (_hasCodeFeatures(trimmed)) {
@@ -314,7 +326,9 @@ class FilePathAnalyzer extends ContentAnalyzer {
     // 常见的代码关键字和模式
     final codePatterns = [
       // 编程语言关键字
-      RegExp(r'\b(import|export|from|as|function|class|const|let|var|def|if|else|for|while|return|public|private|static|async|await|try|catch|throw|new|this|super)\b'),
+      RegExp(
+        r'\b(import|export|from|as|function|class|const|let|var|def|if|else|for|while|return|public|private|static|async|await|try|catch|throw|new|this|super)\b',
+      ),
       // 函数定义模式
       RegExp(r'\w+\s*\([^)]*\)\s*[{=>]'),
       // 类定义模式
@@ -324,14 +338,14 @@ class FilePathAnalyzer extends ContentAnalyzer {
       // 注释
       RegExp(r'//.*$|/\*[\s\S]*?\*/'),
       // 字符串字面量
-      RegExp(r'''['"][^'"]*['"]'''),
+      RegExp('''['"][^'"]*['"]'''),
       // 代码块特征
       RegExp(r'[{}[\]()]'),
       // 赋值操作
       RegExp(r'\w+\s*=\s*[^;]'),
     ];
 
-    int codeFeatureCount = 0;
+    var codeFeatureCount = 0;
     for (final pattern in codePatterns) {
       if (pattern.hasMatch(content)) {
         codeFeatureCount++;

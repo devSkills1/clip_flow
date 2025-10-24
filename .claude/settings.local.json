@@ -10,7 +10,8 @@
       "Bash(flutter pub get:*)",
       "Bash(find:*)",
       "Bash(dart format:*)",
-      "Bash(flutter test:*)"
+      "Bash(flutter test:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
