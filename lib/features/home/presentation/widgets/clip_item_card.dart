@@ -1031,31 +1031,6 @@ class ClipItemCard extends StatelessWidget {
             ),
           ),
         ],
-        if (item.content != null && item.content!.length > 500) ...[
-          const SizedBox(width: ClipConstants.smallPadding),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 4,
-              vertical: 1,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(AppColors.blue100),
-              borderRadius: BorderRadius.circular(2),
-            ),
-            child: Builder(
-              builder: (context) {
-                return Text(
-                  '已截断',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
       ],
     );
   }
