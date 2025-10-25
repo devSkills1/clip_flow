@@ -10,7 +10,7 @@ import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
-import 'package:clip_flow_pro/features/home/presentation/pages/home_page.dart';
+import 'package:clip_flow_pro/features/home/presentation/pages/enhanced_home_page.dart';
 import 'package:clip_flow_pro/features/settings/presentation/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,7 +34,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const EnhancedHomePage(),
       ),
       GoRoute(
         path: AppRoutes.settings,
