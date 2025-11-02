@@ -321,3 +321,274 @@ flutter config --enable-macos-desktop
 flutter config --enable-windows-desktop
 flutter config --enable-linux-desktop
 ```
+
+### Common Build Issues
+
+#### macOS Build Failures
+- **Permission Errors**: Ensure accessibility permissions are granted for clipboard monitoring
+- **Code Signing**: Production builds require proper developer certificates
+- **Xcode Version**: Use Xcode 15.0+ for Flutter 3.19 compatibility
+
+#### Memory Issues
+- **Image Loading**: Use `OptimizedImageLoader` for large images
+- **List Performance**: Implement pagination for large clipboard histories
+- **Cache Management**:定期清理 LRU 缓存避免内存泄漏
+
+### Performance Debugging
+```dart
+// Enable performance overlay in development
+userPreferencesProvider.showPerformanceOverlay = true;
+
+// Monitor specific operations
+Log.d('Operation started', tag: 'performance', fields: {
+  'operation': 'clipboard_processing',
+  'timestamp': DateTime.now().millisecondsSinceEpoch,
+});
+
+// Use performance service
+final perfService = ref.read(performanceServiceProvider);
+perfService.startTimer('clipboard_operation');
+// ... perform operation
+perfService.endTimer('clipboard_operation');
+```
+
+## Advanced Development Patterns
+
+### Service Module Implementation
+
+When creating new service modules:
+
+1. **Define Port Interface First**: Always start with `*_ports.dart` to define contracts
+2. **Implement Concrete Classes**: Create service implementations that fulfill ports
+3. **Use Dependency Injection**: Register services via Riverpod providers
+4. **Handle Errors Gracefully**: Use proper exception handling with logging
+
+Example pattern:
+```dart
+// my_service_ports.dart
+abstract class MyServicePort {
+  Future<void> doSomething();
+}
+
+// my_service.dart
+class MyService implements MyServicePort {
+  @override
+  Future<void> doSomething() async {
+    try {
+      // Implementation
+    } on Exception catch (e) {
+      Log.e('Service error', tag: 'my_service', error: e);
+      rethrow;
+    }
+  }
+}
+
+// providers.dart
+final myServiceProvider = Provider<MyServicePort>((ref) {
+  return MyService();
+});
+```
+
+### Cross-Platform Abstractions
+
+For platform-specific functionality:
+
+1. **Define Common Interface**: Use port pattern for cross-platform APIs
+2. **Implement Platform Channels**: Create native implementations in each platform
+3. **Use Fallbacks**: Provide graceful degradation for unsupported features
+4. **Test on All Platforms**: Ensure functionality works across macOS, Windows, Linux
+
+### State Management Best Practices
+
+```dart
+// Use async providers for data loading
+final dataProvider = FutureProvider<List<Data>>((ref) async {
+  final service = ref.read(myServiceProvider);
+  return await service.loadData();
+});
+
+// Use stream providers for real-time data
+final streamProvider = StreamProvider<Event>((ref) {
+  final service = ref.read(myServiceProvider);
+  return service.eventStream;
+});
+
+// Use state notifier for mutable state
+class MyNotifier extends StateNotifier<MyState> {
+  MyNotifier(this._service) : super(const MyState.initial());
+
+  final MyServicePort _service;
+
+  Future<void> updateData() async {
+    state = const MyState.loading();
+    try {
+      final data = await _service.getData();
+      state = MyState.loaded(data);
+    } on Exception catch (e) {
+      state = MyState.error(e);
+      Log.e('Failed to update data', error: e);
+    }
+  }
+}
+
+final myNotifierProvider = StateNotifierProvider<MyNotifier, MyState>((ref) {
+  return MyNotifier(ref.read(myServiceProvider));
+});
+```
+
+## Integration Testing
+
+### End-to-End Test Structure
+```
+test/integration/
+├── test_clipboard.dart           # Core clipboard functionality
+├── test_clipboard_permissions.dart  # Permission handling
+├── test_poller_status.dart       # Polling mechanism
+└── diagnose_clipboard.dart       # Diagnostic utilities
+```
+
+### Running Integration Tests
+```bash
+# Run all integration tests
+flutter test test/integration/
+
+# Run specific test
+flutter test test/integration/test_clipboard.dart
+
+# Run with coverage
+flutter test --coverage
+genhtml coverage/lcov.info -o coverage/html
+```
+
+## Release Process
+
+### Version Management
+The project uses automated version management:
+
+1. **Semantic Versioning**: Follow MAJOR.MINOR.PATCH format
+2. **Build Numbers**: Auto-generated YYYYMMDDNN format (date + counter)
+3. **Release Branches**: Use feature branches, merge to main via PR
+
+```bash
+# Check current version
+./scripts/version-manager.sh --info
+
+# Create release build
+./scripts/build.sh prod all
+
+# Tag release (after successful build)
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+```
+
+### Pre-Release Checklist
+- [ ] All tests passing (unit + integration)
+- [ ] Code quality checks passing (`flutter analyze`)
+- [ ] Documentation updated (including this CLAUDE.md)
+- [ ] Version number updated in pubspec.yaml
+- [ ] Build tested on all target platforms
+- [ ] Performance benchmarks within acceptable range
+- [ ] Security scan passed (if applicable)
+
+### Post-Release Tasks
+- [ ] Upload build artifacts to distribution platform
+- [ ] Create GitHub Release with changelog
+- [ ] Update documentation website
+- [ ] Notify stakeholders of release
+- [ ] Monitor crash reports and errors
+
+## Emergency Procedures
+
+### Critical Bug Fixes
+1. **Create Hotfix Branch**: `git checkout -b hotfix/critical-bug`
+2. **Implement Fix**: Minimal change to resolve issue
+3. **Test Thoroughly**: Ensure fix doesn't introduce regressions
+4. **Fast-Track Release**: Use emergency release process
+5. **Communicate**: Notify users of fix and update
+
+### Performance Degradation
+1. **Enable Performance Monitoring**: Use built-in performance overlay
+2. **Collect Metrics**: Log key performance indicators
+3. **Profile Application**: Use Flutter DevTools
+4. **Identify Bottlenecks**: Check CPU, memory, and I/O usage
+5. **Optimize**: Apply targeted optimizations
+
+### Data Corruption
+1. **Stop Application**: Prevent further data modification
+2. **Backup Database**: Preserve current state
+3. **Run Diagnostics**: Use built-in diagnostic tools
+4. **Repair Data**: Attempt data recovery if possible
+5. **Restore from Backup**: If available and necessary
+
+## Security Considerations
+
+### Data Protection
+- **Encryption**: All sensitive data encrypted at rest using AES-256-GCM
+- **Key Management**: Keys derived from user credentials, not stored
+- **Permissions**: Minimal permissions requested, clearly explained
+- **Data Retention**: Configurable cleanup policies for old data
+
+### Platform Security
+- **macOS**: App notarization required for distribution
+- **Windows**: Code signing recommended for trust
+- **Linux**: Package signatures for package managers
+
+### Secure Coding Practices
+- No hardcoded secrets or API keys
+- Input validation for all user data
+- Safe handling of file paths and URLs
+- Proper error handling without information disclosure
+
+## Frequently Asked Questions
+
+### Q: How do I add a new clipboard data type?
+A:
+1. Update `ClipType` enum in `lib/core/models/clip_item.dart`
+2. Add detection logic in `ClipboardDetector`
+3. Implement processing in `ClipboardProcessor`
+4. Add UI handling in relevant widgets
+5. Write tests for new functionality
+
+### Q: How do I debug platform-specific issues?
+A:
+1. Check platform-specific logs (Console.app on macOS)
+2. Use Flutter DevTools for debugging
+3. Enable verbose logging: `Log.minLevel = LogLevel.trace`
+4. Use native debugging tools when necessary
+
+### Q: How do I optimize memory usage?
+A:
+1. Use image caching with size limits
+2. Implement pagination for large lists
+3. Dispose resources properly in widget lifecycle
+4. Monitor memory usage with performance overlay
+5. Use `ListView.builder` for long lists
+
+### Q: How do I handle async operations properly?
+A:
+1. Always use try-catch with specific exception types
+2. Use async/await instead of then() when possible
+3. Handle loading states in UI
+4. Cancel ongoing operations when widgets dispose
+5. Log errors with context for debugging
+
+## Resources and References
+
+### Official Documentation
+- [Flutter Documentation](https://docs.flutter.dev/)
+- [Riverpod Documentation](https://riverpod.dev/)
+- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+
+### Community Resources
+- [Flutter Discord](https://discord.gg/flutter)
+- [Stack Overflow](https://stackoverflow.com/questions/tagged/flutter)
+- [Reddit r/Flutter](https://www.reddit.com/r/Flutter/)
+
+### Internal Resources
+- Project Wiki: [Link to internal wiki if available]
+- Design Documents: Check `/docs/` directory
+- API Documentation: Generated from code comments
+
+---
+
+Remember: This documentation is a living document. Keep it updated as the project evolves. When in doubt, prioritize code clarity, testability, and user experience.

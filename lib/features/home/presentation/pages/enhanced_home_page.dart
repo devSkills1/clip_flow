@@ -14,9 +14,11 @@ import 'package:clip_flow_pro/features/home/presentation/widgets/filter_componen
 import 'package:clip_flow_pro/features/home/presentation/widgets/responsive_home_layout.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// 增强版首页 - 解决所有布局溢出和性能问题
 class EnhancedHomePage extends ConsumerStatefulWidget {
@@ -482,7 +484,19 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   }
 
   Widget _buildSidebarFooter() {
-    return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: OutlinedButton.icon(
+        onPressed: () {
+          context.push(AppRoutes.settings);
+        },
+        icon: const Icon(Icons.settings_outlined),
+        label: const Text('设置'),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(40),
+        ),
+      ),
+    );
   }
 
   Widget _buildSearchBar() {
