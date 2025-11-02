@@ -8,7 +8,6 @@ import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/debug/clipboard_debug_page.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search_bar.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/filter_components.dart'
     as filter;
@@ -248,45 +247,20 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
 
     return Container(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Logo或图标
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.content_paste,
-              size: 24,
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
+      child: Center(
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
           ),
-
-          const SizedBox(height: 16),
-
-          // 应用名称
-          Text(
-            'ClipFlow Pro',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
+          child: Icon(
+            Icons.content_paste,
+            size: 24,
+            color: theme.colorScheme.onPrimaryContainer,
           ),
-
-          const SizedBox(height: 4),
-
-          // 副标题
-          Text(
-            '智能剪贴板管理器',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -508,25 +482,6 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   }
 
   Widget _buildSidebarFooter() {
-    if (!kReleaseMode) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        child: OutlinedButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const ClipboardDebugPage(),
-              ),
-            );
-          },
-          icon: const Icon(Icons.bug_report_outlined),
-          label: const Text('调试'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(40),
-          ),
-        ),
-      );
-    }
     return const SizedBox.shrink();
   }
 
