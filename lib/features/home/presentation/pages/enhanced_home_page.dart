@@ -8,17 +8,13 @@ import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/basic_sidebar.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search_bar.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/filter_components.dart'
-    as filter;
 import 'package:clip_flow_pro/features/home/presentation/widgets/responsive_home_layout.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
-import 'package:clip_flow_pro/core/constants/routes.dart';
-import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 /// 增强版首页 - 解决所有布局溢出和性能问题
 class EnhancedHomePage extends ConsumerStatefulWidget {
@@ -188,8 +184,8 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
         opacity: _fadeAnimation,
         child: Row(
           children: [
-            // 侧边栏
-            _buildSidebar(),
+            // 基础侧边栏 - 简单稳定
+            const BasicSidebar(),
 
             // 主内容区域
             Expanded(
@@ -211,289 +207,6 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSidebar() {
-    return Container(
-      width: 280,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          right: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-          ),
-        ),
-      ),
-      child: Column(
-        children: [
-          // 应用标题
-          _buildAppHeader(),
-
-          // 筛选选项
-          Expanded(
-            child: _buildFilterSidebar(),
-          ),
-
-          // 底部操作
-          _buildSidebarFooter(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppHeader() {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.content_paste,
-            size: 24,
-            color: theme.colorScheme.onPrimaryContainer,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterSidebar() {
-    final filterOption = ref.watch(filterTypeProvider);
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      children: [
-        _buildFilterSectionTitle('类型筛选'),
-        _buildTypeFilterOptions(filterOption),
-
-        const SizedBox(height: 24),
-
-        _buildFilterSectionTitle('显示模式'),
-        _buildDisplayModeOptions(),
-      ],
-    );
-  }
-
-  Widget _buildFilterSectionTitle(String title) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: theme.textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.87),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTypeFilterOptions(FilterOption currentFilter) {
-    final typeOptions = [
-      filter.FilterOption.all,
-      filter.FilterOption.text,
-      filter.FilterOption.richTextUnion,
-      filter.FilterOption.image,
-      filter.FilterOption.file,
-      filter.FilterOption.color,
-    ];
-
-    return Column(
-      children: typeOptions.map((option) {
-        final isSelected = _getFilterOptionValue(option.value) == currentFilter;
-        return _buildFilterTile(option, isSelected);
-      }).toList(),
-    );
-  }
-
-  Widget _buildFilterTile(filter.FilterOption option, bool isSelected) {
-    final theme = Theme.of(context);
-
-    return ListTile(
-      leading: Icon(
-        option.icon,
-        size: 20,
-        color: isSelected
-            ? theme.colorScheme.primary
-            : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-      ),
-      title: Text(
-        option.label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          color: isSelected
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurface,
-        ),
-      ),
-      selected: isSelected,
-      selectedTileColor: theme.colorScheme.primaryContainer.withValues(
-        alpha: 0.1,
-      ),
-      onTap: () {
-        final filterValue = _getFilterOptionValue(option.value);
-        ref.read(filterTypeProvider.notifier).state = filterValue;
-      },
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-    );
-  }
-
-  filter.FilterOption _getClassFilterOption(FilterOption enumOption) {
-    switch (enumOption) {
-      case FilterOption.all:
-        return filter.FilterOption.all;
-      case FilterOption.text:
-        return filter.FilterOption.text;
-      case FilterOption.richTextUnion:
-        return filter.FilterOption.richTextUnion;
-      case FilterOption.rtf:
-        return filter.FilterOption.rtf;
-      case FilterOption.html:
-        return filter.FilterOption.html;
-      case FilterOption.code:
-        return filter.FilterOption.code;
-      case FilterOption.image:
-        return filter.FilterOption.image;
-      case FilterOption.color:
-        return filter.FilterOption.color;
-      case FilterOption.file:
-        return filter.FilterOption.file;
-      case FilterOption.audio:
-        return filter.FilterOption.audio;
-      case FilterOption.video:
-        return filter.FilterOption.video;
-    }
-  }
-
-  FilterOption _getFilterOptionValue(String value) {
-    switch (value) {
-      case 'all':
-        return FilterOption.all;
-      case 'text':
-        return FilterOption.text;
-      case 'rich':
-        return FilterOption.richTextUnion;
-      case 'image':
-        return FilterOption.image;
-      case 'file':
-        return FilterOption.file;
-      case 'color':
-        return FilterOption.color;
-      case 'recent':
-      case 'favorites':
-      case 'images':
-        return FilterOption.all; // 这些特殊筛选项暂时归类为全部
-      default:
-        return FilterOption.all;
-    }
-  }
-
-  Widget _buildDisplayModeOptions() {
-    final displayMode = ref.watch(displayModeProvider);
-
-    return Row(
-      children: [
-        Expanded(
-          child: _buildModeTile(
-            '紧凑',
-            Icons.view_list,
-            DisplayMode.compact,
-            displayMode == DisplayMode.compact,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildModeTile(
-            '网格',
-            Icons.grid_view,
-            DisplayMode.normal,
-            displayMode == DisplayMode.normal,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildModeTile(
-            '预览',
-            Icons.view_module,
-            DisplayMode.preview,
-            displayMode == DisplayMode.preview,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModeTile(
-    String label,
-    IconData icon,
-    DisplayMode mode,
-    bool isSelected,
-  ) {
-    final theme = Theme.of(context);
-
-    return GestureDetector(
-      onTap: () {
-        ref.read(displayModeProvider.notifier).state = mode;
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected
-                  ? theme.colorScheme.onPrimaryContainer
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected
-                    ? theme.colorScheme.onPrimaryContainer
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSidebarFooter() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: OutlinedButton.icon(
-        onPressed: () {
-          context.push(AppRoutes.settings);
-        },
-        icon: const Icon(Icons.settings_outlined),
-        label: const Text('设置'),
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(40),
         ),
       ),
     );
@@ -538,7 +251,6 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     return suggestions.toSet().toList();
   }
 
-  
   Widget _buildContentArea(
     String searchQuery,
     List<ClipItem> filteredItems,

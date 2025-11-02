@@ -1,6 +1,5 @@
 // ignore_for_file: public_member_api_docs
 // Filter components for clip item filtering and display mode selection.
-import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 
