@@ -9,8 +9,9 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/debug/clipboard_debug_page.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search_bar.dart'
-    as search;
+import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search_bar.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/filter_components.dart'
+    as filter;
 import 'package:clip_flow_pro/features/home/presentation/widgets/responsive_home_layout.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
@@ -196,9 +197,6 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
                   // 顶部搜索栏
                   _buildSearchBar(),
 
-                  // 快速筛选
-                  _buildQuickFilters(filterOption, displayMode),
-
                   // 主内容区域
                   Expanded(
                     child: _buildContentArea(
@@ -327,12 +325,12 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
 
   Widget _buildTypeFilterOptions(FilterOption currentFilter) {
     final typeOptions = [
-      search.FilterOption.all,
-      search.FilterOption.text,
-      search.FilterOption.richTextUnion,
-      search.FilterOption.image,
-      search.FilterOption.file,
-      search.FilterOption.color,
+      filter.FilterOption.all,
+      filter.FilterOption.text,
+      filter.FilterOption.richTextUnion,
+      filter.FilterOption.image,
+      filter.FilterOption.file,
+      filter.FilterOption.color,
     ];
 
     return Column(
@@ -343,7 +341,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     );
   }
 
-  Widget _buildFilterTile(search.FilterOption option, bool isSelected) {
+  Widget _buildFilterTile(filter.FilterOption option, bool isSelected) {
     final theme = Theme.of(context);
 
     return ListTile(
@@ -378,30 +376,30 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     );
   }
 
-  search.FilterOption _getClassFilterOption(FilterOption enumOption) {
+  filter.FilterOption _getClassFilterOption(FilterOption enumOption) {
     switch (enumOption) {
       case FilterOption.all:
-        return search.FilterOption.all;
+        return filter.FilterOption.all;
       case FilterOption.text:
-        return search.FilterOption.text;
+        return filter.FilterOption.text;
       case FilterOption.richTextUnion:
-        return search.FilterOption.richTextUnion;
+        return filter.FilterOption.richTextUnion;
       case FilterOption.rtf:
-        return search.FilterOption.rtf;
+        return filter.FilterOption.rtf;
       case FilterOption.html:
-        return search.FilterOption.html;
+        return filter.FilterOption.html;
       case FilterOption.code:
-        return search.FilterOption.code;
+        return filter.FilterOption.code;
       case FilterOption.image:
-        return search.FilterOption.image;
+        return filter.FilterOption.image;
       case FilterOption.color:
-        return search.FilterOption.color;
+        return filter.FilterOption.color;
       case FilterOption.file:
-        return search.FilterOption.file;
+        return filter.FilterOption.file;
       case FilterOption.audio:
-        return search.FilterOption.audio;
+        return filter.FilterOption.audio;
       case FilterOption.video:
-        return search.FilterOption.video;
+        return filter.FilterOption.video;
     }
   }
 
@@ -535,7 +533,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(24),
-      child: search.EnhancedSearchBar(
+      child: EnhancedSearchBar(
         controller: _searchController,
         hintText: '搜索剪贴板内容...',
         onChanged: (query) {
@@ -571,46 +569,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     return suggestions.toSet().toList();
   }
 
-  Widget _buildQuickFilters(
-    FilterOption filterOption,
-    DisplayMode displayMode,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          Expanded(
-            child: search.QuickFilterChips(
-              filters: _getQuickFilterOptions(),
-              selectedFilter: _getClassFilterOption(filterOption),
-              onFilterSelected: (filter) {
-                ref.read(filterTypeProvider.notifier).state =
-                    _getFilterOptionValue(filter.value);
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-          search.DisplayModeToggle(
-            displayMode: displayMode,
-            onModeChanged: (mode) {
-              ref.read(displayModeProvider.notifier).state = mode;
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<search.FilterOption> _getQuickFilterOptions() {
-    return [
-      search.FilterOption.all,
-      search.FilterOption.recent,
-      search.FilterOption.favorites,
-      search.FilterOption.images,
-      search.FilterOption.text,
-    ];
-  }
-
+  
   Widget _buildContentArea(
     String searchQuery,
     List<ClipItem> filteredItems,
