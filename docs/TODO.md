@@ -398,10 +398,10 @@
 
 ### 关联文件（需要评审与变更）
 - `lib/core/services/clipboard_service.dart`
-- `lib/features/home/widgets/clip_item_card.dart`
-- `lib/features/home/pages/home_page.dart`
 - `lib/shared/providers/app_providers.dart`
-- `lib/features/home/widgets/filter_sidebar.dart`
+- `lib/features/home/presentation/pages/enhanced_home_page.dart`
+- `lib/features/home/presentation/widgets/modern_clip_item_card.dart`
+- `lib/features/home/presentation/widgets/enhanced_search_bar.dart`
 
 ### 建议提交信息（示例）
 ```

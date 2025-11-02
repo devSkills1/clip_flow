@@ -108,16 +108,12 @@ class ImageCacheManager {
 ```
 lib/features/home/presentation/
 ├── pages/
-│   ├── enhanced_home_page.dart              # 新的主页
-│   └── home_page.dart                       # 原始主页
+│   └── enhanced_home_page.dart              # 主页（已优化）
 ├── widgets/
 │   ├── modern_clip_item_card.dart           # 现代化卡片组件
 │   ├── responsive_home_layout.dart           # 响应式布局
 │   ├── enhanced_search_bar.dart             # 增强的搜索栏
 │   ├── optimized_image_loader.dart           # 优化的图片加载器
-│   ├── clip_item_card.dart                  # 原始卡片组件
-│   ├── filter_sidebar.dart                   # 筛选侧边栏
-│   └── search_bar_widget.dart               # 搜索栏组件
 └── utils/
     └── performance_monitor.dart              # 性能监控工具
 ```
@@ -212,7 +208,7 @@ ResponsiveHomeLayout(
 
 1. **备份原始文件**:
 ```bash
-cp lib/features/home/presentation/pages/home_page.dart lib/features/home/presentation/pages/home_page_original.dart
+# 原始 home_page.dart 已被移除，当前使用 enhanced_home_page.dart
 ```
 
 2. **更新路由配置**:
