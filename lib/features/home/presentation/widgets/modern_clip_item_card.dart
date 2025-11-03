@@ -3,6 +3,7 @@
 // cleaner without default cases. Public member documentation is handled inline.
 import 'dart:io';
 import 'dart:math' as math;
+
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
@@ -208,8 +209,8 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 
           SizedBox(height: _getVerticalSpacing()),
 
-          // 内容预览 - 使用Flexible确保不溢出
-          Flexible(
+          // 内容预览 - 使用Expanded占据剩余空间
+          Expanded(
             child: _buildContentArea(context),
           ),
 
@@ -764,11 +765,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     final content = widget.item.content ?? '';
     final theme = Theme.of(context);
 
-    // 计算统计信息
-    final charCount = content.length;
-    final wordCount = _calculateWordCount(content);
-    final lineCount = content.split('\n').length;
-
     final isMonospace =
         widget.item.type == ClipType.code ||
         widget.item.type == ClipType.json ||
@@ -783,28 +779,15 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       height: 1.4,
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Flexible(
-          child: Container(
-            width: double.infinity,
-            constraints: BoxConstraints(
-              maxHeight: _getTextMaxHeight(),
-            ),
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: _buildTextContent(context, content, textStyle),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // 内容统计信息
-        _buildContentStats(context, charCount, wordCount, lineCount),
-      ],
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(
+        maxHeight: _getTextMaxHeight(),
+      ),
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: _buildTextContent(context, content, textStyle),
+      ),
     );
   }
 
@@ -834,54 +817,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     );
   }
 
-  Widget _buildContentStats(
-    BuildContext context,
-    int charCount,
-    int wordCount,
-    int lineCount,
-  ) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      children: [
-        _buildStatChip(context, Icons.text_fields, '$charCount 字符'),
-        if (wordCount > 0)
-          _buildStatChip(context, Icons.space_bar, '$wordCount 词'),
-        if (lineCount > 1)
-          _buildStatChip(context, Icons.format_align_left, '$lineCount 行'),
-      ],
-    );
-  }
-
-  Widget _buildStatChip(BuildContext context, IconData icon, String text) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 12,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFooter(BuildContext context) {
     final theme = Theme.of(context);
     final timeAgo = _getTimeAgo(context);
@@ -889,10 +824,10 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 时间显示
+        // 时间和所有信息在同一行显示
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest.withValues(
               alpha: 0.5,
@@ -901,6 +836,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
           ),
           child: Row(
             children: [
+              // 时间信息部分
               Icon(
                 Icons.access_time,
                 size: 12,
@@ -917,146 +853,18 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Tooltip(
-                message: DateFormat(
-                  'yyyy-MM-dd HH:mm:ss',
-                ).format(widget.item.createdAt),
-                child: Icon(
-                  Icons.info_outline,
-                  size: 12,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.5,
-                  ),
-                ),
-              ),
+
+              // 其他统计信息 - 文本统计或图片/文件元数据
+              const SizedBox(width: 12),
+              _buildCompactStatsOrMetadata(context),
             ],
           ),
         ),
-
-        // 元数据信息
-        if (_shouldShowMetadata()) ...[
-          const SizedBox(height: 8),
-          _buildMetadataSection(context),
-        ],
       ],
     );
   }
 
-  Widget _buildMetadataSection(BuildContext context) {
-    final metadataItems = <Widget>[];
-
-    switch (widget.item.type) {
-      case ClipType.image:
-        final width =
-            widget.item.originWidth ?? widget.item.metadata['width'] as int?;
-        final height =
-            widget.item.originHeight ?? widget.item.metadata['height'] as int?;
-        final format = widget.item.metadata['format'] as String?;
-        final size = widget.item.metadata['fileSize'] as int?;
-
-        if (width != null && height != null) {
-          metadataItems.add(
-            _buildMetadataItem(
-              context,
-              Icons.photo_size_select_large,
-              '$width×$height',
-            ),
-          );
-        }
-        if (format != null) {
-          metadataItems.add(
-            _buildMetadataItem(context, Icons.image, format.toUpperCase()),
-          );
-        }
-        if (size != null) {
-          metadataItems.add(
-            _buildMetadataItem(context, Icons.storage, _formatFileSize(size)),
-          );
-        }
-
-      case ClipType.file:
-        final fileSize = widget.item.metadata['fileSize'] as int?;
-        final fileType = widget.item.metadata['fileType'] as String?;
-
-        if (fileType != null) {
-          metadataItems.add(
-            _buildMetadataItem(context, Icons.description, fileType),
-          );
-        }
-        if (fileSize != null) {
-          metadataItems.add(
-            _buildMetadataItem(
-              context,
-              Icons.storage,
-              _formatFileSize(fileSize),
-            ),
-          );
-        }
-
-      case ClipType.color:
-        final colorHex = widget.item.metadata['colorHex'] as String?;
-        if (colorHex != null) {
-          metadataItems.add(
-            _buildMetadataItem(context, Icons.palette, colorHex.toUpperCase()),
-          );
-        }
-
-      case ClipType.url:
-        final domain = _extractDomain(widget.item.content ?? '');
-        if (domain.isNotEmpty) {
-          metadataItems.add(
-            _buildMetadataItem(context, Icons.language, domain),
-          );
-        }
-
-      default:
-        break;
-    }
-
-    if (metadataItems.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Wrap(
-      spacing: 6,
-      runSpacing: 4,
-      children: metadataItems,
-    );
-  }
-
-  Widget _buildMetadataItem(BuildContext context, IconData icon, String text) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 10,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 3),
-          Text(
-            text,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 辅助方法和配置
-
   EdgeInsets _getCardMargin() {
     switch (widget.displayMode) {
       case DisplayMode.compact:
@@ -1387,16 +1195,168 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     }
   }
 
-  bool _shouldShowMetadata() {
+  Widget _buildCompactStatsOrMetadata(BuildContext context) {
     switch (widget.item.type) {
-      case ClipType.image:
-      case ClipType.file:
-      case ClipType.color:
+      case ClipType.text:
+      case ClipType.rtf:
+      case ClipType.html:
+      case ClipType.audio:
+      case ClipType.video:
       case ClipType.url:
-        return true;
-      default:
-        return false;
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
+        return _buildCompactContentStats(context);
+
+      case ClipType.image:
+        return _buildCompactImageMetadata(context);
+
+      case ClipType.file:
+        return _buildCompactFileMetadata(context);
+
+      case ClipType.color:
+        return _buildCompactColorMetadata(context);
     }
+  }
+
+  Widget _buildCompactContentStats(BuildContext context) {
+    final content = widget.item.content ?? '';
+
+    // 计算统计信息
+    final charCount = content.length;
+    final wordCount = _calculateWordCount(content);
+    final lineCount = content.split('\n').length;
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 3,
+      children: [
+        _buildCompactStatChip(context, Icons.text_fields, '$charCount字符'),
+        if (wordCount > 0)
+          _buildCompactStatChip(context, Icons.space_bar, '$wordCount词'),
+        if (lineCount > 1)
+          _buildCompactStatChip(
+            context,
+            Icons.format_align_left,
+            '$lineCount行',
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCompactImageMetadata(BuildContext context) {
+    final metadataItems = <Widget>[];
+
+    final width =
+        widget.item.originWidth ?? widget.item.metadata['width'] as int?;
+    final height =
+        widget.item.originHeight ?? widget.item.metadata['height'] as int?;
+    final format = widget.item.metadata['format'] as String?;
+    final size = widget.item.metadata['fileSize'] as int?;
+
+    if (width != null && height != null) {
+      metadataItems.add(
+        _buildCompactStatChip(
+          context,
+          Icons.photo_size_select_large,
+          '$width×$height',
+        ),
+      );
+    }
+    if (format != null) {
+      metadataItems.add(
+        _buildCompactStatChip(context, Icons.image, format.toUpperCase()),
+      );
+    }
+    if (size != null) {
+      metadataItems.add(
+        _buildCompactStatChip(context, Icons.storage, _formatFileSize(size)),
+      );
+    }
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 3,
+      children: metadataItems,
+    );
+  }
+
+  Widget _buildCompactFileMetadata(BuildContext context) {
+    final metadataItems = <Widget>[];
+
+    final fileSize = widget.item.metadata['fileSize'] as int?;
+    final fileType = widget.item.metadata['fileType'] as String?;
+
+    if (fileType != null) {
+      metadataItems.add(
+        _buildCompactStatChip(context, Icons.description, fileType),
+      );
+    }
+    if (fileSize != null) {
+      metadataItems.add(
+        _buildCompactStatChip(
+          context,
+          Icons.storage,
+          _formatFileSize(fileSize),
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 3,
+      children: metadataItems,
+    );
+  }
+
+  Widget _buildCompactColorMetadata(BuildContext context) {
+    final colorHex = widget.item.metadata['colorHex'] as String?;
+
+    if (colorHex != null) {
+      return _buildCompactStatChip(
+        context,
+        Icons.palette,
+        colorHex.toUpperCase(),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildCompactStatChip(
+    BuildContext context,
+    IconData icon,
+    String text,
+  ) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 10,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            text,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 8,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatFileSize(int bytes) {
@@ -1420,15 +1380,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 
     final words = content.trim().split(RegExp(r'\s+'));
     return words.where((word) => word.isNotEmpty).length;
-  }
-
-  String _extractDomain(String url) {
-    try {
-      final uri = Uri.parse(url);
-      return uri.host.replaceAll('www.', '');
-    } on Exception {
-      return '';
-    }
   }
 
   List<TextSpan> _buildHighlightedSpans(
