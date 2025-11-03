@@ -717,7 +717,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
@@ -727,36 +727,34 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: fileIcon.color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              fileIcon.icon,
-              size: 32,
-              color: fileIcon.color,
-            ),
+          Icon(
+            fileIcon.icon,
+            size: 24,
+            color: fileIcon.color,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             fileName,
-            style: theme.textTheme.titleSmall?.copyWith(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
-          Text(
-            _formatFileSize(fileSize),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          if (fileSize > 0) ...[
+            const SizedBox(height: 2),
+            Text(
+              _formatFileSize(fileSize),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
+          ],
         ],
       ),
     );
