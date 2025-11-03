@@ -56,6 +56,7 @@ class LoggerConfig {
     this.enableConsole = true,
     this.enableFile = false,
     this.fileDirectory, // 自定义日志目录；为空则使用应用文档目录/logs
+    this.maxRetentionDays = 7, // 日志文件最多保留天数
   }) : includeTags = includeTags ?? <String>{},
        includeIds = includeIds ?? <String>{};
 
@@ -66,6 +67,7 @@ class LoggerConfig {
   bool enableConsole;
   bool enableFile;
   String? fileDirectory;
+  int maxRetentionDays; // 日志文件保留天数
 }
 
 /// 适配器接口
@@ -97,6 +99,7 @@ class Log {
     _config.enableConsole = config.enableConsole;
     _config.enableFile = config.enableFile;
     _config.fileDirectory = config.fileDirectory;
+    _config.maxRetentionDays = config.maxRetentionDays;
 
     // 重建适配器
     for (final a in _adapters) {
@@ -111,6 +114,7 @@ class Log {
       // Web 环境下会自动降级为 no-op
       final fileAdapter = await FileLogAdapter.create(
         customDir: _config.fileDirectory,
+        maxRetentionDays: _config.maxRetentionDays,
       );
       if (fileAdapter != null) {
         _adapters.add(fileAdapter);
@@ -314,6 +318,7 @@ class Log {
 ///     enableConsole: true,
 ///     enableFile: true, // 桌面/移动生效，Web 自动无操作
 ///     includeTags: {'home'}, // 仅输出 tag=home 的日志；留空输出全部
+///     maxRetentionDays: 7, // 日志文件最多保留7个自然日
 ///   ));
 ///
 ///   Log.d('App started', tag: 'home', id: 'boot');

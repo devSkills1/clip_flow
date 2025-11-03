@@ -8,17 +8,25 @@ import 'package:flutter/foundation.dart';
 /// 文件日志适配器：
 /// - Web 环境自动返回 null（通过工厂）
 /// - 非 Web：按日期滚动，每天一个文件：`logsDir`/`yyyy-mm-dd`.log
+/// - 自动清理：最多保留7个自然日的日志文件
 class FileLogAdapter implements LogAdapter {
-  FileLogAdapter._(this._dirPath);
+  FileLogAdapter._(this._dirPath, [this.maxRetentionDays = 7]);
 
+  /// 日志目录路径
   final String _dirPath;
+
+  /// 日志文件最大保留天数
+  final int maxRetentionDays;
 
   io.File? _currentFile;
   String? _currentDateKey;
   bool _creating = false;
 
   /// 创建文件日志适配器，Web 环境自动返回 null
-  static Future<FileLogAdapter?> create({String? customDir}) async {
+  ///
+  /// [customDir] 自定义日志目录路径，为空时使用默认目录
+  /// [maxRetentionDays] 日志文件最大保留天数，默认7天
+  static Future<FileLogAdapter?> create({String? customDir, int maxRetentionDays = 7}) async {
     if (kIsWeb) return null;
     try {
       final baseDir = customDir ?? await _defaultLogsDir();
@@ -26,7 +34,10 @@ class FileLogAdapter implements LogAdapter {
       if (!d.existsSync()) {
         d.createSync(recursive: true);
       }
-      return FileLogAdapter._(d.path);
+      final adapter = FileLogAdapter._(d.path, maxRetentionDays);
+      // 初始化时清理旧日志文件
+      await adapter._cleanupOldLogs();
+      return adapter;
     } on Exception catch (_) {
       return null;
     }
@@ -88,6 +99,8 @@ class FileLogAdapter implements LogAdapter {
       final f = io.File(path);
       if (!f.existsSync()) {
         f.createSync(recursive: true);
+        // 创建新日志文件时清理旧文件
+        await _cleanupOldLogs();
       }
       _currentFile = f;
       _currentDateKey = dateKey;
@@ -136,6 +149,61 @@ class FileLogAdapter implements LogAdapter {
     final sanitized = name.replaceAll(RegExp('[^A-Za-z0-9._-]'), '_');
     // 避免空或全被替换
     return sanitized.isEmpty ? 'default' : sanitized;
+  }
+
+  /// 清理超过保留天数的日志文件
+  Future<void> _cleanupOldLogs() async {
+    try {
+      final dir = io.Directory(_dirPath);
+      if (!dir.existsSync()) return;
+
+      final now = DateTime.now();
+      final cutoffDate = now.subtract(Duration(days: maxRetentionDays));
+
+      await for (final entity in dir.list()) {
+        if (entity is io.File && entity.path.endsWith('.log')) {
+          final fileName = entity.path.split('/').last;
+
+          // 跳过ID文件（格式：<id>.log），只清理日期文件（格式：yyyy-mm-dd.log）
+          if (!_isDateLogFile(fileName)) continue;
+
+          final fileDate = _parseDateFromFileName(fileName);
+          if (fileDate != null && fileDate.isBefore(cutoffDate)) {
+            try {
+              await entity.delete();
+            } on Exception catch (_) {
+              // 忽略删除失败
+            }
+          }
+        }
+      }
+    } on Exception catch (_) {
+      // 忽略清理过程中的错误
+    }
+  }
+
+  /// 检查是否为日期格式的日志文件（yyyy-mm-dd.log）
+  bool _isDateLogFile(String fileName) {
+    final nameWithoutExt = fileName.replaceAll('.log', '');
+    final datePattern = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+    return datePattern.hasMatch(nameWithoutExt);
+  }
+
+  /// 从文件名解析日期（yyyy-mm-dd.log -> DateTime）
+  DateTime? _parseDateFromFileName(String fileName) {
+    try {
+      final nameWithoutExt = fileName.replaceAll('.log', '');
+      final parts = nameWithoutExt.split('-');
+      if (parts.length == 3) {
+        final year = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        final day = int.parse(parts[2]);
+        return DateTime(year, month, day);
+      }
+    } on Exception catch (_) {
+      return null;
+    }
+    return null;
   }
 
   @override
