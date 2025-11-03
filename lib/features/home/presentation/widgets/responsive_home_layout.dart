@@ -322,11 +322,13 @@ class EnhancedEmptyState extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
               // 图标
               Container(
                 width: 120,
@@ -379,6 +381,7 @@ class EnhancedEmptyState extends StatelessWidget {
               ],
             ],
           ),
+        ),
         ),
       ),
     );

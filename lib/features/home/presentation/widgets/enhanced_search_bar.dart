@@ -157,7 +157,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar>
                   ? IconButton(
                       onPressed: () {
                         widget.onClear();
-                        _focusNode.requestFocus();
+                        _focusNode.unfocus(); // 失去焦点以隐藏搜索建议
                       },
                       icon: Icon(
                         Icons.clear,

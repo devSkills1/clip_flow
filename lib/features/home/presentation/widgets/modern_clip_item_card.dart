@@ -202,14 +202,13 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       padding: _getContentPadding(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           // 头部：类型图标和操作按钮
           _buildHeader(context),
 
           SizedBox(height: _getVerticalSpacing()),
 
-          // 内容预览 - 使用Expanded占据剩余空间
+          // 内容预览 - 使用Expanded确保footer固定在底部
           Expanded(
             child: _buildContentArea(context),
           ),
@@ -779,11 +778,8 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       height: 1.4,
     );
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      constraints: BoxConstraints(
-        maxHeight: _getTextMaxHeight(),
-      ),
       child: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         child: _buildTextContent(context, content, textStyle),
@@ -797,12 +793,20 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     TextStyle? style,
   ) {
     if (widget.searchQuery == null || widget.searchQuery!.isEmpty) {
-      return Text(content, style: style);
+      return Text(
+        content,
+        style: style,
+        overflow: TextOverflow.clip,
+      );
     }
 
     // 搜索高亮
     if (!content.toLowerCase().contains(widget.searchQuery!.toLowerCase())) {
-      return Text(content, style: style);
+      return Text(
+        content,
+        style: style,
+        overflow: TextOverflow.clip,
+      );
     }
 
     final spans = _buildHighlightedSpans(
@@ -1010,17 +1014,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     }
   }
 
-  double _getTextMaxHeight() {
-    switch (widget.displayMode) {
-      case DisplayMode.compact:
-        return 80;
-      case DisplayMode.normal:
-        return 120;
-      case DisplayMode.preview:
-        return 200;
-    }
-  }
-
+  
   double _getOcrTextMaxHeight() {
     switch (widget.displayMode) {
       case DisplayMode.compact:

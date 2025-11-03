@@ -315,20 +315,10 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   }
 
   Widget _buildEmptySearchState(S? l10n) {
-    return EnhancedEmptyState(
+    return const EnhancedEmptyState(
       title: '未找到匹配内容',
       subtitle: '尝试使用其他关键词或调整筛选条件',
       icon: Icons.search_off,
-      actions: [
-        TextButton.icon(
-          onPressed: () {
-            _searchController.clear();
-            ref.read(searchQueryProvider.notifier).state = '';
-          },
-          icon: const Icon(Icons.clear),
-          label: const Text('清除搜索'),
-        ),
-      ],
     );
   }
 
