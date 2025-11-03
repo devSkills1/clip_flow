@@ -8,14 +8,14 @@ import 'package:flutter/foundation.dart';
 /// 文件日志适配器：
 /// - Web 环境自动返回 null（通过工厂）
 /// - 非 Web：按日期滚动，每天一个文件：`logsDir`/`yyyy-mm-dd`.log
-/// - 自动清理：最多保留7个自然日的日志文件
+/// - 自动清理：保留最新的N个日志文件，避免按绝对日期删除导致的问题
 class FileLogAdapter implements LogAdapter {
   FileLogAdapter._(this._dirPath, [this.maxRetentionDays = 7]);
 
   /// 日志目录路径
   final String _dirPath;
 
-  /// 日志文件最大保留天数
+  /// 日志文件最大保留数量（保留最新的N个文件）
   final int maxRetentionDays;
 
   io.File? _currentFile;
@@ -25,7 +25,7 @@ class FileLogAdapter implements LogAdapter {
   /// 创建文件日志适配器，Web 环境自动返回 null
   ///
   /// [customDir] 自定义日志目录路径，为空时使用默认目录
-  /// [maxRetentionDays] 日志文件最大保留天数，默认7天
+  /// [maxRetentionDays] 日志文件最大保留数量，默认保留最新的7个文件
   static Future<FileLogAdapter?> create({String? customDir, int maxRetentionDays = 7}) async {
     if (kIsWeb) return null;
     try {
@@ -151,15 +151,15 @@ class FileLogAdapter implements LogAdapter {
     return sanitized.isEmpty ? 'default' : sanitized;
   }
 
-  /// 清理超过保留天数的日志文件
+  /// 清理日志文件，保留最新的maxRetentionDays个文件
   Future<void> _cleanupOldLogs() async {
     try {
       final dir = io.Directory(_dirPath);
       if (!dir.existsSync()) return;
 
-      final now = DateTime.now();
-      final cutoffDate = now.subtract(Duration(days: maxRetentionDays));
+      final logFiles = <io.File>[];
 
+      // 收集所有日期格式的日志文件
       await for (final entity in dir.list()) {
         if (entity is io.File && entity.path.endsWith('.log')) {
           final fileName = entity.path.split('/').last;
@@ -167,14 +167,27 @@ class FileLogAdapter implements LogAdapter {
           // 跳过ID文件（格式：<id>.log），只清理日期文件（格式：yyyy-mm-dd.log）
           if (!_isDateLogFile(fileName)) continue;
 
-          final fileDate = _parseDateFromFileName(fileName);
-          if (fileDate != null && fileDate.isBefore(cutoffDate)) {
-            try {
-              await entity.delete();
-            } on Exception catch (_) {
-              // 忽略删除失败
-            }
-          }
+          logFiles.add(entity);
+        }
+      }
+
+      // 如果文件数量少于等于保留天数，不需要清理
+      if (logFiles.length <= maxRetentionDays) return;
+
+      // 按文件修改时间排序（最新的在前）
+      logFiles.sort((a, b) {
+        final aModified = a.statSync().modified;
+        final bModified = b.statSync().modified;
+        return bModified.compareTo(aModified); // 降序排列
+      });
+
+      // 删除超出保留数量的旧文件
+      final filesToDelete = logFiles.skip(maxRetentionDays);
+      for (final file in filesToDelete) {
+        try {
+          await file.delete();
+        } on Exception catch (_) {
+          // 忽略删除失败
         }
       }
     } on Exception catch (_) {
@@ -187,23 +200,6 @@ class FileLogAdapter implements LogAdapter {
     final nameWithoutExt = fileName.replaceAll('.log', '');
     final datePattern = RegExp(r'^\d{4}-\d{2}-\d{2}$');
     return datePattern.hasMatch(nameWithoutExt);
-  }
-
-  /// 从文件名解析日期（yyyy-mm-dd.log -> DateTime）
-  DateTime? _parseDateFromFileName(String fileName) {
-    try {
-      final nameWithoutExt = fileName.replaceAll('.log', '');
-      final parts = nameWithoutExt.split('-');
-      if (parts.length == 3) {
-        final year = int.parse(parts[0]);
-        final month = int.parse(parts[1]);
-        final day = int.parse(parts[2]);
-        return DateTime(year, month, day);
-      }
-    } on Exception catch (_) {
-      return null;
-    }
-    return null;
   }
 
   @override
