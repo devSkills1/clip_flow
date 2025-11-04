@@ -97,8 +97,8 @@ void main() {
       // This test verifies the flow described in the implementation
       // Note: Full clipboard processing test requires platform channels
 
-      // Verify that UniversalClipboardDetector creates ClipItem without ID
-      final detector = UniversalClipboardDetector();
+      // Verify that ClipboardDetector creates ClipItem without ID
+      final detector = ClipboardDetector();
 
       // Create a mock detection result
       final mockResult = ClipboardDetectionResult(

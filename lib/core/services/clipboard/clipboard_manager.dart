@@ -6,7 +6,7 @@ import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/performance/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 
-/// 优化的剪贴板管理器
+/// 剪贴板管理器
 ///
 /// 整合所有性能优化，包括：
 /// - 快速轮询机制
@@ -14,16 +14,16 @@ import 'package:clip_flow_pro/core/services/storage/index.dart';
 /// - 批量数据库操作
 /// - 智能缓存
 /// - 防抖和去重
-class OptimizedClipboardManager {
+class ClipboardManager {
   /// 工厂构造：返回单例实例
-  factory OptimizedClipboardManager() => _instance;
+  factory ClipboardManager() => _instance;
 
   /// 私有构造：单例内部初始化
-  OptimizedClipboardManager._internal();
+  ClipboardManager._internal();
 
   /// 单例实例
-  static final OptimizedClipboardManager _instance =
-      OptimizedClipboardManager._internal();
+  static final ClipboardManager _instance =
+      ClipboardManager._internal();
 
   /// 剪贴板轮询器
   final ClipboardPoller _poller = ClipboardPoller();

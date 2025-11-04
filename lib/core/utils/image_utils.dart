@@ -3,24 +3,29 @@ import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/dimensions.dart';
+import 'package:clip_flow_pro/core/utils/file_type_utils.dart';
 import 'package:image/image.dart' as img;
 
 /// Image utilities for format detection, resizing/compressing and helpers.
+///
+/// 这个类专注于图片处理功能，文件类型检测已经统一使用 FileTypeUtils
 class ImageUtils {
-  // 检测是否为图片文件
-  /// Returns true if path extension indicates a common image type.
+  /// 检查是否为图片文件（委托给 FileTypeUtils）
   static bool isImageFile(String filePath) {
-    final extension = filePath.split('.').last.toLowerCase();
-    return [
-      'jpg',
-      'jpeg',
-      'png',
-      'gif',
-      'bmp',
-      'webp',
-      'svg',
-      'heic',
-    ].contains(extension);
+    final extension = FileTypeUtils.extractExtension(filePath);
+    return FileTypeUtils.isImageFile(extension);
+  }
+
+  /// 检查是否为视频文件（委托给 FileTypeUtils）
+  static bool isVideoFile(String filePath) {
+    final extension = FileTypeUtils.extractExtension(filePath);
+    return FileTypeUtils.isVideoFile(extension);
+  }
+
+  /// 检查是否为音频文件（委托给 FileTypeUtils）
+  static bool isAudioFile(String filePath) {
+    final extension = FileTypeUtils.extractExtension(filePath);
+    return FileTypeUtils.isAudioFile(extension);
   }
 
   // 生成缩略图
