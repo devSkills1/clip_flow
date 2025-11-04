@@ -121,7 +121,8 @@ class ClipboardProcessor {
 
       // 使用统一的去重服务进行检查
       if (processedItem != null) {
-        final deduplicatedItem = await DeduplicationService.instance.checkAndPrepare(contentHash, processedItem);
+        final deduplicatedItem = await DeduplicationService.instance
+            .checkAndPrepare(contentHash, processedItem);
         if (deduplicatedItem != null) {
           _updateCache(contentHash, deduplicatedItem);
           return deduplicatedItem;
@@ -458,16 +459,16 @@ class ClipboardProcessor {
       final originalItem = detectionResult.createClipItem();
 
       // 合并metadata，确保不丢失原有信息
-      final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata);
-      mergedMetadata.addAll(metadata);
+      final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata)
+        ..addAll(metadata);
       // contentHash现在直接作为ID使用，不需要存储在metadata中
 
       // 返回修改后的ClipItem，保持原有ID
       return originalItem.copyWith(
         filePath: relativePath, // 更新为保存后的相对路径
-        thumbnail: thumbnail,   // 添加缩略图
+        thumbnail: thumbnail, // 添加缩略图
         metadata: mergedMetadata, // 合并元数据
-        ocrText: ocrText,      // 添加OCR文本
+        ocrText: ocrText, // 添加OCR文本
         updatedAt: DateTime.now(), // 更新时间戳
       );
     } on Exception catch (e) {
@@ -560,8 +561,8 @@ class ClipboardProcessor {
       final originalItem = detectionResult.createClipItem();
 
       // 合并metadata，确保不丢失原有信息
-      final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata);
-      mergedMetadata.addAll(metadata);
+      final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata)
+        ..addAll(metadata);
       // contentHash现在直接作为ID使用，不需要存储在metadata中
 
       // 返回修改后的ClipItem，保持原有ID
