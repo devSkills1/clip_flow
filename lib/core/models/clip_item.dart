@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
+import 'package:clip_flow_pro/core/services/id_generator.dart';
 import 'package:meta/meta.dart';
 
 /// 剪贴内容类型：表示剪贴板条目的数据类型，用于解析与渲染。
@@ -170,6 +170,16 @@ class ClipItem {
     final bytes = utf8.encode(contentString);
     final digest = sha256.convert(bytes);
     return digest.toString();
+  }
+
+  /// 基于内容生成唯一ID - 使用统一的ID生成器
+  static String _generateContentBasedId(
+    ClipType type,
+    String? content,
+    String? filePath,
+    Map<String, dynamic> metadata,
+  ) {
+    return IdGenerator.generateId(type, content, filePath, metadata);
   }
 
   /// 主键（UUID）：唯一标识该条剪贴记录
