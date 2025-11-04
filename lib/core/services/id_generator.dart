@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:crypto/crypto.dart';
@@ -9,7 +10,12 @@ class IdGenerator {
   IdGenerator._();
 
   /// 生成基于内容的唯一ID
-  static String generateId(ClipType type, String? content, String? filePath, Map<String, dynamic> metadata) {
+  static String generateId(
+    ClipType type,
+    String? content,
+    String? filePath,
+    Map<String, dynamic> metadata,
+  ) {
     String contentString;
 
     switch (type) {
@@ -38,9 +44,10 @@ class IdGenerator {
             fileIdentifier = fileName;
           }
         } else {
-          fileIdentifier = metadata['fileName'] as String? ??
-                          metadata['originalName'] as String? ??
-                          'unknown_file';
+          fileIdentifier =
+              metadata['fileName'] as String? ??
+              metadata['originalName'] as String? ??
+              'unknown_file';
         }
 
         contentString = '${type.name}:$fileIdentifier';
