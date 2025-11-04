@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/deduplication_service.dart';
+import 'package:clip_flow_pro/core/services/id_generator.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
@@ -53,17 +53,27 @@ class ClipboardProcessor {
       final clipboardData = await _getNativeClipboardData();
       if (clipboardData == null) return null;
 
-      // 检查缓存
-      final contentHash = _calculateContentHash(clipboardData);
+      // 使用通用检测器检测内容类型
+      final detectionResult = await _universalDetector.detect(clipboardData);
+
+      // 创建临时ClipItem（不包含ID）用于内容检查
+      final tempItem = detectionResult.createClipItem();
+
+      // 始终使用统一的ID生成器生成哈希（作为内容标识）
+      final contentHash = IdGenerator.generateId(
+        tempItem.type,
+        tempItem.content,
+        tempItem.filePath,
+        tempItem.metadata,
+      );
+
+      // 检查缓存（使用统一的哈希）
       if (await _isCached(contentHash)) {
         return null; // 内容未变化
       }
 
-      // 使用通用检测器检测内容类型
-      final detectionResult = await _universalDetector.detect(clipboardData);
-
-      // 创建 ClipItem - 使用contentHash作为ID
-      final item = detectionResult.createClipItem(id: contentHash);
+      // 创建正式的ClipItem - 使用统一的哈希作为ID
+      final item = tempItem.copyWith(id: contentHash);
 
       // 增加详细的调试日志
       await Log.d(
@@ -585,37 +595,7 @@ class ClipboardProcessor {
     }
   }
 
-  /// 计算内容哈希
-  String _calculateContentHash(ClipboardData data) {
-    // 创建基于内容的哈希（不包含sequence和timestamp，确保相同内容产生相同哈希）
-    final contentMap = <String, dynamic>{};
-
-    // 按固定顺序添加格式数据，确保哈希一致性
-    final sortedFormats = data.formats.keys.toList()
-      ..sort((a, b) => a.value.compareTo(b.value));
-
-    for (final format in sortedFormats) {
-      final content = data.formats[format];
-      if (content != null) {
-        // 对于图片数据，计算内容哈希而不是直接序列化
-        if (format == ClipboardFormat.image && content is Uint8List) {
-          final imageHash = sha256.convert(content).toString();
-          contentMap[format.value] = 'image_hash:$imageHash';
-        } else {
-          // 对于其他数据，转换为字符串并计算哈希
-          final contentStr = content.toString();
-          final contentHash = sha256
-              .convert(utf8.encode(contentStr))
-              .toString();
-          contentMap[format.value] = 'hash:$contentHash';
-        }
-      }
-    }
-
-    // 不包含 timestamp 和 sequence 等易变数据，只基于内容计算哈希
-    final content = json.encode(contentMap);
-    return sha256.convert(utf8.encode(content)).toString().substring(0, 16);
-  }
+  
 
   /// 检查是否已缓存（优化版本）
   Future<bool> _isCached(String contentHash) async {
