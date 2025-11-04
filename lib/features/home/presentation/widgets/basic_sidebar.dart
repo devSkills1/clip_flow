@@ -116,17 +116,7 @@ class BasicSidebar extends ConsumerWidget {
                 FilterOption.image,
             theme: theme,
           ),
-          _buildNavButton(
-            context: context,
-            ref: ref,
-            icon: Icons.code_rounded,
-            label: '代码',
-            isSelected: filterType == FilterOption.code,
-            onTap: () =>
-                ref.read(filterTypeProvider.notifier).state = FilterOption.code,
-            theme: theme,
-          ),
-          _buildNavButton(
+            _buildNavButton(
             context: context,
             ref: ref,
             icon: Icons.link_rounded,

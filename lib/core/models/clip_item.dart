@@ -1,5 +1,7 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:meta/meta.dart';
-import 'package:uuid/uuid.dart';
 
 /// 剪贴内容类型：表示剪贴板条目的数据类型，用于解析与渲染。
 enum ClipType {
@@ -66,7 +68,7 @@ class ClipItem {
     this.originHeight,
     DateTime? createdAt,
     DateTime? updatedAt,
-  }) : id = id ?? const Uuid().v4(),
+  }) : id = id ?? _generateContentBasedId(type, content, filePath, metadata),
        createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
@@ -110,6 +112,64 @@ class ClipItem {
           ? DateTime.tryParse(updatedAtRaw) ?? DateTime.now()
           : (updatedAtRaw is DateTime ? updatedAtRaw : DateTime.now()),
     );
+  }
+
+  /// 基于内容生成唯一ID
+  static String _generateContentBasedId(
+    ClipType type,
+    String? content,
+    String? filePath,
+    Map<String, dynamic> metadata,
+  ) {
+    // 创建内容字符串用于哈希
+    String contentString;
+
+    switch (type) {
+      case ClipType.color:
+        // 颜色类型的ID由ClipboardProcessor的contentHash直接提供
+        contentString = 'color:content';
+      case ClipType.image:
+      case ClipType.file:
+      case ClipType.audio:
+      case ClipType.video:
+        // 对于二进制类型，当没有提供ID时，使用文件路径或元数据生成唯一标识
+        String fileIdentifier;
+
+        // 优先使用文件路径（去掉时间戳部分）
+        if (filePath != null && filePath.isNotEmpty) {
+          // 提取文件名和扩展名作为标识，去掉时间戳
+          final fileName = filePath.split('/').last;
+          final fileParts = fileName.split('_');
+          if (fileParts.length >= 2) {
+            // 去掉时间戳部分 (通常格式为: timestamp_originalname.ext)
+            fileIdentifier = fileParts.sublist(1).join('_');
+          } else {
+            fileIdentifier = fileName;
+          }
+        } else {
+          // 回退到使用元数据中的文件信息
+          fileIdentifier = metadata['fileName'] as String? ??
+                          metadata['originalName'] as String? ??
+                          'unknown_file';
+        }
+
+        contentString = '${type.name}:${fileIdentifier}';
+      case ClipType.text:
+      case ClipType.code:
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.html:
+      case ClipType.rtf:
+        // 文本类型使用内容本身
+        contentString = '${type.name}:${content?.trim() ?? ''}';
+    }
+
+    // 使用 SHA256 哈希生成固定长度的ID
+    final bytes = utf8.encode(contentString);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
 
   /// 主键（UUID）：唯一标识该条剪贴记录

@@ -61,7 +61,7 @@ class ClipboardProcessor {
       // 使用通用检测器检测内容类型
       final detectionResult = await _universalDetector.detect(clipboardData);
 
-      // 创建 ClipItem
+      // 创建 ClipItem - 使用contentHash作为ID
       final item = detectionResult.createClipItem(id: contentHash);
 
       // 增加详细的调试日志
@@ -106,13 +106,15 @@ class ClipboardProcessor {
           processedItem = await _processFileData(detectionResult, contentHash);
         case ClipType.text:
         case ClipType.code:
-        case ClipType.color:
         case ClipType.url:
         case ClipType.email:
         case ClipType.json:
         case ClipType.xml:
         case ClipType.html:
         case ClipType.rtf:
+          processedItem = item; // 直接使用原始item，不做额外处理
+        case ClipType.color:
+          // 颜色类型直接使用contentHash作为ID
           processedItem = item;
       }
 
@@ -435,21 +437,33 @@ class ClipboardProcessor {
         );
       }
 
-      // 直接创建ClipItem，确保使用保存后的文件路径
-      return ClipItem(
-        id: contentHash,
-        type: detectionResult.detectedType,
-        content: '', // 图片类型内容为空
-        filePath: relativePath, // 使用保存后的相对路径
-        thumbnail: await _generateFileThumbnail(
+      // 生成缩略图
+      List<int>? thumbnail;
+      try {
+        thumbnail = await _generateFileThumbnail(
           File(
             '${(await PathService.instance.getDocumentsDirectory()).path}/$relativePath',
           ),
-        ),
-        metadata: metadata,
-        ocrText: ocrText,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        );
+      } on Exception catch (_) {
+        // 缩略图生成失败不影响创建条目
+      }
+
+      // 获取原始ClipItem并修改它，保持原有ID
+      final originalItem = detectionResult.createClipItem();
+
+      // 合并metadata，确保不丢失原有信息
+      final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata);
+      mergedMetadata.addAll(metadata);
+      // contentHash现在直接作为ID使用，不需要存储在metadata中
+
+      // 返回修改后的ClipItem，保持原有ID
+      return originalItem.copyWith(
+        filePath: relativePath, // 更新为保存后的相对路径
+        thumbnail: thumbnail,   // 添加缩略图
+        metadata: mergedMetadata, // 合并元数据
+        ocrText: ocrText,      // 添加OCR文本
+        updatedAt: DateTime.now(), // 更新时间戳
       );
     } on Exception catch (e) {
       await Log.e(
@@ -537,17 +551,23 @@ class ClipboardProcessor {
         }
       }
 
-      return ClipItem(
-        type: fileType,
-        content: '',
+      // 获取原始ClipItem并修改它，保持原有ID
+      final originalItem = detectionResult.createClipItem();
+
+      // 合并metadata，确保不丢失原有信息
+      final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata);
+      mergedMetadata.addAll(metadata);
+      // contentHash现在直接作为ID使用，不需要存储在metadata中
+
+      // 返回修改后的ClipItem，保持原有ID
+      return originalItem.copyWith(
+        type: fileType, // 更新文件类型（可能比检测到的更准确）
         filePath: (relativePath != null && relativePath.isNotEmpty)
             ? relativePath
-            : filePath,
-        thumbnail: thumbnail,
-        metadata: metadata,
-        id: contentHash,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+            : filePath, // 使用保存后的路径或原始路径
+        thumbnail: thumbnail, // 添加缩略图
+        metadata: mergedMetadata, // 合并元数据
+        updatedAt: DateTime.now(), // 更新时间戳
       );
     } on Exception catch (e) {
       await Log.e(

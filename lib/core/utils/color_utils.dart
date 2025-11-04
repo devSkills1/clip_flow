@@ -313,6 +313,45 @@ class ColorUtils {
   }
 
   // 16进制字符串转换为 Color（支持 #RGB/#RGBA/#RRGGBB/#RRGGBBAA，兼容无#）
+  /// 标准化颜色十六进制格式
+  /// 将各种格式的颜色统一转换为 #RRGGBB 格式
+  static String normalizeColorHex(String color) {
+    final trimmed = color.trim();
+
+    // 如果已经是 #RRGGBB 格式，直接返回
+    if (RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(trimmed)) {
+      return trimmed.toUpperCase();
+    }
+
+    // 如果是 #RGB 格式，转换为 #RRGGBB
+    if (RegExp(r'^#[0-9A-Fa-f]{3}$').hasMatch(trimmed)) {
+      final hex = trimmed.substring(1);
+      final expanded = hex.split('').map((c) => c + c).join();
+      return '#$expanded'.toUpperCase();
+    }
+
+    // 如果没有 # 号的 6 位十六进制，添加 # 号
+    if (RegExp(r'^[0-9A-Fa-f]{6}$').hasMatch(trimmed)) {
+      return '#$trimmed'.toUpperCase();
+    }
+
+    // 如果是 3 位无 # 号，转换为 #RRGGBB
+    if (RegExp(r'^[0-9A-Fa-f]{3}$').hasMatch(trimmed)) {
+      final expanded = trimmed.split('').map((c) => c + c).join();
+      return '#$expanded'.toUpperCase();
+    }
+
+    // 其他格式（RGB/RGBA/HSL/HSLA 等）返回原值
+    return trimmed;
+  }
+
+  /// 生成颜色类型的内容ID前缀
+  /// 用于确保相同颜色生成相同的ID
+  static String generateColorContentId(String colorHex) {
+    final normalizedHex = normalizeColorHex(colorHex).toUpperCase();
+    return 'color:$normalizedHex';
+  }
+
   /// Parses HEX string to [Color]. Supports #RGB/#RGBA/#RRGGBB/#RRGGBBAA and no-# input.
   static Color hexToColor(String hex) {
     var value = hex.trim();

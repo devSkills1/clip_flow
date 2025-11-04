@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
@@ -72,6 +73,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       if (recentItems.isEmpty) return;
 
       final notifier = ref.read(clipboardHistoryProvider.notifier);
+      final validItems = <ClipItem>[];
 
       for (final dbItem in recentItems) {
         ClipItem? validItem;
@@ -107,8 +109,13 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
         }
 
         if (validItem != null) {
-          notifier.addItem(validItem);
+          validItems.add(validItem);
         }
+      }
+
+      // 一次性设置所有有效项目，保持数据库返回的顺序（最新在前）
+      if (validItems.isNotEmpty) {
+        notifier.setItems(validItems);
       }
     } on Exception catch (e) {
       // 静默失败，避免阻塞UI
@@ -356,34 +363,26 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   ) {
     if (filterOption == FilterOption.all) return items;
 
-    return items.where((item) {
-      switch (filterOption) {
-        case FilterOption.text:
-          return item.type == ClipType.text;
-        case FilterOption.richTextUnion:
-          return item.type == ClipType.rtf ||
-              item.type == ClipType.html ||
-              item.type == ClipType.code;
-        case FilterOption.rtf:
-          return item.type == ClipType.rtf;
-        case FilterOption.html:
-          return item.type == ClipType.html;
-        case FilterOption.code:
-          return item.type == ClipType.code;
-        case FilterOption.image:
-          return item.type == ClipType.image;
-        case FilterOption.color:
-          return item.type == ClipType.color;
-        case FilterOption.file:
-          return item.type == ClipType.file;
-        case FilterOption.audio:
-          return item.type == ClipType.audio;
-        case FilterOption.video:
-          return item.type == ClipType.video;
-        default:
-          return true;
-      }
-    }).toList();
+    // 预定义过滤条件映射，提高性能和可维护性
+    final filterMap = {
+      FilterOption.text: (ClipItem item) =>
+        item.type != ClipType.image &&
+        item.type != ClipType.file &&
+        item.type != ClipType.color,
+      FilterOption.richTextUnion: (ClipItem item) =>
+        const {ClipType.rtf, ClipType.html, ClipType.code}.contains(item.type),
+      FilterOption.rtf: (ClipItem item) => item.type == ClipType.rtf,
+      FilterOption.html: (ClipItem item) => item.type == ClipType.html,
+      FilterOption.code: (ClipItem item) => item.type == ClipType.code,
+      FilterOption.image: (ClipItem item) => item.type == ClipType.image,
+      FilterOption.color: (ClipItem item) => item.type == ClipType.color,
+      FilterOption.file: (ClipItem item) => item.type == ClipType.file,
+      FilterOption.audio: (ClipItem item) => item.type == ClipType.audio,
+      FilterOption.video: (ClipItem item) => item.type == ClipType.video,
+    };
+
+    final predicate = filterMap[filterOption] ?? (item) => true;
+    return items.where(predicate).toList();
   }
 
   void _updateAdvancedFilters() {
@@ -475,7 +474,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
             I18nFallbacks.common.unknown;
         return '${I18nFallbacks.common.labelFile}: $fileName';
       case ClipType.color:
-        final colorHex = item.metadata['colorHex'] as String? ?? '#000000';
+        final colorHex = item.content ?? AppColors.defaultColorHex;
         return '${I18nFallbacks.common.labelColor}: $colorHex';
       default:
         final content = item.content ?? '';

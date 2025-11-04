@@ -106,6 +106,11 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     }).toList();
   }
 
+  /// 批量设置历史项目。
+  void setItems(List<ClipItem> items) {
+    state = items;
+  }
+
   /// 清空所有历史项目。
   Future<void> clearHistory() async {
     try {
