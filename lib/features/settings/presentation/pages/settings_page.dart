@@ -11,6 +11,7 @@ import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/features/settings/presentation/widgets/hotkey_capture_dialog.dart';
+import 'package:clip_flow_pro/features/settings/presentation/widgets/modern_radio_list_tile.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -439,7 +440,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: colorScheme.outline.withValues(alpha: 0.15),
-              width: 1,
             ),
             boxShadow: [
               BoxShadow(
@@ -691,13 +691,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RadioListTile<ThemeMode>(
+                ModernRadioListTile<ThemeMode>(
+                  value: ThemeMode.light,
+                  groupValue: selectedTheme,
                   title: Text(
                     S.of(context)?.themeLight ??
                         I18nFallbacks.settings.themeLight,
                   ),
-                  value: ThemeMode.light,
-                  groupValue: selectedTheme,
                   onChanged: (value) {
                     if (value != null) {
                       ref.read(themeModeProvider.notifier).state = value;
@@ -705,13 +705,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     }
                   },
                 ),
-                RadioListTile<ThemeMode>(
+                ModernRadioListTile<ThemeMode>(
+                  value: ThemeMode.dark,
+                  groupValue: selectedTheme,
                   title: Text(
                     S.of(context)?.themeDark ??
                         I18nFallbacks.settings.themeDark,
                   ),
-                  value: ThemeMode.dark,
-                  groupValue: selectedTheme,
                   onChanged: (value) {
                     if (value != null) {
                       ref.read(themeModeProvider.notifier).state = value;
@@ -719,13 +719,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     }
                   },
                 ),
-                RadioListTile<ThemeMode>(
+                ModernRadioListTile<ThemeMode>(
+                  value: ThemeMode.system,
+                  groupValue: selectedTheme,
                   title: Text(
                     S.of(context)?.themeSystem ??
                         I18nFallbacks.settings.themeSystem,
                   ),
-                  value: ThemeMode.system,
-                  groupValue: selectedTheme,
                   onChanged: (value) {
                     if (value != null) {
                       ref.read(themeModeProvider.notifier).state = value;
@@ -757,7 +757,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RadioListTile<DisplayMode>(
+                ModernRadioListTile<DisplayMode>(
                   title: Text(
                     S.of(context)?.displayCompact ??
                         I18nFallbacks.settings.displayCompact,
@@ -780,7 +780,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     }
                   },
                 ),
-                RadioListTile<DisplayMode>(
+                ModernRadioListTile<DisplayMode>(
                   title: Text(
                     S.of(context)?.displayNormal ??
                         I18nFallbacks.settings.displayNormal,
@@ -803,7 +803,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     }
                   },
                 ),
-                RadioListTile<DisplayMode>(
+                ModernRadioListTile<DisplayMode>(
                   title: Text(
                     S.of(context)?.displayPreview ??
                         I18nFallbacks.settings.displayPreview,
@@ -848,7 +848,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RadioListTile<String>(
+                ModernRadioListTile<String>(
                   title: Text(
                     S.of(context)?.languageZhCN ??
                         I18nFallbacks.settings.languageZhCN,
@@ -860,12 +860,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       setState(() {
                         selectedLanguage = value;
                       });
-                      ref.read(userPreferencesProvider.notifier).setLanguage(value);
+                      ref
+                          .read(userPreferencesProvider.notifier)
+                          .setLanguage(value);
                       Navigator.of(context).pop();
                     }
                   },
                 ),
-                RadioListTile<String>(
+                ModernRadioListTile<String>(
                   title: Text(
                     S.of(context)?.languageEnUS ??
                         I18nFallbacks.settings.languageEnUS,
@@ -877,7 +879,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       setState(() {
                         selectedLanguage = value;
                       });
-                      ref.read(userPreferencesProvider.notifier).setLanguage(value);
+                      ref
+                          .read(userPreferencesProvider.notifier)
+                          .setLanguage(value);
                       Navigator.of(context).pop();
                     }
                   },
@@ -1257,8 +1261,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   /// 打开邮件反馈
   Future<void> _openEmailFeedback() async {
     try {
-      final subject = Uri.encodeComponent(I18nFallbacks.settings.feedbackEmailSubject);
-      final body = Uri.encodeComponent(I18nFallbacks.settings.feedbackEmailBody);
+      final subject = Uri.encodeComponent(
+        I18nFallbacks.settings.feedbackEmailSubject,
+      );
+      final body = Uri.encodeComponent(
+        I18nFallbacks.settings.feedbackEmailBody,
+      );
       final emailUri = Uri(
         scheme: 'mailto',
         path: ClipConstants.feedbackEmail,
@@ -1270,7 +1278,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       } else {
         _showErrorSnackBar(
           l10n?.feedbackEmailErrorMessage('Unable to launch email client') ??
-              I18nFallbacks.settings.feedbackEmailErrorMessage('Unable to launch email client'),
+              I18nFallbacks.settings.feedbackEmailErrorMessage(
+                'Unable to launch email client',
+              ),
         );
       }
     } on Exception catch (e) {
@@ -1284,32 +1294,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   /// 打开问题报告页面
   Future<void> _openIssuePage() async {
     try {
-      final Uri issueUri = Uri.parse('${ClipConstants.githubRepositoryUrl}/issues/new');
+      final issueUri = Uri.parse(
+        '${ClipConstants.githubRepositoryUrl}/issues/new',
+      );
 
       if (await canLaunchUrl(issueUri)) {
         await launchUrl(issueUri, mode: LaunchMode.externalApplication);
       } else {
         _showErrorSnackBar(
-          l10n?.feedbackIssueErrorMessage('Unable to open GitHub issues page') ??
-              I18nFallbacks.settings.feedbackIssueErrorMessage('Unable to open GitHub issues page'),
+          l10n?.feedbackIssueErrorMessage(
+                'Unable to open GitHub issues page',
+              ) ??
+              I18nFallbacks.settings.feedbackIssueErrorMessage(
+                'Unable to open GitHub issues page',
+              ),
         );
       }
     } on Exception catch (e) {
       _showErrorSnackBar(
         l10n?.feedbackIssueErrorMessage(e.toString()) ??
             I18nFallbacks.settings.feedbackIssueErrorMessage(e.toString()),
-      );
-    }
-  }
-
-  /// 显示信息提示
-  void _showInfoSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
       );
     }
   }
