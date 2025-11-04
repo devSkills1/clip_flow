@@ -553,7 +553,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 if (trailing != null) ...[
                   const SizedBox(width: 16),
-                  trailing!,
+                  trailing,
                 ],
               ],
             ),
