@@ -67,7 +67,7 @@ class ClipboardService {
         // 即使权限未授予，也继续初始化，但会在操作时进行检查
       }
 
-      // 只在明确要求时启动轮询器，避免与 OptimizedClipboardManager 冲突
+      // 只在明确要求时启动轮询器，避免与 ClipboardManager 冲突
       if (startPolling) {
         _poller.startPolling(
           onClipboardChanged: _handleClipboardChange,
@@ -82,7 +82,7 @@ class ClipboardService {
           'ClipboardService initialized without polling',
           tag: 'clipboard_service',
           fields: {
-            'reason': 'OptimizedClipboardManager handles monitoring',
+            'reason': 'ClipboardManager handles monitoring',
           },
         );
       }

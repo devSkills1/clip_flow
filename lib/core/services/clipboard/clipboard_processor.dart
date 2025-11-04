@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/models/clipboard_detection_result.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/deduplication_service.dart';
 import 'package:clip_flow_pro/core/services/id_generator.dart';
@@ -27,8 +28,6 @@ class ClipboardProcessor {
   );
 
   final ClipboardDetector _detector = ClipboardDetector();
-  final UniversalClipboardDetector _universalDetector =
-      UniversalClipboardDetector();
 
   // 缓存配置
   static const int _maxCacheSize = 100;
@@ -54,7 +53,7 @@ class ClipboardProcessor {
       if (clipboardData == null) return null;
 
       // 使用通用检测器检测内容类型
-      final detectionResult = await _universalDetector.detect(clipboardData);
+      final detectionResult = await _detector.detect(clipboardData);
 
       // 创建临时ClipItem（不包含ID）用于内容检查
       final tempItem = detectionResult.createClipItem();
@@ -152,8 +151,8 @@ class ClipboardProcessor {
   /// 获取原生剪贴板数据
   Future<ClipboardData?> _getNativeClipboardData() async {
     try {
-      // 初始化通用检测器
-      _universalDetector.initialize();
+      // 初始化检测器
+      _detector.initialize();
 
       // 使用新的平台方法获取所有格式的剪贴板数据
       final formatsResult = await _platformChannel
