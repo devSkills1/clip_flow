@@ -1,22 +1,32 @@
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:crypto/crypto.dart';
 
 /// 集中化去重服务
 /// 统一处理所有去重逻辑，避免多层检查冲突
 class DeduplicationService {
-  DeduplicationService._();
-
-  static final DeduplicationService _instance = DeduplicationService._internal();
-  static DeduplicationService get instance => _instance;
-
+  /// 创建去重服务实例
   factory DeduplicationService() => _instance;
 
+  /// 私有构造函数，用于创建单例实例
   DeduplicationService._internal();
 
+  /// 单例实例
+  static final DeduplicationService _instance =
+      DeduplicationService._internal();
+
+  /// 获取去重服务实例
+  static DeduplicationService get instance => _instance;
+
   /// 检查并准备剪贴项，确保去重逻辑统一
-  Future<ClipItem?> checkAndPrepare(String contentHash, ClipItem newItem) async {
+  Future<ClipItem?> checkAndPrepare(
+    String contentHash,
+    ClipItem newItem,
+  ) async {
     try {
       await Log.d(
         'Checking for duplicate content',
@@ -114,9 +124,9 @@ class DeduplicationService {
   /// 验证ID格式是否有效
   bool isValidId(String? id) {
     return id != null &&
-           id.isNotEmpty &&
-           id.length == 64 && // SHA256 哈希的固定长度
-           RegExp(r'^[a-f0-9]{64}$').hasMatch(id!);
+        id.isNotEmpty &&
+        id.length == 64 && // SHA256 哈希的固定长度
+        RegExp(r'^[a-f0-9]{64}$').hasMatch(id);
   }
 
   /// 生成内容哈希（如果需要重新生成）
@@ -137,7 +147,7 @@ class DeduplicationService {
       // 如果有contentHash且未见过，添加到结果中
       if (isValidId(item.id) && !seenHashes.contains(item.id)) {
         uniqueItems.add(item);
-        seenHashes.add(item.id!);
+        seenHashes.add(item.id);
       } else if (!isValidId(item.id)) {
         // 无效ID的项目，也添加（避免数据丢失）
         uniqueItems.add(item);

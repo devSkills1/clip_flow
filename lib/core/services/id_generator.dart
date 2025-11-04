@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:crypto/crypto.dart';
 
 /// 统一的ID生成服务
 /// 提供一致的、基于内容的ID生成逻辑
@@ -21,7 +21,6 @@ class IdGenerator {
         } else {
           contentString = 'color:$colorContent';
         }
-        break;
 
       case ClipType.image:
       case ClipType.file:
@@ -45,7 +44,6 @@ class IdGenerator {
         }
 
         contentString = '${type.name}:$fileIdentifier';
-        break;
 
       case ClipType.text:
       case ClipType.code:
@@ -58,7 +56,6 @@ class IdGenerator {
         // 文本类型使用标准化内容
         final normalizedContent = content?.trim() ?? '';
         contentString = '${type.name}:$normalizedContent';
-        break;
     }
 
     // 使用 SHA256 生成唯一ID
