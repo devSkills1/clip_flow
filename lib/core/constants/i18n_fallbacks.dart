@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+
 //// 文案回退常量
 /// 集中管理 UI 文案的本地回退值，避免 i18n 缺失造成的崩溃或空白。
 /// 使用示例：
@@ -429,6 +433,12 @@ class _SettingsFallback {
 
   /// 邮件反馈标题
   String get feedbackEmailTitle => '邮件反馈';
+
+  /// 邮件反馈主题
+  String get feedbackEmailSubject => 'ClipFlow Pro 反馈与建议';
+
+  /// 邮件反馈正文
+  String get feedbackEmailBody => '请在这里描述您的反馈或建议...\n\n---\n应用版本: ${ClipConstants.appVersion}\n系统平台: ${Platform.operatingSystem}';
 
   /// 问题报告标题
   String get feedbackIssueTitle => '问题报告';
