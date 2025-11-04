@@ -16,6 +16,7 @@ import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// 应用设置页面
 /// 提供应用的配置和偏好设置
@@ -687,38 +688,52 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         content: StatefulBuilder(
           builder: (context, setState) {
             final selectedTheme = ref.read(themeModeProvider);
-            return RadioGroup<ThemeMode>(
-              groupValue: selectedTheme,
-              onChanged: (value) {
-                ref.read(themeModeProvider.notifier).state = value!;
-                Navigator.of(context).pop();
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<ThemeMode>(
-                    title: Text(
-                      S.of(context)?.themeLight ??
-                          I18nFallbacks.settings.themeLight,
-                    ),
-                    value: ThemeMode.light,
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<ThemeMode>(
+                  title: Text(
+                    S.of(context)?.themeLight ??
+                        I18nFallbacks.settings.themeLight,
                   ),
-                  RadioListTile<ThemeMode>(
-                    title: Text(
-                      S.of(context)?.themeDark ??
-                          I18nFallbacks.settings.themeDark,
-                    ),
-                    value: ThemeMode.dark,
+                  value: ThemeMode.light,
+                  groupValue: selectedTheme,
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(themeModeProvider.notifier).state = value;
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text(
+                    S.of(context)?.themeDark ??
+                        I18nFallbacks.settings.themeDark,
                   ),
-                  RadioListTile<ThemeMode>(
-                    title: Text(
-                      S.of(context)?.themeSystem ??
-                          I18nFallbacks.settings.themeSystem,
-                    ),
-                    value: ThemeMode.system,
+                  value: ThemeMode.dark,
+                  groupValue: selectedTheme,
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(themeModeProvider.notifier).state = value;
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text(
+                    S.of(context)?.themeSystem ??
+                        I18nFallbacks.settings.themeSystem,
                   ),
-                ],
-              ),
+                  value: ThemeMode.system,
+                  groupValue: selectedTheme,
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(themeModeProvider.notifier).state = value;
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ],
             );
           },
         ),
@@ -739,55 +754,79 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             var selectedMode = ref
                 .read(userPreferencesProvider)
                 .defaultDisplayMode;
-            return RadioGroup<DisplayMode>(
-              groupValue: selectedMode,
-              onChanged: (value) {
-                setState(() {
-                  selectedMode = value!;
-                });
-                ref
-                    .read(userPreferencesProvider.notifier)
-                    .setDefaultDisplayMode(value!);
-                Navigator.of(context).pop();
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<DisplayMode>(
-                    title: Text(
-                      S.of(context)?.displayCompact ??
-                          I18nFallbacks.settings.displayCompact,
-                    ),
-                    subtitle: Text(
-                      S.of(context)?.displayCompactDesc ??
-                          I18nFallbacks.settings.displayCompactDesc,
-                    ),
-                    value: DisplayMode.compact,
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<DisplayMode>(
+                  title: Text(
+                    S.of(context)?.displayCompact ??
+                        I18nFallbacks.settings.displayCompact,
                   ),
-                  RadioListTile<DisplayMode>(
-                    title: Text(
-                      S.of(context)?.displayNormal ??
-                          I18nFallbacks.settings.displayNormal,
-                    ),
-                    subtitle: Text(
-                      S.of(context)?.displayNormalDesc ??
-                          I18nFallbacks.settings.displayNormalDesc,
-                    ),
-                    value: DisplayMode.normal,
+                  subtitle: Text(
+                    S.of(context)?.displayCompactDesc ??
+                        I18nFallbacks.settings.displayCompactDesc,
                   ),
-                  RadioListTile<DisplayMode>(
-                    title: Text(
-                      S.of(context)?.displayPreview ??
-                          I18nFallbacks.settings.displayPreview,
-                    ),
-                    subtitle: Text(
-                      S.of(context)?.displayPreviewDesc ??
-                          I18nFallbacks.settings.displayPreviewDesc,
-                    ),
-                    value: DisplayMode.preview,
+                  value: DisplayMode.compact,
+                  groupValue: selectedMode,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedMode = value;
+                      });
+                      ref
+                          .read(userPreferencesProvider.notifier)
+                          .setDefaultDisplayMode(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                RadioListTile<DisplayMode>(
+                  title: Text(
+                    S.of(context)?.displayNormal ??
+                        I18nFallbacks.settings.displayNormal,
                   ),
-                ],
-              ),
+                  subtitle: Text(
+                    S.of(context)?.displayNormalDesc ??
+                        I18nFallbacks.settings.displayNormalDesc,
+                  ),
+                  value: DisplayMode.normal,
+                  groupValue: selectedMode,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedMode = value;
+                      });
+                      ref
+                          .read(userPreferencesProvider.notifier)
+                          .setDefaultDisplayMode(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                RadioListTile<DisplayMode>(
+                  title: Text(
+                    S.of(context)?.displayPreview ??
+                        I18nFallbacks.settings.displayPreview,
+                  ),
+                  subtitle: Text(
+                    S.of(context)?.displayPreviewDesc ??
+                        I18nFallbacks.settings.displayPreviewDesc,
+                  ),
+                  value: DisplayMode.preview,
+                  groupValue: selectedMode,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedMode = value;
+                      });
+                      ref
+                          .read(userPreferencesProvider.notifier)
+                          .setDefaultDisplayMode(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ],
             );
           },
         ),
@@ -806,34 +845,44 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         content: StatefulBuilder(
           builder: (context, setState) {
             var selectedLanguage = ref.read(userPreferencesProvider).language;
-            return RadioGroup<String>(
-              groupValue: selectedLanguage,
-              onChanged: (value) {
-                setState(() {
-                  selectedLanguage = value!;
-                });
-                ref.read(userPreferencesProvider.notifier).setLanguage(value!);
-                Navigator.of(context).pop();
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<String>(
-                    title: Text(
-                      S.of(context)?.languageZhCN ??
-                          I18nFallbacks.settings.languageZhCN,
-                    ),
-                    value: 'zh_CN',
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: Text(
+                    S.of(context)?.languageZhCN ??
+                        I18nFallbacks.settings.languageZhCN,
                   ),
-                  RadioListTile<String>(
-                    title: Text(
-                      S.of(context)?.languageEnUS ??
-                          I18nFallbacks.settings.languageEnUS,
-                    ),
-                    value: 'en_US',
+                  value: 'zh_CN',
+                  groupValue: selectedLanguage,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedLanguage = value;
+                      });
+                      ref.read(userPreferencesProvider.notifier).setLanguage(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                RadioListTile<String>(
+                  title: Text(
+                    S.of(context)?.languageEnUS ??
+                        I18nFallbacks.settings.languageEnUS,
                   ),
-                ],
-              ),
+                  value: 'en_US',
+                  groupValue: selectedLanguage,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedLanguage = value;
+                      });
+                      ref.read(userPreferencesProvider.notifier).setLanguage(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ],
             );
           },
         ),
@@ -1208,12 +1257,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   /// 打开邮件反馈
   Future<void> _openEmailFeedback() async {
     try {
-      // 这里应该使用url_launcher打开邮件客户端
-      // 暂时显示一个提示
-      _showInfoSnackBar(
-        l10n?.feedbackEmailInDevelopment ??
-            I18nFallbacks.settings.feedbackEmailInDevelopment,
+      final subject = Uri.encodeComponent(I18nFallbacks.settings.feedbackEmailSubject);
+      final body = Uri.encodeComponent(I18nFallbacks.settings.feedbackEmailBody);
+      final emailUri = Uri(
+        scheme: 'mailto',
+        path: ClipConstants.feedbackEmail,
+        query: 'subject=$subject&body=$body',
       );
+
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+      } else {
+        _showErrorSnackBar(
+          l10n?.feedbackEmailErrorMessage('Unable to launch email client') ??
+              I18nFallbacks.settings.feedbackEmailErrorMessage('Unable to launch email client'),
+        );
+      }
     } on Exception catch (e) {
       _showErrorSnackBar(
         l10n?.feedbackEmailErrorMessage(e.toString()) ??
@@ -1225,12 +1284,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   /// 打开问题报告页面
   Future<void> _openIssuePage() async {
     try {
-      // 这里应该使用url_launcher打开GitHub Issues页面
-      // 暂时显示一个提示
-      _showInfoSnackBar(
-        l10n?.feedbackIssueInDevelopment ??
-            I18nFallbacks.settings.feedbackIssueInDevelopment,
-      );
+      final Uri issueUri = Uri.parse('${ClipConstants.githubRepositoryUrl}/issues/new');
+
+      if (await canLaunchUrl(issueUri)) {
+        await launchUrl(issueUri, mode: LaunchMode.externalApplication);
+      } else {
+        _showErrorSnackBar(
+          l10n?.feedbackIssueErrorMessage('Unable to open GitHub issues page') ??
+              I18nFallbacks.settings.feedbackIssueErrorMessage('Unable to open GitHub issues page'),
+        );
+      }
     } on Exception catch (e) {
       _showErrorSnackBar(
         l10n?.feedbackIssueErrorMessage(e.toString()) ??

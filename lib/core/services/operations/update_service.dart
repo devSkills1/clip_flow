@@ -141,8 +141,7 @@ class UpdateService {
   /// 更新检查URL
   static const String _updateCheckUrl = String.fromEnvironment(
     'UPDATE_CHECK_URL',
-    defaultValue:
-        'https://api.github.com/repos/your-org/clip_flow_pro/releases/latest',
+    defaultValue: '', // 默认为空，表示禁用更新检查
   );
 
   /// 初始化更新服务
@@ -173,6 +172,13 @@ class UpdateService {
     try {
       if (!silent) {
         await Log.i('Checking for updates...');
+      }
+
+      // 检查更新URL是否配置
+      if (_updateCheckUrl.isEmpty) {
+        await Log.i('Update check URL not configured, skipping update check');
+        _updateStatus(UpdateStatus.upToDate);
+        return false;
       }
 
       final response = await _dio.get<Map<String, dynamic>>(_updateCheckUrl);

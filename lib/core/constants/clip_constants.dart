@@ -122,6 +122,10 @@ class ClipConstants {
   /// 反馈邮箱
   static const String feedbackEmail = 'jr.lu.jobs@gmail.com';
 
+  /// GitHub 仓库地址
+  static const String githubRepositoryUrl =
+      'https://github.com/devSkills1/clip_flow_pro';
+
   /// 全局快捷键默认值（平台：macOS）
   static const String defaultGlobalHotkey = 'cmd+shift+v';
 
