@@ -84,9 +84,17 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
       // 添加新项目到列表开头
       state = [item, ...state];
 
-      // 限制历史记录数量
+      // 限制历史记录数量（优先保留收藏的项目）
       if (state.length > 500) {
-        state = state.take(500).toList();
+        // 先提取所有收藏的项目
+        final favorites = state.where((item) => item.isFavorite).toList();
+        final nonFavorites = state.where((item) => !item.isFavorite).toList();
+
+        // 保留所有收藏的项目，并从非收藏项目中取最新的直到总数达到500
+        final remainingNonFavorites = nonFavorites.take(500 - favorites.length).toList();
+
+        // 收藏项目在前，非收藏项目在后
+        state = [...favorites, ...remainingNonFavorites];
       }
     }
   }
@@ -107,12 +115,30 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   }
 
   /// 批量设置历史项目。
-  void setItems(List<ClipItem> items) {
+  set items(List<ClipItem> items) {
     state = items;
   }
 
-  /// 清空所有历史项目。
+  /// 获取当前历史项目列表。
+  List<ClipItem> get items => state;
+
+  /// 清空所有历史项目（保留收藏的项目）。
   Future<void> clearHistory() async {
+    try {
+      // 清空数据库（保留收藏的项目）
+      await _databaseService.clearAllClipItemsExceptFavorites();
+
+      // 只从内存中移除非收藏的项目
+      state = state.where((item) => item.isFavorite).toList();
+    } on Exception catch (_) {
+      // 即使数据库清空失败，也只保留收藏的项目
+      state = state.where((item) => item.isFavorite).toList();
+      // 可以在这里添加错误日志
+    }
+  }
+
+  /// 清空所有历史项目（包括收藏的项目）。
+  Future<void> clearHistoryIncludingFavorites() async {
     try {
       // 清空数据库
       await _databaseService.clearAllClipItems();

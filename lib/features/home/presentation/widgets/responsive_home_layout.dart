@@ -15,6 +15,7 @@ class ResponsiveHomeLayout extends StatelessWidget {
     required this.emptyWidget,
     super.key,
     this.scrollController,
+    this.onItemFavoriteToggle,
   });
 
   /// 剪贴板项目列表
@@ -31,6 +32,9 @@ class ResponsiveHomeLayout extends StatelessWidget {
 
   /// 项目删除回调
   final void Function(ClipItem) onItemDelete;
+
+  /// 项目收藏切换回调
+  final void Function(ClipItem)? onItemFavoriteToggle;
 
   /// 空状态组件
   final Widget emptyWidget;
@@ -75,6 +79,9 @@ class ResponsiveHomeLayout extends StatelessWidget {
                   searchQuery: searchQuery,
                   onTap: () => onItemTap(item),
                   onDelete: () => onItemDelete(item),
+                  onFavoriteToggle: onItemFavoriteToggle != null
+                      ? () => onItemFavoriteToggle!(item)
+                      : null,
                 ),
               );
             },
@@ -113,6 +120,9 @@ class ResponsiveHomeLayout extends StatelessWidget {
                       searchQuery: searchQuery,
                       onTap: () => onItemTap(item),
                       onDelete: () => onItemDelete(item),
+                      onFavoriteToggle: onItemFavoriteToggle != null
+                          ? () => onItemFavoriteToggle!(item)
+                          : null,
                     );
                   },
                   childCount: items.length,
@@ -153,6 +163,9 @@ class ResponsiveHomeLayout extends StatelessWidget {
                       searchQuery: searchQuery,
                       onTap: () => onItemTap(item),
                       onDelete: () => onItemDelete(item),
+                      onFavoriteToggle: onItemFavoriteToggle != null
+                          ? () => onItemFavoriteToggle!(item)
+                          : null,
                     );
                   },
                   childCount: items.length,

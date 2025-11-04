@@ -39,4 +39,9 @@ class ClipRepositoryImpl implements ClipRepository {
   Future<void> delete(String id) async {
     await _db.deleteClipItem(id);
   }
+
+  @override
+  Future<void> updateFavoriteStatus({required String id, required bool isFavorite}) async {
+    await _db.updateFavoriteStatus(id: id, isFavorite: isFavorite);
+  }
 }
