@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
+import 'package:clip_flow_pro/core/services/deduplication_service.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
@@ -118,10 +119,14 @@ class ClipboardProcessor {
           processedItem = item;
       }
 
+      // 使用统一的去重服务进行检查
       if (processedItem != null) {
-        _updateCache(contentHash, processedItem);
+        final deduplicatedItem = await DeduplicationService.instance.checkAndPrepare(contentHash, processedItem);
+        if (deduplicatedItem != null) {
+          _updateCache(contentHash, deduplicatedItem);
+          return deduplicatedItem;
+        }
       }
-
       return processedItem;
     } on Exception catch (e) {
       await Log.e(
