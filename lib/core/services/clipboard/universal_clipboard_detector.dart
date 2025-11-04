@@ -2,6 +2,7 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:clip_flow_pro/core/utils/image_utils.dart';
 
 /// 通用剪贴板检测器
 ///
@@ -237,7 +238,11 @@ class UniversalClipboardDetector {
       'File path detection: content=$contentToAnalyze, length=${contentToAnalyze.length}, isFilePath=$isFilePath',
       tag: 'UniversalClipboardDetector',
     );
-    if (isFilePath) return ClipType.file;
+    if (isFilePath) {
+      // 根据文件扩展名确定具体类型
+      final fileType = _detectFileTypeByExtension(contentToAnalyze);
+      return fileType;
+    }
 
     // 4. 首先检查是否为颜色（无论长度如何）
     if (_isColor(contentToAnalyze)) return ClipType.color;
@@ -800,6 +805,39 @@ class UniversalClipboardDetector {
         .replaceAll(RegExp(r'\\[^a-zA-Z]'), '')
         .trim();
   }
+
+  /// 根据文件扩展名检测文件类型
+  ClipType _detectFileTypeByExtension(String filePath) {
+    // 使用现有的 ImageUtils 检测是否为图片文件
+    if (ImageUtils.isImageFile(filePath)) {
+      return ClipType.image;
+    }
+
+    // 视频文件扩展名
+    const videoExtensions = {
+      'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'm4v',
+      '3gp', 'ogv', 'ts', 'mts', 'm2ts', 'vob', 'f4v', 'asf',
+      'rm', 'rmvb', 'divx', 'xvid', 'mpeg', 'mpg', 'mpe'
+    };
+
+    // 音频文件扩展名
+    const audioExtensions = {
+      'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff',
+      'au', 'ra', 'amr', 'ac3', 'dts', 'opus', 'm4p', 'm4b'
+    };
+
+    final cleanPath = filePath.trim();
+    final extension = cleanPath.split('.').last.toLowerCase();
+
+    if (videoExtensions.contains(extension)) {
+      return ClipType.video;
+    } else if (audioExtensions.contains(extension)) {
+      return ClipType.audio;
+    } else {
+      // 其他扩展名作为文件处理
+      return ClipType.file;
+    }
+  }
 }
 
 /// 格式信息
@@ -956,3 +994,4 @@ class ClipboardDetectionResult {
     return baseMetadata;
   }
 }
+

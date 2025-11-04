@@ -352,6 +352,62 @@ perfService.startTimer('clipboard_operation');
 perfService.endTimer('clipboard_operation');
 ```
 
+## Critical Architecture Components
+
+### ID Generation and Deduplication System
+
+The application implements a **unified ID generation and deduplication system** to prevent duplicate clipboard entries:
+
+#### Core Components
+
+1. **IdGenerator** (`lib/core/services/id_generator.dart`)
+   - Centralized ID generation using SHA256 hashing
+   - Content-based ID generation for all clipboard types
+   - Handles color normalization, file identifier extraction, and text processing
+   - Generates consistent 64-character hash strings
+
+2. **DeduplicationService** (`lib/core/services/deduplication_service.dart`)
+   - Singleton service for centralized deduplication logic
+   - Checks database for existing content before creating new entries
+   - Updates timestamps and merges metadata for duplicates
+   - Provides batch deduplication capabilities
+
+#### Critical Implementation Rule
+
+**ID generation should ONLY occur when content needs to be written to database/sandbox.**
+
+The correct flow:
+```dart
+// 1. Detect clipboard content
+final detectionResult = await _universalDetector.detect(clipboardData);
+final tempItem = detectionResult.createClipItem();
+
+// 2. Check cache first (no ID generation yet)
+if (await _isCachedByContent(tempItem)) return null;
+
+// 3. ONLY when determined to save, generate ID
+final contentHash = IdGenerator.generateId(
+  tempItem.type, tempItem.content, tempItem.filePath, tempItem.metadata,
+);
+final item = tempItem.copyWith(id: contentHash);
+```
+
+#### Anti-Patterns to Avoid
+
+- ❌ Multiple ID generation strategies in different parts of code
+- ❌ Using truncated hashes (16-char) vs full SHA256 hashes (64-char)
+- ❌ Generating IDs for temporary operations or caching
+- ❌ Content-based logic in UI components instead of services
+
+#### Key Architectural Decisions
+
+- **Single Source of Truth**: Only `IdGenerator.generateId()` creates IDs
+- **Content Consistency**: Same content always generates same ID regardless of source
+- **Cache Integration**: Cache checks use content signatures, not full IDs
+- **Database Deduplication**: Database queries use the unified ID for exact matching
+
+This system solves the critical issue where identical content (like color #0F1319) would create multiple database entries due to inconsistent ID generation.
+
 ## Advanced Development Patterns
 
 ### Service Module Implementation
