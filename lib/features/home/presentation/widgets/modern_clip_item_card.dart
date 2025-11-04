@@ -13,6 +13,7 @@ import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 
@@ -26,6 +27,7 @@ class ModernClipItemCard extends StatefulWidget {
     required this.onDelete,
     super.key,
     this.searchQuery,
+    this.onFavoriteToggle,
   });
 
   /// 剪贴项
@@ -39,6 +41,9 @@ class ModernClipItemCard extends StatefulWidget {
 
   /// 删除回调
   final VoidCallback onDelete;
+
+  /// 收藏切换回调
+  final VoidCallback? onFavoriteToggle;
 
   /// 搜索关键词
   final String? searchQuery;
@@ -278,9 +283,56 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          _buildFavoriteButton(context),
+          const SizedBox(width: Spacing.s4),
           _buildDeleteButton(context),
         ],
       ),
+    );
+  }
+
+  Widget _buildFavoriteButton(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Consumer(
+      builder: (context, ref, child) {
+        // 从状态管理器获取最新的收藏状态
+        final clipboardItems = ref.watch(clipboardHistoryProvider);
+        final currentItem = clipboardItems.firstWhere(
+          (item) => item.id == widget.item.id,
+          orElse: () => widget.item, // 如果找不到则使用原始item
+        );
+        final isFavorite = currentItem.isFavorite;
+
+        return Semantics(
+          label: isFavorite ? '取消收藏' : '收藏',
+          button: true,
+          child: IconButton.outlined(
+            onPressed: _handleFavoriteToggle,
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                key: ValueKey(isFavorite),
+                size: 18,
+                color: isFavorite
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            style: IconButton.styleFrom(
+              foregroundColor: isFavorite
+                  ? theme.colorScheme.error
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              side: BorderSide(
+                color: isFavorite
+                    ? theme.colorScheme.error.withValues(alpha: 0.5)
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.2),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -291,7 +343,12 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       label: '删除',
       button: true,
       child: IconButton.outlined(
-        onPressed: () => _handleDeleteWithFeedback(context),
+        onPressed: () {
+          // 添加触觉反馈
+          HapticFeedback.mediumImpact();
+          // 直接调用外部删除回调，确认对话框由主页处理
+          widget.onDelete();
+        },
         icon: Icon(
           Icons.delete_outline,
           size: 18,
@@ -1433,39 +1490,15 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     }
   }
 
-  void _handleDeleteWithFeedback(BuildContext context) {
-    HapticFeedback.mediumImpact();
+  
+  void _handleFavoriteToggle() {
+    // 触发触觉反馈
+    HapticFeedback.selectionClick();
 
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除这个${_getTypeLabel()}吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              widget.onDelete();
-              _showFloatingFeedback(
-                context,
-                '已删除',
-                Icons.delete,
-                isError: true,
-              );
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
+    // 调用外部回调来更新收藏状态
+    if (widget.onFavoriteToggle != null) {
+      widget.onFavoriteToggle?.call();
+    }
   }
 
   Color _parseColorSafely(String colorHex) {
@@ -1477,75 +1510,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         int.parse(AppColors.defaultColorHex.replaceFirst('#', '0xFF')),
       );
     }
-  }
-
-  void _showFloatingFeedback(
-    BuildContext context,
-    String message,
-    IconData icon, {
-    bool isError = false,
-  }) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-
-    entry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: 100,
-        left: MediaQuery.of(context).size.width / 2 - 75,
-        child: Material(
-          color: Colors.transparent,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutBack,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isError
-                    ? Theme.of(context).colorScheme.errorContainer
-                    : Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 16,
-                    color: isError
-                        ? Theme.of(context).colorScheme.error
-                        : Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    message,
-                    style: TextStyle(
-                      color: isError
-                          ? Theme.of(context).colorScheme.onErrorContainer
-                          : Theme.of(context).colorScheme.onPrimaryContainer,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlay.insert(entry);
-
-    Future.delayed(const Duration(seconds: 3), () {
-      entry.remove();
-    });
   }
 }
 

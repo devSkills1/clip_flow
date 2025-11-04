@@ -115,7 +115,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
 
       // 一次性设置所有有效项目，保持数据库返回的顺序（最新在前）
       if (validItems.isNotEmpty) {
-        notifier.setItems(validItems);
+        notifier.items = validItems;
       }
     } on Exception catch (e) {
       // 静默失败，避免阻塞UI
@@ -278,6 +278,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
             searchQuery: searchQuery,
             onItemTap: _onItemTap,
             onItemDelete: _onDeleteItem,
+            onItemFavoriteToggle: _onItemFavoriteToggle,
             emptyWidget: _buildEmptySearchState(l10n),
             scrollController: _scrollController,
           );
@@ -299,6 +300,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       searchQuery: searchQuery,
       onItemTap: _onItemTap,
       onItemDelete: _onDeleteItem,
+      onItemFavoriteToggle: _onItemFavoriteToggle,
       emptyWidget: _buildEmptyState(l10n),
       scrollController: _scrollController,
     );
@@ -311,9 +313,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       icon: Icons.content_paste_outlined,
       actions: [
         TextButton.icon(
-          onPressed: () {
-            // 显示使用提示
-          },
+          onPressed: _showUserGuide,
           icon: const Icon(Icons.help_outline),
           label: const Text('使用指南'),
         ),
@@ -366,11 +366,14 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     // 预定义过滤条件映射，提高性能和可维护性
     final filterMap = {
       FilterOption.text: (ClipItem item) =>
-        item.type != ClipType.image &&
-        item.type != ClipType.file &&
-        item.type != ClipType.color,
-      FilterOption.richTextUnion: (ClipItem item) =>
-        const {ClipType.rtf, ClipType.html, ClipType.code}.contains(item.type),
+          item.type != ClipType.image &&
+          item.type != ClipType.file &&
+          item.type != ClipType.color,
+      FilterOption.richTextUnion: (ClipItem item) => const {
+        ClipType.rtf,
+        ClipType.html,
+        ClipType.code,
+      }.contains(item.type),
       FilterOption.rtf: (ClipItem item) => item.type == ClipType.rtf,
       FilterOption.html: (ClipItem item) => item.type == ClipType.html,
       FilterOption.code: (ClipItem item) => item.type == ClipType.code,
@@ -416,42 +419,60 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   }
 
   void _onDeleteItem(ClipItem item) {
+    final isFavorite = item.isFavorite;
+
     showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(
-          S.of(context)?.dialogDeleteTitle ?? I18nFallbacks.common.deleteTitle,
+        title: Row(
+          children: [
+            Icon(
+              isFavorite ? Icons.warning_amber : Icons.delete_outline,
+              color: isFavorite
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.onSurface,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(isFavorite ? '删除收藏项目？' : '确认删除'),
+          ],
         ),
-        content: Text(
-          S.of(context)?.dialogDeleteContent(_getItemPreview(item)) ??
-              '${I18nFallbacks.common.deleteContentPrefix}'
-                  '${_getItemPreview(item)}',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isFavorite) ...[
+              const Text(
+                '这是一个收藏的项目！删除后将无法恢复。',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('你确定要继续删除吗？'),
+            ] else ...[
+              const Text('确定要删除这个项目吗？'),
+            ],
+          ],
         ),
         actions: [
-          TextButton(
+          TextButton.icon(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              S.of(context)?.actionCancel ?? I18nFallbacks.common.actionCancel,
-            ),
+            icon: const Icon(Icons.cancel_outlined),
+            label: const Text('取消'),
           ),
-          FilledButton(
+          FilledButton.icon(
             onPressed: () {
-              // 先移除内存
-              ref.read(clipboardHistoryProvider.notifier).removeItem(item.id);
-              // 再尝试删除数据库记录
-              try {
-                ref.read(clipRepositoryProvider).delete(item.id);
-              } on Exception {
-                // 忽略删除异常
-              }
               Navigator.of(context).pop();
+              _performDelete(item);
             },
+            icon: const Icon(Icons.delete_forever),
+            label: const Text('删除'),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: Text(
-              S.of(context)?.actionDelete ?? I18nFallbacks.common.actionDelete,
             ),
           ),
         ],
@@ -482,6 +503,145 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
           return '${content.substring(0, 50)}...';
         }
         return content;
+    }
+  }
+
+  Future<void> _onItemFavoriteToggle(ClipItem item) async {
+    try {
+      // 先更新数据库
+      await ref
+          .read(clipRepositoryProvider)
+          .updateFavoriteStatus(
+            id: item.id,
+            isFavorite: !item.isFavorite,
+          );
+
+      // 数据库更新成功后再更新内存
+      ref.read(clipboardHistoryProvider.notifier).toggleFavorite(item.id);
+
+      // 静默完成收藏状态切换，不显示 SnackBar 减少打扰
+    } on Exception catch (e) {
+      // 错误处理 - 不更新内存状态
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('收藏操作失败：$e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showUserGuide() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('使用指南'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildGuideSection(
+                '基本使用',
+                [
+                  '1. 复制任何内容（文字、图片、文件等）',
+                  '2. 内容将自动保存到剪贴板历史',
+                  '3. 在这里查看和管理所有复制的内容',
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildGuideSection(
+                '搜索和筛选',
+                [
+                  '• 使用搜索框快速查找内容',
+                  '• 使用筛选器按类型查看',
+                  '• 使用快捷键快速访问',
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildGuideSection(
+                '高级功能',
+                [
+                  '• 收藏重要内容防止被清理',
+                  '• 收藏项目删除需要二次确认',
+                  '• 导出剪贴板历史',
+                  '• 在设置中自定义行为',
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuideSection(String title, List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...items.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(left: 16, bottom: 4),
+            child: Text(
+              item,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 执行实际的删除操作
+  Future<void> _performDelete(ClipItem item) async {
+    // 先尝试删除数据库记录
+    try {
+      await ref.read(clipRepositoryProvider).delete(item.id);
+
+      // 数据库删除成功后，再移除内存
+      ref.read(clipboardHistoryProvider.notifier).removeItem(item.id);
+
+      // 静默完成删除，不显示成功提示减少打扰
+    } on Exception catch (e) {
+      // 删除失败时显示错误，不移除内存状态
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('删除失败：$e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 }

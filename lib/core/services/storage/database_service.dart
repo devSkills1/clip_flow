@@ -309,6 +309,27 @@ class DatabaseService {
     );
   }
 
+  /// 更新剪贴板项目的收藏状态
+  ///
+  /// 参数：
+  /// - id：剪贴项主键
+  /// - isFavorite：收藏状态
+  Future<void> updateFavoriteStatus({required String id, required bool isFavorite}) async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    await _database!.update(
+      ClipConstants.clipItemsTable,
+      {
+        'is_favorite': isFavorite ? 1 : 0,
+        'updated_at': DateTime.now().toIso8601String(),
+        'schema_version': 1,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   /// 删除指定 id 的剪贴项
   ///
   /// 参数：
@@ -331,7 +352,23 @@ class DatabaseService {
     }
   }
 
-  /// 清空所有剪贴项
+  /// 清空所有剪贴项（保留收藏的项目）
+  Future<void> clearAllClipItemsExceptFavorites() async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    // 只删除非收藏的项目
+    await _database!.delete(
+      ClipConstants.clipItemsTable,
+      where: 'is_favorite = ?',
+      whereArgs: [0],
+    );
+
+    // 清理媒体文件（只删除非收藏项目的文件）
+    await _cleanupMediaFilesExceptFavorites();
+  }
+
+  /// 清空所有剪贴项（包括收藏的项目）
   Future<void> clearAllClipItems() async {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
@@ -769,7 +806,43 @@ class DatabaseService {
     }
   }
 
-  /// 扫描媒体目录，删除未在 DB 引用的“孤儿文件”
+  /// 清理媒体文件（只删除非收藏项目的文件）
+  Future<void> _cleanupMediaFilesExceptFavorites() async {
+    try {
+      // 获取所有非收藏项目的文件路径
+      final List<Map<String, dynamic>> nonFavoriteItems = await _database!.query(
+        ClipConstants.clipItemsTable,
+        columns: ['file_path', 'thumbnail'],
+        where: 'is_favorite = ? AND (file_path IS NOT NULL OR thumbnail IS NOT NULL)',
+        whereArgs: [0],
+      );
+
+      final documentsDirectory = await PathService.instance.getDocumentsDirectory();
+      final mediaDirectory = Directory(join(documentsDirectory.path, 'media'));
+
+      if (mediaDirectory.existsSync()) {
+        // 删除非收藏项目的文件
+        for (final item in nonFavoriteItems) {
+          final filePath = item['file_path'] as String?;
+
+          // 删除主文件
+          if (filePath != null && filePath.isNotEmpty) {
+            await _deleteMediaFileSafe(filePath);
+          }
+
+          // 注意：缩略图存储为二进制数据在数据库中，不需要单独删除文件
+        }
+      }
+    } on FileSystemException catch (_) {
+      // 忽略文件系统异常，避免阻塞操作
+    } on Exception catch (e) {
+      // 记录其他异常但不抛出
+      await Log.w('Error cleaning media files except favorites',
+            tag: 'DatabaseService', error: e);
+    }
+  }
+
+  /// 扫描媒体目录，删除未在 DB 引用的"孤儿文件"
   /// retainDays: 保留最近 N 天内的文件，避免误删
   Future<int> cleanOrphanMediaFiles({int retainDays = 3}) async {
     if (!_isInitialized) await initialize();

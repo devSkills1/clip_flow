@@ -24,6 +24,9 @@ abstract class DatabaseServicePort {
   /// 删除剪贴板项目
   Future<void> deleteClipItem(String id);
 
+  /// 更新剪贴板项目的收藏状态
+  Future<void> updateFavoriteStatus({required String id, required bool isFavorite});
+
   /// 根据 ID 获取剪贴板项目
   Future<ClipItem?> getClipItem(String id);
 
@@ -36,8 +39,14 @@ abstract class DatabaseServicePort {
   /// 搜索剪贴板项目
   Future<List<ClipItem>> searchClipItems(String query);
 
-  /// 清理过期数据
+  /// 清理过期数据（保留收藏的项目）
   Future<void> cleanupExpiredData();
+
+  /// 清空所有剪贴项（保留收藏的项目）
+  Future<void> clearAllClipItemsExceptFavorites();
+
+  /// 清空所有剪贴项（包括收藏的项目）
+  Future<void> clearAllClipItems();
 
   /// 获取数据库统计信息
   Future<Map<String, dynamic>> getDatabaseStats();

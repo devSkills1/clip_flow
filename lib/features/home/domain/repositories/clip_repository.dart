@@ -10,4 +10,7 @@ abstract class ClipRepository {
 
   /// Deletes an item by [id].
   Future<void> delete(String id);
+
+  /// Updates the favorite status of an item by [id].
+  Future<void> updateFavoriteStatus({required String id, required bool isFavorite});
 }
