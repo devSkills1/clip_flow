@@ -1,6 +1,7 @@
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/utils/color_utils.dart';
 
 /// 通用剪贴板检测器
 ///
@@ -238,13 +239,15 @@ class UniversalClipboardDetector {
     );
     if (isFilePath) return ClipType.file;
 
-    // 4. 对于短文本（<20字符），只进行基本检查
-    if (contentToAnalyze.length < 20) {
-      if (_isURL(contentToAnalyze)) return ClipType.url;
-      if (_isEmail(contentToAnalyze)) return ClipType.email;
-      if (_isColor(contentToAnalyze)) return ClipType.color;
+    // 4. 首先检查是否为颜色（无论长度如何）
+    if (_isColor(contentToAnalyze)) return ClipType.color;
 
-      // 其他短文本默认为普通文本，避免过度分析
+    // 5. 检查URL和邮箱
+    if (_isURL(contentToAnalyze)) return ClipType.url;
+    if (_isEmail(contentToAnalyze)) return ClipType.email;
+
+    // 6. 对于短文本（<20字符），避免过度分析
+    if (contentToAnalyze.length < 20) {
       return ClipType.text;
     }
 
@@ -527,11 +530,18 @@ class UniversalClipboardDetector {
 
   /// 检查是否为颜色值
   bool _isColor(String content) {
-    return content.startsWith('#') ||
-        content.startsWith('rgb(') ||
-        content.startsWith('rgba(') ||
-        content.startsWith('hsl(') ||
-        content.startsWith('hsla(');
+    // 首先进行基本的格式检查
+    final trimmed = content.trim();
+    if (!trimmed.startsWith('#') &&
+        !trimmed.startsWith('rgb(') &&
+        !trimmed.startsWith('rgba(') &&
+        !trimmed.startsWith('hsl(') &&
+        !trimmed.startsWith('hsla(')) {
+      return false;
+    }
+
+    // 使用 ColorUtils 进行严格的颜色验证
+    return ColorUtils.isColorValue(trimmed);
   }
 
   /// 检查是否为JSON
@@ -689,10 +699,16 @@ class UniversalClipboardDetector {
       case ClipType.audio:
       case ClipType.video:
         return data.getFormat<String>(ClipboardFormat.files);
+      case ClipType.color:
+        // 颜色类型：优先使用文本格式的内容，因为颜色值通常是文本格式
+        if (data.formats.containsKey(ClipboardFormat.text)) {
+          return data.getFormat<String>(ClipboardFormat.text);
+        }
+        // 如果没有文本格式，使用最佳内容
+        return data.bestContent;
       case ClipType.text:
       case ClipType.rtf:
       case ClipType.html:
-      case ClipType.color:
       case ClipType.url:
       case ClipType.email:
       case ClipType.json:
@@ -850,7 +866,7 @@ class ClipboardDetectionResult {
   /// 创建ClipItem
   ClipItem createClipItem({String? id}) {
     return ClipItem(
-      id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: id, // 让ClipItem构造函数自动生成基于内容的ID
       type: detectedType,
       content: _getContentForClipItem(),
       filePath: _extractFilePath(),
@@ -872,7 +888,16 @@ class ClipboardDetectionResult {
       return '';
     }
 
-    // 对于文本类型，返回要保存的内容
+    // 对于颜色类型，返回标准化的颜色值，确保与metadata一致
+    if (detectedType == ClipType.color) {
+      final colorContent = contentToSave?.toString().trim();
+      if (colorContent != null && ColorUtils.isColorValue(colorContent)) {
+        return ColorUtils.normalizeColorHex(colorContent);
+      }
+      return colorContent;
+    }
+
+    // 对于其他文本类型，返回要保存的内容
     return contentToSave?.toString();
   }
 
@@ -909,24 +934,25 @@ class ClipboardDetectionResult {
   }
 
   Map<String, dynamic> _buildMetadata() {
-    if (originalData == null) {
-      return {
-        'confidence': confidence,
-        'availableFormats': <String>[],
-        'sequence': 0,
-        'formatAnalysis': <String, dynamic>{},
-      };
-    }
-
-    return {
+    final baseMetadata = {
       'confidence': confidence,
-      'availableFormats': originalData!.availableFormats
+      'availableFormats': originalData?.availableFormats
           .map((f) => f.value)
-          .toList(),
-      'sequence': originalData!.sequence,
+          .toList() ?? <String>[],
+      'sequence': originalData?.sequence ?? 0,
       'formatAnalysis': formatAnalysis.map(
         (k, v) => MapEntry(k.value, v.metadata),
       ),
     };
+
+    // 为颜色类型添加 colorHex 元数据
+    if (detectedType == ClipType.color) {
+      final colorContent = _getContentForClipItem()?.trim();
+      if (colorContent != null && ColorUtils.isColorValue(colorContent)) {
+        baseMetadata['colorHex'] = ColorUtils.normalizeColorHex(colorContent);
+      }
+    }
+
+    return baseMetadata;
   }
 }

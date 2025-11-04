@@ -349,11 +349,9 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 
   Widget _buildColorPreview(BuildContext context) {
     final theme = Theme.of(context);
-    final colorHex =
-        widget.item.metadata['colorHex'] as String? ??
-        AppColors.defaultColorHex;
+    final colorHex = widget.item.content ?? AppColors.defaultColorHex;
     final colorName = ColorUtils.getColorName(colorHex);
-    final color = Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
+    final color = _parseColorSafely(colorHex);
 
     return Container(
       width: double.infinity,
@@ -1014,7 +1012,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     }
   }
 
-  
   double _getOcrTextMaxHeight() {
     switch (widget.displayMode) {
       case DisplayMode.compact:
@@ -1160,8 +1157,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         final fileName = widget.item.metadata['fileName'] as String? ?? '未知文件';
         return fileName;
       case ClipType.color:
-        final colorHex =
-            widget.item.metadata['colorHex'] as String? ?? '#000000';
+        final colorHex = widget.item.content ?? AppColors.defaultColorHex;
         return '颜色 $colorHex';
       default:
         final content = widget.item.content ?? '';
@@ -1305,9 +1301,9 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   Widget _buildCompactColorMetadata(BuildContext context) {
-    final colorHex = widget.item.metadata['colorHex'] as String?;
+    final colorHex = widget.item.content;
 
-    if (colorHex != null) {
+    if (colorHex != null && colorHex.isNotEmpty) {
       return _buildCompactStatChip(
         context,
         Icons.palette,
@@ -1470,6 +1466,17 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         ],
       ),
     );
+  }
+
+  Color _parseColorSafely(String colorHex) {
+    try {
+      return ColorUtils.hexToColor(colorHex);
+    } on Exception catch (_) {
+      // 如果颜色解析失败，返回默认颜色
+      return Color(
+        int.parse(AppColors.defaultColorHex.replaceFirst('#', '0xFF')),
+      );
+    }
   }
 
   void _showFloatingFeedback(
