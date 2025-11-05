@@ -29,10 +29,13 @@ class OCRCopyService {
     if (_isInitialized) return;
 
     try {
+      // 检查平台支持
+      await Log.d('Initializing OCR Copy Service', tag: 'OCRCopyService');
+
       _isInitialized = true;
-      await Log.i('OCR Copy Service initialized');
+      await Log.i('OCR Copy Service initialized successfully', tag: 'OCRCopyService');
     } on Exception catch (e) {
-      await Log.e('Failed to initialize OCR Copy Service', error: e);
+      await Log.e('Failed to initialize OCR Copy Service', tag: 'OCRCopyService', error: e);
       rethrow;
     }
   }

@@ -3,6 +3,7 @@
 // Switch statements use exhaustive patterns without default cases.
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
@@ -14,6 +15,7 @@ import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search
 import 'package:clip_flow_pro/features/home/presentation/widgets/responsive_home_layout.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow_pro/core/services/analysis/ocr_copy_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -279,6 +281,8 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
             onItemTap: _onItemTap,
             onItemDelete: _onDeleteItem,
             onItemFavoriteToggle: _onItemFavoriteToggle,
+            onOcrTextTap: _onOcrTextTap,
+            enableOcrCopy: ref.watch(userPreferencesProvider).enableOCR,
             emptyWidget: _buildEmptySearchState(l10n),
             scrollController: _scrollController,
           );
@@ -301,6 +305,8 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       onItemTap: _onItemTap,
       onItemDelete: _onDeleteItem,
       onItemFavoriteToggle: _onItemFavoriteToggle,
+      onOcrTextTap: _onOcrTextTap,
+      enableOcrCopy: ref.watch(userPreferencesProvider).enableOCR,
       emptyWidget: _buildEmptyState(l10n),
       scrollController: _scrollController,
     );
@@ -534,6 +540,93 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
           ),
         );
       }
+    }
+  }
+
+  /// 处理OCR文本点击复制
+  Future<void> _onOcrTextTap(ClipItem item) async {
+    // 详细的调试信息
+    await Log.d('OCR text tap triggered', tag: 'HomePage', fields: {
+      'itemId': item.id,
+      'itemType': item.type.name,
+      'hasOcrText': item.ocrText != null,
+      'ocrTextLength': item.ocrText?.length ?? 0,
+      'ocrTextPreview': item.ocrText?.substring(0, math.min(50, item.ocrText?.length ?? 0)) ?? '',
+    });
+
+    if (item.type != ClipType.image) {
+      await Log.w('OCR tap on non-image item', tag: 'HomePage', fields: {
+        'itemId': item.id,
+        'itemType': item.type.name,
+      });
+      _showOcrErrorMessage('只能对图片类型进行OCR操作');
+      return;
+    }
+
+    if (item.ocrText == null || item.ocrText!.isEmpty) {
+      await Log.w('No OCR text available', tag: 'HomePage', fields: {
+        'itemId': item.id,
+        'hasOcrText': item.ocrText != null,
+      });
+      _showOcrErrorMessage('该图片没有可用的OCR文本');
+      return;
+    }
+
+    try {
+      await Log.d('Initializing OCR Copy Service', tag: 'HomePage');
+      final copyService = OCRCopyService();
+      await copyService.initialize();
+
+      await Log.d('Attempting to copy OCR text', tag: 'HomePage', fields: {
+        'itemId': item.id,
+        'textLength': item.ocrText!.length,
+      });
+
+      final success = await copyService.copyOcrTextSilently(item);
+
+      await Log.i('OCR copy operation completed', tag: 'HomePage', fields: {
+        'itemId': item.id,
+        'success': success,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? '✅ OCR文本已复制到剪贴板 (${item.ocrText!.length}字符)'
+                     : '❌ OCR文本复制失败，请重试',
+            ),
+            backgroundColor: success
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } on Exception catch (e) {
+      await Log.e('OCR copy operation failed', tag: 'HomePage', error: e);
+      _showOcrErrorMessage('OCR复制错误：${e.toString()}');
+    }
+  }
+
+  /// 显示OCR错误消息
+  void _showOcrErrorMessage(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('⚠️ $message'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
