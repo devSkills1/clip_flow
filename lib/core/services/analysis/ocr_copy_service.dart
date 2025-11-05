@@ -33,9 +33,16 @@ class OCRCopyService {
       await Log.d('Initializing OCR Copy Service', tag: 'OCRCopyService');
 
       _isInitialized = true;
-      await Log.i('OCR Copy Service initialized successfully', tag: 'OCRCopyService');
+      await Log.i(
+        'OCR Copy Service initialized successfully',
+        tag: 'OCRCopyService',
+      );
     } on Exception catch (e) {
-      await Log.e('Failed to initialize OCR Copy Service', tag: 'OCRCopyService', error: e);
+      await Log.e(
+        'Failed to initialize OCR Copy Service',
+        tag: 'OCRCopyService',
+        error: e,
+      );
       rethrow;
     }
   }
@@ -55,11 +62,15 @@ class OCRCopyService {
     }
 
     try {
-      await Log.d('Copying image silently', tag: 'OCRCopyService', fields: {
-        'itemId': imageItem.id,
-        'hasFilePath': imageItem.filePath != null,
-        'hasThumbnail': imageItem.thumbnail != null,
-      });
+      await Log.d(
+        'Copying image silently',
+        tag: 'OCRCopyService',
+        fields: {
+          'itemId': imageItem.id,
+          'hasFilePath': imageItem.filePath != null,
+          'hasThumbnail': imageItem.thumbnail != null,
+        },
+      );
 
       var success = false;
 
@@ -73,15 +84,23 @@ class OCRCopyService {
       }
 
       if (success) {
-        await Log.i('Image copied silently to clipboard', tag: 'OCRCopyService', fields: {
-          'itemId': imageItem.id,
-        });
+        await Log.i(
+          'Image copied silently to clipboard',
+          tag: 'OCRCopyService',
+          fields: {
+            'itemId': imageItem.id,
+          },
+        );
         return true;
       } else {
         throw Exception('No valid image data available for copying');
       }
     } on Exception catch (e) {
-      await Log.e('Failed to copy image silently', tag: 'OCRCopyService', error: e);
+      await Log.e(
+        'Failed to copy image silently',
+        tag: 'OCRCopyService',
+        error: e,
+      );
       return false;
     }
   }
@@ -109,11 +128,15 @@ class OCRCopyService {
     }
 
     try {
-      await Log.d('Copying OCR text silently', tag: 'OCRCopyService', fields: {
-        'itemId': imageItem.id,
-        'format': format.name,
-        'textLength': imageItem.ocrText!.length,
-      });
+      await Log.d(
+        'Copying OCR text silently',
+        tag: 'OCRCopyService',
+        fields: {
+          'itemId': imageItem.id,
+          'format': format.name,
+          'textLength': imageItem.ocrText!.length,
+        },
+      );
 
       // 格式化OCR文本
       final formattedText = formatOcrText(imageItem.ocrText!, format);
@@ -121,15 +144,23 @@ class OCRCopyService {
       // 静默复制文本到剪贴板
       await Clipboard.setData(ClipboardData(text: formattedText));
 
-      await Log.i('OCR text copied silently to clipboard', tag: 'OCRCopyService', fields: {
-        'itemId': imageItem.id,
-        'format': format.name,
-        'textLength': formattedText.length,
-      });
+      await Log.i(
+        'OCR text copied silently to clipboard',
+        tag: 'OCRCopyService',
+        fields: {
+          'itemId': imageItem.id,
+          'format': format.name,
+          'textLength': formattedText.length,
+        },
+      );
 
       return true;
     } on Exception catch (e) {
-      await Log.e('Failed to copy OCR text silently', tag: 'OCRCopyService', error: e);
+      await Log.e(
+        'Failed to copy OCR text silently',
+        tag: 'OCRCopyService',
+        error: e,
+      );
       return false;
     }
   }
@@ -140,14 +171,20 @@ class OCRCopyService {
       const platform = MethodChannel('clipboard_service');
 
       // 使用PathService将路径转换为绝对路径
-      final absolutePath = await PathService.instance.resolveAbsolutePath(filePath);
+      final absolutePath = await PathService.instance.resolveAbsolutePath(
+        filePath,
+      );
 
       // 检查文件是否存在
       if (!await PathService.instance.fileExists(filePath)) {
-        await Log.e('Image file not found', tag: 'OCRCopyService', fields: {
-          'path': absolutePath,
-          'sourcePath': filePath,
-        });
+        await Log.e(
+          'Image file not found',
+          tag: 'OCRCopyService',
+          fields: {
+            'path': absolutePath,
+            'sourcePath': filePath,
+          },
+        );
         return false;
       }
 
@@ -159,7 +196,11 @@ class OCRCopyService {
 
       return true;
     } on Exception catch (e) {
-      await Log.e('Failed to copy image from file', tag: 'OCRCopyService', error: e);
+      await Log.e(
+        'Failed to copy image from file',
+        tag: 'OCRCopyService',
+        error: e,
+      );
       return false;
     }
   }
@@ -180,7 +221,11 @@ class OCRCopyService {
 
       return true;
     } on Exception catch (e) {
-      await Log.e('Failed to copy image from bytes', tag: 'OCRCopyService', error: e);
+      await Log.e(
+        'Failed to copy image from bytes',
+        tag: 'OCRCopyService',
+        error: e,
+      );
       return false;
     }
   }
@@ -206,7 +251,10 @@ class OCRCopyService {
   /// 格式化为JSON
   String _formatAsJson(String text) {
     final escapedText = escapeJson(text);
-    final wordCount = text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    final wordCount = text
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .length;
 
     return '''
 {
@@ -220,10 +268,9 @@ class OCRCopyService {
   /// 格式化为Markdown
   String _formatAsMarkdown(String text) {
     final lines = text.split('\n');
-    final buffer = StringBuffer();
-
-    buffer.writeln('> **识别文本**');
-    buffer.writeln('> ');
+    final buffer = StringBuffer()
+      ..writeln('> **识别文本**')
+      ..writeln('> ');
 
     for (final line in lines) {
       if (line.isNotEmpty) {
@@ -233,8 +280,9 @@ class OCRCopyService {
       }
     }
 
-    buffer.writeln('> ');
-    buffer.writeln('> *由 ClipFlow Pro OCR 识别*');
+    buffer
+      ..writeln('> ')
+      ..writeln('> *由 ClipFlow Pro OCR 识别*');
 
     return buffer.toString();
   }
@@ -242,7 +290,7 @@ class OCRCopyService {
   /// JSON字符串转义
   String escapeJson(String text) {
     return text
-        .replaceAll('\\', r'\\')
+        .replaceAll(r'\', r'\\')
         .replaceAll('"', r'\"')
         .replaceAll('\n', r'\n')
         .replaceAll('\r', r'\r')
@@ -304,6 +352,14 @@ enum OCRTextFormat {
 
 /// OCR复制支持状态
 class OCRCopySupportStatus {
+  /// 创建OCR复制支持状态
+  const OCRCopySupportStatus({
+    required this.canCopyImage,
+    required this.canCopyOcrText,
+    required this.hasOcrText,
+    required this.hasImageData,
+  });
+
   /// 是否可以复制图片
   final bool canCopyImage;
 
@@ -315,14 +371,6 @@ class OCRCopySupportStatus {
 
   /// 是否有图片数据
   final bool hasImageData;
-
-  /// 创建OCR复制支持状态
-  const OCRCopySupportStatus({
-    required this.canCopyImage,
-    required this.canCopyOcrText,
-    required this.hasOcrText,
-    required this.hasImageData,
-  });
 
   /// 是否支持任何复制操作
   bool get canCopyAnything => canCopyImage || canCopyOcrText;

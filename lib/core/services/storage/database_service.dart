@@ -102,9 +102,24 @@ class DatabaseService {
     await _ensureColumnsExist(db);
 
     // 创建OCR相关索引（如果不存在）
-    await _ensureIndexExists(db, 'idx_clip_items_ocr_text_id', ClipConstants.clipItemsTable, 'ocr_text_id');
-    await _ensureIndexExists(db, 'idx_clip_items_parent_image_id', ClipConstants.clipItemsTable, 'parent_image_id');
-    await _ensureIndexExists(db, 'idx_clip_items_is_ocr_extracted', ClipConstants.clipItemsTable, 'is_ocr_extracted');
+    await _ensureIndexExists(
+      db,
+      'idx_clip_items_ocr_text_id',
+      ClipConstants.clipItemsTable,
+      'ocr_text_id',
+    );
+    await _ensureIndexExists(
+      db,
+      'idx_clip_items_parent_image_id',
+      ClipConstants.clipItemsTable,
+      'parent_image_id',
+    );
+    await _ensureIndexExists(
+      db,
+      'idx_clip_items_is_ocr_extracted',
+      ClipConstants.clipItemsTable,
+      'is_ocr_extracted',
+    );
   }
 
   /// 新增或替换一条剪贴项记录
@@ -337,7 +352,10 @@ class DatabaseService {
   /// 参数：
   /// - id：剪贴项主键
   /// - isFavorite：收藏状态
-  Future<void> updateFavoriteStatus({required String id, required bool isFavorite}) async {
+  Future<void> updateFavoriteStatus({
+    required String id,
+    required bool isFavorite,
+  }) async {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
@@ -843,14 +861,17 @@ class DatabaseService {
   Future<void> _cleanupMediaFilesExceptFavorites() async {
     try {
       // 获取所有非收藏项目的文件路径
-      final List<Map<String, dynamic>> nonFavoriteItems = await _database!.query(
+      final List<Map<String, dynamic>>
+      nonFavoriteItems = await _database!.query(
         ClipConstants.clipItemsTable,
         columns: ['file_path', 'thumbnail'],
-        where: 'is_favorite = ? AND (file_path IS NOT NULL OR thumbnail IS NOT NULL)',
+        where:
+            'is_favorite = ? AND (file_path IS NOT NULL OR thumbnail IS NOT NULL)',
         whereArgs: [0],
       );
 
-      final documentsDirectory = await PathService.instance.getDocumentsDirectory();
+      final documentsDirectory = await PathService.instance
+          .getDocumentsDirectory();
       final mediaDirectory = Directory(join(documentsDirectory.path, 'media'));
 
       if (mediaDirectory.existsSync()) {
@@ -870,8 +891,11 @@ class DatabaseService {
       // 忽略文件系统异常，避免阻塞操作
     } on Exception catch (e) {
       // 记录其他异常但不抛出
-      await Log.w('Error cleaning media files except favorites',
-            tag: 'DatabaseService', error: e);
+      await Log.w(
+        'Error cleaning media files except favorites',
+        tag: 'DatabaseService',
+        error: e,
+      );
     }
   }
 
@@ -1054,13 +1078,23 @@ class DatabaseService {
   }
 
   /// 检查索引是否存在，不存在则创建
-  Future<void> _ensureIndexExists(Database db, String indexName, String table, String column) async {
+  Future<void> _ensureIndexExists(
+    Database db,
+    String indexName,
+    String table,
+    String column,
+  ) async {
     try {
       // 尝试创建索引，如果已存在会抛出异常
-      await db.execute('CREATE INDEX IF NOT EXISTS $indexName ON $table($column)');
-    } catch (e) {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS $indexName ON $table($column)',
+      );
+    } on Exception catch (e) {
       // 忽略索引已存在的错误
-      await Log.d('Index $indexName already exists or creation failed: $e', tag: 'DatabaseService');
+      await Log.d(
+        'Index $indexName already exists or creation failed: $e',
+        tag: 'DatabaseService',
+      );
     }
   }
 
