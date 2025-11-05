@@ -1222,12 +1222,16 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       },
     );
 
-    if (widget.item.originWidth == null || widget.item.originHeight == null) {
+    // 从metadata中获取图片尺寸
+    final metadataWidth = widget.item.metadata['width'] as int?;
+    final metadataHeight = widget.item.metadata['height'] as int?;
+
+    if (metadataWidth == null || metadataHeight == null) {
       return Size(maxWidth, maxWidth * 0.75); // 默认4:3比例
     }
 
-    final originWidth = widget.item.originWidth!.toDouble();
-    final originHeight = widget.item.originHeight!.toDouble();
+    final originWidth = metadataWidth.toDouble();
+    final originHeight = metadataHeight.toDouble();
     final aspectRatio = originWidth / originHeight;
 
     final displayWidth = math.min(maxWidth, originWidth);
@@ -1330,11 +1334,9 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     switch (widget.item.type) {
       case ClipType.image:
         final width =
-            widget.item.originWidth ??
             widget.item.metadata['width'] as int? ??
             0;
         final height =
-            widget.item.originHeight ??
             widget.item.metadata['height'] as int? ??
             0;
         return width > 0 && height > 0 ? '图片 $width×$height' : '图片';
@@ -1423,10 +1425,8 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   Widget _buildCompactImageMetadata(BuildContext context) {
     final metadataItems = <Widget>[];
 
-    final width =
-        widget.item.originWidth ?? widget.item.metadata['width'] as int?;
-    final height =
-        widget.item.originHeight ?? widget.item.metadata['height'] as int?;
+    final width = widget.item.metadata['width'] as int?;
+    final height = widget.item.metadata['height'] as int?;
     final format = widget.item.metadata['format'] as String?;
     final size = widget.item.metadata['fileSize'] as int?;
 

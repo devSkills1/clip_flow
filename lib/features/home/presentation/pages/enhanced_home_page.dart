@@ -489,9 +489,8 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   String _getItemPreview(ClipItem item) {
     switch (item.type) {
       case ClipType.image:
-        final width = item.originWidth ?? (item.metadata['width'] as int? ?? 0);
-        final height =
-            item.originHeight ?? (item.metadata['height'] as int? ?? 0);
+        final width = item.metadata['width'] as int? ?? 0;
+        final height = item.metadata['height'] as int? ?? 0;
         final format = item.metadata['format'] as String?;
         return '${I18nFallbacks.common.labelImage} '
             '($width x $height, ${format ?? I18nFallbacks.common.unknown})';
