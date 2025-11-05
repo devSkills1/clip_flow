@@ -28,6 +28,8 @@ class ModernClipItemCard extends StatefulWidget {
     super.key,
     this.searchQuery,
     this.onFavoriteToggle,
+    this.onOcrTextTap,
+    this.enableOcrCopy = false,
   });
 
   /// 剪贴项
@@ -47,6 +49,12 @@ class ModernClipItemCard extends StatefulWidget {
 
   /// 搜索关键词
   final String? searchQuery;
+
+  /// OCR文本点击回调
+  final VoidCallback? onOcrTextTap;
+
+  /// 是否启用OCR复制功能
+  final bool enableOcrCopy;
 
   @override
   State<ModernClipItemCard> createState() => _ModernClipItemCardState();
@@ -538,19 +546,22 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     final theme = Theme.of(context);
     final imageDisplaySize = _calculateImageDisplaySize(availableWidth);
 
-    return Container(
-      width: imageDisplaySize.width,
-      height: imageDisplaySize.height,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+    return GestureDetector(
+      onTap: widget.enableOcrCopy ? widget.onTap : null,
+      child: Container(
+        width: imageDisplaySize.width,
+        height: imageDisplaySize.height,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          ),
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: _buildImageContent(context, imageDisplaySize),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: _buildImageContent(context, imageDisplaySize),
+        ),
       ),
     );
   }
@@ -703,17 +714,19 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     final ocrText = widget.item.ocrText ?? '';
     final ocrConfidence = widget.item.metadata['ocrConfidence'] as double?;
 
-    return Container(
-      width: double.infinity,
-      height: fixedHeight, // 使用固定的指定高度
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+    return GestureDetector(
+      onTap: widget.enableOcrCopy ? widget.onOcrTextTap : null,
+      child: Container(
+        width: double.infinity,
+        height: fixedHeight, // 使用固定的指定高度
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
+          ),
         ),
-      ),
-      child: Column(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 紧凑的OCR标题栏
@@ -781,6 +794,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             ),
           ),
         ],
+      ),
       ),
     );
   }

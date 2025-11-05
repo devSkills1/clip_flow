@@ -16,6 +16,8 @@ class ResponsiveHomeLayout extends StatelessWidget {
     super.key,
     this.scrollController,
     this.onItemFavoriteToggle,
+    this.onOcrTextTap,
+    this.enableOcrCopy = false,
   });
 
   /// 剪贴板项目列表
@@ -35,6 +37,12 @@ class ResponsiveHomeLayout extends StatelessWidget {
 
   /// 项目收藏切换回调
   final void Function(ClipItem)? onItemFavoriteToggle;
+
+  /// OCR文本点击回调
+  final void Function(ClipItem)? onOcrTextTap;
+
+  /// 是否启用OCR复制功能
+  final bool enableOcrCopy;
 
   /// 空状态组件
   final Widget emptyWidget;
@@ -82,6 +90,10 @@ class ResponsiveHomeLayout extends StatelessWidget {
                   onFavoriteToggle: onItemFavoriteToggle != null
                       ? () => onItemFavoriteToggle!(item)
                       : null,
+                  onOcrTextTap: onOcrTextTap != null
+                      ? () => onOcrTextTap!(item)
+                      : null,
+                  enableOcrCopy: enableOcrCopy,
                 ),
               );
             },
@@ -123,6 +135,10 @@ class ResponsiveHomeLayout extends StatelessWidget {
                       onFavoriteToggle: onItemFavoriteToggle != null
                           ? () => onItemFavoriteToggle!(item)
                           : null,
+                      onOcrTextTap: onOcrTextTap != null
+                          ? () => onOcrTextTap!(item)
+                          : null,
+                      enableOcrCopy: enableOcrCopy,
                     );
                   },
                   childCount: items.length,
@@ -166,6 +182,10 @@ class ResponsiveHomeLayout extends StatelessWidget {
                       onFavoriteToggle: onItemFavoriteToggle != null
                           ? () => onItemFavoriteToggle!(item)
                           : null,
+                      onOcrTextTap: onOcrTextTap != null
+                          ? () => onOcrTextTap!(item)
+                          : null,
+                      enableOcrCopy: enableOcrCopy,
                     );
                   },
                   childCount: items.length,

@@ -12,17 +12,17 @@ import 'package:flutter/services.dart';
 /// - 复制OCR文本到剪贴板（不生成新记录）
 /// - 静默复制模式，避免触发剪贴板监听
 class OCRCopyService {
-  /// 单例实例
-  static final OCRCopyService _instance = OCRCopyService._internal();
-
-  /// 是否已初始化
-  bool _isInitialized = false;
-
   /// 创建OCR复制服务实例
   factory OCRCopyService() => _instance;
 
   /// 私有构造函数
   OCRCopyService._internal();
+
+  /// 单例实例
+  static final OCRCopyService _instance = OCRCopyService._internal();
+
+  /// 是否已初始化
+  bool _isInitialized = false;
 
   /// 初始化服务
   Future<void> initialize() async {
@@ -252,7 +252,7 @@ class OCRCopyService {
 
     // 检查是否有文件路径且文件存在
     if (imageItem.filePath != null && imageItem.filePath!.isNotEmpty) {
-      return await PathService.instance.fileExists(imageItem.filePath!);
+      return PathService.instance.fileExists(imageItem.filePath!);
     }
 
     // 检查是否有缩略图数据
