@@ -91,7 +91,8 @@ class ClipboardProcessor {
       );
 
       // 检查是否为空内容，如果为空则直接返回null，不记录到剪贴历史
-      if (_isEmptyContent(item)) {
+      // 对于图片类型，需要检查原始数据中是否有图片数据
+      if (_isEmptyContent(item, detectionResult)) {
         await Log.w(
           'Empty clipboard content detected, skipping recording',
           tag: 'ClipboardProcessor',
@@ -99,7 +100,17 @@ class ClipboardProcessor {
             'detectedType': detectionResult.detectedType.toString(),
             'contentLength': item.content?.length ?? 0,
             'filePath': item.filePath,
-            'isEmptyReason': _getEmptyReason(item),
+            'isEmptyReason': _getEmptyReason(item, detectionResult),
+            'hasImageData':
+                detectionResult.originalData?.getFormat<Uint8List>(
+                  ClipboardFormat.image,
+                ) !=
+                null,
+            'imageDataSize':
+                detectionResult.originalData
+                    ?.getFormat<Uint8List>(ClipboardFormat.image)
+                    ?.length ??
+                0,
           },
         );
         return null;
@@ -109,37 +120,7 @@ class ClipboardProcessor {
       ClipItem? processedItem;
       switch (detectionResult.detectedType) {
         case ClipType.image:
-          // 检查图像数据来源：文件路径 vs 二进制数据
-          final hasFiles = detectionResult.originalData?.getFormat<List<String>>(ClipboardFormat.files) != null;
-          final hasImageData = detectionResult.originalData?.getFormat<Uint8List>(ClipboardFormat.image) != null;
-
-          await Log.i(
-            'Processing image type - checking data source',
-            tag: 'ClipboardProcessor',
-            fields: {
-              'hasFiles': hasFiles,
-              'hasImageData': hasImageData,
-              'contentHash': contentHash,
-            },
-          );
-
-          if (hasFiles) {
-            // 图像来自文件路径，使用文件处理逻辑
-            await Log.d('Image from file path - using file processing', tag: 'ClipboardProcessor');
-            processedItem = await _processFileData(detectionResult, contentHash);
-          } else if (hasImageData) {
-            // 图像来自二进制数据，使用图像处理逻辑
-            await Log.d('Image from binary data - using image processing', tag: 'ClipboardProcessor');
-            processedItem = await _processImageData(detectionResult, contentHash);
-          } else {
-            await Log.w(
-              'Image detected but no valid data source found',
-              tag: 'ClipboardProcessor',
-              fields: {
-                'contentHash': contentHash,
-              },
-            );
-          }
+          processedItem = await _processImageData(detectionResult, contentHash);
         case ClipType.file:
         case ClipType.audio:
         case ClipType.video:
@@ -624,8 +605,6 @@ class ClipboardProcessor {
     }
   }
 
-  
-
   /// 检查是否已缓存（优化版本）
   Future<bool> _isCached(String contentHash) async {
     final entry = _contentCache[contentHash];
@@ -991,8 +970,11 @@ class ClipboardProcessor {
   ///
   /// 对于文本类型，检查内容是否为空或只包含空白字符
   /// 对于文件类型，检查文件路径是否存在
-  /// 对于图片类型，始终认为不为空（因为图片本身存在）
-  bool _isEmptyContent(ClipItem item) {
+  /// 对于图片类型，检查原始数据中是否有图片数据
+  bool _isEmptyContent(
+    ClipItem item,
+    ClipboardDetectionResult detectionResult,
+  ) {
     switch (item.type) {
       case ClipType.text:
       case ClipType.code:
@@ -1008,8 +990,20 @@ class ClipboardProcessor {
         return content.trim().isEmpty;
 
       case ClipType.image:
-        // 图片类型有数据就不为空
-        return item.filePath?.isEmpty ?? true;
+        // 图片类型检查：
+        // 1. 有文件路径
+        // 2. 有文本内容（某些情况下可能有）
+        // 3. 原始数据中有图片字节数据（最关键，用于截图工具）
+        final hasFilePath = item.filePath != null && item.filePath!.isNotEmpty;
+        final hasContent = item.content != null && item.content!.isNotEmpty;
+
+        // 检查原始数据中是否有图片数据（企业微信截图等工具通常只有这个）
+        final imageData = detectionResult.originalData?.getFormat<Uint8List>(
+          ClipboardFormat.image,
+        );
+        final hasImageData = imageData != null && imageData.isNotEmpty;
+
+        return !(hasFilePath || hasContent || hasImageData);
 
       case ClipType.file:
       case ClipType.audio:
@@ -1024,7 +1018,10 @@ class ClipboardProcessor {
   }
 
   /// 获取空内容的原因
-  String _getEmptyReason(ClipItem item) {
+  String _getEmptyReason(
+    ClipItem item,
+    ClipboardDetectionResult detectionResult,
+  ) {
     switch (item.type) {
       case ClipType.text:
       case ClipType.code:
@@ -1044,6 +1041,17 @@ class ClipboardProcessor {
         return 'content_unknown_reason';
 
       case ClipType.image:
+        // 检查原始数据中是否有图片数据
+        final imageData = detectionResult.originalData?.getFormat<Uint8List>(
+          ClipboardFormat.image,
+        );
+        if (imageData == null || imageData.isEmpty) {
+          if (item.filePath == null) {
+            return 'file_path_is_null_and_no_image_data';
+          } else if (item.filePath!.isEmpty) {
+            return 'file_path_is_empty_and_no_image_data';
+          }
+        }
         if (item.filePath == null) {
           return 'file_path_is_null';
         } else if (item.filePath!.isEmpty) {
