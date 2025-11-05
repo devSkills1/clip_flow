@@ -468,28 +468,37 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         // 获取OCR设置状态
         final preferences = ref.watch(userPreferencesProvider);
         final isOcrEnabled = preferences.enableOCR;
-        final hasOcrText = widget.item.ocrText != null && widget.item.ocrText!.isNotEmpty;
+        final hasOcrText =
+            widget.item.ocrText != null && widget.item.ocrText!.isNotEmpty;
 
         // 添加调试日志
         if (widget.item.type == ClipType.image) {
-          Log.d('Image OCR status check', tag: 'ModernClipItemCard', fields: {
-            'itemId': widget.item.id,
-            'isOcrEnabled': isOcrEnabled,
-            'hasOcrText': hasOcrText,
-            'ocrTextLength': widget.item.ocrText?.length ?? 0,
-            'enableOcrCopy': widget.enableOcrCopy,
-          });
+          Log.d(
+            'Image OCR status check',
+            tag: 'ModernClipItemCard',
+            fields: {
+              'itemId': widget.item.id,
+              'isOcrEnabled': isOcrEnabled,
+              'hasOcrText': hasOcrText,
+              'ocrTextLength': widget.item.ocrText?.length ?? 0,
+              'enableOcrCopy': widget.enableOcrCopy,
+            },
+          );
         }
 
         // 如果开启OCR且有OCR文本，使用并排布局
         if (isOcrEnabled && hasOcrText) {
-          Log.d('Building image with OCR side-by-side layout', tag: 'ModernClipItemCard', fields: {
-            'itemId': widget.item.id,
-            'isOcrEnabled': isOcrEnabled,
-            'hasOcrText': hasOcrText,
-            'enableOcrCopy': widget.enableOcrCopy,
-            'hasOcrCallback': widget.onOcrTextTap != null,
-          });
+          Log.d(
+            'Building image with OCR side-by-side layout',
+            tag: 'ModernClipItemCard',
+            fields: {
+              'itemId': widget.item.id,
+              'isOcrEnabled': isOcrEnabled,
+              'hasOcrText': hasOcrText,
+              'enableOcrCopy': widget.enableOcrCopy,
+              'hasOcrCallback': widget.onOcrTextTap != null,
+            },
+          );
           return _buildImageWithOcrSideBySide(context, availableWidth, ref);
         }
 
@@ -508,12 +517,19 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(
@@ -542,7 +558,11 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     );
   }
 
-  Widget _buildImageWithOcrSideBySide(BuildContext context, double availableWidth, WidgetRef ref) {
+  Widget _buildImageWithOcrSideBySide(
+    BuildContext context,
+    double availableWidth,
+    WidgetRef ref,
+  ) {
     // 计算间距
     const spacing = 8.0; // 固定间距
 
@@ -551,26 +571,30 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     final imageWidth = remainingWidth / 2; // 图片和OCR各占一半
     final imageDisplaySize = _calculateImageDisplaySize(imageWidth);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 左侧：图片预览
-        SizedBox(
-          width: imageWidth,
-          height: imageDisplaySize.height, // 确保容器高度匹配图片
-          child: _buildImageWidget(context, imageWidth),
-        ),
+    return SizedBox(
+      width: availableWidth,
+      height: imageDisplaySize.height, // 明确设置整个Row的高度
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch, // 让子项拉伸到填满高度
+        children: [
+          // 左侧：图片预览
+          SizedBox(
+            width: imageWidth,
+            child: _buildImageWidget(context, imageWidth),
+          ),
 
-        // 间距
-        const SizedBox(width: spacing),
+          // 间距
+          const SizedBox(width: spacing),
 
-        // 右侧：OCR文本 - 宽度和高度都与图片一致
-        SizedBox(
-          width: imageWidth, // OCR容器宽度与图片容器宽度完全一致
-          height: imageDisplaySize.height, // 高度与图片完全一致
-          child: _buildCompactOcrTextPreviewWithHeight(context, imageDisplaySize.height),
-        ),
-      ],
+          // 右侧：OCR文本 - 填充剩余空间和高度
+          Expanded(
+            child: _buildCompactOcrTextPreviewWithHeight(
+              context,
+              imageDisplaySize.height,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -593,10 +617,14 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
           width: imageDisplaySize.width,
           height: imageDisplaySize.height,
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+              color: widget.onOcrTextTap != null
+                  ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                  : theme.colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           child: ClipRRect(
@@ -750,8 +778,10 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     );
   }
 
-  
-  Widget _buildCompactOcrTextPreviewWithHeight(BuildContext context, double fixedHeight) {
+  Widget _buildCompactOcrTextPreviewWithHeight(
+    BuildContext context,
+    double fixedHeight,
+  ) {
     final theme = Theme.of(context);
     final ocrText = widget.item.ocrText ?? '';
     final ocrConfidence = widget.item.metadata['ocrConfidence'] as double?;
@@ -766,12 +796,16 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         child: InkWell(
           onTap: () {
             // 添加调试日志
-            Log.d('OCR area tapped', tag: 'ModernClipItemCard', fields: {
-              'itemId': widget.item.id,
-              'hasCallback': widget.onOcrTextTap != null,
-              'enableOcrCopy': widget.enableOcrCopy,
-              'ocrTextLength': ocrText.length,
-            });
+            Log.d(
+              'OCR area tapped',
+              tag: 'ModernClipItemCard',
+              fields: {
+                'itemId': widget.item.id,
+                'hasCallback': widget.onOcrTextTap != null,
+                'enableOcrCopy': widget.enableOcrCopy,
+                'ocrTextLength': ocrText.length,
+              },
+            );
 
             // 触觉反馈
             HapticFeedback.lightImpact();
@@ -786,7 +820,9 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             width: double.infinity,
             height: fixedHeight, // 使用固定的指定高度
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.5,
+              ),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: widget.onOcrTextTap != null
@@ -799,7 +835,10 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
               children: [
                 // 紧凑的OCR标题栏
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: const BorderRadius.only(
@@ -877,7 +916,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     );
   }
 
-  
   Widget _buildOcrTextContent(BuildContext context, String ocrText) {
     final theme = Theme.of(context);
     final textStyle = theme.textTheme.bodySmall?.copyWith(
@@ -1207,7 +1245,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     }
   }
 
-  
   Size _calculateImageDisplaySize(double availableWidth) {
     final maxWidth = math.min(
       switch (widget.displayMode) {
@@ -1333,12 +1370,8 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   String _getContentPreview() {
     switch (widget.item.type) {
       case ClipType.image:
-        final width =
-            widget.item.metadata['width'] as int? ??
-            0;
-        final height =
-            widget.item.metadata['height'] as int? ??
-            0;
+        final width = widget.item.metadata['width'] as int? ?? 0;
+        final height = widget.item.metadata['height'] as int? ?? 0;
         return width > 0 && height > 0 ? '图片 $width×$height' : '图片';
       case ClipType.file:
         final fileName = widget.item.metadata['fileName'] as String? ?? '未知文件';
@@ -1618,7 +1651,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     }
   }
 
-  
   void _handleFavoriteToggle() {
     // 触发触觉反馈
     HapticFeedback.selectionClick();
