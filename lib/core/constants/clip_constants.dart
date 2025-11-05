@@ -48,7 +48,7 @@ class ClipConstants {
   static const String databaseName = 'clipflow_pro.db';
 
   /// 数据库版本号
-  static const int databaseVersion = 1;
+  static const int databaseVersion = 2;
 
   /// 剪贴项表名
   static const String clipItemsTable = 'clip_items';

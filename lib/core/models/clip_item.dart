@@ -63,10 +63,7 @@ class ClipItem {
     this.isFavorite = false,
     this.ocrText,
     this.ocrTextId,
-    this.parentImageId,
     this.isOcrExtracted = false,
-    this.originWidth,
-    this.originHeight,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : id = id ?? IdGenerator.generateId(type, content, filePath, metadata),
@@ -86,10 +83,7 @@ class ClipItem {
     final updatedAtRaw = json['updatedAt'];
     final ocrTextRaw = json['ocrText'];
     final ocrTextIdRaw = json['ocrTextId'];
-    final parentImageIdRaw = json['parentImageId'];
     final isOcrExtractedRaw = json['isOcrExtracted'];
-    final originWidthRaw = json['originWidth'];
-    final originHeightRaw = json['originHeight'];
 
     return ClipItem(
       id: id,
@@ -108,10 +102,7 @@ class ClipItem {
       isFavorite: isFavRaw is bool ? isFavRaw : (isFavRaw == 1),
       ocrText: ocrTextRaw is String ? ocrTextRaw : null,
       ocrTextId: ocrTextIdRaw is String ? ocrTextIdRaw : null,
-      parentImageId: parentImageIdRaw is String ? parentImageIdRaw : null,
       isOcrExtracted: isOcrExtractedRaw as bool? ?? false,
-      originWidth: originWidthRaw is num ? originWidthRaw.toInt() : null,
-      originHeight: originHeightRaw is num ? originHeightRaw.toInt() : null,
       createdAt: createdAtRaw is String
           ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
           : (createdAtRaw is DateTime ? createdAtRaw : DateTime.now()),
@@ -150,17 +141,8 @@ class ClipItem {
   /// OCR文本的独立ID：用于OCR文本的独立身份标识
   final String? ocrTextId;
 
-  /// OCR文本的父图片ID：用于建立OCR文本与原图片的关联关系
-  final String? parentImageId;
-
   /// 是否已提取OCR文本：标识该图片是否已进行OCR识别
   final bool isOcrExtracted;
-
-  /// 图片原始宽度（像素）：用于图片尺寸计算和布局
-  final int? originWidth;
-
-  /// 图片原始高度（像素）：用于图片尺寸计算和布局
-  final int? originHeight;
 
   /// 创建时间：该条目首次创建的时间
   final DateTime createdAt;
@@ -179,10 +161,7 @@ class ClipItem {
     bool? isFavorite,
     String? ocrText,
     String? ocrTextId,
-    String? parentImageId,
     bool? isOcrExtracted,
-    int? originWidth,
-    int? originHeight,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -196,10 +175,7 @@ class ClipItem {
       isFavorite: isFavorite ?? this.isFavorite,
       ocrText: ocrText ?? this.ocrText,
       ocrTextId: ocrTextId ?? this.ocrTextId,
-      parentImageId: parentImageId ?? this.parentImageId,
       isOcrExtracted: isOcrExtracted ?? this.isOcrExtracted,
-      originWidth: originWidth ?? this.originWidth,
-      originHeight: originHeight ?? this.originHeight,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -217,10 +193,7 @@ class ClipItem {
       'isFavorite': isFavorite,
       'ocrText': ocrText,
       'ocrTextId': ocrTextId,
-      'parentImageId': parentImageId,
       'isOcrExtracted': isOcrExtracted,
-      'originWidth': originWidth,
-      'originHeight': originHeight,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

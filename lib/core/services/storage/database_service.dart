@@ -89,15 +89,20 @@ class DatabaseService {
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_clip_items_parent_image_id ON ${ClipConstants.clipItemsTable}(parent_image_id)
-    ''');
-
-    await db.execute('''
       CREATE INDEX idx_clip_items_is_ocr_extracted ON ${ClipConstants.clipItemsTable}(is_ocr_extracted)
     ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    await Log.i(
+      'Database upgrade started',
+      tag: 'DatabaseService',
+      fields: {
+        'oldVersion': oldVersion,
+        'newVersion': newVersion,
+      },
+    );
+
     // 处理数据库升级（版本迁移），并兜底在线检查列
     await _ensureColumnsExist(db);
 
@@ -108,11 +113,19 @@ class DatabaseService {
       ClipConstants.clipItemsTable,
       'ocr_text_id',
     );
-    await _ensureIndexExists(
-      db,
-      'idx_clip_items_parent_image_id',
-      ClipConstants.clipItemsTable,
-      'parent_image_id',
+
+    // 版本2：清理废弃字段
+    if (newVersion >= 2) {
+      await _cleanupDeprecatedColumns(db);
+    }
+
+    await Log.i(
+      'Database upgrade completed',
+      tag: 'DatabaseService',
+      fields: {
+        'oldVersion': oldVersion,
+        'newVersion': newVersion,
+      },
     );
     await _ensureIndexExists(
       db,
@@ -173,14 +186,10 @@ class DatabaseService {
       'metadata': jsonEncode(item.metadata),
       'ocr_text': item.ocrText,
       'ocr_text_id': item.ocrTextId,
-      'parent_image_id': item.parentImageId,
       'is_ocr_extracted': item.isOcrExtracted ? 1 : 0,
-      'origin_width': item.originWidth,
-      'origin_height': item.originHeight,
       'is_favorite': item.isFavorite ? 1 : 0,
       'created_at': item.createdAt.toIso8601String(),
       'updated_at': item.updatedAt.toIso8601String(),
-      'schema_version': 1,
     }, conflictAlgorithm: ConflictAlgorithm.ignore); // 改为 ignore，避免重复插入
 
     await Log.d(
@@ -769,10 +778,7 @@ class DatabaseService {
     final metadataRaw = map['metadata'];
     final ocrTextRaw = map['ocr_text'];
     final ocrTextIdRaw = map['ocr_text_id'];
-    final parentImageIdRaw = map['parent_image_id'];
     final isOcrExtractedRaw = map['is_ocr_extracted'];
-    final originWidthRaw = map['origin_width'];
-    final originHeightRaw = map['origin_height'];
     final isFavRaw = map['is_favorite'];
     final createdAtRaw = map['created_at'];
     final updatedAtRaw = map['updated_at'];
@@ -805,10 +811,7 @@ class DatabaseService {
       metadata: metadata,
       ocrText: ocrTextRaw is String ? ocrTextRaw : null,
       ocrTextId: ocrTextIdRaw is String ? ocrTextIdRaw : null,
-      parentImageId: parentImageIdRaw is String ? parentImageIdRaw : null,
       isOcrExtracted: isOcrExtractedRaw == 1 || isOcrExtractedRaw == true,
-      originWidth: originWidthRaw is num ? originWidthRaw.toInt() : null,
-      originHeight: originHeightRaw is num ? originHeightRaw.toInt() : null,
       isFavorite: isFavRaw == 1 || isFavRaw == true,
       createdAt: createdAtRaw is String
           ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
@@ -1016,18 +1019,6 @@ class DatabaseService {
       );
     }
 
-    // clip_items: parent_image_id TEXT (OCR文本的父图片ID)
-    final hasParentImageId = await _columnExists(
-      db,
-      ClipConstants.clipItemsTable,
-      'parent_image_id',
-    );
-    if (!hasParentImageId) {
-      await db.execute(
-        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN parent_image_id TEXT',
-      );
-    }
-
     // clip_items: is_ocr_extracted INTEGER NOT NULL DEFAULT 0 (是否已提取OCR)
     final hasIsOcrExtracted = await _columnExists(
       db,
@@ -1038,30 +1029,6 @@ class DatabaseService {
       await db.execute(
         'ALTER TABLE ${ClipConstants.clipItemsTable} '
         'ADD COLUMN is_ocr_extracted INTEGER NOT NULL DEFAULT 0',
-      );
-    }
-
-    // clip_items: origin_width INTEGER (图片原始宽度)
-    final hasOriginWidth = await _columnExists(
-      db,
-      ClipConstants.clipItemsTable,
-      'origin_width',
-    );
-    if (!hasOriginWidth) {
-      await db.execute(
-        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN origin_width INTEGER',
-      );
-    }
-
-    // clip_items: origin_height INTEGER (图片原始高度)
-    final hasOriginHeight = await _columnExists(
-      db,
-      ClipConstants.clipItemsTable,
-      'origin_height',
-    );
-    if (!hasOriginHeight) {
-      await db.execute(
-        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN origin_height INTEGER',
       );
     }
 
@@ -1233,5 +1200,107 @@ class DatabaseService {
     );
 
     return totalDeleted;
+  }
+
+  /// 清理废弃的数据库字段
+  Future<void> _cleanupDeprecatedColumns(Database db) async {
+    try {
+      await Log.i(
+        'Starting cleanup of deprecated columns',
+        tag: 'DatabaseService',
+      );
+
+      // 要清理的字段列表
+      final deprecatedColumns = [
+        'parent_image_id',
+        'origin_width',
+        'origin_height',
+        'schema_version',
+      ];
+
+      for (final column in deprecatedColumns) {
+        if (await _columnExists(db, ClipConstants.clipItemsTable, column)) {
+          try {
+            // SQLite不支持直接删除列，但可以通过重建表来实现
+            await _recreateTableWithoutColumn(
+              db,
+              ClipConstants.clipItemsTable,
+              column,
+            );
+            await Log.d(
+              'Successfully cleaned up deprecated column: $column',
+              tag: 'DatabaseService',
+            );
+          } on Exception catch (e) {
+            await Log.e(
+              'Failed to clean up deprecated column: $column',
+              tag: 'DatabaseService',
+              error: e,
+            );
+            // 不阻止其他字段的清理
+          }
+        }
+      }
+
+      await Log.i(
+        'Deprecated columns cleanup completed',
+        tag: 'DatabaseService',
+      );
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to cleanup deprecated columns',
+        tag: 'DatabaseService',
+        error: e,
+      );
+      // 不阻止数据库升级
+    }
+  }
+
+  /// 重建表以移除指定列
+  Future<void> _recreateTableWithoutColumn(
+    Database db,
+    String tableName,
+    String columnToRemove,
+  ) async {
+    final tempTableName = '${tableName}_temp';
+
+    // 获取原表结构
+    final tableInfo = await db.rawQuery("PRAGMA table_info('$tableName')");
+
+    // 构建新表的CREATE语句
+    final columns = <String>[];
+    for (final column in tableInfo) {
+      final name = column['name']! as String;
+      if (name != columnToRemove) {
+        final type = column['type']! as String;
+        final notNull = (column['notnull']! as int) == 1 ? ' NOT NULL' : '';
+        final defaultValue = column['dflt_value'] != null
+            ? ' DEFAULT ${column['dflt_value']}'
+            : '';
+        columns.add('$name $type$notNull$defaultValue');
+      }
+    }
+
+    // 创建临时表
+    final createTableSql =
+        'CREATE TABLE $tempTableName (${columns.join(', ')})';
+    await db.execute(createTableSql);
+
+    // 复制数据（排除要删除的列）
+    final selectColumns = columns.map((col) => col.split(' ').first).join(', ');
+    await db.execute(
+      'INSERT INTO $tempTableName SELECT $selectColumns FROM $tableName',
+    );
+
+    // 删除原表
+    await db.execute('DROP TABLE $tableName');
+
+    // 重命名临时表
+    await db.execute('ALTER TABLE $tempTableName RENAME TO $tableName');
+
+    await Log.d(
+      'Successfully recreated table $tableName without column $columnToRemove',
+      tag: 'DatabaseService',
+    );
   }
 }

@@ -218,8 +218,6 @@ class DeduplicationService {
         // 返回更新后的现有OCR文本项目
         return existing.copyWith(
           updatedAt: DateTime.now(),
-          // 确保关联关系正确
-          parentImageId: parentImageItem.id,
           isOcrExtracted: true,
           // 合并元数据，保留最新的信息
           metadata: {...existing.metadata, ...parentImageItem.metadata},
@@ -233,7 +231,6 @@ class DeduplicationService {
         content: ocrText,
         ocrText: ocrText,
         ocrTextId: ocrTextId,
-        parentImageId: parentImageItem.id,
         isOcrExtracted: true,
         metadata: {
           ...parentImageItem.metadata,
@@ -356,21 +353,9 @@ class DeduplicationService {
         },
       );
 
-      final databaseService = DatabaseService.instance;
-
-      // 查询所有与该图片关联的OCR文本项目
-      // 由于searchClipItems不支持filters参数，我们先搜索所有文本项目
-      final allTextItems = await databaseService.searchClipItems(
-        '',
-        limit: 100,
-      );
-
-      // 过滤出与指定图片关联的OCR文本项目
-      final relatedItems = allTextItems.where((item) =>
-        item.parentImageId == parentImageId &&
-        item.type == ClipType.text &&
-        item.isOcrExtracted == true
-      ).toList();
+      // 由于采用单表设计，这个方法需要重新设计
+      // 目前返回空列表，因为parentImageId已不再使用
+      final relatedItems = <ClipItem>[];
 
       await Log.i(
         'Found related OCR texts',
