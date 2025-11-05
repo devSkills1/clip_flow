@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
@@ -178,27 +179,12 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
                   child: Material(
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(_getBorderRadius()),
-                    child: InkWell(
-                      onTapDown: _handleTapDown,
-                      onTapUp: _handleTapUp,
-                      onTapCancel: _handleTapCancel,
-                      onTap: widget.onTap,
-                      borderRadius: BorderRadius.circular(_getBorderRadius()),
-                      splashColor: Theme.of(context).colorScheme.primary
-                          .withValues(
-                            alpha: 0.1,
-                          ),
-                      highlightColor: Theme.of(context).colorScheme.primary
-                          .withValues(
-                            alpha: 0.05,
-                          ),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight: _getMaxCardHeight(context),
-                          minHeight: _getMinCardHeight(context),
-                        ),
-                        child: _buildCardContent(context),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: _getMaxCardHeight(context),
+                        minHeight: _getMinCardHeight(context),
                       ),
+                      child: _buildCardContent(context),
                     ),
                   ),
                 ),
@@ -484,12 +470,30 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         final isOcrEnabled = preferences.enableOCR;
         final hasOcrText = widget.item.ocrText != null && widget.item.ocrText!.isNotEmpty;
 
+        // 添加调试日志
+        if (widget.item.type == ClipType.image) {
+          Log.d('Image OCR status check', tag: 'ModernClipItemCard', fields: {
+            'itemId': widget.item.id,
+            'isOcrEnabled': isOcrEnabled,
+            'hasOcrText': hasOcrText,
+            'ocrTextLength': widget.item.ocrText?.length ?? 0,
+            'enableOcrCopy': widget.enableOcrCopy,
+          });
+        }
+
         // 如果开启OCR且有OCR文本，使用并排布局
         if (isOcrEnabled && hasOcrText) {
+          Log.d('Building image with OCR side-by-side layout', tag: 'ModernClipItemCard', fields: {
+            'itemId': widget.item.id,
+            'isOcrEnabled': isOcrEnabled,
+            'hasOcrText': hasOcrText,
+            'enableOcrCopy': widget.enableOcrCopy,
+            'hasOcrCallback': widget.onOcrTextTap != null,
+          });
           return _buildImageWithOcrSideBySide(context, availableWidth, ref);
         }
 
-        // 否则使用垂直布局（仅图片或图片+OCR文本）
+        // 否则使用垂直布局（仅图片）
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -499,11 +503,39 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
               child: _buildImageWidget(context, availableWidth),
             ),
 
-            // OCR文本显示（仅在关闭OCR时显示，作为额外信息）
-            if (!isOcrEnabled && hasOcrText) ...[
-              SizedBox(height: _getVerticalSpacing()),
-              _buildOcrTextPreview(context),
-            ],
+            // 如果OCR被禁用但有OCR文本，显示提示
+            if (!isOcrEnabled && hasOcrText)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '检测到OCR文本，但OCR功能已禁用。请在设置中启用。',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         );
       },
@@ -546,21 +578,31 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     final theme = Theme.of(context);
     final imageDisplaySize = _calculateImageDisplaySize(availableWidth);
 
-    return GestureDetector(
-      onTap: widget.enableOcrCopy ? widget.onTap : null,
-      child: Container(
-        width: imageDisplaySize.width,
-        height: imageDisplaySize.height,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTapDown: _handleTapDown,
+        onTapUp: _handleTapUp,
+        onTapCancel: _handleTapCancel,
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(12),
+        splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+        highlightColor: theme.colorScheme.primary.withValues(alpha: 0.05),
+        child: Container(
+          width: imageDisplaySize.width,
+          height: imageDisplaySize.height,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            ),
           ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: _buildImageContent(context, imageDisplaySize),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _buildImageContent(context, imageDisplaySize),
+          ),
         ),
       ),
     );
@@ -714,181 +756,130 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     final ocrText = widget.item.ocrText ?? '';
     final ocrConfidence = widget.item.metadata['ocrConfidence'] as double?;
 
-    return GestureDetector(
-      onTap: widget.enableOcrCopy ? widget.onOcrTextTap : null,
-      child: Container(
-        width: double.infinity,
-        height: fixedHeight, // 使用固定的指定高度
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 紧凑的OCR标题栏
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.text_fields,
-                  size: 10,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 3),
-                Expanded(
-                  child: Text(
-                    'OCR',
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (ocrConfidence != null) ...[
-                  const SizedBox(width: 3),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 3,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getConfidenceColor(
-                        ocrConfidence,
-                      ).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: Text(
-                      '${(ocrConfidence * 100).round()}%',
-                      style: TextStyle(
-                        fontSize: 7,
-                        fontWeight: FontWeight.w600,
-                        color: _getConfidenceColor(ocrConfidence),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          // OCR文本内容 - 使用剩余的全部空间
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(6),
-              physics: const ClampingScrollPhysics(),
-              child: _buildOcrTextContent(context, ocrText),
-            ),
-          ),
-        ],
-      ),
-      ),
-    );
-  }
-
-  Widget _buildOcrTextPreview(BuildContext context) {
-    final theme = Theme.of(context);
-    final ocrText = widget.item.ocrText ?? '';
-    final ocrConfidence = widget.item.metadata['ocrConfidence'] as double?;
-
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(
-        maxHeight: _getOcrTextMaxHeight(),
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+    return MouseRegion(
+      cursor: widget.onOcrTextTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // OCR标题栏
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: InkWell(
+          onTap: () {
+            // 添加调试日志
+            Log.d('OCR area tapped', tag: 'ModernClipItemCard', fields: {
+              'itemId': widget.item.id,
+              'hasCallback': widget.onOcrTextTap != null,
+              'enableOcrCopy': widget.enableOcrCopy,
+              'ocrTextLength': ocrText.length,
+            });
+
+            // 触觉反馈
+            HapticFeedback.lightImpact();
+
+            // 调用OCR回调
+            if (widget.onOcrTextTap != null) {
+              widget.onOcrTextTap!();
+            }
+          },
+          borderRadius: BorderRadius.circular(8),
+          splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+          highlightColor: theme.colorScheme.primary.withValues(alpha: 0.05),
+          child: Container(
+            width: double.infinity,
+            height: fixedHeight, // 使用固定的指定高度
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: widget.onOcrTextTap != null
+                    ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                    : theme.colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.text_fields,
-                  size: 12,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    'OCR识别文本',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
+                // 紧凑的OCR标题栏
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8),
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                if (ocrConfidence != null) ...[
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getConfidenceColor(
-                        ocrConfidence,
-                      ).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${(ocrConfidence * 100).round()}%',
-                      style: TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w600,
-                        color: _getConfidenceColor(ocrConfidence),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.text_fields,
+                        size: 10,
+                        color: theme.colorScheme.primary,
                       ),
-                    ),
+                      const SizedBox(width: 3),
+                      if (widget.onOcrTextTap != null) ...[
+                        Icon(
+                          Icons.copy,
+                          size: 8,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 2),
+                      ],
+                      Expanded(
+                        child: Text(
+                          'OCR',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.primary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (ocrConfidence != null) ...[
+                        const SizedBox(width: 3),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 3,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getConfidenceColor(
+                              ocrConfidence,
+                            ).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            '${(ocrConfidence * 100).round()}%',
+                            style: TextStyle(
+                              fontSize: 7,
+                              fontWeight: FontWeight.w600,
+                              color: _getConfidenceColor(ocrConfidence),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
+                ),
+
+                // OCR文本内容 - 使用剩余的全部空间
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(6),
+                    physics: const ClampingScrollPhysics(),
+                    child: _buildOcrTextContent(context, ocrText),
+                  ),
+                ),
               ],
             ),
           ),
-
-          // OCR文本内容
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(8),
-              physics: const ClampingScrollPhysics(),
-              child: _buildOcrTextContent(context, ocrText),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
+  
   Widget _buildOcrTextContent(BuildContext context, String ocrText) {
     final theme = Theme.of(context);
     final textStyle = theme.textTheme.bodySmall?.copyWith(
@@ -1218,17 +1209,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     }
   }
 
-  double _getOcrTextMaxHeight() {
-    switch (widget.displayMode) {
-      case DisplayMode.compact:
-        return 60;
-      case DisplayMode.normal:
-        return 80;
-      case DisplayMode.preview:
-        return 120;
-    }
-  }
-
+  
   Size _calculateImageDisplaySize(double availableWidth) {
     final maxWidth = math.min(
       switch (widget.displayMode) {
