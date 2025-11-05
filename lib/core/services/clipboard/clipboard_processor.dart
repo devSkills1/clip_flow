@@ -109,7 +109,37 @@ class ClipboardProcessor {
       ClipItem? processedItem;
       switch (detectionResult.detectedType) {
         case ClipType.image:
-          processedItem = await _processImageData(detectionResult, contentHash);
+          // 检查图像数据来源：文件路径 vs 二进制数据
+          final hasFiles = detectionResult.originalData?.getFormat<List<String>>(ClipboardFormat.files) != null;
+          final hasImageData = detectionResult.originalData?.getFormat<Uint8List>(ClipboardFormat.image) != null;
+
+          await Log.i(
+            'Processing image type - checking data source',
+            tag: 'ClipboardProcessor',
+            fields: {
+              'hasFiles': hasFiles,
+              'hasImageData': hasImageData,
+              'contentHash': contentHash,
+            },
+          );
+
+          if (hasFiles) {
+            // 图像来自文件路径，使用文件处理逻辑
+            await Log.d('Image from file path - using file processing', tag: 'ClipboardProcessor');
+            processedItem = await _processFileData(detectionResult, contentHash);
+          } else if (hasImageData) {
+            // 图像来自二进制数据，使用图像处理逻辑
+            await Log.d('Image from binary data - using image processing', tag: 'ClipboardProcessor');
+            processedItem = await _processImageData(detectionResult, contentHash);
+          } else {
+            await Log.w(
+              'Image detected but no valid data source found',
+              tag: 'ClipboardProcessor',
+              fields: {
+                'contentHash': contentHash,
+              },
+            );
+          }
         case ClipType.file:
         case ClipType.audio:
         case ClipType.video:
