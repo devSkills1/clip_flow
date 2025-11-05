@@ -85,4 +85,59 @@ class IdGenerator {
     }
     return fileName;
   }
+
+  /// 为OCR文本生成独立ID
+  ///
+  /// [ocrText] OCR识别的文本内容
+  /// [parentImageId] 原图片的ID，用于建立关联关系
+  ///
+  /// 返回基于图片ID和OCR文本内容生成的唯一ID
+  static String generateOcrTextId(String ocrText, String parentImageId) {
+    // 标准化OCR文本内容
+    final normalizedText = _normalizeOcrText(ocrText);
+
+    // 使用图片ID和标准化文本生成关联式ID
+    final contentString = 'ocr_text:$parentImageId:$normalizedText';
+
+    // 使用 SHA256 生成唯一ID
+    final bytes = utf8.encode(contentString);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  /// 标准化OCR文本内容
+  ///
+  /// 移除多余的空白字符，统一换行符，截断过长的文本
+  static String _normalizeOcrText(String text) {
+    if (text.isEmpty) return '';
+
+    // 移除首尾空白
+    var normalized = text.trim();
+
+    // 统一换行符
+    normalized = normalized.replaceAll(RegExp(r'\r\n|\r'), '\n');
+
+    // 将连续的空白字符替换为单个空格
+    normalized = normalized.replaceAll(RegExp(r'\s+'), ' ');
+
+    // 如果文本过长，进行截断（保留前10000个字符）
+    const maxLength = 10000;
+    if (normalized.length > maxLength) {
+      normalized = '${normalized.substring(0, maxLength)}...';
+    }
+
+    return normalized;
+  }
+
+  /// 生成OCR内容的签名用于缓存比较
+  ///
+  /// 与generateOcrTextId不同，此方法用于快速比较OCR内容是否相同
+  static String generateOcrContentSignature(String ocrText) {
+    final normalizedText = _normalizeOcrText(ocrText);
+    final contentString = 'ocr_signature:$normalizedText';
+
+    final bytes = utf8.encode(contentString);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
 }
