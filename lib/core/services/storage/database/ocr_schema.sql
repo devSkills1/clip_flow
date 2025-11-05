@@ -1,169 +1,143 @@
--- OCR功能数据库Schema变更
--- 基于现有ClipItem表结构，添加OCR相关字段和辅助表
+-- OCR功能数据库Schema设计
+-- 基于单表设计方案的ClipItem表OCR字段定义
+-- 日期: 2025-01-05
+-- 版本: 2.0
 
--- 1. 扩展现有ClipItem表，添加OCR相关字段
--- 这是向后兼容的变更，不影响现有数据
-ALTER TABLE clip_items ADD COLUMN ocr_text TEXT;
-ALTER TABLE clip_items ADD COLUMN ocr_language VARCHAR(10) DEFAULT NULL;
-ALTER TABLE clip_items ADD COLUMN ocr_confidence REAL DEFAULT NULL;
-ALTER TABLE clip_items ADD COLUMN ocr_processed_at INTEGER DEFAULT NULL;
-ALTER TABLE clip_items ADD COLUMN ocr_version INTEGER DEFAULT 1;
-ALTER TABLE clip_items ADD COLUMN ocr_status VARCHAR(20) DEFAULT 'pending';
+-- ClipItem表的OCR相关字段定义
+-- 单表设计：图片和OCR文本存储在同一个记录中
+-- ocr_text_id 用于OCR文本复制时的去重和状态管理
 
--- 2. 创建OCR缓存表（可选，用于高级缓存策略）
-CREATE TABLE IF NOT EXISTS ocr_cache (
-    id TEXT PRIMARY KEY,                    -- OCR结果ID (ocr_[image_hash]_v[version])
-    source_item_id TEXT NOT NULL,           -- 源图片项目ID
-    ocr_text TEXT NOT NULL,                 -- OCR识别的文本
-    language VARCHAR(10),                   -- 识别语言
-    confidence REAL,                        -- 置信度 0-1
-    processed_at INTEGER NOT NULL,          -- 处理时间戳
-    expires_at INTEGER,                     -- 过期时间
-    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+-- 1. ClipItem表OCR字段 (已在现有表结构中实现)
+-- 这些字段通过DatabaseService._onUpgrade()方法自动添加
+-- ALTER TABLE clip_items ADD COLUMN ocr_text TEXT;
+-- ALTER TABLE clip_items ADD COLUMN ocr_text_id TEXT;
+-- ALTER TABLE clip_items ADD COLUMN is_ocr_extracted INTEGER NOT NULL DEFAULT 0;
 
-    FOREIGN KEY (source_item_id) REFERENCES clip_items(id) ON DELETE CASCADE,
-    INDEX idx_ocr_cache_source (source_item_id),
-    INDEX idx_ocr_cache_expires (expires_at),
-    INDEX idx_ocr_cache_language (language)
-);
+-- 2. ClipItem表OCR相关索引 (已在现有代码中实现)
+-- 这些索引在DatabaseService._onCreate()中创建
+-- CREATE INDEX idx_clip_items_ocr_text_id ON clip_items(ocr_text_id);
+-- CREATE INDEX idx_clip_items_is_ocr_extracted ON clip_items(is_ocr_extracted);
 
--- 3. 创建OCR处理队列表（用于持久化处理队列）
-CREATE TABLE IF NOT EXISTS ocr_queue (
-    id TEXT PRIMARY KEY,                    -- 队列任务ID
-    item_id TEXT NOT NULL,                  -- 待处理的剪贴项ID
-    priority INTEGER NOT NULL DEFAULT 0,    -- 优先级 (0=normal, 1=high, 2=urgent)
-    language VARCHAR(10),                   -- 目标语言
-    status VARCHAR(20) DEFAULT 'pending',   -- 状态: pending, processing, completed, failed
-    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-    started_at INTEGER,                     -- 开始处理时间
-    completed_at INTEGER,                   -- 完成时间
-    error_message TEXT,                     -- 错误信息
-    retry_count INTEGER DEFAULT 0,          -- 重试次数
-    max_retries INTEGER DEFAULT 3,          -- 最大重试次数
+-- 3. OCR数据处理流程说明
+--
+-- 图片复制流程：
+-- clip_items (type=image, ocr_text=null, ocr_text_id=null, is_ocr_extracted=0)
+--     ↓ (ClipboardProcessor._processImageData())
+-- OCR识别 → 生成ocr_text_id
+--     ↓
+-- clip_items (type=image, ocr_text="识别文本", ocr_text_id="generated_id", is_ocr_extracted=1)
+--
+-- OCR复制流程：
+-- 点击OCR → 使用ocr_text_id更新记录时间戳
+--     ↓
+-- 剪贴板监控检测到相同ocr_text_id → 更新而非创建新记录
+--
+-- 4. OCR字段说明
+-- ocr_text: TEXT
+--   - OCR识别的文本内容
+--   - 用于显示和搜索
+--   - 支持多语言文本
+--
+-- ocr_text_id: TEXT
+--   - OCR文本的唯一标识符
+--   - 使用IdGenerator.generateOcrTextId()生成
+--   - 格式: ocr_text:[parent_image_id]:[normalized_text_hash]
+--   - 用于OCR复制时的去重机制
+--
+-- is_ocr_extracted: INTEGER (0/1)
+--   - 标记是否已进行OCR识别
+--   - 0: 未识别或识别失败
+--   - 1: 已成功识别
 
-    FOREIGN KEY (item_id) REFERENCES clip_items(id) ON DELETE CASCADE,
-    INDEX idx_ocr_queue_status (status),
-    INDEX idx_ocr_queue_priority (priority DESC),
-    INDEX idx_ocr_queue_created (created_at)
-);
+-- 5. ID生成策略
+--
+-- 图片记录ID:
+-- IdGenerator.generateId(
+--   ClipType.image,
+--   content,
+--   filePath,
+--   metadata,
+//   → "image:normalized_filename"
+//
+-- OCR文本ID (当OCR文本存在时):
+// IdGenerator.generateOcrTextId(
+//   ocrText,
+//   parentImageId,
+// ) → "ocr_text:image_id:normalized_text_hash"
+//
+// 注意：OCR文本记录实际上存储在图片记录中，不创建独立记录
 
--- 4. 创建OCR复制历史表
-CREATE TABLE IF NOT EXISTS ocr_copy_history (
-    id TEXT PRIMARY KEY,                    -- 记录ID
-    item_id TEXT NOT NULL,                  -- 源剪贴项ID
-    copy_type VARCHAR(20) NOT NULL,         -- 复制类型: image, text, both
-    content_summary TEXT,                   -- 内容摘要
-    success BOOLEAN NOT NULL DEFAULT TRUE,  -- 是否成功
-    error_message TEXT,                     -- 错误信息
-    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+-- 6. 复制操作流程
+--
+-- 图片复制:
+// _onItemTap() → clipboardServiceProvider.setClipboardContent(item)
+// → 剪贴板监控 → 使用图片ID → 更新图片记录时间戳
+//
+// OCR文本复制:
+// _onOcrTextTap() → Clipboard.setData(ocrText)
+// → 剪贴板监控 → 使用ocr_text_id → 更新对应记录时间戳
+// → 不会创建新记录，避免重复
 
-    FOREIGN KEY (item_id) REFERENCES clip_items(id) ON DELETE CASCADE,
-    INDEX idx_ocr_copy_item (item_id),
-    INDEX idx_ocr_copy_created (created_at DESC)
-);
+-- 7. 数据完整性保证
+--
+-- 去重机制:
+// - DeduplicationService.checkAndPrepare() 确保相同内容不重复
+// - OCR文本复制时通过ocr_text_id避免创建重复记录
+//
+// 数据关联:
+// - ocr_text_id 建于图片ID和文本内容生成
+// - 同一张图片的OCR文本始终有相同的ocr_text_id
+// - 不同图片的相同OCR文本会有不同的ocr_text_id
 
--- 5. 创建OCR统计表（可选，用于持久化统计）
-CREATE TABLE IF NOT EXISTS ocr_statistics (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date DATE NOT NULL,                     -- 统计日期
-    total_processed INTEGER DEFAULT 0,      -- 总处理数
-    success_count INTEGER DEFAULT 0,        -- 成功数
-    failure_count INTEGER DEFAULT 0,        -- 失败数
-    avg_processing_time INTEGER DEFAULT 0,  -- 平均处理时间(毫秒)
-    cache_hits INTEGER DEFAULT 0,           -- 缓存命中数
-    cache_misses INTEGER DEFAULT 0,         -- 缓存未命中数
+-- 8. 版本兼容性
+--
+-- Version 1.0 → 2.0 变更:
+// - 移除 parent_image_id (单表设计不需要)
+// - 移除 origin_width/origin_height (使用metadata替代)
+// - 移除 schema_version (硬编码字段)
+// - 保留 ocr_text, ocr_text_id, is_ocr_extracted 核心字段
+//
+// 数据库升级:
+// DatabaseService._onUpgrade(oldVersion: 1, newVersion: 2)
+// - 自动清理废弃字段
+// - 确保核心OCR字段存在
+// - 重建必要索引
 
-    UNIQUE(date),
-    INDEX idx_ocr_statistics_date (date)
-);
+-- 9. 查询示例
+--
+-- 查询包含OCR文本的图片:
+-- SELECT id, type, content, ocr_text, ocr_text_id, is_ocr_extracted
+-- FROM clip_items
+-- WHERE type = 'image' AND is_ocr_extracted = 1;
+//
+-- 查询特定图片的OCR文本:
+-- SELECT ocr_text
+-- FROM clip_items
+-- WHERE id = 'image_id' AND is_ocr_extracted = 1;
+//
+-- 按OCR文本长度排序:
+-- SELECT id, LENGTH(ocr_text) as text_length, ocr_text
+-- FROM clip_items
+-- WHERE type = 'image' AND is_ocr_extracted = 1
+-- ORDER BY text_length DESC;
 
--- 6. 创建索引以优化查询性能
--- ClipItem表的OCR相关索引
-CREATE INDEX IF NOT EXISTS idx_clip_items_ocr_status ON clip_items(ocr_status);
-CREATE INDEX IF NOT EXISTS idx_clip_items_ocr_text ON clip_items(ocr_text);
-CREATE INDEX IF NOT EXISTS idx_clip_items_ocr_processed ON clip_items(ocr_processed_at);
+-- 10. 性能优化建议
+--
+-- 索引使用:
+-- - ocr_text_id: 用于OCR复制时的快速查找
+// - is_ocr_extracted: 用于筛选已识别的图片
+//
+// 查询优化:
+// - 使用LIMIT限制结果数量
+// - 对大量OCR文本使用分页
+// - 定期清理过期数据
 
--- 7. 创建触发器自动更新OCR相关字段
--- 更新OCR文本时自动更新processed_at和版本号
-CREATE TRIGGER IF NOT EXISTS update_ocr_timestamp
-    AFTER UPDATE OF ocr_text ON clip_items
-    WHEN NEW.ocr_text != OLD.ocr_text OR NEW.ocr_text IS NOT NULL
-BEGIN
-    UPDATE clip_items
-    SET
-        ocr_processed_at = strftime('%s', 'now'),
-        ocr_version = OLD.ocr_version + 1,
-        updated_at = strftime('%s', 'now')
-    WHERE id = NEW.id;
-END;
-
--- 8. 创建视图以简化复杂查询
--- 创建包含OCR信息的完整剪贴项视图
-CREATE VIEW IF NOT EXISTS clip_items_with_ocr AS
-SELECT
-    ci.*,
-    -- OCR状态描述
-    CASE ci.ocr_status
-        WHEN 'pending' THEN '等待处理'
-        WHEN 'processing' THEN '正在识别'
-        WHEN 'completed' THEN '已完成'
-        WHEN 'failed' THEN '识别失败'
-        WHEN 'skipped' THEN '已跳过'
-        ELSE ci.ocr_status
-    END AS ocr_status_desc,
-    -- OCR文本长度（用于显示摘要）
-    LENGTH(ci.ocr_text) AS ocr_text_length,
-    -- OCR置信度百分比
-    CASE
-        WHEN ci.ocr_confidence IS NOT NULL
-        THEN ROUND(ci.ocr_confidence * 100, 1)
-        ELSE NULL
-    END AS ocr_confidence_percent
-FROM clip_items ci;
-
--- 9. 创建OCR清理存储过程
--- 清理过期的OCR缓存和队列记录
-CREATE PROCEDURE IF NOT EXISTS cleanup_ocr_data(IN days_to_keep INTEGER)
-BEGIN
-    -- 清理过期的OCR缓存
-    DELETE FROM ocr_cache
-    WHERE expires_at IS NOT NULL
-    AND expires_at < strftime('%s', 'now');
-
-    -- 清理旧的队列记录
-    DELETE FROM ocr_queue
-    WHERE status IN ('completed', 'failed')
-    AND completed_at < strftime('%s', 'now', '-' || days_to_keep || ' days');
-
-    -- 清理旧的复制历史
-    DELETE FROM ocr_copy_history
-    WHERE created_at < strftime('%s', 'now', '-' || days_to_keep || ' days');
-
-    -- 更新统计信息
-    UPDATE ocr_statistics
-    SET last_cleanup = strftime('%s', 'now')
-    WHERE date = date('now');
-END;
-
--- 10. 创建OCR性能监控视图
-CREATE VIEW IF NOT EXISTS ocr_performance_metrics AS
-SELECT
-    date,
-    total_processed,
-    success_count,
-    failure_count,
-    CASE WHEN total_processed > 0
-         THEN ROUND((success_count * 100.0 / total_processed), 2)
-         ELSE 0
-    END AS success_rate_percent,
-    avg_processing_time,
-    cache_hits,
-    cache_misses,
-    CASE WHEN (cache_hits + cache_misses) > 0
-         THEN ROUND((cache_hits * 100.0 / (cache_hits + cache_misses)), 2)
-         ELSE 0
-    END AS cache_hit_rate_percent
-FROM ocr_statistics
-WHERE date >= date('now', '-30 days')
-ORDER BY date DESC;
+-- 11. 未来扩展性
+--
+// 当前单表设计已满足OCR功能需求，如需扩展可考虑:
+// - 添加ocr_confidence字段存储置信度
+// - 添加ocr_language字段存储识别语言
+// - 添加ocr_version字段跟踪处理版本
+// - 创建OCR历史记录表（如需要）
+//
+// 所有扩展都应保持单表设计的一致性。
