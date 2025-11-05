@@ -5,6 +5,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/models/ocr_enhanced_clip_item.dart';
+import 'package:clip_flow_pro/core/services/analysis/ocr_copy_service.dart';
+import 'package:clip_flow_pro/core/services/analysis/ocr_manager_service.dart';
 import 'package:clip_flow_pro/core/services/analysis/ocr_ports.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/modern_clip_item_card.dart';
@@ -568,7 +570,7 @@ class OCREnhancedClipItemCard extends ConsumerWidget {
 /// OCR状态Provider
 final ocrStatusProvider = Provider.family<OCRProcessingStatus, String>(
   (ref, itemId) {
-    // TODO: 从OCRManager获取实时状态
+    // TODO(you): 从OCRManager获取实时状态
     return OCRProcessingStatus.pending;
   },
 );
@@ -576,17 +578,17 @@ final ocrStatusProvider = Provider.family<OCRProcessingStatus, String>(
 /// OCR增强项Provider
 final ocrEnhancedItemProvider = Provider.family<OCREnhancedClipItem?, String>(
   (ref, itemId) {
-    // TODO: 从OCRManager获取增强项
+    // TODO(you): 从OCRManager获取增强项
     return null;
   },
 );
 
 /// OCR复制服务Provider
-final ocrCopyServiceProvider = Provider<OCRCopyServicePort>(
+final ocrCopyServiceProvider = Provider<OCRCopyService>(
   (ref) => OCRCopyService(),
 );
 
 /// OCR管理器Provider
-final ocrManagerProvider = Provider<OCRManagerPort>(
+final ocrManagerProvider = Provider<OCRManagerService>(
   (ref) => OCRManagerService(),
 );

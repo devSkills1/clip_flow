@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_service.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:flutter/services.dart';
@@ -17,14 +15,14 @@ class OCRCopyService {
   /// 单例实例
   static final OCRCopyService _instance = OCRCopyService._internal();
 
+  /// 是否已初始化
+  bool _isInitialized = false;
+
   /// 创建OCR复制服务实例
   factory OCRCopyService() => _instance;
 
   /// 私有构造函数
   OCRCopyService._internal();
-
-  /// 是否已初始化
-  bool _isInitialized = false;
 
   /// 初始化服务
   Future<void> initialize() async {
@@ -60,7 +58,7 @@ class OCRCopyService {
         'hasThumbnail': imageItem.thumbnail != null,
       });
 
-      bool success = false;
+      var success = false;
 
       // 优先使用文件路径复制
       if (imageItem.filePath != null && imageItem.filePath!.isNotEmpty) {
@@ -241,7 +239,7 @@ class OCRCopyService {
   /// JSON字符串转义
   String escapeJson(String text) {
     return text
-        .replaceAll(r'\', r'\\')
+        .replaceAll('\\', r'\\')
         .replaceAll('"', r'\"')
         .replaceAll('\n', r'\n')
         .replaceAll('\r', r'\r')
@@ -268,8 +266,8 @@ class OCRCopyService {
   /// 检查OCR文本是否可以复制
   bool canCopyOcrText(ClipItem imageItem) {
     return imageItem.type == ClipType.image &&
-           imageItem.ocrText != null &&
-           imageItem.ocrText!.isNotEmpty;
+        imageItem.ocrText != null &&
+        imageItem.ocrText!.isNotEmpty;
   }
 
   /// 获取复制支持状态
