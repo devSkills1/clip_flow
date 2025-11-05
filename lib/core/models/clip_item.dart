@@ -109,7 +109,7 @@ class ClipItem {
       ocrText: ocrTextRaw is String ? ocrTextRaw : null,
       ocrTextId: ocrTextIdRaw is String ? ocrTextIdRaw : null,
       parentImageId: parentImageIdRaw is String ? parentImageIdRaw : null,
-      isOcrExtracted: isOcrExtractedRaw is bool ? isOcrExtractedRaw : false,
+      isOcrExtracted: isOcrExtractedRaw as bool? ?? false,
       originWidth: originWidthRaw is num ? originWidthRaw.toInt() : null,
       originHeight: originHeightRaw is num ? originHeightRaw.toInt() : null,
       createdAt: createdAtRaw is String

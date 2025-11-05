@@ -1,8 +1,10 @@
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/id_generator.dart';
+import 'package:flutter/foundation.dart';
 
 /// OCR识别结果模型
 /// 扩展ClipItem以支持OCR功能的独立性和关联性
+@immutable
 class OCREnhancedClipItem {
   /// 原始图片项目
   final ClipItem imageItem;
@@ -28,6 +30,7 @@ class OCREnhancedClipItem {
   /// OCR版本号（支持OCR结果更新）
   final int ocrVersion;
 
+  /// 创建OCR增强剪贴项
   const OCREnhancedClipItem({
     required this.imageItem,
     this.ocrId,
@@ -130,21 +133,22 @@ class OCREnhancedClipItem {
     };
   }
 
+  /// 从JSON创建OCR增强剪贴项
   factory OCREnhancedClipItem.fromJson(Map<String, dynamic> json) {
     return OCREnhancedClipItem(
-      imageItem: ClipItem.fromJson(json['imageItem']),
-      ocrId: json['ocrId'],
-      ocrText: json['ocrText'],
+      imageItem: ClipItem.fromJson(json['imageItem'] as Map<String, dynamic>),
+      ocrId: json['ocrId'] as String?,
+      ocrText: json['ocrText'] as String?,
       ocrTimestamp: json['ocrTimestamp'] != null
-          ? DateTime.parse(json['ocrTimestamp'])
+          ? DateTime.parse(json['ocrTimestamp'] as String)
           : null,
-      ocrLanguage: json['ocrLanguage'],
-      ocrConfidence: json['ocrConfidence']?.toDouble(),
+      ocrLanguage: json['ocrLanguage'] as String?,
+      ocrConfidence: (json['ocrConfidence'] as num?)?.toDouble(),
       ocrStatus: OCRProcessingStatus.values.firstWhere(
-        (e) => e.name == json['ocrStatus'],
+        (e) => e.name == json['ocrStatus'] as String?,
         orElse: () => OCRProcessingStatus.pending,
       ),
-      ocrVersion: json['ocrVersion'] ?? 1,
+      ocrVersion: json['ocrVersion'] as int? ?? 1,
     );
   }
 }

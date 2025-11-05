@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/models/ocr_enhanced_clip_item.dart';
+import 'package:clip_flow_pro/core/services/analysis/ocr_copy_service.dart';
 import 'package:clip_flow_pro/core/services/analysis/ocr_ports.dart';
 import 'package:clip_flow_pro/core/services/clipboard/clipboard_ports.dart';
 import 'package:clip_flow_pro/core/services/deduplication_service.dart';
@@ -12,19 +13,23 @@ import 'package:clip_flow_pro/core/services/storage/index.dart';
 /// OCR管理器实现
 /// 负责OCR功能的队列管理、缓存和批量处理
 class OCRManagerService implements OCRManagerPort {
-  /// 单例实例
-  static final OCRManagerService _instance = OCRManagerService._internal();
+  /// 创建OCR管理器实例
   factory OCRManagerService() => _instance;
+
+  /// 私有构造函数
   OCRManagerService._internal();
 
+  /// 单例实例
+  static final OCRManagerService _instance = OCRManagerService._internal();
+
   /// OCR服务
-  late OCRServicePort _ocrService;
+  OCRServicePort? _ocrService;
 
   /// 数据库服务
-  late DatabaseServicePort _databaseService;
+  DatabaseService _databaseService;
 
   /// 剪贴板服务
-  late ClipboardServicePort _clipboardService;
+  ClipboardServicePort? _clipboardService;
 
   /// 处理队列（按优先级排序）
   final Queue<OCRTask> _queue = Queue();
@@ -57,13 +62,15 @@ class OCRManagerService implements OCRManagerPort {
     if (_isInitialized) return;
 
     try {
-      // 获取依赖服务
-      _ocrService = OCRService();
+      // 获取依赖服务 - 暂时使用空实现，后续需要注入实际的服务
+      // _ocrService = OCRService();
       _databaseService = DatabaseService.instance;
-      _clipboardService = ClipboardService();
+      // _clipboardService = ClipboardService();
 
       // 初始化OCR服务
-      await _ocrService.initialize();
+      if (_ocrService != null) {
+        await _ocrService!.initialize();
+      }
 
       // 恢复未完成的任务
       await _restorePendingTasks();
