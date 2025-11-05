@@ -483,12 +483,29 @@ class ClipboardProcessor {
         ..addAll(metadata);
       // contentHash现在直接作为ID使用，不需要存储在metadata中
 
+      // 如果有OCR文本，生成ocrTextId
+      String? ocrTextId;
+      if (ocrText != null && ocrText.isNotEmpty) {
+        ocrTextId = IdGenerator.generateOcrTextId(ocrText, originalItem.id);
+        await Log.d(
+          'Generated OCR text ID',
+          tag: 'ClipboardProcessor',
+          fields: {
+            'ocrTextId': ocrTextId,
+            'imageId': originalItem.id,
+            'textLength': ocrText.length,
+          },
+        );
+      }
+
       // 返回修改后的ClipItem，保持原有ID
       return originalItem.copyWith(
         filePath: relativePath, // 更新为保存后的相对路径
         thumbnail: thumbnail, // 添加缩略图
         metadata: mergedMetadata, // 合并元数据
         ocrText: ocrText, // 添加OCR文本
+        ocrTextId: ocrTextId, // 添加OCR文本ID
+        isOcrExtracted: ocrText != null, // 标记是否已提取OCR
         updatedAt: DateTime.now(), // 更新时间戳
       );
     } on Exception catch (e) {

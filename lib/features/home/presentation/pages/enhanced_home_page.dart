@@ -15,8 +15,8 @@ import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search
 import 'package:clip_flow_pro/features/home/presentation/widgets/responsive_home_layout.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
-import 'package:clip_flow_pro/core/services/analysis/ocr_copy_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 增强版首页 - 解决所有布局溢出和性能问题
@@ -546,59 +546,86 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   /// 处理OCR文本点击复制
   Future<void> _onOcrTextTap(ClipItem item) async {
     // 详细的调试信息
-    await Log.d('OCR text tap triggered', tag: 'HomePage', fields: {
-      'itemId': item.id,
-      'itemType': item.type.name,
-      'hasOcrText': item.ocrText != null,
-      'ocrTextLength': item.ocrText?.length ?? 0,
-      'ocrTextPreview': item.ocrText?.substring(0, math.min(50, item.ocrText?.length ?? 0)) ?? '',
-    });
-
-    if (item.type != ClipType.image) {
-      await Log.w('OCR tap on non-image item', tag: 'HomePage', fields: {
+    await Log.d(
+      'OCR text tap triggered',
+      tag: 'HomePage',
+      fields: {
         'itemId': item.id,
         'itemType': item.type.name,
-      });
+        'hasOcrText': item.ocrText != null,
+        'ocrTextLength': item.ocrText?.length ?? 0,
+        'ocrTextId': item.ocrTextId,
+        'ocrTextPreview':
+            item.ocrText?.substring(
+              0,
+              math.min(50, item.ocrText?.length ?? 0),
+            ) ??
+            '',
+      },
+    );
+
+    if (item.type != ClipType.image) {
+      await Log.w(
+        'OCR tap on non-image item',
+        tag: 'HomePage',
+        fields: {
+          'itemId': item.id,
+          'itemType': item.type.name,
+        },
+      );
       _showOcrErrorMessage('只能对图片类型进行OCR操作');
       return;
     }
 
     if (item.ocrText == null || item.ocrText!.isEmpty) {
-      await Log.w('No OCR text available', tag: 'HomePage', fields: {
-        'itemId': item.id,
-        'hasOcrText': item.ocrText != null,
-      });
+      await Log.w(
+        'No OCR text available',
+        tag: 'HomePage',
+        fields: {
+          'itemId': item.id,
+          'hasOcrText': item.ocrText != null,
+        },
+      );
       _showOcrErrorMessage('该图片没有可用的OCR文本');
       return;
     }
 
     try {
-      await Log.d('Initializing OCR Copy Service', tag: 'HomePage');
-      final copyService = OCRCopyService();
-      await copyService.initialize();
+      await Log.d(
+        'Copying OCR text to clipboard',
+        tag: 'HomePage',
+        fields: {
+          'itemId': item.id,
+          'ocrTextId': item.ocrTextId,
+          'textLength': item.ocrText!.length,
+        },
+      );
 
-      await Log.d('Attempting to copy OCR text', tag: 'HomePage', fields: {
-        'itemId': item.id,
-        'textLength': item.ocrText!.length,
-      });
+      // 直接复制OCR文本到剪贴板
+      await Clipboard.setData(ClipboardData(text: item.ocrText!));
 
-      final success = await copyService.copyOcrTextSilently(item);
+      // 更新数据库中对应的OCR文本记录（如果存在ocrTextId）
+      if (item.ocrTextId != null) {
+        await _updateOcrTextRecord(item);
+      }
 
-      await Log.i('OCR copy operation completed', tag: 'HomePage', fields: {
-        'itemId': item.id,
-        'success': success,
-      });
+      await Log.i(
+        'OCR text copied successfully',
+        tag: 'HomePage',
+        fields: {
+          'itemId': item.id,
+          'ocrTextId': item.ocrTextId,
+          'textLength': item.ocrText!.length,
+        },
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? '✅ OCR文本已复制到剪贴板 (${item.ocrText!.length}字符)'
-                     : '❌ OCR文本复制失败，请重试',
+              '✅ OCR文本已复制到剪贴板 (${item.ocrText!.length}字符)',
             ),
-            backgroundColor: success
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.error,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -609,7 +636,38 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       }
     } on Exception catch (e) {
       await Log.e('OCR copy operation failed', tag: 'HomePage', error: e);
-      _showOcrErrorMessage('OCR复制错误：${e.toString()}');
+      _showOcrErrorMessage('OCR复制错误：$e');
+    }
+  }
+
+  /// 更新OCR文本记录的时间戳
+  Future<void> _updateOcrTextRecord(ClipItem imageItem) async {
+    try {
+      final database = DatabaseService.instance;
+
+      // 获取OCR文本记录
+      final ocrRecord = await database.getClipItemById(imageItem.ocrTextId!);
+      if (ocrRecord != null) {
+        // 更新OCR文本记录的时间戳
+        final updatedOcrRecord = ocrRecord.copyWith(updatedAt: DateTime.now());
+        await database.updateClipItem(updatedOcrRecord);
+
+        await Log.d(
+          'Updated OCR text record timestamp',
+          tag: 'HomePage',
+          fields: {
+            'ocrTextId': imageItem.ocrTextId,
+            'imageId': imageItem.id,
+          },
+        );
+      }
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to update OCR text record',
+        tag: 'HomePage',
+        error: e,
+      );
+      // 不阻止复制操作，只记录错误
     }
   }
 

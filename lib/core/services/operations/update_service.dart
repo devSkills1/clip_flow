@@ -141,7 +141,6 @@ class UpdateService {
   /// 更新检查URL
   static const String _updateCheckUrl = String.fromEnvironment(
     'UPDATE_CHECK_URL',
-    defaultValue: '', // 默认为空，表示禁用更新检查
   );
 
   /// 初始化更新服务

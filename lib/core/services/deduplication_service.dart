@@ -303,8 +303,9 @@ class DeduplicationService {
             );
 
             // 替换结果中的图片项目
-            results.removeWhere((item) => item.type == ClipType.image);
-            results.add(imageWithOcrStatus);
+            results
+              ..removeWhere((item) => item.type == ClipType.image)
+              ..add(imageWithOcrStatus);
           }
         }
       }

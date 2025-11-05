@@ -777,9 +777,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             HapticFeedback.lightImpact();
 
             // 调用OCR回调
-            if (widget.onOcrTextTap != null) {
-              widget.onOcrTextTap!();
-            }
+            widget.onOcrTextTap?.call();
           },
           borderRadius: BorderRadius.circular(8),
           splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
