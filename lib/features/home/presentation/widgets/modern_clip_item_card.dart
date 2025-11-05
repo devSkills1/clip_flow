@@ -469,20 +469,67 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   Widget _buildImagePreview(BuildContext context, double availableWidth) {
-    return Column(
+    return Consumer(
+      builder: (context, ref, child) {
+        // 获取OCR设置状态
+        final preferences = ref.watch(userPreferencesProvider);
+        final isOcrEnabled = preferences.enableOCR;
+        final hasOcrText = widget.item.ocrText != null && widget.item.ocrText!.isNotEmpty;
+
+        // 如果开启OCR且有OCR文本，使用并排布局
+        if (isOcrEnabled && hasOcrText) {
+          return _buildImageWithOcrSideBySide(context, availableWidth, ref);
+        }
+
+        // 否则使用垂直布局（仅图片或图片+OCR文本）
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 图片预览
+            Flexible(
+              child: _buildImageWidget(context, availableWidth),
+            ),
+
+            // OCR文本显示（仅在关闭OCR时显示，作为额外信息）
+            if (!isOcrEnabled && hasOcrText) ...[
+              SizedBox(height: _getVerticalSpacing()),
+              _buildOcrTextPreview(context),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildImageWithOcrSideBySide(BuildContext context, double availableWidth, WidgetRef ref) {
+    // 计算间距
+    const spacing = 8.0; // 固定间距
+
+    // 计算可用宽度（减去间距后，平分给图片和OCR）
+    final remainingWidth = availableWidth - spacing;
+    final imageWidth = remainingWidth / 2; // 图片和OCR各占一半
+    final imageDisplaySize = _calculateImageDisplaySize(imageWidth);
+
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
       children: [
-        // 图片预览
-        Flexible(
-          child: _buildImageWidget(context, availableWidth),
+        // 左侧：图片预览
+        SizedBox(
+          width: imageWidth,
+          height: imageDisplaySize.height, // 确保容器高度匹配图片
+          child: _buildImageWidget(context, imageWidth),
         ),
 
-        // OCR文本显示（如果有的话）
-        if (widget.item.ocrText != null && widget.item.ocrText!.isNotEmpty) ...[
-          SizedBox(height: _getVerticalSpacing()),
-          _buildOcrTextPreview(context),
-        ],
+        // 间距
+        const SizedBox(width: spacing),
+
+        // 右侧：OCR文本 - 宽度和高度都与图片一致
+        SizedBox(
+          width: imageWidth, // OCR容器宽度与图片容器宽度完全一致
+          height: imageDisplaySize.height, // 高度与图片完全一致
+          child: _buildCompactOcrTextPreviewWithHeight(context, imageDisplaySize.height),
+        ),
       ],
     );
   }
@@ -646,6 +693,94 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  
+  Widget _buildCompactOcrTextPreviewWithHeight(BuildContext context, double fixedHeight) {
+    final theme = Theme.of(context);
+    final ocrText = widget.item.ocrText ?? '';
+    final ocrConfidence = widget.item.metadata['ocrConfidence'] as double?;
+
+    return Container(
+      width: double.infinity,
+      height: fixedHeight, // 使用固定的指定高度
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 紧凑的OCR标题栏
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.text_fields,
+                  size: 10,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 3),
+                Expanded(
+                  child: Text(
+                    'OCR',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (ocrConfidence != null) ...[
+                  const SizedBox(width: 3),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 3,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getConfidenceColor(
+                        ocrConfidence,
+                      ).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      '${(ocrConfidence * 100).round()}%',
+                      style: TextStyle(
+                        fontSize: 7,
+                        fontWeight: FontWeight.w600,
+                        color: _getConfidenceColor(ocrConfidence),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // OCR文本内容 - 使用剩余的全部空间
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(6),
+              physics: const ClampingScrollPhysics(),
+              child: _buildOcrTextContent(context, ocrText),
+            ),
+          ),
+        ],
       ),
     );
   }
