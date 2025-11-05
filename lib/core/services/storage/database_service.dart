@@ -82,11 +82,29 @@ class DatabaseService {
     await db.execute('''
       CREATE INDEX idx_clip_items_type ON ${ClipConstants.clipItemsTable}(type)
     ''');
+
+    // OCR相关索引
+    await db.execute('''
+      CREATE INDEX idx_clip_items_ocr_text_id ON ${ClipConstants.clipItemsTable}(ocr_text_id)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_clip_items_parent_image_id ON ${ClipConstants.clipItemsTable}(parent_image_id)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_clip_items_is_ocr_extracted ON ${ClipConstants.clipItemsTable}(is_ocr_extracted)
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // 处理数据库升级（版本迁移），并兜底在线检查列
     await _ensureColumnsExist(db);
+
+    // 创建OCR相关索引（如果不存在）
+    await _ensureIndexExists(db, 'idx_clip_items_ocr_text_id', ClipConstants.clipItemsTable, 'ocr_text_id');
+    await _ensureIndexExists(db, 'idx_clip_items_parent_image_id', ClipConstants.clipItemsTable, 'parent_image_id');
+    await _ensureIndexExists(db, 'idx_clip_items_is_ocr_extracted', ClipConstants.clipItemsTable, 'is_ocr_extracted');
   }
 
   /// 新增或替换一条剪贴项记录
@@ -139,6 +157,11 @@ class DatabaseService {
       'thumbnail': item.thumbnail,
       'metadata': jsonEncode(item.metadata),
       'ocr_text': item.ocrText,
+      'ocr_text_id': item.ocrTextId,
+      'parent_image_id': item.parentImageId,
+      'is_ocr_extracted': item.isOcrExtracted ? 1 : 0,
+      'origin_width': item.originWidth,
+      'origin_height': item.originHeight,
       'is_favorite': item.isFavorite ? 1 : 0,
       'created_at': item.createdAt.toIso8601String(),
       'updated_at': item.updatedAt.toIso8601String(),
@@ -727,6 +750,11 @@ class DatabaseService {
     final thumbRaw = map['thumbnail'];
     final metadataRaw = map['metadata'];
     final ocrTextRaw = map['ocr_text'];
+    final ocrTextIdRaw = map['ocr_text_id'];
+    final parentImageIdRaw = map['parent_image_id'];
+    final isOcrExtractedRaw = map['is_ocr_extracted'];
+    final originWidthRaw = map['origin_width'];
+    final originHeightRaw = map['origin_height'];
     final isFavRaw = map['is_favorite'];
     final createdAtRaw = map['created_at'];
     final updatedAtRaw = map['updated_at'];
@@ -758,6 +786,11 @@ class DatabaseService {
       thumbnail: thumbRaw is List ? List<int>.from(thumbRaw) : null,
       metadata: metadata,
       ocrText: ocrTextRaw is String ? ocrTextRaw : null,
+      ocrTextId: ocrTextIdRaw is String ? ocrTextIdRaw : null,
+      parentImageId: parentImageIdRaw is String ? parentImageIdRaw : null,
+      isOcrExtracted: isOcrExtractedRaw == 1 || isOcrExtractedRaw == true,
+      originWidth: originWidthRaw is num ? originWidthRaw.toInt() : null,
+      originHeight: originHeightRaw is num ? originHeightRaw.toInt() : null,
       isFavorite: isFavRaw == 1 || isFavRaw == true,
       createdAt: createdAtRaw is String
           ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
@@ -947,6 +980,67 @@ class DatabaseService {
       );
     }
 
+    // clip_items: ocr_text_id TEXT (OCR文本的独立ID)
+    final hasOcrTextId = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'ocr_text_id',
+    );
+    if (!hasOcrTextId) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN ocr_text_id TEXT',
+      );
+    }
+
+    // clip_items: parent_image_id TEXT (OCR文本的父图片ID)
+    final hasParentImageId = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'parent_image_id',
+    );
+    if (!hasParentImageId) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN parent_image_id TEXT',
+      );
+    }
+
+    // clip_items: is_ocr_extracted INTEGER NOT NULL DEFAULT 0 (是否已提取OCR)
+    final hasIsOcrExtracted = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'is_ocr_extracted',
+    );
+    if (!hasIsOcrExtracted) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} '
+        'ADD COLUMN is_ocr_extracted INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    // clip_items: origin_width INTEGER (图片原始宽度)
+    final hasOriginWidth = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'origin_width',
+    );
+    if (!hasOriginWidth) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN origin_width INTEGER',
+      );
+    }
+
+    // clip_items: origin_height INTEGER (图片原始高度)
+    final hasOriginHeight = await _columnExists(
+      db,
+      ClipConstants.clipItemsTable,
+      'origin_height',
+    );
+    if (!hasOriginHeight) {
+      await db.execute(
+        'ALTER TABLE ${ClipConstants.clipItemsTable} ADD COLUMN origin_height INTEGER',
+      );
+    }
+
     // 预留：如未来新增列，可在此继续检测并 ALTER
   }
 
@@ -957,6 +1051,17 @@ class DatabaseService {
       if (name == column) return true;
     }
     return false;
+  }
+
+  /// 检查索引是否存在，不存在则创建
+  Future<void> _ensureIndexExists(Database db, String indexName, String table, String column) async {
+    try {
+      // 尝试创建索引，如果已存在会抛出异常
+      await db.execute('CREATE INDEX IF NOT EXISTS $indexName ON $table($column)');
+    } catch (e) {
+      // 忽略索引已存在的错误
+      await Log.d('Index $indexName already exists or creation failed: $e', tag: 'DatabaseService');
+    }
   }
 
   /// 清理空内容的文本类型数据

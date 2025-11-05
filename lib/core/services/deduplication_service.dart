@@ -294,15 +294,15 @@ class DeduplicationService {
           results.add(processedOcr);
 
           // 更新图片项目的OCR状态
-          final imageWithOcrStatus = processedImage?.copyWith(
-            ocrText: ocrText,
-            isOcrExtracted: true,
-            // 如果图片没有ocrTextId，设置OCR文本的ID
-            ocrTextId: processedImage?.ocrTextId ?? processedOcr?.id,
-          );
+          if (processedImage != null) {
+            final imageWithOcrStatus = processedImage.copyWith(
+              ocrText: ocrText,
+              isOcrExtracted: true,
+              // 如果图片没有ocrTextId，设置OCR文本的ID
+              ocrTextId: processedImage.ocrTextId ?? processedOcr.id,
+            );
 
-          // 替换结果中的图片项目
-          if (imageWithOcrStatus != null) {
+            // 替换结果中的图片项目
             results.removeWhere((item) => item.type == ClipType.image);
             results.add(imageWithOcrStatus);
           }
