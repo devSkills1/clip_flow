@@ -1,42 +1,36 @@
 import 'dart:async';
-import 'dart:collection';
+import 'dart:typed_data';
 
-import 'package:clip_flow_pro/core/models/ocr_enhanced_clip_item.dart';
-import 'package:clip_flow_pro/core/services/analysis/ocr_ports.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_ports.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:uuid/uuid.dart';
+import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/clipboard/clipboard_service.dart';
+import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:flutter/services.dart';
 
-/// OCR复制服务实现
-/// 负责OCR相关的复制功能和历史记录管理
-class OCRCopyService implements OCRCopyServicePort {
+/// OCR复制服务
+///
+/// 提供OCR相关的复制功能，支持：
+/// - 复制图片到剪贴板（不生成新记录）
+/// - 复制OCR文本到剪贴板（不生成新记录）
+/// - 静默复制模式，避免触发剪贴板监听
+class OCRCopyService {
   /// 单例实例
   static final OCRCopyService _instance = OCRCopyService._internal();
+
+  /// 创建OCR复制服务实例
   factory OCRCopyService() => _instance;
+
+  /// 私有构造函数
   OCRCopyService._internal();
-
-  /// 剪贴板服务
-  late ClipboardServicePort _clipboardService;
-
-  /// 复制历史记录
-  final Queue<OCRCopyRecord> _copyHistory = Queue();
-
-  /// 历史记录最大数量
-  static const int _maxHistorySize = 100;
 
   /// 是否已初始化
   bool _isInitialized = false;
 
-  @override
+  /// 初始化服务
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      _clipboardService = ClipboardService();
-
-      // 加载历史记录
-      await _loadHistory();
-
       _isInitialized = true;
       await Log.i('OCR Copy Service initialized');
     } on Exception catch (e) {
@@ -45,184 +39,163 @@ class OCRCopyService implements OCRCopyServicePort {
     }
   }
 
-  @override
-  Future<void> copyImage(OCREnhancedClipItem item) async {
+  /// 复制图片到剪贴板（静默模式）
+  ///
+  /// [imageItem] 图片剪贴项
+  ///
+  /// 注意：此操作不会生成新的剪贴板记录
+  Future<bool> copyImageSilently(ClipItem imageItem) async {
     if (!_isInitialized) {
       throw StateError('OCR Copy Service not initialized');
     }
 
+    if (imageItem.type != ClipType.image) {
+      throw ArgumentError('Item must be of type image');
+    }
+
     try {
-      await Log.d('Copying image', tag: 'OCRCopyService', fields: {
-        'itemId': item.imageItem.id,
+      await Log.d('Copying image silently', tag: 'OCRCopyService', fields: {
+        'itemId': imageItem.id,
+        'hasFilePath': imageItem.filePath != null,
+        'hasThumbnail': imageItem.thumbnail != null,
       });
 
-      // 从文件或缩略图复制图片
-      if (item.imageItem.filePath != null) {
-        await _clipboardService.copyImageFromFile(item.imageItem.filePath!);
-      } else if (item.imageItem.thumbnail != null) {
-        await _clipboardService.copyImageData(item.imageItem.thumbnail!);
-      } else {
-        throw Exception('No image data available to copy');
+      bool success = false;
+
+      // 优先使用文件路径复制
+      if (imageItem.filePath != null && imageItem.filePath!.isNotEmpty) {
+        success = await _copyImageFromFile(imageItem.filePath!);
+      }
+      // 如果没有文件路径，尝试使用缩略图
+      else if (imageItem.thumbnail != null && imageItem.thumbnail!.isNotEmpty) {
+        success = await _copyImageFromBytes(imageItem.thumbnail!);
       }
 
-      // 记录复制历史
-      _addToHistory(
-        OCRCopyRecord(
-          id: const Uuid().v4(),
-          timestamp: DateTime.now(),
-          copyType: OCRCopyType.image,
-          sourceItemId: item.imageItem.id,
-          contentSummary: 'Image (${item.imageItem.type.name})',
-        ),
-      );
-
-      await Log.i('Image copied successfully', tag: 'OCRCopyService');
+      if (success) {
+        await Log.i('Image copied silently to clipboard', tag: 'OCRCopyService', fields: {
+          'itemId': imageItem.id,
+        });
+        return true;
+      } else {
+        throw Exception('No valid image data available for copying');
+      }
     } on Exception catch (e) {
-      await Log.e('Failed to copy image', tag: 'OCRCopyService', error: e);
-
-      // 记录失败
-      _addToHistory(
-        OCRCopyRecord(
-          id: const Uuid().v4(),
-          timestamp: DateTime.now(),
-          copyType: OCRCopyType.image,
-          sourceItemId: item.imageItem.id,
-          contentSummary: 'Image copy failed',
-          success: false,
-          error: e.toString(),
-        ),
-      );
-
-      rethrow;
+      await Log.e('Failed to copy image silently', tag: 'OCRCopyService', error: e);
+      return false;
     }
   }
 
-  @override
-  Future<void> copyOCRText(
-    OCREnhancedClipItem item, {
+  /// 复制OCR文本到剪贴板（静默模式）
+  ///
+  /// [imageItem] 包含OCR文本的图片剪贴项
+  /// [format] OCR文本格式
+  ///
+  /// 注意：此操作不会生成新的剪贴板记录
+  Future<bool> copyOcrTextSilently(
+    ClipItem imageItem, {
     OCRTextFormat format = OCRTextFormat.plain,
   }) async {
     if (!_isInitialized) {
       throw StateError('OCR Copy Service not initialized');
     }
 
-    if (!item.hasOCR) {
+    if (imageItem.type != ClipType.image) {
+      throw ArgumentError('Item must be of type image');
+    }
+
+    if (imageItem.ocrText == null || imageItem.ocrText!.isEmpty) {
       throw StateError('No OCR text available to copy');
     }
 
     try {
-      await Log.d('Copying OCR text', tag: 'OCRCopyService', fields: {
-        'itemId': item.imageItem.id,
+      await Log.d('Copying OCR text silently', tag: 'OCRCopyService', fields: {
+        'itemId': imageItem.id,
         'format': format.name,
+        'textLength': imageItem.ocrText!.length,
       });
 
-      // 格式化文本
-      final formattedText = _formatOCRText(item.ocrText!, format);
+      // 格式化OCR文本
+      final formattedText = formatOcrText(imageItem.ocrText!, format);
 
-      // 复制到剪贴板
-      await _clipboardService.copyText(formattedText);
+      // 静默复制文本到剪贴板
+      await Clipboard.setData(ClipboardData(text: formattedText));
 
-      // 记录复制历史
-      _addToHistory(
-        OCRCopyRecord(
-          id: const Uuid().v4(),
-          timestamp: DateTime.now(),
-          copyType: OCRCopyType.text,
-          sourceItemId: item.imageItem.id,
-          contentSummary: _generateTextSummary(formattedText),
-        ),
-      );
-
-      await Log.i('OCR text copied successfully', tag: 'OCRCopyService', fields: {
+      await Log.i('OCR text copied silently to clipboard', tag: 'OCRCopyService', fields: {
+        'itemId': imageItem.id,
+        'format': format.name,
         'textLength': formattedText.length,
-        'format': format.name,
       });
+
+      return true;
     } on Exception catch (e) {
-      await Log.e('Failed to copy OCR text', tag: 'OCRCopyService', error: e);
-
-      // 记录失败
-      _addToHistory(
-        OCRCopyRecord(
-          id: const Uuid().v4(),
-          timestamp: DateTime.now(),
-          copyType: OCRCopyType.text,
-          sourceItemId: item.imageItem.id,
-          contentSummary: 'OCR text copy failed',
-          success: false,
-          error: e.toString(),
-        ),
-      );
-
-      rethrow;
+      await Log.e('Failed to copy OCR text silently', tag: 'OCRCopyService', error: e);
+      return false;
     }
   }
 
-  @override
-  Future<void> smartCopy(
-    OCREnhancedClipItem item, {
-    OCRCopyType type = OCRCopyType.both,
-  }) async {
-    switch (type) {
-      case OCRCopyType.image:
-        await copyImage(item);
-        break;
+  /// 从文件路径复制图片
+  Future<bool> _copyImageFromFile(String filePath) async {
+    try {
+      const platform = MethodChannel('clipboard_service');
 
-      case OCRCopyType.text:
-        await copyOCRText(item);
-        break;
+      // 使用PathService将路径转换为绝对路径
+      final absolutePath = await PathService.instance.resolveAbsolutePath(filePath);
 
-      case OCRCopyType.both:
-        try {
-          // 先复制图片
-          await copyImage(item);
+      // 检查文件是否存在
+      if (!await PathService.instance.fileExists(filePath)) {
+        await Log.e('Image file not found', tag: 'OCRCopyService', fields: {
+          'path': absolutePath,
+          'sourcePath': filePath,
+        });
+        return false;
+      }
 
-          // 延迟一秒后复制文本
-          Timer(const Duration(seconds: 1), () async {
-            try {
-              await copyOCRText(item);
-            } on Exception catch (e) {
-              await Log.e('Failed to copy OCR text in smart copy', error: e);
-            }
-          });
+      // 使用原生方法复制图片文件
+      await platform.invokeMethod('setClipboardFile', {
+        'filePath': absolutePath,
+        'silent': true, // 标记为静默复制，避免触发监听
+      });
 
-          await Log.i('Smart copy initiated (image + text)');
-        } on Exception catch (e) {
-          await Log.e('Failed to copy image in smart copy', error: e);
-          // 尝试只复制文本
-          if (item.hasOCR) {
-            await copyOCRText(item);
-          }
-        }
-        break;
+      return true;
+    } on Exception catch (e) {
+      await Log.e('Failed to copy image from file', tag: 'OCRCopyService', error: e);
+      return false;
     }
   }
 
-  @override
-  Future<List<OCRCopyRecord>> getCopyHistory({int limit = 10}) async {
-    final history = _copyHistory.toList();
-    return history.take(limit).toList();
-  }
+  /// 从字节数据复制图片
+  Future<bool> _copyImageFromBytes(List<int> imageBytes) async {
+    try {
+      const platform = MethodChannel('clipboard_service');
 
-  @override
-  Future<void> clearCopyHistory() async {
-    _copyHistory.clear();
-    await Log.i('Copy history cleared');
-  }
+      // 将字节数据转换为Uint8List
+      final uint8List = Uint8List.fromList(imageBytes);
 
-  /// 私有方法
+      // 使用原生方法复制图片数据
+      await platform.invokeMethod('setClipboardImageData', {
+        'imageData': uint8List,
+        'silent': true, // 标记为静默复制，避免触发监听
+      });
+
+      return true;
+    } on Exception catch (e) {
+      await Log.e('Failed to copy image from bytes', tag: 'OCRCopyService', error: e);
+      return false;
+    }
+  }
 
   /// 格式化OCR文本
-  String _formatOCRText(String text, OCRTextFormat format) {
+  String formatOcrText(String text, OCRTextFormat format) {
     switch (format) {
       case OCRTextFormat.plain:
         return text;
 
       case OCRTextFormat.formatted:
-        // 保留换行和空格格式
+        // 保留换行和空格格式，去除首尾空白
         return text.trim();
 
       case OCRTextFormat.json:
-        return _formatAsJSON(text);
+        return _formatAsJson(text);
 
       case OCRTextFormat.markdown:
         return _formatAsMarkdown(text);
@@ -230,13 +203,16 @@ class OCRCopyService implements OCRCopyServicePort {
   }
 
   /// 格式化为JSON
-  String _formatAsJSON(String text) {
+  String _formatAsJson(String text) {
+    final escapedText = escapeJson(text);
+    final wordCount = text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+
     return '''
 {
-  "text": ${_escapeJson(text)},
+  "text": "$escapedText",
   "timestamp": "${DateTime.now().toIso8601String()}",
   "source": "OCR",
-  "wordCount": ${text.split(RegExp(r'\s+')).length}
+  "wordCount": $wordCount
 }''';
   }
 
@@ -262,49 +238,103 @@ class OCRCopyService implements OCRCopyServicePort {
     return buffer.toString();
   }
 
-  /// JSON转义
-  String _escapeJson(String text) {
+  /// JSON字符串转义
+  String escapeJson(String text) {
     return text
-        .replaceAll('\\', '\\\\')
-        .replaceAll('"', '\\"')
-        .replaceAll('\n', '\\n')
-        .replaceAll('\r', '\\r')
-        .replaceAll('\t', '\\t');
+        .replaceAll(r'\', r'\\')
+        .replaceAll('"', r'\"')
+        .replaceAll('\n', r'\n')
+        .replaceAll('\r', r'\r')
+        .replaceAll('\t', r'\t');
   }
 
-  /// 生成文本摘要
-  String _generateTextSummary(String text) {
-    final words = text.split(RegExp(r'\s+'));
-    final summary = words.take(5).join(' ');
+  /// 检查图片是否可以复制
+  Future<bool> canCopyImage(ClipItem imageItem) async {
+    if (imageItem.type != ClipType.image) return false;
 
-    if (words.length > 5) {
-      return '$summary... (${words.length} words)';
+    // 检查是否有文件路径且文件存在
+    if (imageItem.filePath != null && imageItem.filePath!.isNotEmpty) {
+      return await PathService.instance.fileExists(imageItem.filePath!);
     }
 
-    return summary;
-  }
-
-  /// 添加到历史记录
-  void _addToHistory(OCRCopyRecord record) {
-    _copyHistory.addFirst(record);
-
-    // 限制历史记录大小
-    while (_copyHistory.length > _maxHistorySize) {
-      _copyHistory.removeLast();
+    // 检查是否有缩略图数据
+    if (imageItem.thumbnail != null && imageItem.thumbnail!.isNotEmpty) {
+      return true;
     }
 
-    // 保存到持久化存储（可选）
-    _saveHistory();
+    return false;
   }
 
-  /// 加载历史记录
-  Future<void> _loadHistory() async {
-    // TODO: 从持久化存储加载历史记录
-    // 这里可以使用SharedPreferences或数据库
+  /// 检查OCR文本是否可以复制
+  bool canCopyOcrText(ClipItem imageItem) {
+    return imageItem.type == ClipType.image &&
+           imageItem.ocrText != null &&
+           imageItem.ocrText!.isNotEmpty;
   }
 
-  /// 保存历史记录
-  Future<void> _saveHistory() async {
-    // TODO: 保存历史记录到持久化存储
+  /// 获取复制支持状态
+  Future<OCRCopySupportStatus> getCopySupportStatus(ClipItem imageItem) async {
+    final canCopyImageData = await canCopyImage(imageItem);
+    final canCopyOcrTextData = canCopyOcrText(imageItem);
+
+    return OCRCopySupportStatus(
+      canCopyImage: canCopyImageData,
+      canCopyOcrText: canCopyOcrTextData,
+      hasOcrText: canCopyOcrTextData,
+      hasImageData: canCopyImageData,
+    );
+  }
+}
+
+/// OCR文本格式枚举
+enum OCRTextFormat {
+  /// 纯文本
+  plain,
+
+  /// 格式化文本（保留换行和空格）
+  formatted,
+
+  /// JSON格式
+  json,
+
+  /// Markdown格式
+  markdown,
+}
+
+/// OCR复制支持状态
+class OCRCopySupportStatus {
+  /// 是否可以复制图片
+  final bool canCopyImage;
+
+  /// 是否可以复制OCR文本
+  final bool canCopyOcrText;
+
+  /// 是否有OCR文本
+  final bool hasOcrText;
+
+  /// 是否有图片数据
+  final bool hasImageData;
+
+  /// 创建OCR复制支持状态
+  const OCRCopySupportStatus({
+    required this.canCopyImage,
+    required this.canCopyOcrText,
+    required this.hasOcrText,
+    required this.hasImageData,
+  });
+
+  /// 是否支持任何复制操作
+  bool get canCopyAnything => canCopyImage || canCopyOcrText;
+
+  /// 是否支持所有复制操作
+  bool get canCopyBoth => canCopyImage && canCopyOcrText;
+
+  @override
+  String toString() {
+    return 'OCRCopySupportStatus('
+        'canCopyImage: $canCopyImage, '
+        'canCopyOcrText: $canCopyOcrText, '
+        'hasOcrText: $hasOcrText, '
+        'hasImageData: $hasImageData)';
   }
 }
