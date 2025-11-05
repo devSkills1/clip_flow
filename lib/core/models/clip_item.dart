@@ -62,6 +62,9 @@ class ClipItem {
     this.thumbnail,
     this.isFavorite = false,
     this.ocrText,
+    this.ocrTextId,
+    this.parentImageId,
+    this.isOcrExtracted = false,
     this.originWidth,
     this.originHeight,
     DateTime? createdAt,
@@ -82,6 +85,9 @@ class ClipItem {
     final createdAtRaw = json['createdAt'];
     final updatedAtRaw = json['updatedAt'];
     final ocrTextRaw = json['ocrText'];
+    final ocrTextIdRaw = json['ocrTextId'];
+    final parentImageIdRaw = json['parentImageId'];
+    final isOcrExtractedRaw = json['isOcrExtracted'];
     final originWidthRaw = json['originWidth'];
     final originHeightRaw = json['originHeight'];
 
@@ -101,6 +107,9 @@ class ClipItem {
                 : <String, dynamic>{}),
       isFavorite: isFavRaw is bool ? isFavRaw : (isFavRaw == 1),
       ocrText: ocrTextRaw is String ? ocrTextRaw : null,
+      ocrTextId: ocrTextIdRaw is String ? ocrTextIdRaw : null,
+      parentImageId: parentImageIdRaw is String ? parentImageIdRaw : null,
+      isOcrExtracted: isOcrExtractedRaw is bool ? isOcrExtractedRaw : false,
       originWidth: originWidthRaw is num ? originWidthRaw.toInt() : null,
       originHeight: originHeightRaw is num ? originHeightRaw.toInt() : null,
       createdAt: createdAtRaw is String
@@ -138,6 +147,15 @@ class ClipItem {
   /// OCR识别的文本内容：用于图片中的文字搜索
   final String? ocrText;
 
+  /// OCR文本的独立ID：用于OCR文本的独立身份标识
+  final String? ocrTextId;
+
+  /// OCR文本的父图片ID：用于建立OCR文本与原图片的关联关系
+  final String? parentImageId;
+
+  /// 是否已提取OCR文本：标识该图片是否已进行OCR识别
+  final bool isOcrExtracted;
+
   /// 图片原始宽度（像素）：用于图片尺寸计算和布局
   final int? originWidth;
 
@@ -160,6 +178,9 @@ class ClipItem {
     Map<String, dynamic>? metadata,
     bool? isFavorite,
     String? ocrText,
+    String? ocrTextId,
+    String? parentImageId,
+    bool? isOcrExtracted,
     int? originWidth,
     int? originHeight,
     DateTime? createdAt,
@@ -174,6 +195,9 @@ class ClipItem {
       metadata: metadata ?? this.metadata,
       isFavorite: isFavorite ?? this.isFavorite,
       ocrText: ocrText ?? this.ocrText,
+      ocrTextId: ocrTextId ?? this.ocrTextId,
+      parentImageId: parentImageId ?? this.parentImageId,
+      isOcrExtracted: isOcrExtracted ?? this.isOcrExtracted,
       originWidth: originWidth ?? this.originWidth,
       originHeight: originHeight ?? this.originHeight,
       createdAt: createdAt ?? this.createdAt,
@@ -192,6 +216,9 @@ class ClipItem {
       'metadata': metadata,
       'isFavorite': isFavorite,
       'ocrText': ocrText,
+      'ocrTextId': ocrTextId,
+      'parentImageId': parentImageId,
+      'isOcrExtracted': isOcrExtracted,
       'originWidth': originWidth,
       'originHeight': originHeight,
       'createdAt': createdAt.toIso8601String(),
