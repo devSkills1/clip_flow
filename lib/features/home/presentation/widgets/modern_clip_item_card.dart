@@ -637,8 +637,31 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   Widget _buildImageContent(BuildContext context, Size displaySize) {
+    // 添加调试日志
+    Log.d(
+      'Building image content',
+      tag: 'ModernClipItemCard',
+      fields: {
+        'itemId': widget.item.id,
+        'hasThumbnail':
+            widget.item.thumbnail != null && widget.item.thumbnail!.isNotEmpty,
+        'hasFilePath':
+            widget.item.filePath != null && widget.item.filePath!.isNotEmpty,
+        'thumbnailSize': widget.item.thumbnail?.length ?? 0,
+        'filePath': widget.item.filePath,
+      },
+    );
+
     // 优先使用缩略图
     if (widget.item.thumbnail != null && widget.item.thumbnail!.isNotEmpty) {
+      Log.d(
+        'Using thumbnail for image display',
+        tag: 'ModernClipItemCard',
+        fields: {
+          'itemId': widget.item.id,
+          'thumbnailSize': widget.item.thumbnail!.length,
+        },
+      );
       return Image.memory(
         Uint8List.fromList(widget.item.thumbnail!),
         width: displaySize.width,
@@ -683,6 +706,13 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
       );
     }
 
+    Log.d(
+      'No thumbnail or file path available, showing placeholder',
+      tag: 'ModernClipItemCard',
+      fields: {
+        'itemId': widget.item.id,
+      },
+    );
     return _buildImagePlaceholder(context, displaySize);
   }
 

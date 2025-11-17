@@ -184,6 +184,10 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     // 监听剪贴板流
     ref.listen<AsyncValue<ClipItem>>(clipboardStreamProvider, (previous, next) {
       next.whenData((clipItem) async {
+        Log.d('UI received clipboard item: ${clipItem.type} - ID: ${clipItem.id}', tag: 'EnhancedHomePage');
+        if (clipItem.type == ClipType.image) {
+          Log.d('Image item details - hasContent: ${clipItem.content != null}, hasFilePath: ${clipItem.filePath != null}', tag: 'EnhancedHomePage');
+        }
         ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
       });
     });
