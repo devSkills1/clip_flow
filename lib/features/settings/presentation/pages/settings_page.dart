@@ -160,6 +160,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   _showMaxHistoryDialog(context, ref);
                 },
               ),
+              _buildRadioTile<UiMode>(
+                title: '界面模式',
+                subtitle: '选择应用的界面风格',
+                value: preferences.uiMode,
+                options: const [
+                  (
+                    value: UiMode.traditional,
+                    title: '传统剪贴板',
+                    subtitle: '经典的剪贴板历史管理界面',
+                  ),
+                  (
+                    value: UiMode.appSwitcher,
+                    title: '应用切换器',
+                    subtitle: '类似 macOS Cmd+Tab 的切换界面',
+                  ),
+                ],
+                onChanged: (UiMode value) {
+                  ref.read(userPreferencesProvider.notifier).setUiMode(value);
+                },
+              ),
             ],
           ),
 
