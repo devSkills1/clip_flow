@@ -5,6 +5,7 @@ import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
+import 'package:clip_flow_pro/core/services/platform/system/window_management_service.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -42,10 +43,11 @@ Future<void> _runApp() async {
 
   // 注意：Sentry已在main()中初始化，这里不再重复初始化CrashService
 
-  // 初始化窗口管理
-  await windowManager.ensureInitialized();
+  // 初始化窗口管理服务
+  final windowService = WindowManagementService.instance;
+  await windowService.initialize();
 
-  // 设置窗口属性
+  // 设置窗口属性 - 增强版配置
   const windowOptions = WindowOptions(
     size: Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
     center: true,
@@ -53,13 +55,15 @@ Future<void> _runApp() async {
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.normal,
     alwaysOnTop: false,
+    minimumSize: Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
+    maximumSize: Size(ClipConstants.maxWindowWidth, ClipConstants.maxWindowHeight),
+    windowButtonVisibility: true,
   );
 
   /// 主函数
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.setPreventClose(true); // 阻止默认关闭行为，由监听器处理
-    await windowManager.show();
-    await windowManager.focus();
+    // 使用窗口管理服务显示窗口
+    await windowService.showAndFocus();
   });
 
   // 初始化日志系统
