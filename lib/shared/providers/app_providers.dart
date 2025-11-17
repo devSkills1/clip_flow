@@ -236,10 +236,20 @@ final filterTypeProvider = StateProvider<FilterOption>(
 /// UI 列表/网格的显示密度枚举。
 enum DisplayMode { compact, normal, preview }
 
+//// UI 模式（传统剪贴板/应用切换器）
+/// UI 界面模式枚举，用于切换不同的UI风格。
+enum UiMode { traditional, appSwitcher }
+
 //// 显示模式提供者
 /// 当前 UI 显示模式（紧凑/默认/预览）的状态提供者。
 final displayModeProvider = StateProvider<DisplayMode>(
   (ref) => DisplayMode.normal,
+);
+
+//// UI 模式提供者
+/// 当前 UI 界面模式（传统剪贴板/应用切换器）的状态提供者。
+final uiModeProvider = StateProvider<UiMode>(
+  (ref) => UiMode.traditional,
 );
 
 //// 用户偏好设置提供者
@@ -264,6 +274,7 @@ class UserPreferences {
     this.ocrMinConfidence = 0.5,
     this.language = 'zh_CN',
     this.defaultDisplayMode = DisplayMode.normal,
+    this.uiMode = UiMode.traditional,
     this.isDeveloperMode = false,
     this.showPerformanceOverlay = false,
   });
@@ -283,6 +294,10 @@ class UserPreferences {
       defaultDisplayMode: DisplayMode.values.firstWhere(
         (e) => e.name == (json['defaultDisplayMode'] as String?),
         orElse: () => DisplayMode.normal,
+      ),
+      uiMode: UiMode.values.firstWhere(
+        (e) => e.name == (json['uiMode'] as String?),
+        orElse: () => UiMode.traditional,
       ),
       isDeveloperMode: (json['isDeveloperMode'] as bool?) ?? false,
       showPerformanceOverlay:
@@ -320,6 +335,9 @@ class UserPreferences {
   /// 默认显示模式
   final DisplayMode defaultDisplayMode;
 
+  /// UI 界面模式（传统剪贴板/应用切换器）
+  final UiMode uiMode;
+
   /// 是否启用开发者模式
   final bool isDeveloperMode;
 
@@ -338,6 +356,7 @@ class UserPreferences {
     double? ocrMinConfidence,
     String? language,
     DisplayMode? defaultDisplayMode,
+    UiMode? uiMode,
     bool? isDeveloperMode,
     bool? showPerformanceOverlay,
   }) {
@@ -352,6 +371,7 @@ class UserPreferences {
       ocrMinConfidence: ocrMinConfidence ?? this.ocrMinConfidence,
       language: language ?? this.language,
       defaultDisplayMode: defaultDisplayMode ?? this.defaultDisplayMode,
+      uiMode: uiMode ?? this.uiMode,
       isDeveloperMode: isDeveloperMode ?? this.isDeveloperMode,
       showPerformanceOverlay:
           showPerformanceOverlay ?? this.showPerformanceOverlay,
@@ -371,6 +391,7 @@ class UserPreferences {
       'ocrMinConfidence': ocrMinConfidence,
       'language': language,
       'defaultDisplayMode': defaultDisplayMode.name,
+      'uiMode': uiMode.name,
       'isDeveloperMode': isDeveloperMode,
       'showPerformanceOverlay': showPerformanceOverlay,
     };
@@ -562,6 +583,12 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     state = state.copyWith(
       showPerformanceOverlay: !state.showPerformanceOverlay,
     );
+    _savePreferences();
+  }
+
+  /// 设置UI界面模式。
+  void setUiMode(UiMode mode) {
+    state = state.copyWith(uiMode: mode);
     _savePreferences();
   }
 }
