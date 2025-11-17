@@ -43,6 +43,13 @@ class ClipConstants {
   /// 默认窗口高度
   static const double defaultWindowHeight = 800;
 
+  /// 应用切换器窗口尺寸
+  /// 应用切换器窗口高度
+  static const double appSwitcherWindowHeight = 360;
+
+  /// 应用切换器窗口宽度比例
+  static const double appSwitcherWidthRatio = 0.8;
+
   /// 数据库相关常量
   /// 数据库文件名
   static const String databaseName = 'clipflow_pro.db';

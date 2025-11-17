@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:clip_flow_pro/app.dart';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
@@ -5,7 +7,7 @@ import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
-import 'package:clip_flow_pro/core/services/platform/system/window_management_service.dart';
+import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -49,14 +51,20 @@ Future<void> _runApp() async {
 
   // 设置窗口属性 - 增强版配置
   const windowOptions = WindowOptions(
-    size: Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
+    size: ui.Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
     center: true,
     backgroundColor: Color(AppColors.white),
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.normal,
     alwaysOnTop: false,
-    minimumSize: Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
-    maximumSize: Size(ClipConstants.maxWindowWidth, ClipConstants.maxWindowHeight),
+    minimumSize: ui.Size(
+      ClipConstants.minWindowWidth,
+      ClipConstants.minWindowHeight,
+    ),
+    maximumSize: ui.Size(
+      ClipConstants.maxWindowWidth,
+      ClipConstants.maxWindowHeight,
+    ),
     windowButtonVisibility: true,
   );
 

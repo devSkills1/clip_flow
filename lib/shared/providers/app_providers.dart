@@ -8,6 +8,7 @@ import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow_pro/features/appswitcher/presentation/pages/app_switcher_page.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
 import 'package:clip_flow_pro/features/home/presentation/pages/enhanced_home_page.dart';
@@ -27,6 +28,23 @@ final clipRepositoryProvider = Provider<ClipRepository>((ref) {
   return ClipRepositoryImpl(DatabaseService.instance);
 });
 //// 路由提供者
+/// 动态主页组件，根据UI模式切换不同的页面
+class DynamicHomePage extends ConsumerWidget {
+  const DynamicHomePage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uiMode = ref.watch(uiModeProvider);
+
+    switch (uiMode) {
+      case UiMode.traditional:
+        return const EnhancedHomePage();
+      case UiMode.appSwitcher:
+        return const AppSwitcherPage();
+    }
+  }
+}
+
 /// 全局路由器提供者，定义应用路由表与初始路由。
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -34,7 +52,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const EnhancedHomePage(),
+        builder: (context, state) => const DynamicHomePage(),
       ),
       GoRoute(
         path: AppRoutes.settings,
@@ -91,7 +109,9 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
         final nonFavorites = state.where((item) => !item.isFavorite).toList();
 
         // 保留所有收藏的项目，并从非收藏项目中取最新的直到总数达到500
-        final remainingNonFavorites = nonFavorites.take(500 - favorites.length).toList();
+        final remainingNonFavorites = nonFavorites
+            .take(500 - favorites.length)
+            .toList();
 
         // 收藏项目在前，非收藏项目在后
         state = [...favorites, ...remainingNonFavorites];
@@ -248,8 +268,9 @@ final displayModeProvider = StateProvider<DisplayMode>(
 
 //// UI 模式提供者
 /// 当前 UI 界面模式（传统剪贴板/应用切换器）的状态提供者。
-final uiModeProvider = StateProvider<UiMode>(
-  (ref) => UiMode.traditional,
+/// 从 userPreferencesProvider 中读取状态，确保同步。
+final uiModeProvider = Provider<UiMode>(
+  (ref) => ref.watch(userPreferencesProvider).uiMode,
 );
 
 //// 用户偏好设置提供者

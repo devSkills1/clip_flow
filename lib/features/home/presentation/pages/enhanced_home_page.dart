@@ -9,6 +9,7 @@ import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
+import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/basic_sidebar.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search_bar.dart';
@@ -43,6 +44,7 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   void initState() {
     super.initState();
     _initializeAnimations();
+    _setupWindow();
     _loadInitialData();
   }
 
@@ -64,6 +66,17 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       curve: Curves.easeInOut,
     );
     _fadeController.forward();
+  }
+
+  /// 设置传统模式窗口
+  Future<void> _setupWindow() async {
+    // 等待一帧以确保context已初始化
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        // 使用WindowManagementService统一处理窗口设置
+        await WindowManagementService.instance.applyUISettings(UiMode.traditional, context: context);
+      }
+    });
   }
 
   Future<void> _loadInitialData() async {
