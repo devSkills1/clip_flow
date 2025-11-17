@@ -67,8 +67,20 @@ class ClipboardProcessor {
       );
 
       // 检查缓存（使用统一的哈希）
-      if (await _isCached(contentHash)) {
-        return null; // 内容未变化
+      final isCachedResult = await _isCached(contentHash);
+      if (isCachedResult) {
+        // 即使是重复内容，也要返回更新后的项目以便UI更新
+        // 去重逻辑在DeduplicationService中处理
+        final deduplicatedItem = await DeduplicationService.instance
+            .checkAndPrepare(contentHash, tempItem.copyWith(id: contentHash));
+        if (deduplicatedItem != null) {
+          Log.d('Returning deduplicated item for UI update', tag: 'ClipboardProcessor', fields: {
+            'contentHash': contentHash,
+            'itemType': deduplicatedItem.type.name,
+          });
+          return deduplicatedItem;
+        }
+        return null;
       }
 
       // 创建正式的ClipItem - 使用统一的哈希作为ID
