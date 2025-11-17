@@ -80,15 +80,17 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   /// 添加新项目；若内容重复则仅更新其时间戳并前置。
   void addItem(ClipItem item) {
     // 避免重复添加相同内容
-    // 以唯一的 id 作为去重键，避免不同类型/相同文本被误判为重复
+    // 使用内容哈希作为去重键，确保相同内容的不同复制也能被识别
     final existingIndex = state.indexWhere(
       (existing) => existing.id == item.id,
     );
 
     if (existingIndex != -1) {
-      // 更新现有项目的时间戳
+      // 更新现有项目并移动到顶部
       final updatedItem = state[existingIndex].copyWith(
         updatedAt: DateTime.now(),
+        // 合并新项目的元数据
+        metadata: {...state[existingIndex].metadata, ...item.metadata},
       );
       state = [
         updatedItem,
@@ -98,9 +100,12 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
             .where((e) => e.key != existingIndex)
             .map((e) => e.value),
       ];
+
+      Log.d('Moved existing item to top: ${item.id} (${item.type})', tag: 'ClipboardHistoryNotifier');
     } else {
       // 添加新项目到列表开头
       state = [item, ...state];
+      Log.d('Added new item to top: ${item.id} (${item.type})', tag: 'ClipboardHistoryNotifier');
 
       // 限制历史记录数量（优先保留收藏的项目）
       if (state.length > 500) {
