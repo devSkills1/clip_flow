@@ -120,6 +120,8 @@ import Vision
             getCurrentApp(result: result)
         case "getHotkeyStats":
             getHotkeyStats(result: result)
+        case "getPhysicalScreenSize":
+            getPhysicalScreenSize(result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -1881,5 +1883,126 @@ import Vision
         ]
 
         result(stats)
+    }
+
+    /// 获取物理屏幕尺寸
+    private func getPhysicalScreenSize(result: @escaping FlutterResult) {
+        // 获取主屏幕
+        guard let mainScreen = NSScreen.main else {
+            result(FlutterError(code: "SCREEN_NOT_FOUND", message: "Main screen not found", details: nil))
+            return
+        }
+
+        // 获取屏幕的物理尺寸
+        let screenFrame = mainScreen.frame
+        let screenVisibleFrame = mainScreen.visibleFrame
+
+        // 获取屏幕分辨率
+        let screenScale = mainScreen.backingScaleFactor
+        let physicalWidth = screenFrame.width * screenScale
+        let physicalHeight = screenFrame.height * screenScale
+
+        // 获取屏幕的物理尺寸（毫米）
+        let deviceDescription = mainScreen.deviceDescription
+        let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        var physicalSize: CGSize = .zero
+
+        print("📏 [getPhysicalScreenSize] 开始获取物理屏幕尺寸")
+        print("📏 [getPhysicalScreenSize] screenNumber: \(screenNumber?.stringValue ?? "nil")")
+
+        if let screenNumberValue = screenNumber {
+            let displayID = CGDirectDisplayID(screenNumberValue.uint32Value)
+            print("📏 [getPhysicalScreenSize] displayID: \(displayID)")
+
+            // 获取显示器物理尺寸
+            physicalSize = CGDisplayScreenSize(displayID)
+            print("📏 [getPhysicalScreenSize] CGDisplayScreenSize 返回: \(physicalSize)")
+            print("📏 [getPhysicalScreenSize] 物理宽度: \(physicalSize.width)mm, 物理高度: \(physicalSize.height)mm")
+        } else {
+            print("⚠️ [getPhysicalScreenSize] 无法获取 screenNumber")
+        }
+
+        // 获取显示器信息
+        let displayInfo: [String: Any] = [
+            "screenWidth": screenFrame.width,
+            "screenHeight": screenFrame.height,
+            "visibleWidth": screenVisibleFrame.width,
+            "visibleHeight": screenVisibleFrame.height,
+            "scaleFactor": screenScale,
+            "physicalWidth": physicalWidth,
+            "physicalHeight": physicalHeight,
+            "physicalWidthMM": physicalSize.width,
+            "physicalHeightMM": physicalSize.height,
+            "diagonalMM": sqrt(pow(physicalSize.width, 2) + pow(physicalSize.height, 2)),
+            "colorSpace": mainScreen.colorSpace?.localizedName ?? "unknown",
+            "isMain": mainScreen == NSScreen.main
+        ]
+
+        // 如果有多个显示器，也返回所有显示器的信息
+        var allScreens: [[String: Any]] = []
+
+        print("📏 [getPhysicalScreenSize] 总显示器数量: \(NSScreen.screens.count)")
+        var screenIndex = 0
+
+        for screen in NSScreen.screens {
+            let screenFrame = screen.frame
+            let screenVisibleFrame = screen.visibleFrame
+            let screenScale = screen.backingScaleFactor
+            let physicalWidth = screenFrame.width * screenScale
+            let physicalHeight = screenFrame.height * screenScale
+
+            // 获取物理尺寸
+            let deviceDescription = screen.deviceDescription
+            let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+            var physicalSize: CGSize = .zero
+
+            print("📏 [getPhysicalScreenSize] 处理显示器 \(screenIndex):")
+            print("   - 逻辑尺寸: \(screenFrame.width) x \(screenFrame.height)")
+            print("   - 缩放因子: \(screenScale)")
+            print("   - 物理像素: \(physicalWidth) x \(physicalHeight)")
+            print("   - screenNumber: \(screenNumber?.stringValue ?? "nil")")
+
+            if let screenNumberValue = screenNumber {
+                let displayID = CGDirectDisplayID(screenNumberValue.uint32Value)
+                print("   - displayID: \(displayID)")
+                physicalSize = CGDisplayScreenSize(displayID)
+                print("   - 物理尺寸: \(physicalSize.width)mm x \(physicalSize.height)mm")
+            } else {
+                print("   - ⚠️ 无法获取 screenNumber")
+            }
+
+            screenIndex += 1
+
+            let screenInfo: [String: Any] = [
+                "screenWidth": screenFrame.width,
+                "screenHeight": screenFrame.height,
+                "visibleWidth": screenVisibleFrame.width,
+                "visibleHeight": screenVisibleFrame.height,
+                "scaleFactor": screenScale,
+                "physicalWidth": physicalWidth,
+                "physicalHeight": physicalHeight,
+                "physicalWidthMM": physicalSize.width,
+                "physicalHeightMM": physicalSize.height,
+                "diagonalMM": sqrt(pow(physicalSize.width, 2) + pow(physicalSize.height, 2)),
+                "colorSpace": screen.colorSpace?.localizedName ?? "unknown",
+                "isMain": screen == NSScreen.main
+            ]
+
+            allScreens.append(screenInfo)
+        }
+
+        let resultData: [String: Any] = [
+            "mainDisplay": displayInfo,
+            "allDisplays": allScreens,
+            "displayCount": NSScreen.screens.count
+        ]
+
+        print("📏 [getPhysicalScreenSize] 结果总结:")
+        print("   - 主显示器物理尺寸: \(physicalSize.width)mm x \(physicalSize.height)mm")
+        print("   - 对角线长度: \(sqrt(pow(physicalSize.width, 2) + pow(physicalSize.height, 2)))mm")
+        print("   - 总显示器数量: \(NSScreen.screens.count)")
+        print("📏 [getPhysicalScreenSize] 完成")
+
+        result(resultData)
     }
 }

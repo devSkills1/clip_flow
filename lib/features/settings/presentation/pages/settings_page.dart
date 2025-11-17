@@ -65,6 +65,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final preferences = ref.watch(userPreferencesProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -160,25 +162,85 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   _showMaxHistoryDialog(context, ref);
                 },
               ),
-              _buildRadioTile<UiMode>(
-                title: '界面模式',
-                subtitle: '选择应用的界面风格',
-                value: preferences.uiMode,
-                options: const [
-                  (
-                    value: UiMode.traditional,
-                    title: '传统剪贴板',
-                    subtitle: '经典的剪贴板历史管理界面',
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.2),
                   ),
-                  (
-                    value: UiMode.appSwitcher,
-                    title: '应用切换器',
-                    subtitle: '类似 macOS Cmd+Tab 的切换界面',
-                  ),
-                ],
-                onChanged: (UiMode value) {
-                  ref.read(userPreferencesProvider.notifier).setUiMode(value);
-                },
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+                      child: Text(
+                        '界面模式',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 16, 8),
+                      child: Text(
+                        '选择应用的界面风格',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ModernRadioListTile<UiMode>(
+                      value: UiMode.traditional,
+                      groupValue: preferences.uiMode,
+                      title: const Text('传统剪贴板'),
+                      subtitle: const Text('经典的剪贴板历史管理界面'),
+                      onChanged: (UiMode? value) async {
+                        if (value != null) {
+                          ref
+                              .read(userPreferencesProvider.notifier)
+                              .setUiMode(value);
+                          // 切换界面模式后重新设置窗口并居中
+                          if (mounted) {
+                            final navigator = Navigator.of(context);
+                            await WindowManagementService.instance
+                                .applyUISettings(value, context: context);
+                            // 返回对应模式的首页
+                            if (mounted) {
+                              navigator.pop();
+                            }
+                          }
+                        }
+                      },
+                    ),
+                    ModernRadioListTile<UiMode>(
+                      value: UiMode.appSwitcher,
+                      groupValue: preferences.uiMode,
+                      title: const Text('应用切换器'),
+                      subtitle: const Text('类似 macOS Cmd+Tab 的切换界面'),
+                      onChanged: (UiMode? value) async {
+                        if (value != null) {
+                          ref
+                              .read(userPreferencesProvider.notifier)
+                              .setUiMode(value);
+                          // 切换界面模式后重新设置窗口并居中
+                          if (mounted) {
+                            final navigator = Navigator.of(context);
+                            await WindowManagementService.instance
+                                .applyUISettings(value, context: context);
+                            // 返回对应模式的首页
+                            if (mounted) {
+                              navigator.pop();
+                            }
+                          }
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
             ],
           ),
