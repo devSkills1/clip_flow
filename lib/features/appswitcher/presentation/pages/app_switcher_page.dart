@@ -1,8 +1,10 @@
 import 'dart:ui' as ui;
 
+import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
+import 'package:clip_flow_pro/core/utils/clip_item_icon_util.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -91,104 +93,33 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   }
 
   Widget _buildLargeItemIcon(ClipItem item) {
-    IconData iconData;
-    Color iconColor;
-
-    switch (item.type) {
-      case ClipType.text:
-      case ClipType.html:
-      case ClipType.rtf:
-        iconData = Icons.text_fields;
-        iconColor = Colors.blue;
-      case ClipType.image:
-        iconData = Icons.image;
-        iconColor = Colors.green;
-      case ClipType.file:
-        iconData = Icons.insert_drive_file;
-        iconColor = Colors.orange;
-      case ClipType.color:
-        iconData = Icons.palette;
-        iconColor = Colors.purple;
-      case ClipType.url:
-        iconData = Icons.link;
-        iconColor = Colors.cyan;
-      case ClipType.email:
-        iconData = Icons.email;
-        iconColor = Colors.red;
-      case ClipType.json:
-      case ClipType.xml:
-      case ClipType.code:
-        iconData = Icons.code;
-        iconColor = Colors.grey;
-      case ClipType.audio:
-        iconData = Icons.audiotrack;
-        iconColor = Colors.pink;
-      case ClipType.video:
-        iconData = Icons.videocam;
-        iconColor = Colors.indigo;
-    }
+    final iconConfig = ClipItemIconUtil.getIconConfig(item);
 
     return Container(
-      width: 80,
-      height: 80,
+      width: 48, // 与传统模式ListTile的leading保持一致
+      height: 48,
+      padding: const EdgeInsets.all(Spacing.s8), // 8px padding，与传统模式一致
       decoration: BoxDecoration(
-        color: iconColor.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(16),
+        color: iconConfig.color.withValues(alpha: 0.1), // 与传统模式一致的透明度
+        borderRadius: BorderRadius.circular(Spacing.s8), // 8px圆角，与传统模式一致
+        border: Border.all(
+          color: iconConfig.color.withValues(alpha: 0.2), // 与传统模式一致的边框透明度
+        ),
       ),
       child: Icon(
-        iconData,
-        color: Colors.white,
-        size: 40,
+        iconConfig.icon,
+        color: iconConfig.color, // 使用类型颜色而不是白色，与传统模式一致
+        size: 16, // 与传统模式type icon大小一致
       ),
     );
   }
 
   String _getItemTitle(ClipItem item) {
-    final content = item.content ?? '';
-    switch (item.type) {
-      case ClipType.text:
-      case ClipType.html:
-      case ClipType.rtf:
-        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
-      case ClipType.image:
-        final width = item.metadata['width'] as int? ?? 0;
-        final height = item.metadata['height'] as int? ?? 0;
-        return '图片 (${width}x$height)';
-      case ClipType.file:
-        final fileName = item.metadata['fileName'] as String? ?? '未知文件';
-        return fileName;
-      case ClipType.color:
-        return '颜色: $content';
-      case ClipType.url:
-        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
-      case ClipType.email:
-        return content;
-      case ClipType.json:
-      case ClipType.xml:
-      case ClipType.code:
-        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
-      case ClipType.audio:
-      case ClipType.video:
-        return item.metadata['fileName'] as String? ??
-            (content.isNotEmpty ? content : '${item.type.name}文件');
-    }
+    return ClipItemUtil.getItemTitle(item);
   }
 
   String _formatDate(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return '刚刚';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}分钟前';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}小时前';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
-    } else {
-      return '${dateTime.month}/${dateTime.day} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    }
+    return ClipItemUtil.formatDateTime(dateTime);
   }
 
   void _onItemTap(ClipItem item) {
@@ -261,32 +192,32 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                             filled: true,
                             fillColor: Colors.white.withValues(alpha: 0.1),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(Spacing.s12),
                               borderSide: BorderSide(
                                 color: Colors.white.withValues(alpha: 0.2),
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(Spacing.s12),
                               borderSide: BorderSide(
                                 color: Colors.white.withValues(alpha: 0.2),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(Spacing.s12),
                               borderSide: BorderSide(
                                 color: Colors.white.withValues(alpha: 0.4),
                               ),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                              horizontal: Spacing.s16,
+                              vertical: Spacing.s12,
                             ),
                           ),
                           onChanged: _filterItems,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: Spacing.s12),
                       // 切换回传统UI的按钮
                       ElevatedButton.icon(
                         onPressed: () {
@@ -307,7 +238,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                             vertical: 12,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(Spacing.s8),
                           ),
                         ),
                       ),
@@ -345,7 +276,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                                     : null,
                                 icon: const Icon(Icons.chevron_left),
                                 color: Colors.white,
-                                iconSize: 32,
+                                iconSize: 20, // 与传统模式导航图标大小一致
                               ),
 
                             // 水平滚动视图
@@ -373,7 +304,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                                     },
                                     child: Container(
                                       margin: const EdgeInsets.symmetric(
-                                        horizontal: 8,
+                                        horizontal: Spacing.s8,
                                       ),
                                       decoration: BoxDecoration(
                                         color: isSelected
@@ -383,7 +314,9 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                                             : Colors.white.withValues(
                                                 alpha: 0.15,
                                               ),
-                                        borderRadius: BorderRadius.circular(16),
+                                        borderRadius: BorderRadius.circular(
+                                          Spacing.s12,
+                                        ), // 12px圆角，与传统模式卡片一致
                                         border: Border.all(
                                           color: isSelected
                                               ? Colors.white.withValues(
@@ -418,15 +351,20 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                                         children: [
                                           // 应用图标
                                           Container(
-                                            width: 80,
-                                            height: 80,
-                                            margin: const EdgeInsets.all(16),
+                                            width:
+                                                48, // 与传统模式ListTile的leading保持一致
+                                            height: 48,
+                                            margin: const EdgeInsets.all(
+                                              Spacing.s16,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: Colors.white.withValues(
                                                 alpha: 0.1,
                                               ),
                                               borderRadius:
-                                                  BorderRadius.circular(16),
+                                                  BorderRadius.circular(
+                                                    Spacing.s8,
+                                                  ), // 8px圆角，与传统模式一致
                                             ),
                                             child: _buildLargeItemIcon(item),
                                           ),
@@ -434,7 +372,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                                           // 应用标题
                                           Padding(
                                             padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
+                                              horizontal: Spacing.s12,
                                             ),
                                             child: Text(
                                               _getItemTitle(item),
@@ -491,7 +429,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                                     : null,
                                 icon: const Icon(Icons.chevron_right),
                                 color: Colors.white,
-                                iconSize: 32,
+                                iconSize: 20, // 与传统模式导航图标大小一致
                               ),
                           ],
                         ),

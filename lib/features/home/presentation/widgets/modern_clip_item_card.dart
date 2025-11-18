@@ -9,13 +9,13 @@ import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow_pro/core/utils/clip_item_icon_util.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 
 /// 现代化的剪贴项卡片组件 - 解决布局溢出和性能问题
@@ -1217,51 +1217,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   IconConfig _getIconConfig() {
-    switch (widget.item.type) {
-      case ClipType.text:
-        return IconConfig(
-          Icons.text_fields,
-          Color(AppColors.iconColors['blue']!),
-        );
-      case ClipType.rtf:
-      case ClipType.html:
-        return IconConfig(
-          Icons.description,
-          Color(AppColors.iconColors['green']!),
-        );
-      case ClipType.image:
-        return IconConfig(Icons.image, Color(AppColors.iconColors['purple']!));
-      case ClipType.color:
-        return IconConfig(
-          Icons.palette,
-          Color(AppColors.iconColors['orange']!),
-        );
-      case ClipType.file:
-        return IconConfig(
-          Icons.insert_drive_file,
-          Color(AppColors.iconColors['grey']!),
-        );
-      case ClipType.audio:
-        return IconConfig(
-          Icons.audiotrack,
-          Color(AppColors.iconColors['red']!),
-        );
-      case ClipType.video:
-        return IconConfig(Icons.videocam, Color(AppColors.iconColors['pink']!));
-      case ClipType.url:
-        return IconConfig(Icons.link, Color(AppColors.iconColors['blue']!));
-      case ClipType.email:
-        return IconConfig(Icons.email, Color(AppColors.iconColors['green']!));
-      case ClipType.json:
-        return IconConfig(
-          Icons.data_object,
-          Color(AppColors.iconColors['orange']!),
-        );
-      case ClipType.xml:
-        return IconConfig(Icons.code, Color(AppColors.iconColors['purple']!));
-      case ClipType.code:
-        return IconConfig(Icons.terminal, Color(AppColors.iconColors['grey']!));
-    }
+    return ClipItemIconUtil.getIconConfig(widget.item);
   }
 
   double _getColorPreviewHeight() {
@@ -1398,41 +1354,11 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   String _getContentPreview() {
-    switch (widget.item.type) {
-      case ClipType.image:
-        final width = widget.item.metadata['width'] as int? ?? 0;
-        final height = widget.item.metadata['height'] as int? ?? 0;
-        return width > 0 && height > 0 ? '图片 $width×$height' : '图片';
-      case ClipType.file:
-        final fileName = widget.item.metadata['fileName'] as String? ?? '未知文件';
-        return fileName;
-      case ClipType.color:
-        final colorHex = widget.item.content ?? AppColors.defaultColorHex;
-        return '颜色 $colorHex';
-      default:
-        final content = widget.item.content ?? '';
-        if (content.length > 50) {
-          return '${content.substring(0, 50)}...';
-        }
-        return content;
-    }
+    return ClipItemUtil.getItemTitle(widget.item);
   }
 
   String _getTimeAgo(BuildContext context) {
-    final now = DateTime.now();
-    final difference = now.difference(widget.item.createdAt);
-
-    if (difference.inMinutes < 1) {
-      return I18nCommonUtil.getTimeJustNow(context);
-    } else if (difference.inMinutes < 60) {
-      return I18nCommonUtil.getTimeMinutesAgo(context, difference.inMinutes);
-    } else if (difference.inHours < 24) {
-      return I18nCommonUtil.getTimeHoursAgo(context, difference.inHours);
-    } else if (difference.inDays < 7) {
-      return I18nCommonUtil.getTimeDaysAgo(context, difference.inDays);
-    } else {
-      return DateFormat('yyyy-MM-dd').format(widget.item.createdAt);
-    }
+    return ClipItemUtil.formatDate(widget.item.createdAt);
   }
 
   Widget _buildCompactStatsOrMetadata(BuildContext context) {
@@ -1704,18 +1630,6 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 }
 
 // 配置类
-
-/// 图标配置类
-class IconConfig {
-  /// 创建图标配置
-  const IconConfig(this.icon, this.color);
-
-  /// 图标数据
-  final IconData icon;
-
-  /// 图标颜色
-  final Color color;
-}
 
 /// 文件图标配置类
 class FileIconConfig {
