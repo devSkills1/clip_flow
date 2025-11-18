@@ -12,29 +12,10 @@ import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
-  // 检查是否配置了Sentry DSN
-  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
-
-  if (sentryDsn.isNotEmpty) {
-    // 只有在配置了DSN时才初始化Sentry
-    await SentryFlutter.init(
-      (options) {
-        options
-          ..dsn = sentryDsn
-          ..environment = const bool.fromEnvironment('dart.vm.product')
-              ? 'production'
-              : 'development';
-      },
-      appRunner: _runApp,
-    );
-  } else {
-    // 开发模式下直接运行应用，不使用Sentry
-    await _runApp();
-  }
+  await _runApp();
 }
 
 Future<void> _runApp() async {
@@ -108,10 +89,10 @@ Future<void> _runApp() async {
     // 安排后台检查更新
     UpdateService().scheduleBackgroundCheck();
   } on Exception catch (e, stackTrace) {
-    await CrashService.reportError(
-      e,
-      stackTrace,
-      context: 'Failed to initialize UpdateService',
+    await Log.e(
+      'Failed to initialize UpdateService: $e',
+      error: e,
+      stackTrace: stackTrace,
     );
   }
 

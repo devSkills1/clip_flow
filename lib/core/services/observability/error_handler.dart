@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// 全局错误处理器
 ///
@@ -101,7 +100,6 @@ class ErrorHandler {
       stackTrace,
       context: context ?? 'Business Logic Error',
       extra: extra,
-      level: SentryLevel.warning,
     );
   }
 
