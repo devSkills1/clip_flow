@@ -74,7 +74,10 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
         // 使用WindowManagementService统一处理窗口设置
-        await WindowManagementService.instance.applyUISettings(UiMode.traditional, context: context);
+        await WindowManagementService.instance.applyUISettings(
+          UiMode.traditional,
+          context: context,
+        );
       }
     });
   }
