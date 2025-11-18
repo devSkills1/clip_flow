@@ -74,10 +74,14 @@ class ClipboardProcessor {
         final deduplicatedItem = await DeduplicationService.instance
             .checkAndPrepare(contentHash, tempItem.copyWith(id: contentHash));
         if (deduplicatedItem != null) {
-          Log.d('Returning deduplicated item for UI update', tag: 'ClipboardProcessor', fields: {
-            'contentHash': contentHash,
-            'itemType': deduplicatedItem.type.name,
-          });
+          await Log.d(
+            'Returning deduplicated item for UI update',
+            tag: 'ClipboardProcessor',
+            fields: {
+              'contentHash': contentHash,
+              'itemType': deduplicatedItem.type.name,
+            },
+          );
           return deduplicatedItem;
         }
         return null;
