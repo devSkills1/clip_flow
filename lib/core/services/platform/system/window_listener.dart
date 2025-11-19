@@ -29,6 +29,7 @@ class WindowManagementService {
 
   bool _isInitialized = false;
   WindowState _currentState = WindowState.normal;
+  _WindowEventListener? _eventListener;
 
   // ScreenService constants and methods
   static const MethodChannel _screenChannel = MethodChannel(
@@ -93,7 +94,8 @@ class WindowManagementService {
 
   /// 设置事件监听器
   Future<void> _setupEventListeners() async {
-    windowManager.addListener(_WindowEventListener());
+    _eventListener = _WindowEventListener();
+    windowManager.addListener(_eventListener!);
   }
 
   /// 显示并聚焦窗口
@@ -209,6 +211,47 @@ class WindowManagementService {
     }
   }
 
+  /// 窗口操作包装器（减少重复的错误处理）
+  Future<T> _executeWindowOperation<T>(
+    String operationName,
+    Future<T> Function() operation, {
+    bool enableLogging = true,
+  }) async {
+    try {
+      final result = await operation();
+      if (enableLogging) {
+        await Log.i('$operationName - 操作成功', tag: 'WindowManagementService');
+      }
+      return result;
+    } on Exception catch (e, stackTrace) {
+      await Log.e(
+        '$operationName - 操作失败',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'WindowManagementService',
+      );
+      rethrow;
+    }
+  }
+
+  /// 统一的窗口尺寸设置方法
+  Future<void> _setWindowConstraints({
+    required double width,
+    required double height,
+    bool enableLogging = false,
+  }) async {
+    await windowManager.setMinimumSize(ui.Size(width, height));
+    await windowManager.setMaximumSize(ui.Size(width, height));
+    await windowManager.setSize(ui.Size(width, height));
+
+    if (enableLogging) {
+      await Log.i(
+        '窗口约束设置完成: ${width.toStringAsFixed(0)}x${height.toStringAsFixed(0)}',
+        tag: 'WindowManagementService',
+      );
+    }
+  }
+
   /// 居中窗口
   Future<void> center() async {
     try {
@@ -277,163 +320,121 @@ class WindowManagementService {
     }
   }
 
-  /// 启动时设置窗口（不需要 context）
-  Future<void> setupWindow(UiMode uiMode) async {
-    try {
-      switch (uiMode) {
-        case UiMode.traditional:
-          await _setupTraditionalWindow();
-        case UiMode.appSwitcher:
-          await _setupAppSwitcherWindow();
-      }
-    } on Exception catch (e, stackTrace) {
-      await Log.e(
-        'UI窗口管理 - 启动窗口设置失败',
-        error: e,
-        stackTrace: stackTrace,
-        tag: 'WindowManagementService',
-      );
-    }
+  /// 统一的窗口配置方法（替代 setupWindow 和 applyUISettings）
+  Future<void> configureWindow(
+    UiMode uiMode, {
+    BuildContext? context,
+    bool enableLogging = true,
+    bool applyDelay = true,
+    UserPreferences? userPreferences,
+  }) async {
+    await _executeWindowOperation(
+      'UI窗口管理 - 窗口配置',
+      () async {
+        switch (uiMode) {
+          case UiMode.traditional:
+            await _configureTraditionalWindow(
+              enableLogging: enableLogging,
+              applyDelay: applyDelay,
+            );
+          case UiMode.appSwitcher:
+            await _configureAppSwitcherMode(
+              context,
+              enableLogging: enableLogging,
+              applyDelay: applyDelay,
+              userPreferences: userPreferences,
+            );
+        }
+      },
+    );
   }
 
-  /// UI模式应用窗口设置
+  /// 启动时设置窗口（保持向后兼容）
+  Future<void> setupWindow(UiMode uiMode) async {
+    await configureWindow(uiMode, enableLogging: false, applyDelay: false);
+  }
+
+  /// UI模式应用窗口设置（保持向后兼容）
   Future<void> applyUISettings(
     UiMode uiMode, {
     required BuildContext context,
+    UserPreferences? userPreferences,
   }) async {
-    try {
-      switch (uiMode) {
-        case UiMode.traditional:
-          await _applyTraditionalMode();
-        case UiMode.appSwitcher:
-          await _applyAppSwitcherMode(context);
-      }
-    } on Exception catch (e, stackTrace) {
-      await Log.e(
-        'UI窗口管理 - 应用窗口设置失败',
-        error: e,
-        stackTrace: stackTrace,
-        tag: 'WindowManagementService',
-      );
-    }
+    await configureWindow(
+      uiMode,
+      context: context,
+      userPreferences: userPreferences,
+    );
   }
 
-  /// 应用传统模式窗口设置
-  Future<void> _applyTraditionalMode() async {
-    await Log.i('UI窗口管理 - 应用传统模式窗口设置', tag: 'WindowManagementService');
-
-    // 传统模式使用固定窗口尺寸
-    const traditionalWidth = ClipConstants.minWindowWidth; // 1200（固定宽度）
-    const traditionalHeight = ClipConstants.minWindowHeight; // 800（固定高度）
-
-    await Log.i(
-      '传统模式尺寸: ${traditionalWidth.toStringAsFixed(0)}x${traditionalHeight.toStringAsFixed(0)} (固定尺寸)',
-      tag: 'WindowManagementService',
-    );
-
-    // 先设置窗口约束，避免约束冲突导致的居中失败
-    await windowManager.setMinimumSize(
-      const ui.Size(traditionalWidth, traditionalHeight),
-    );
-    await windowManager.setMaximumSize(
-      const ui.Size(traditionalWidth, traditionalHeight),
-    );
-
-    // 设置窗口尺寸（在约束之后设置，确保约束已生效）
-    await windowManager.setSize(
-      const ui.Size(traditionalWidth, traditionalHeight),
-    );
-
-    // 恢复默认窗口标题
-    await windowManager.setTitle(ClipConstants.appName);
-
-    // 等待窗口管理器稳定后再居中（修复约束竞争条件）
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-    await center();
-
-    await Log.i('UI窗口管理 - 传统模式窗口设置完成', tag: 'WindowManagementService');
-  }
-
-  /// 应用应用切换器模式窗口设置
-  Future<void> _applyAppSwitcherMode(BuildContext context) async {
-    // 获取逻辑屏幕尺寸（修复bug：使用逻辑分辨率避免超出屏幕）
-    final screenInfo = await getMainScreenInfo();
-
-    // 使用逻辑分辨率计算80%宽度（修复bug：避免超出屏幕）
-    final logicalScreenWidth = screenInfo.screenWidth; // 逻辑分辨率宽度（修复）
-    final appSwitcherWidth =
-        logicalScreenWidth *
-        ClipConstants.appSwitcherWidthRatio; // 逻辑宽度比例（常量定义）
-    const appSwitcherHeight =
-        ClipConstants.appSwitcherWindowHeight; // 固定高度（常量定义）
-
-    await Log.i('UI窗口管理 - 开始应用应用切换器模式窗口设置', tag: 'WindowManagementService');
-    await Log.i(
-      '逻辑屏幕尺寸: ${logicalScreenWidth.toStringAsFixed(0)}x${screenInfo.screenHeight.toStringAsFixed(0)} (缩放因子: ${screenInfo.scaleFactor})',
-      tag: 'WindowManagementService',
-    );
-    await Log.i(
-      '应用切换器宽度: ${appSwitcherWidth.toStringAsFixed(0)} (逻辑屏幕80% - 用户强指令 + 修复)',
-      tag: 'WindowManagementService',
-    );
-    await Log.i(
-      '应用切换器高度: ${appSwitcherHeight.toStringAsFixed(0)} (固定高度 - 用户强指令)',
-      tag: 'WindowManagementService',
-    );
-
-    // 先设置窗口约束，避免约束冲突导致的居中失败（修复约束竞争条件）
-    await windowManager.setMinimumSize(
-      ui.Size(appSwitcherWidth, appSwitcherHeight),
-    );
-    await windowManager.setMaximumSize(
-      ui.Size(appSwitcherWidth, appSwitcherHeight),
-    );
-
-    // 设置应用切换器的窗口尺寸（在约束之后设置，确保约束已生效）
-    await windowManager.setSize(ui.Size(appSwitcherWidth, appSwitcherHeight));
-    await Log.i(
-      'UI窗口管理 - 应用切换器尺寸设置: ${appSwitcherWidth.toStringAsFixed(0)}x${appSwitcherHeight.toInt()}',
-      tag: 'WindowManagementService',
-    );
-
-    // 设置应用切换器窗口标题
-    await windowManager.setTitle('应用切换器 - ${ClipConstants.appName}');
-
-    // 等待窗口管理器稳定后再居中（修复约束竞争条件）
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-    await center();
-
-    await Log.i('UI窗口管理 - 应用切换器模式窗口设置完成', tag: 'WindowManagementService');
-  }
-
-  /// 设置传统模式窗口（启动时使用）
-  Future<void> _setupTraditionalWindow() async {
+  /// 统一的传统模式窗口配置
+  Future<void> _configureTraditionalWindow({
+    bool enableLogging = true,
+    bool applyDelay = true,
+  }) async {
     const traditionalWidth = ClipConstants.minWindowWidth;
     const traditionalHeight = ClipConstants.minWindowHeight;
 
-    await windowManager.setSize(
-      const ui.Size(traditionalWidth, traditionalHeight),
+    if (enableLogging) {
+      await Log.i(
+        '配置传统模式窗口: ${traditionalWidth}x$traditionalHeight',
+        tag: 'WindowManagementService',
+      );
+    }
+
+    // 使用统一的约束设置方法
+    await _setWindowConstraints(
+      width: traditionalWidth,
+      height: traditionalHeight,
+      enableLogging: enableLogging,
     );
-    await windowManager.setMinimumSize(
-      const ui.Size(traditionalWidth, traditionalHeight),
-    );
-    await windowManager.setMaximumSize(
-      const ui.Size(traditionalWidth, traditionalHeight),
-    );
+
     await windowManager.setTitle(ClipConstants.appName);
+
+    // 应用延迟和居中（修复约束竞争条件）
+    if (applyDelay) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
     await center();
   }
 
-  /// 设置应用切换器窗口（启动时使用）
-  Future<void> _setupAppSwitcherWindow() async {
+  /// 统一的应用切换器模式窗口配置
+  Future<void> _configureAppSwitcherMode(
+    BuildContext? context, {
+    bool enableLogging = true,
+    bool applyDelay = true,
+    UserPreferences? userPreferences,
+  }) async {
+    // 获取屏幕尺寸和用户偏好宽度
     final screenInfo = await getMainScreenInfo();
-    final width = screenInfo.screenWidth * ClipConstants.appSwitcherWidthRatio;
-    const height = ClipConstants.appSwitcherWindowHeight;
 
-    await windowManager.setSize(ui.Size(width, height));
-    await windowManager.setMinimumSize(ui.Size(width, height));
-    await windowManager.setMaximumSize(ui.Size(width, height));
+    // 使用用户自定义宽度或默认计算宽度
+    final appSwitcherWidth =
+        userPreferences?.appSwitcherWindowWidth ??
+        screenInfo.screenWidth * ClipConstants.appSwitcherWidthRatio;
+
+    const appSwitcherHeight = ClipConstants.appSwitcherWindowHeight;
+
+    if (enableLogging) {
+      await Log.i(
+        '配置应用切换器窗口: ${appSwitcherWidth.toStringAsFixed(0)}x${appSwitcherHeight.toStringAsFixed(0)}',
+        tag: 'WindowManagementService',
+      );
+    }
+
+    // 使用统一的约束设置方法
+    await _setWindowConstraints(
+      width: appSwitcherWidth,
+      height: appSwitcherHeight,
+      enableLogging: enableLogging,
+    );
+
     await windowManager.setTitle('应用切换器 - ${ClipConstants.appName}');
+
+    // 应用延迟和居中（修复约束竞争条件）
+    if (applyDelay) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
     await center();
   }
 
@@ -516,7 +517,11 @@ class WindowManagementService {
   /// 清理资源
   Future<void> dispose() async {
     try {
-      windowManager.removeListener(_WindowEventListener());
+      // 正确移除存储的监听器引用
+      if (_eventListener != null) {
+        windowManager.removeListener(_eventListener!);
+        _eventListener = null;
+      }
       _isInitialized = false;
 
       await Log.i('WindowManagementService disposed');

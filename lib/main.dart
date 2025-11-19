@@ -57,7 +57,7 @@ Future<void> _runApp() async {
   await windowService.setupWindow(resolvedUiMode);
   const windowOptions = WindowOptions(
     center: true,
-    backgroundColor:  Color(AppColors.white),
+    backgroundColor: Color(AppColors.white),
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.normal,
     alwaysOnTop: false,
@@ -109,10 +109,8 @@ Future<void> _runApp() async {
         userPreferencesProvider.overrideWith(
           (ref) => UserPreferencesNotifier.withInitial(initialPreferences),
         ),
-        ],
+      ],
       child: const ClipFlowProApp(),
     ),
   );
 }
-
-
