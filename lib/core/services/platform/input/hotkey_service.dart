@@ -397,6 +397,30 @@ class HotkeyService {
       } else {
         return false;
       }
+    } on PlatformException catch (e) {
+      await Log.e(
+        '平台快捷键注册失败',
+        tag: _tag,
+        error: e,
+        fields: {
+          'action': config.action.name,
+          'key': config.displayString,
+          'errorCode': e.code,
+          'errorDetails': e.details,
+        },
+      );
+      return false;
+    } on MissingPluginException catch (e) {
+      await Log.e(
+        '快捷键插件缺失',
+        tag: _tag,
+        error: e,
+        fields: {
+          'action': config.action.name,
+          'key': config.displayString,
+        },
+      );
+      return false;
     } on Exception catch (e) {
       await Log.e(
         '通过通道注册快捷键失败',
@@ -543,26 +567,55 @@ class HotkeyService {
         final configsList = jsonDecode(configsJson) as List<dynamic>;
 
         for (final configJson in configsList) {
-          final config = HotkeyConfig.fromJson(
-            configJson as Map<String, dynamic>,
-          );
-          if (config.enabled) {
-            // 使用公共注册方法，不保存配置（避免重复保存）
-            final result = await _registerHotkeyWithChannel(
-              config,
-              saveConfig: false,
+          try {
+            final config = HotkeyConfig.fromJson(
+              configJson as Map<String, dynamic>,
             );
-
-            if (!result) {
-              await Log.w(
-                '加载快捷键配置时注册失败',
-                tag: _tag,
-                fields: {
-                  'action': config.action.name,
-                  'key': config.displayString,
-                },
+            if (config.enabled) {
+              // 使用公共注册方法，不保存配置（避免重复保存）
+              final result = await _registerHotkeyWithChannel(
+                config,
+                saveConfig: false,
               );
+
+              if (!result) {
+                await Log.w(
+                  '加载快捷键配置时注册失败',
+                  tag: _tag,
+                  fields: {
+                    'action': config.action.name,
+                    'key': config.displayString,
+                  },
+                );
+              }
             }
+          } on FormatException catch (e) {
+            await Log.e(
+              '快捷键配置格式错误',
+              tag: _tag,
+              error: e,
+              fields: {
+                'configData': configJson,
+              },
+            );
+          } on ArgumentError catch (e) {
+            await Log.e(
+              '快捷键配置参数错误',
+              tag: _tag,
+              error: e,
+              fields: {
+                'configData': configJson,
+              },
+            );
+          } on Exception catch (e) {
+            await Log.e(
+              '加载单个快捷键配置失败',
+              tag: _tag,
+              error: e,
+              fields: {
+                'configData': configJson,
+              },
+            );
           }
         }
 
@@ -574,6 +627,8 @@ class HotkeyService {
           },
         );
       }
+    } on FormatException catch (e) {
+      await Log.e('快捷键配置JSON格式错误', tag: _tag, error: e);
     } on Exception catch (e) {
       await Log.e('加载快捷键配置失败', tag: _tag, error: e);
     }
