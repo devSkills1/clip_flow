@@ -277,6 +277,25 @@ class WindowManagementService {
     }
   }
 
+  /// 启动时设置窗口（不需要 context）
+  Future<void> setupWindow(UiMode uiMode) async {
+    try {
+      switch (uiMode) {
+        case UiMode.traditional:
+          await _setupTraditionalWindow();
+        case UiMode.appSwitcher:
+          await _setupAppSwitcherWindow();
+      }
+    } on Exception catch (e, stackTrace) {
+      await Log.e(
+        'UI窗口管理 - 启动窗口设置失败',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'WindowManagementService',
+      );
+    }
+  }
+
   /// UI模式应用窗口设置
   Future<void> applyUISettings(
     UiMode uiMode, {
@@ -312,12 +331,7 @@ class WindowManagementService {
       tag: 'WindowManagementService',
     );
 
-    // 设置传统模式的窗口尺寸
-    await windowManager.setSize(
-      const ui.Size(traditionalWidth, traditionalHeight),
-    );
-
-    // 设置传统模式的窗口属性 - 固定尺寸，用户无法调整
+    // 先设置窗口约束，避免约束冲突导致的居中失败
     await windowManager.setMinimumSize(
       const ui.Size(traditionalWidth, traditionalHeight),
     );
@@ -325,10 +339,16 @@ class WindowManagementService {
       const ui.Size(traditionalWidth, traditionalHeight),
     );
 
+    // 设置窗口尺寸（在约束之后设置，确保约束已生效）
+    await windowManager.setSize(
+      const ui.Size(traditionalWidth, traditionalHeight),
+    );
+
     // 恢复默认窗口标题
     await windowManager.setTitle(ClipConstants.appName);
 
-    // 居中窗口
+    // 等待窗口管理器稳定后再居中（修复约束竞争条件）
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     await center();
 
     await Log.i('UI窗口管理 - 传统模式窗口设置完成', tag: 'WindowManagementService');
@@ -361,14 +381,7 @@ class WindowManagementService {
       tag: 'WindowManagementService',
     );
 
-    // 设置应用切换器的窗口尺寸
-    await windowManager.setSize(ui.Size(appSwitcherWidth, appSwitcherHeight));
-    await Log.i(
-      'UI窗口管理 - 应用切换器尺寸设置: ${appSwitcherWidth.toStringAsFixed(0)}x${appSwitcherHeight.toInt()}',
-      tag: 'WindowManagementService',
-    );
-
-    // 设置应用切换器的窗口属性 - 固定尺寸，用户无法调整
+    // 先设置窗口约束，避免约束冲突导致的居中失败（修复约束竞争条件）
     await windowManager.setMinimumSize(
       ui.Size(appSwitcherWidth, appSwitcherHeight),
     );
@@ -376,13 +389,52 @@ class WindowManagementService {
       ui.Size(appSwitcherWidth, appSwitcherHeight),
     );
 
+    // 设置应用切换器的窗口尺寸（在约束之后设置，确保约束已生效）
+    await windowManager.setSize(ui.Size(appSwitcherWidth, appSwitcherHeight));
+    await Log.i(
+      'UI窗口管理 - 应用切换器尺寸设置: ${appSwitcherWidth.toStringAsFixed(0)}x${appSwitcherHeight.toInt()}',
+      tag: 'WindowManagementService',
+    );
+
     // 设置应用切换器窗口标题
     await windowManager.setTitle('应用切换器 - ${ClipConstants.appName}');
 
-    // 居中窗口
+    // 等待窗口管理器稳定后再居中（修复约束竞争条件）
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     await center();
 
     await Log.i('UI窗口管理 - 应用切换器模式窗口设置完成', tag: 'WindowManagementService');
+  }
+
+  /// 设置传统模式窗口（启动时使用）
+  Future<void> _setupTraditionalWindow() async {
+    const traditionalWidth = ClipConstants.minWindowWidth;
+    const traditionalHeight = ClipConstants.minWindowHeight;
+
+    await windowManager.setSize(
+      const ui.Size(traditionalWidth, traditionalHeight),
+    );
+    await windowManager.setMinimumSize(
+      const ui.Size(traditionalWidth, traditionalHeight),
+    );
+    await windowManager.setMaximumSize(
+      const ui.Size(traditionalWidth, traditionalHeight),
+    );
+    await windowManager.setTitle(ClipConstants.appName);
+    await center();
+  }
+
+  /// 设置应用切换器窗口（启动时使用）
+  Future<void> _setupAppSwitcherWindow() async {
+    final screenInfo = await getMainScreenInfo();
+    final width = screenInfo.screenWidth * ClipConstants.appSwitcherWidthRatio;
+    const height = ClipConstants.appSwitcherWindowHeight;
+
+    await windowManager.setSize(ui.Size(width, height));
+    await windowManager.setMinimumSize(ui.Size(width, height));
+    await windowManager.setMaximumSize(ui.Size(width, height));
+    await windowManager.setTitle('应用切换器 - ${ClipConstants.appName}');
+    await center();
   }
 
   // ========== 集成的 ScreenService 静态方法 ==========
@@ -482,8 +534,9 @@ class WindowManagementService {
 ///
 /// 处理窗口关闭、最小化等事件，并根据用户设置决定是否最小化到托盘
 class AppWindowListener with WindowListener {
-  AppWindowListener(this._trayService);
+  AppWindowListener(this._trayService, {this.onSaveAppSwitcherWidth});
   final TrayService _trayService;
+  final void Function(double)? onSaveAppSwitcherWidth;
   UserPreferences? _userPreferences;
 
   /// 更新用户偏好设置（仅写入，外部不需要读取以降低耦合）
@@ -573,6 +626,30 @@ class AppWindowListener with WindowListener {
   @override
   Future<void> onWindowBlur() async {
     await Log.i('Window blurred');
+  }
+
+  @override
+  Future<void> onWindowResize() async {
+    await Log.d('Window resize event received');
+
+    // 只在 AppSwitcher 模式下保存窗口宽度
+    if (_userPreferences?.uiMode == UiMode.appSwitcher) {
+      try {
+        final size = await windowManager.getSize();
+        final width = size.width;
+
+        await Log.d('Saving AppSwitcher window width: $width');
+
+        // 使用回调保存窗口宽度
+        onSaveAppSwitcherWidth?.call(width);
+      } on Exception catch (e, stackTrace) {
+        await Log.e(
+          'Failed to save window width',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    }
   }
 }
 

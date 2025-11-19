@@ -27,6 +27,7 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 final clipRepositoryProvider = Provider<ClipRepository>((ref) {
   return ClipRepositoryImpl(DatabaseService.instance);
 });
+
 //// 路由提供者
 /// 动态主页组件，根据UI模式切换不同的页面
 class DynamicHomePage extends ConsumerWidget {
@@ -88,11 +89,19 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
       final items = await _databaseService.getAllClipItems(limit: limit);
       if (items.isNotEmpty) {
         state = items;
-        Log.d('Preloaded ${items.length} items into clipboard history',
-            tag: 'ClipboardHistoryNotifier');
+        Log.d(
+          'Preloaded ${items.length} items into clipboard history',
+          tag: 'ClipboardHistoryNotifier',
+        );
       }
     } on Exception catch (e) {
-      unawaited(Log.w('Failed to preload history', tag: 'ClipboardHistoryNotifier', error: e));
+      unawaited(
+        Log.w(
+          'Failed to preload history',
+          tag: 'ClipboardHistoryNotifier',
+          error: e,
+        ),
+      );
     }
   }
 
@@ -120,11 +129,17 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
             .map((e) => e.value),
       ];
 
-      Log.d('Moved existing item to top: ${item.id} (${item.type})', tag: 'ClipboardHistoryNotifier');
+      Log.d(
+        'Moved existing item to top: ${item.id} (${item.type})',
+        tag: 'ClipboardHistoryNotifier',
+      );
     } else {
       // 添加新项目到列表开头
       state = [item, ...state];
-      Log.d('Added new item to top: ${item.id} (${item.type})', tag: 'ClipboardHistoryNotifier');
+      Log.d(
+        'Added new item to top: ${item.id} (${item.type})',
+        tag: 'ClipboardHistoryNotifier',
+      );
 
       // 限制历史记录数量（优先保留收藏的项目）
       if (state.length > 500) {
@@ -322,6 +337,7 @@ class UserPreferences {
     this.uiMode = UiMode.traditional,
     this.isDeveloperMode = false,
     this.showPerformanceOverlay = false,
+    this.appSwitcherWindowWidth,
   });
 
   /// 从 JSON Map 创建 [UserPreferences] 实例。
@@ -347,6 +363,7 @@ class UserPreferences {
       isDeveloperMode: (json['isDeveloperMode'] as bool?) ?? false,
       showPerformanceOverlay:
           (json['showPerformanceOverlay'] as bool?) ?? false,
+      appSwitcherWindowWidth: json['appSwitcherWindowWidth'] as double?,
     );
   }
 
@@ -389,6 +406,9 @@ class UserPreferences {
   /// 是否显示性能监控覆盖层
   final bool showPerformanceOverlay;
 
+  /// AppSwitcher 模式的窗口宽度（null 表示使用默认计算值）
+  final double? appSwitcherWindowWidth;
+
   /// 返回复制的新实例，并按需覆盖指定字段。
   UserPreferences copyWith({
     bool? autoStart,
@@ -404,6 +424,7 @@ class UserPreferences {
     UiMode? uiMode,
     bool? isDeveloperMode,
     bool? showPerformanceOverlay,
+    double? appSwitcherWindowWidth,
   }) {
     return UserPreferences(
       autoStart: autoStart ?? this.autoStart,
@@ -420,6 +441,8 @@ class UserPreferences {
       isDeveloperMode: isDeveloperMode ?? this.isDeveloperMode,
       showPerformanceOverlay:
           showPerformanceOverlay ?? this.showPerformanceOverlay,
+      appSwitcherWindowWidth:
+          appSwitcherWindowWidth ?? this.appSwitcherWindowWidth,
     );
   }
 
@@ -439,6 +462,7 @@ class UserPreferences {
       'uiMode': uiMode.name,
       'isDeveloperMode': isDeveloperMode,
       'showPerformanceOverlay': showPerformanceOverlay,
+      'appSwitcherWindowWidth': appSwitcherWindowWidth,
     };
   }
 }
@@ -454,14 +478,16 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 使用传入的初始偏好进行初始化。
   /// 此构造函数不会再次触发异步偏好加载，避免冷启动阶段的 UI 模式闪动。
   UserPreferencesNotifier.withInitial(UserPreferences initial)
-      : super(initial) {
+    : super(initial) {
     // 完全同步初始化，不触发任何异步操作
     // 确保UI模式状态稳定，避免首屏闪动
-    Log.d('UserPreferencesNotifier initialized with UI mode: ${initial.uiMode}',
-          tag: 'UserPreferences');
+    Log.d(
+      'UserPreferencesNotifier initialized with UI mode: ${initial.uiMode}',
+      tag: 'UserPreferences',
+    );
 
     // 延迟同步开机自启动状态，避免影响首屏渲染
-    Future.microtask(() => _syncAutostartStatus());
+    Future.microtask(_syncAutostartStatus);
   }
 
   /// 偏好设置持久化服务
@@ -649,6 +675,12 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     state = state.copyWith(uiMode: mode);
     _savePreferences();
   }
+
+  /// 保存 AppSwitcher 模式的窗口宽度
+  void setAppSwitcherWindowWidth(double? width) {
+    state = state.copyWith(appSwitcherWindowWidth: width);
+    _savePreferences();
+  }
 }
 
 //// 剪贴板服务提供者
@@ -710,7 +742,15 @@ final trayServiceProvider = FutureProvider<TrayService>((ref) async {
 /// 提供全局单例的 AppWindowListener，用于处理窗口事件。
 final windowListenerProvider = Provider<AppWindowListener>((ref) {
   final trayService = TrayService();
-  final windowListener = AppWindowListener(trayService);
+  final windowListener = AppWindowListener(
+    trayService,
+    onSaveAppSwitcherWidth: (width) {
+      // 保存 AppSwitcher 窗口宽度
+      ref
+          .read(userPreferencesProvider.notifier)
+          .setAppSwitcherWindowWidth(width);
+    },
+  );
 
   // 监听用户偏好变化并更新窗口监听器
   ref.listen(userPreferencesProvider, (previous, next) {
