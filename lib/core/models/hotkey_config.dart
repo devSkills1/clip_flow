@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'dart:io' show Platform;
 
 /// 快捷键修饰符
 enum HotkeyModifier {
@@ -151,8 +152,7 @@ class HotkeyConfig {
 
   /// 检查是否为Apple平台（macOS/iOS）
   bool get _isApplePlatform {
-    // 这里简化处理，实际应该通过Platform.isMacOS等判断
-    return true; // 暂时默认为macOS
+    return Platform.isMacOS || Platform.isIOS;
   }
 
   /// 复制并修改配置

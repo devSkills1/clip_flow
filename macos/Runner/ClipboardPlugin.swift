@@ -30,7 +30,7 @@ import Vision
     // 系统快捷键缓存
     private var systemHotkeysCache: Set<String> = []
     private var systemHotkeysCacheTime: CFTimeInterval = 0
-    private let systemHotkeysCacheInterval: CFTimeInterval = 60.0  // 缓存1分钟
+    private let systemHotkeysCacheInterval: CFTimeInterval = 10.0  // 缓存10秒
 
     // 应用感知快捷键管理
     private var currentFrontApp: String?
