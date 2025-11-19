@@ -164,21 +164,20 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 监听剪贴板变化
-    ref.listen<AsyncValue<ClipItem>>(clipboardStreamProvider, (previous, next) {
-      next.whenData((clipItem) {
-        _loadData(); // 重新加载数据以显示最新的项目
+    // 监听剪贴板变化和历史列表变化
+    ref
+      ..listen<AsyncValue<ClipItem>>(clipboardStreamProvider, (previous, next) {
+        next.whenData((clipItem) {
+          _loadData(); // 重新加载数据以显示最新的项目
+        });
+      })
+      ..listen<List<ClipItem>>(clipboardHistoryProvider, (previous, next) {
+        if (!mounted) return;
+        setState(() {
+          _displayItems = next.toList();
+          _selectedIndex = _displayItems.isNotEmpty ? 0 : -1;
+        });
       });
-    });
-
-    // 监听历史列表变化（在 build 中订阅，符合 Riverpod 约束）
-    ref.listen<List<ClipItem>>(clipboardHistoryProvider, (previous, next) {
-      if (!mounted) return;
-      setState(() {
-        _displayItems = next.toList();
-        _selectedIndex = _displayItems.isNotEmpty ? 0 : -1;
-      });
-    });
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
