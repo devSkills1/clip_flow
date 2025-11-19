@@ -1,5 +1,5 @@
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/modern_clip_item_card.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 
@@ -80,7 +80,7 @@ class ResponsiveHomeLayout extends StatelessWidget {
                   horizontal: 16,
                   vertical: 4,
                 ),
-                child: ModernClipItemCard(
+                child: ClipItemCard(
                   key: ValueKey(item.id),
                   item: item,
                   displayMode: DisplayMode.compact,
@@ -125,7 +125,7 @@ class ResponsiveHomeLayout extends StatelessWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final item = items[index];
-                    return ModernClipItemCard(
+                    return ClipItemCard(
                       key: ValueKey(item.id),
                       item: item,
                       displayMode: DisplayMode.normal,
@@ -172,7 +172,7 @@ class ResponsiveHomeLayout extends StatelessWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final item = items[index];
-                    return ModernClipItemCard(
+                    return ClipItemCard(
                       key: ValueKey(item.id),
                       item: item,
                       displayMode: DisplayMode.preview,

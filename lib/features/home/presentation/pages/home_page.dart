@@ -3,33 +3,32 @@
 // Switch statements use exhaustive patterns without default cases.
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 
-import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/basic_sidebar.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/enhanced_search_bar.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar.dart'
+    show EnhancedSearchBar;
 import 'package:clip_flow_pro/features/home/presentation/widgets/responsive_home_layout.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 增强版首页 - 解决所有布局溢出和性能问题
-class EnhancedHomePage extends ConsumerStatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   /// 创建增强版首页
-  const EnhancedHomePage({super.key});
+  const HomePage({super.key});
 
   @override
-  ConsumerState<EnhancedHomePage> createState() => _EnhancedHomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
+class _HomePageState extends ConsumerState<HomePage>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -189,12 +188,12 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       next.whenData((clipItem) async {
         await Log.d(
           'UI received clipboard item: ${clipItem.type} - ID: ${clipItem.id}',
-          tag: 'EnhancedHomePage',
+          tag: 'HomePage',
         );
         if (clipItem.type == ClipType.image) {
           await Log.d(
             'Image item details - hasContent: ${clipItem.content != null}, hasFilePath: ${clipItem.filePath != null}',
-            tag: 'EnhancedHomePage',
+            tag: 'HomePage',
           );
         }
         ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
@@ -253,18 +252,18 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
       child: EnhancedSearchBar(
         controller: _searchController,
         hintText: '搜索剪贴板内容...',
-        onChanged: (query) {
+        onChanged: (String query) {
           ref.read(searchQueryProvider.notifier).state = query;
         },
         onClear: () {
           _searchController.clear();
           ref.read(searchQueryProvider.notifier).state = '';
         },
-        onSubmitted: (query) {
+        onSubmitted: (String query) {
           // 可以添加搜索提交逻辑
         },
         suggestions: _getSearchSuggestions(),
-        onSuggestionSelected: (suggestion) {
+        onSuggestionSelected: (String suggestion) {
           _searchController.text = suggestion;
           ref.read(searchQueryProvider.notifier).state = suggestion;
         },
@@ -431,288 +430,24 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
   }
 
   void _onItemTap(ClipItem item) {
-    // 复制到剪贴板
-    ref.read(clipboardServiceProvider).setClipboardContent(item);
-
-    // 显示提示
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          S.of(context)?.snackCopiedPrefix(_getItemPreview(item)) ??
-              I18nFallbacks.common.snackCopiedPrefix(_getItemPreview(item)),
-        ),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
+    ClipItemUtil.handleItemTap(item, ref, context: context);
   }
 
   void _onDeleteItem(ClipItem item) {
-    final isFavorite = item.isFavorite;
-
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              isFavorite ? Icons.warning_amber : Icons.delete_outline,
-              color: isFavorite
-                  ? Theme.of(context).colorScheme.error
-                  : Theme.of(context).colorScheme.onSurface,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Text(isFavorite ? '删除收藏项目？' : '确认删除'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isFavorite) ...[
-              const Text(
-                '这是一个收藏的项目！删除后将无法恢复。',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text('你确定要继续删除吗？'),
-            ] else ...[
-              const Text('确定要删除这个项目吗？'),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.cancel_outlined),
-            label: const Text('取消'),
-          ),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _performDelete(item);
-            },
-            icon: const Icon(Icons.delete_forever),
-            label: const Text('删除'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-          ),
-        ],
-      ),
-    );
+    ClipItemUtil.handleItemDelete(item, ref, context: context);
   }
 
-  String _getItemPreview(ClipItem item) {
-    switch (item.type) {
-      case ClipType.image:
-        final width = item.metadata['width'] as int? ?? 0;
-        final height = item.metadata['height'] as int? ?? 0;
-        final format = item.metadata['format'] as String?;
-        return '${I18nFallbacks.common.labelImage} '
-            '($width x $height, ${format ?? I18nFallbacks.common.unknown})';
-      case ClipType.file:
-        final fileName =
-            item.metadata['fileName'] as String? ??
-            I18nFallbacks.common.unknown;
-        return '${I18nFallbacks.common.labelFile}: $fileName';
-      case ClipType.color:
-        final colorHex = item.content ?? AppColors.defaultColorHex;
-        return '${I18nFallbacks.common.labelColor}: $colorHex';
-      default:
-        final content = item.content ?? '';
-        if (content.length > 50) {
-          return '${content.substring(0, 50)}...';
-        }
-        return content;
-    }
-  }
-
+  
   Future<void> _onItemFavoriteToggle(ClipItem item) async {
-    try {
-      // 先更新数据库
-      await ref
-          .read(clipRepositoryProvider)
-          .updateFavoriteStatus(
-            id: item.id,
-            isFavorite: !item.isFavorite,
-          );
-
-      // 数据库更新成功后再更新内存
-      ref.read(clipboardHistoryProvider.notifier).toggleFavorite(item.id);
-
-      // 静默完成收藏状态切换，不显示 SnackBar 减少打扰
-    } on Exception catch (e) {
-      // 错误处理 - 不更新内存状态
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('收藏操作失败：$e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
-      }
-    }
+    await ClipItemUtil.handleFavoriteToggle(item, ref, context: context);
   }
 
   /// 处理OCR文本点击复制
   Future<void> _onOcrTextTap(ClipItem item) async {
-    // 详细的调试信息
-    await Log.d(
-      'OCR text tap triggered',
-      tag: 'HomePage',
-      fields: {
-        'itemId': item.id,
-        'itemType': item.type.name,
-        'hasOcrText': item.ocrText != null,
-        'ocrTextLength': item.ocrText?.length ?? 0,
-        'ocrTextId': item.ocrTextId,
-        'ocrTextPreview':
-            item.ocrText?.substring(
-              0,
-              math.min(50, item.ocrText?.length ?? 0),
-            ) ??
-            '',
-      },
-    );
-
-    if (item.type != ClipType.image) {
-      await Log.w(
-        'OCR tap on non-image item',
-        tag: 'HomePage',
-        fields: {
-          'itemId': item.id,
-          'itemType': item.type.name,
-        },
-      );
-      _showOcrErrorMessage('只能对图片类型进行OCR操作');
-      return;
-    }
-
-    if (item.ocrText == null || item.ocrText!.isEmpty) {
-      await Log.w(
-        'No OCR text available',
-        tag: 'HomePage',
-        fields: {
-          'itemId': item.id,
-          'hasOcrText': item.ocrText != null,
-        },
-      );
-      _showOcrErrorMessage('该图片没有可用的OCR文本');
-      return;
-    }
-
-    try {
-      await Log.d(
-        'Copying OCR text to clipboard',
-        tag: 'HomePage',
-        fields: {
-          'itemId': item.id,
-          'ocrTextId': item.ocrTextId,
-          'textLength': item.ocrText!.length,
-        },
-      );
-
-      // 直接复制OCR文本到剪贴板
-      await Clipboard.setData(ClipboardData(text: item.ocrText!));
-
-      // 更新数据库中对应的OCR文本记录（如果存在ocrTextId）
-      if (item.ocrTextId != null) {
-        await _updateOcrTextRecord(item);
-      }
-
-      await Log.i(
-        'OCR text copied successfully',
-        tag: 'HomePage',
-        fields: {
-          'itemId': item.id,
-          'ocrTextId': item.ocrTextId,
-          'textLength': item.ocrText!.length,
-        },
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '✅ OCR文本已复制到剪贴板 (${item.ocrText!.length}字符)',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } on Exception catch (e) {
-      await Log.e('OCR copy operation failed', tag: 'HomePage', error: e);
-      _showOcrErrorMessage('OCR复制错误：$e');
-    }
+    await ClipItemUtil.handleOcrTextTap(item, ref, context: context);
   }
 
-  /// 更新OCR文本记录的时间戳
-  Future<void> _updateOcrTextRecord(ClipItem imageItem) async {
-    try {
-      final database = DatabaseService.instance;
-
-      // 获取OCR文本记录
-      final ocrRecord = await database.getClipItemById(imageItem.ocrTextId!);
-      if (ocrRecord != null) {
-        // 更新OCR文本记录的时间戳
-        final updatedOcrRecord = ocrRecord.copyWith(updatedAt: DateTime.now());
-        await database.updateClipItem(updatedOcrRecord);
-
-        await Log.d(
-          'Updated OCR text record timestamp',
-          tag: 'HomePage',
-          fields: {
-            'ocrTextId': imageItem.ocrTextId,
-            'imageId': imageItem.id,
-          },
-        );
-      }
-    } on Exception catch (e) {
-      await Log.e(
-        'Failed to update OCR text record',
-        tag: 'HomePage',
-        error: e,
-      );
-      // 不阻止复制操作，只记录错误
-    }
-  }
-
-  /// 显示OCR错误消息
-  void _showOcrErrorMessage(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('⚠️ $message'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
+  
   void _showUserGuide() {
     showDialog<void>(
       context: context,
@@ -791,33 +526,5 @@ class _EnhancedHomePageState extends ConsumerState<EnhancedHomePage>
         ),
       ],
     );
-  }
-
-  /// 执行实际的删除操作
-  Future<void> _performDelete(ClipItem item) async {
-    // 先尝试删除数据库记录
-    try {
-      await ref.read(clipRepositoryProvider).delete(item.id);
-
-      // 数据库删除成功后，再移除内存
-      ref.read(clipboardHistoryProvider.notifier).removeItem(item.id);
-
-      // 静默完成删除，不显示成功提示减少打扰
-    } on Exception catch (e) {
-      // 删除失败时显示错误，不移除内存状态
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('删除失败：$e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
   }
 }

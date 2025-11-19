@@ -11,7 +11,7 @@ import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/features/appswitcher/presentation/pages/app_switcher_page.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
 import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
-import 'package:clip_flow_pro/features/home/presentation/pages/enhanced_home_page.dart';
+import 'package:clip_flow_pro/features/home/presentation/pages/home_page.dart';
 import 'package:clip_flow_pro/features/settings/presentation/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,7 +40,7 @@ class DynamicHomePage extends ConsumerWidget {
 
     switch (uiMode) {
       case UiMode.traditional:
-        return const EnhancedHomePage();
+        return const HomePage();
       case UiMode.appSwitcher:
         return const AppSwitcherPage();
     }
@@ -68,10 +68,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// 基于 [ClipboardHistoryNotifier] 的剪贴板历史状态提供者。
 final clipboardHistoryProvider =
     StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
-      final notifier = ClipboardHistoryNotifier(DatabaseService.instance);
-      // 预加载数据库中的最近记录，避免 AppSwitcher 首屏没有数据
-      // ignore: discarded_futures
-      notifier.preloadFromDatabase();
+      final notifier = ClipboardHistoryNotifier(DatabaseService.instance)
+        // 预加载数据库中的最近记录，避免 AppSwitcher 首屏没有数据
+        ..preloadFromDatabase();
       return notifier;
     });
 
@@ -89,9 +88,11 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
       final items = await _databaseService.getAllClipItems(limit: limit);
       if (items.isNotEmpty) {
         state = items;
-        Log.d(
-          'Preloaded ${items.length} items into clipboard history',
-          tag: 'ClipboardHistoryNotifier',
+        unawaited(
+          Log.d(
+            'Preloaded ${items.length} items into clipboard history',
+            tag: 'ClipboardHistoryNotifier',
+          ),
         );
       }
     } on Exception catch (e) {

@@ -9,7 +9,7 @@ import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/core/utils/clip_item_icon_util.dart';
+import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
@@ -19,9 +19,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
 /// 现代化的剪贴项卡片组件 - 解决布局溢出和性能问题
-class ModernClipItemCard extends StatefulWidget {
+class ClipItemCard extends StatefulWidget {
   /// 剪贴项卡片组件
-  const ModernClipItemCard({
+  const ClipItemCard({
     required this.item,
     required this.displayMode,
     required this.onTap,
@@ -58,10 +58,10 @@ class ModernClipItemCard extends StatefulWidget {
   final bool enableOcrCopy;
 
   @override
-  State<ModernClipItemCard> createState() => _ModernClipItemCardState();
+  State<ClipItemCard> createState() => _ClipItemCardState();
 }
 
-class _ModernClipItemCardState extends State<ModernClipItemCard>
+class _ClipItemCardState extends State<ClipItemCard>
     with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -475,7 +475,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         if (widget.item.type == ClipType.image) {
           Log.d(
             'Image OCR status check',
-            tag: 'ModernClipItemCard',
+            tag: 'ClipItemCard',
             fields: {
               'itemId': widget.item.id,
               'isOcrEnabled': isOcrEnabled,
@@ -490,7 +490,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
         if (isOcrEnabled && hasOcrText) {
           Log.d(
             'Building image with OCR side-by-side layout',
-            tag: 'ModernClipItemCard',
+            tag: 'ClipItemCard',
             fields: {
               'itemId': widget.item.id,
               'isOcrEnabled': isOcrEnabled,
@@ -640,7 +640,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     // 添加调试日志
     Log.d(
       'Building image content',
-      tag: 'ModernClipItemCard',
+      tag: 'ClipItemCard',
       fields: {
         'itemId': widget.item.id,
         'hasThumbnail':
@@ -656,7 +656,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
     if (widget.item.thumbnail != null && widget.item.thumbnail!.isNotEmpty) {
       Log.d(
         'Using thumbnail for image display',
-        tag: 'ModernClipItemCard',
+        tag: 'ClipItemCard',
         fields: {
           'itemId': widget.item.id,
           'thumbnailSize': widget.item.thumbnail!.length,
@@ -708,7 +708,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
 
     Log.d(
       'No thumbnail or file path available, showing placeholder',
-      tag: 'ModernClipItemCard',
+      tag: 'ClipItemCard',
       fields: {
         'itemId': widget.item.id,
       },
@@ -828,7 +828,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
             // 添加调试日志
             Log.d(
               'OCR area tapped',
-              tag: 'ModernClipItemCard',
+              tag: 'ClipItemCard',
               fields: {
                 'itemId': widget.item.id,
                 'hasCallback': widget.onOcrTextTap != null,
@@ -1217,7 +1217,7 @@ class _ModernClipItemCardState extends State<ModernClipItemCard>
   }
 
   IconConfig _getIconConfig() {
-    return ClipItemIconUtil.getIconConfig(widget.item);
+    return ClipItemCardUtil.getIconConfig(widget.item);
   }
 
   double _getColorPreviewHeight() {
