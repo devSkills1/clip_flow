@@ -98,8 +98,18 @@ dart fix --apply
 # Run tests
 flutter test
 
+# Run specific test file
+flutter test test/integration/test_clipboard.dart
+
+# Run tests with coverage
+flutter test --coverage
+genhtml coverage/lcov.info -o coverage/html
+
 # Dependency check
 flutter pub outdated
+
+# Clean build artifacts
+flutter clean
 ```
 
 ### Utilities
@@ -211,6 +221,7 @@ Uses **Riverpod 3.0+** with:
 - **Formatting**: dart format with single quotes and trailing commas
 - **Type Safety**: Strict inference, casts, and raw types enabled
 - **Performance**: const constructors preferred, rebuild boundaries optimized
+- **Coverage Requirements**: Global coverage ≥70%, core modules ≥80%
 
 ### Key Patterns
 - **Dependency Injection**: Use Riverpod providers with interface-based dependencies
@@ -223,11 +234,61 @@ Uses **Riverpod 3.0+** with:
   - Any other AI/automated tool attribution
 - **Documentation Updates**: When making significant changes, always update this CLAUDE.md file according to the "Documentation Update Requirements" section at the top of this file.
 
+### Strict Development Standards
+
+#### API Usage Requirements
+- **Deprecated APIs**: Never use @deprecated members - CI treats deprecated warnings as failures
+- **Version Management**: Follow official Flutter/Dart version upgrade timeline (within 2 weeks of release)
+- **Migration**: Always follow official migration guides for API changes
+
+#### Code Structure Requirements
+- **Clean Architecture**: Strict separation of Presentation, Domain, and Data layers
+- **Layer Boundaries**: Presentation must not directly depend on Data - use UseCase/Repository interfaces
+- **Module Communication**: Cross-module communication through interfaces/events/routes only
+- **Naming Conventions**:
+  - Files/Directories: snake_case.dart
+  - Widget files match class names
+  - Test files: *_test.dart
+  - Async methods end with "Async"
+  - Stream variables explicitly named or marked with $
+
+#### Constants and Configuration
+- **No Hardcoding**: Magic numbers, strings, or colors forbidden
+- **Centralized Constants**: All constants in `lib/core/constants` with semantic naming
+- **Environment Config**: Use `--dart-define` for dev/staging/prod environments
+- **Design Tokens**: Colors, spacing, typography from unified sources
+
+#### UI/UX Standards
+- **Material 3**: Mandatory use of Material Design 3 with ColorScheme semantic tokens
+- **Internationalization**: All UI text must use gen-l10n from ARB files - no hardcoded strings
+- **Accessibility**: WCAG 2.1 AA compliance, support textScaleFactor 1.0-1.5, dark/high contrast modes
+- **Animations**: 150-300ms duration with standard curves, critical operations must be cancellable
+
+#### Security Requirements
+- **No Hardcoded Secrets**: Use .env + dart-define + Secret Manager
+- **Local Storage**: Use flutter_secure_storage for sensitive data
+- **Network**: HTTPS mandatory, consider TLS pinning for sensitive communications
+- **Data Sanitization**: Remove sensitive information from logs and clipboard data
+
+#### Performance Standards
+- **Widget Optimization**: Use const constructors,明确 Rebuild boundaries
+- **Lists and Images**: Use Sliver widgets with pagination, implement caching strategies
+- **Performance Targets**: Frame time < 16ms on 60fps devices for complex scenes
+- **Memory Management**: Proper disposal of resources, monitor memory usage
+
 ### Testing Strategy
-- Target coverage: 70% global, 80% for core modules
-- Unit tests for service components
-- Integration tests for end-to-end flows
-- Mock/Fake for external dependencies
+- **Coverage Requirements**: Global coverage ≥70%, core modules ≥80% - CI fails if below threshold
+- **Test Types**:
+  - Unit tests for all service components
+  - Integration tests for end-to-end flows
+  - Golden tests for critical UI components
+  - Mock/Fake for external dependencies (network, time, platform interactions)
+- **Test Quality**:
+  - Use Given-When-Then naming/structure
+  - Use test data factories/fixtures
+  - Integration tests with integration_test package covering startup and critical flows
+  - Use fake_async for concurrent/async testing
+- **Documentation Comments**: Development phase may ignore `public_member_api_docs` warnings, but core public interfaces must be documented before release
 
 ## Platform Considerations
 
