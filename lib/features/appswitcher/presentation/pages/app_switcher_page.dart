@@ -4,8 +4,8 @@ import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
-import 'package:clip_flow_pro/core/utils/clip_item_icon_util.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/modern_clip_item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -69,7 +69,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     // 获取所有剪贴板历史数据
     final allItems = ref.read(clipboardHistoryProvider);
     setState(() {
-      _displayItems = allItems.take(10).toList(); // 限制显示最近10个项目
+      _displayItems = allItems.toList();
       _selectedIndex = _displayItems.isNotEmpty ? 0 : -1;
     });
   }
@@ -77,13 +77,12 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   void _filterItems(String query) {
     final allItems = ref.read(clipboardHistoryProvider);
     final filtered = query.isEmpty
-        ? allItems.take(10).toList()
+        ? allItems.toList()
         : allItems
               .where((item) {
                 final content = item.content?.toLowerCase() ?? '';
                 return content.contains(query.toLowerCase());
               })
-              .take(10)
               .toList();
 
     setState(() {
@@ -92,34 +91,78 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     });
   }
 
-  Widget _buildLargeItemIcon(ClipItem item) {
-    final iconConfig = ClipItemIconUtil.getIconConfig(item);
+  /// 构建应用切换器专用的卡片包装器，复用 ModernClipItemCard
+  Widget _buildAppSwitcherCard(ClipItem item, int index) {
+    final isSelected = index == _selectedIndex;
 
     return Container(
-      width: 48, // 与传统模式ListTile的leading保持一致
-      height: 48,
-      padding: const EdgeInsets.all(Spacing.s8), // 8px padding，与传统模式一致
+      margin: const EdgeInsets.symmetric(horizontal: Spacing.s8),
       decoration: BoxDecoration(
-        color: iconConfig.color.withValues(alpha: 0.1), // 与传统模式一致的透明度
-        borderRadius: BorderRadius.circular(Spacing.s8), // 8px圆角，与传统模式一致
+        borderRadius: BorderRadius.circular(Spacing.s12),
+        color: isSelected
+            ? Colors.white.withValues(alpha: 0.4)
+            : Colors.white.withValues(alpha: 0.15),
         border: Border.all(
-          color: iconConfig.color.withValues(alpha: 0.2), // 与传统模式一致的边框透明度
+          color: isSelected
+              ? Colors.white.withValues(alpha: 0.6)
+              : Colors.white.withValues(alpha: 0.2),
+          width: isSelected ? 2 : 1,
+        ),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(Spacing.s12),
+        child: ModernClipItemCard(
+          key: ValueKey(item.id),
+          item: item,
+          displayMode: DisplayMode.compact, // 使用紧凑模式适合应用切换器
+          onTap: () {
+            setState(() {
+              _selectedIndex = index;
+            });
+            _onItemTap(item);
+          },
+          onDelete: () {
+            // 应用切换器中禁用删除功能
+          },
+          onFavoriteToggle: null, // 应用切换器中禁用收藏功能
+          searchQuery: _searchController.text,
+          enableOcrCopy: true,
+          onOcrTextTap: () {
+            // OCR文本复制逻辑
+            if (item.ocrText != null && item.ocrText!.isNotEmpty) {
+              ref.read(clipboardServiceProvider).setClipboardContent(item.copyWith(content: item.ocrText));
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('已复制OCR文本: ${item.ocrText!.substring(0, 50)}${item.ocrText!.length > 50 ? "..." : ""}'),
+                    duration: const Duration(seconds: 1),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                );
+              }
+            }
+          },
         ),
       ),
-      child: Icon(
-        iconConfig.icon,
-        color: iconConfig.color, // 使用类型颜色而不是白色，与传统模式一致
-        size: 16, // 与传统模式type icon大小一致
-      ),
     );
-  }
-
-  String _getItemTitle(ClipItem item) {
-    return ClipItemUtil.getItemTitle(item);
-  }
-
-  String _formatDate(DateTime dateTime) {
-    return ClipItemUtil.formatDateTime(dateTime);
   }
 
   void _onItemTap(ClipItem item) {
@@ -131,7 +174,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '已复制: ${_getItemTitle(item)}',
+            '已复制: ${(item.content?.length ?? 0) > 50 ? "${item.content?.substring(0, 50)}..." : item.content ?? "未知内容"}',
           ),
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
@@ -149,6 +192,15 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     ref.listen<AsyncValue<ClipItem>>(clipboardStreamProvider, (previous, next) {
       next.whenData((clipItem) {
         _loadData(); // 重新加载数据以显示最新的项目
+      });
+    });
+
+    // 监听历史列表变化（在 build 中订阅，符合 Riverpod 约束）
+    ref.listen<List<ClipItem>>(clipboardHistoryProvider, (previous, next) {
+      if (!mounted) return;
+      setState(() {
+        _displayItems = next.toList();
+        _selectedIndex = _displayItems.isNotEmpty ? 0 : -1;
       });
     });
 
@@ -279,138 +331,19 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                                 iconSize: 20, // 与传统模式导航图标大小一致
                               ),
 
-                            // 水平滚动视图
+                            // 水平滚动视图 - 使用复用的 ModernClipItemCard
                             Expanded(
-                              child: PageView.builder(
-                                controller: PageController(
-                                  viewportFraction: 0.3,
-                                  initialPage: 0,
-                                ),
-                                itemCount: _displayItems.length,
-                                onPageChanged: (index) {
-                                  setState(() {
-                                    _selectedIndex = index;
-                                  });
-                                },
-                                itemBuilder: (context, index) {
-                                  final item = _displayItems[index];
-                                  final isSelected = index == _selectedIndex;
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedIndex = index;
-                                      });
-                                      _onItemTap(item);
+                              child: Builder(
+                                builder: (context) {
+                                  final itemWidth = MediaQuery.of(context).size.width * 0.3;
+                                  return ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _displayItems.length,
+                                    itemExtent: itemWidth,
+                                    itemBuilder: (context, index) {
+                                      final item = _displayItems[index];
+                                      return _buildAppSwitcherCard(item, index);
                                     },
-                                    child: Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: Spacing.s8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? Colors.white.withValues(
-                                                alpha: 0.4,
-                                              )
-                                            : Colors.white.withValues(
-                                                alpha: 0.15,
-                                              ),
-                                        borderRadius: BorderRadius.circular(
-                                          Spacing.s12,
-                                        ), // 12px圆角，与传统模式卡片一致
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? Colors.white.withValues(
-                                                  alpha: 0.6,
-                                                )
-                                              : Colors.white.withValues(
-                                                  alpha: 0.2,
-                                                ),
-                                          width: isSelected ? 2 : 1,
-                                        ),
-                                        boxShadow: isSelected
-                                            ? [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.4),
-                                                  blurRadius: 20,
-                                                  spreadRadius: 2,
-                                                ),
-                                              ]
-                                            : [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.2),
-                                                  blurRadius: 10,
-                                                  spreadRadius: 1,
-                                                ),
-                                              ],
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          // 应用图标
-                                          Container(
-                                            width:
-                                                48, // 与传统模式ListTile的leading保持一致
-                                            height: 48,
-                                            margin: const EdgeInsets.all(
-                                              Spacing.s16,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                    Spacing.s8,
-                                                  ), // 8px圆角，与传统模式一致
-                                            ),
-                                            child: _buildLargeItemIcon(item),
-                                          ),
-
-                                          // 应用标题
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: Spacing.s12,
-                                            ),
-                                            child: Text(
-                                              _getItemTitle(item),
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: isSelected ? 14 : 12,
-                                                fontWeight: isSelected
-                                                    ? FontWeight.w600
-                                                    : FontWeight.w400,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-
-                                          // 时间
-                                          if (isSelected)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 4,
-                                                bottom: 16,
-                                                left: 12,
-                                                right: 12,
-                                              ),
-                                              child: Text(
-                                                _formatDate(item.createdAt),
-                                                style: TextStyle(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.8),
-                                                  fontSize: 10,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
                                   );
                                 },
                               ),

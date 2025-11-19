@@ -7,10 +7,10 @@ import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
-import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -77,6 +77,25 @@ Future<void> _runApp() async {
   // 初始化快捷键服务
   final preferencesService = PreferencesService();
   await preferencesService.initialize();
+  // 预加载用户偏好，避免首屏 UI 模式闪动
+  final loadedPreferences = await preferencesService.loadPreferences();
+
+  // 可选：从平台侧读取启动时希望的 UI 模式（例如通过快捷键唤起 AppSwitcher）
+  var resolvedUiMode = loadedPreferences.uiMode;
+  try {
+    final modeString = await const MethodChannel(
+      'clipboard_service',
+    ).invokeMethod<String>('getLaunchUiMode');
+    if (modeString == 'appSwitcher') {
+      resolvedUiMode = UiMode.appSwitcher;
+    } else if (modeString == 'traditional') {
+      resolvedUiMode = UiMode.traditional;
+    }
+  } on Exception {
+    // 忽略平台调用失败，保持本地偏好
+  }
+
+  final initialPreferences = loadedPreferences.copyWith(uiMode: resolvedUiMode);
   final hotkeyService = HotkeyService(preferencesService);
   await hotkeyService.initialize();
 
@@ -96,5 +115,17 @@ Future<void> _runApp() async {
     );
   }
 
-  runApp(const ProviderScope(child: ClipFlowProApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        // 使用预加载的偏好覆盖默认 Provider，避免加载中的 UI 闪动
+        userPreferencesProvider.overrideWith(
+          (ref) => UserPreferencesNotifier.withInitial(initialPreferences),
+        ),
+        // 同时覆盖 uiModeProvider，确保UI模式立即可用，避免闪动
+        uiModeProvider.overrideWith((ref) => initialPreferences.uiMode),
+      ],
+      child: const ClipFlowProApp(),
+    ),
+  );
 }

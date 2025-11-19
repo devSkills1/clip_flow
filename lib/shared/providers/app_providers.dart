@@ -34,6 +34,7 @@ class DynamicHomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 直接读取uiModeProvider，确保使用预加载的值避免闪动
     final uiMode = ref.watch(uiModeProvider);
 
     switch (uiMode) {
@@ -66,7 +67,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// 基于 [ClipboardHistoryNotifier] 的剪贴板历史状态提供者。
 final clipboardHistoryProvider =
     StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
-      return ClipboardHistoryNotifier(DatabaseService.instance);
+      final notifier = ClipboardHistoryNotifier(DatabaseService.instance);
+      // 预加载数据库中的最近记录，避免 AppSwitcher 首屏没有数据
+      // ignore: discarded_futures
+      notifier.preloadFromDatabase();
+      return notifier;
     });
 
 //// 剪贴板历史通知器
@@ -76,6 +81,20 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   ClipboardHistoryNotifier(this._databaseService) : super([]);
 
   final DatabaseService _databaseService;
+
+  /// 从数据库预加载最近的剪贴项到内存状态（按创建时间倒序）
+  Future<void> preloadFromDatabase({int limit = 100}) async {
+    try {
+      final items = await _databaseService.getAllClipItems(limit: limit);
+      if (items.isNotEmpty) {
+        state = items;
+        Log.d('Preloaded ${items.length} items into clipboard history',
+            tag: 'ClipboardHistoryNotifier');
+      }
+    } on Exception catch (e) {
+      unawaited(Log.w('Failed to preload history', tag: 'ClipboardHistoryNotifier', error: e));
+    }
+  }
 
   /// 添加新项目；若内容重复则仅更新其时间戳并前置。
   void addItem(ClipItem item) {
@@ -430,6 +449,19 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 使用默认偏好初始化。
   UserPreferencesNotifier() : super(UserPreferences()) {
     _loadPreferences();
+  }
+
+  /// 使用传入的初始偏好进行初始化。
+  /// 此构造函数不会再次触发异步偏好加载，避免冷启动阶段的 UI 模式闪动。
+  UserPreferencesNotifier.withInitial(UserPreferences initial)
+      : super(initial) {
+    // 完全同步初始化，不触发任何异步操作
+    // 确保UI模式状态稳定，避免首屏闪动
+    Log.d('UserPreferencesNotifier initialized with UI mode: ${initial.uiMode}',
+          tag: 'UserPreferences');
+
+    // 延迟同步开机自启动状态，避免影响首屏渲染
+    Future.microtask(() => _syncAutostartStatus());
   }
 
   /// 偏好设置持久化服务
