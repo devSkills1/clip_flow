@@ -2,10 +2,9 @@ import 'dart:ui' as ui;
 
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/modern_clip_item_card.dart';
+import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,7 +31,6 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   @override
   void initState() {
     super.initState();
-    _setupWindow();
     _loadData();
   }
 
@@ -40,29 +38,6 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  /// 设置窗口尺寸和属性
-  Future<void> _setupWindow() async {
-    try {
-      // 等待一帧以确保context已初始化
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (mounted) {
-          // 使用WindowManagementService统一处理窗口设置
-          await WindowManagementService.instance.applyUISettings(
-            UiMode.appSwitcher,
-            context: context,
-          );
-        }
-      });
-    } on Exception catch (e, stackTrace) {
-      // 错误处理，不阻止界面显示
-      await Log.e(
-        '应用切换器窗口设置失败',
-        error: e,
-        stackTrace: stackTrace,
-      );
-    }
   }
 
   Future<void> _loadData() async {
@@ -78,12 +53,10 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     final allItems = ref.read(clipboardHistoryProvider);
     final filtered = query.isEmpty
         ? allItems.toList()
-        : allItems
-              .where((item) {
-                final content = item.content?.toLowerCase() ?? '';
-                return content.contains(query.toLowerCase());
-              })
-              .toList();
+        : allItems.where((item) {
+            final content = item.content?.toLowerCase() ?? '';
+            return content.contains(query.toLowerCase());
+          }).toList();
 
     setState(() {
       _displayItems = filtered;
@@ -139,17 +112,20 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
           onDelete: () {
             // 应用切换器中禁用删除功能
           },
-          onFavoriteToggle: null, // 应用切换器中禁用收藏功能
           searchQuery: _searchController.text,
           enableOcrCopy: true,
           onOcrTextTap: () {
             // OCR文本复制逻辑
             if (item.ocrText != null && item.ocrText!.isNotEmpty) {
-              ref.read(clipboardServiceProvider).setClipboardContent(item.copyWith(content: item.ocrText));
+              ref
+                  .read(clipboardServiceProvider)
+                  .setClipboardContent(item.copyWith(content: item.ocrText));
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('已复制OCR文本: ${item.ocrText!.substring(0, 50)}${item.ocrText!.length > 50 ? "..." : ""}'),
+                    content: Text(
+                      '已复制OCR文本: ${item.ocrText!.substring(0, 50)}${item.ocrText!.length > 50 ? "..." : ""}',
+                    ),
                     duration: const Duration(seconds: 1),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -272,10 +248,15 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                       const SizedBox(width: Spacing.s12),
                       // 切换回传统UI的按钮
                       ElevatedButton.icon(
-                        onPressed: () {
+                        onPressed: () async {
                           ref
                               .read(userPreferencesProvider.notifier)
                               .setUiMode(UiMode.traditional);
+                          // 切换界面模式后重新设置窗口并居中
+                          if (mounted) {
+                            await WindowManagementService.instance
+                                .applyUISettings(UiMode.traditional, context: context);
+                          }
                         },
                         icon: const Icon(Icons.arrow_back, size: 18),
                         label: const Text('切回传统剪贴板'),
@@ -335,7 +316,8 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                             Expanded(
                               child: Builder(
                                 builder: (context) {
-                                  final itemWidth = MediaQuery.of(context).size.width * 0.3;
+                                  final itemWidth =
+                                      MediaQuery.of(context).size.width * 0.3;
                                   return ListView.builder(
                                     scrollDirection: Axis.horizontal,
                                     itemCount: _displayItems.length,

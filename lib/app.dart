@@ -81,8 +81,9 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
 
     // 初始化托盘服务（异步）
     // 保持窗口监听器 Provider 存活，以便其内部监听用户偏好变化并更新监听器实例
-    ref.watch(trayServiceProvider);
-    ref.watch(windowListenerProvider);
+    ref
+      ..watch(trayServiceProvider)
+      ..watch(windowListenerProvider);
     // 窗口监听器的注册在 initState 中完成，避免在 build 中重复注册
 
     // 根据用户偏好设置确定locale

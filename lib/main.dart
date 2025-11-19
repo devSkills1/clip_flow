@@ -1,7 +1,4 @@
-import 'dart:ui' as ui;
-
 import 'package:clip_flow_pro/app.dart';
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
@@ -24,28 +21,46 @@ Future<void> _runApp() async {
   // 初始化全局错误处理器
   ErrorHandler.initialize();
 
-  // 注意：Sentry已在main()中初始化，这里不再重复初始化CrashService
+  // 初始化快捷键服务 - 需要在窗口设置之前获取UI模式
+  final preferencesService = PreferencesService();
+  await preferencesService.initialize();
+  // 预加载用户偏好，避免首屏 UI 模式闪动
+  final loadedPreferences = await preferencesService.loadPreferences();
+
+  // 可选：从平台侧读取启动时希望的 UI 模式（例如通过快捷键唤起 AppSwitcher）
+  var resolvedUiMode = loadedPreferences.uiMode;
+  try {
+    final modeString = await const MethodChannel(
+      'clipboard_service',
+    ).invokeMethod<String>('getLaunchUiMode');
+    if (modeString == 'appSwitcher') {
+      resolvedUiMode = UiMode.appSwitcher;
+    } else if (modeString == 'traditional') {
+      resolvedUiMode = UiMode.traditional;
+    }
+  } on Exception {
+    // 忽略平台调用失败，保持本地偏好
+  }
+
+  final initialPreferences = loadedPreferences.copyWith(uiMode: resolvedUiMode);
+  final hotkeyService = HotkeyService(preferencesService);
+  await hotkeyService.initialize();
+
+  // 设置全局快捷键服务实例
+  setHotkeyServiceInstance(hotkeyService);
 
   // 初始化窗口管理服务
   final windowService = WindowManagementService.instance;
   await windowService.initialize();
 
-  // 设置窗口属性 - 增强版配置
+  // 使用 WindowManagementService 设置窗口
+  await windowService.setupWindow(resolvedUiMode);
   const windowOptions = WindowOptions(
-    size: ui.Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
     center: true,
-    backgroundColor: Color(AppColors.white),
+    backgroundColor:  Color(AppColors.white),
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.normal,
     alwaysOnTop: false,
-    minimumSize: ui.Size(
-      ClipConstants.minWindowWidth,
-      ClipConstants.minWindowHeight,
-    ),
-    maximumSize: ui.Size(
-      ClipConstants.maxWindowWidth,
-      ClipConstants.maxWindowHeight,
-    ),
     windowButtonVisibility: true,
   );
 
@@ -74,34 +89,6 @@ Future<void> _runApp() async {
   // 为了兼容性，仍然初始化基础服务（但不再启动监控）
   await ClipboardService.instance.initialize();
 
-  // 初始化快捷键服务
-  final preferencesService = PreferencesService();
-  await preferencesService.initialize();
-  // 预加载用户偏好，避免首屏 UI 模式闪动
-  final loadedPreferences = await preferencesService.loadPreferences();
-
-  // 可选：从平台侧读取启动时希望的 UI 模式（例如通过快捷键唤起 AppSwitcher）
-  var resolvedUiMode = loadedPreferences.uiMode;
-  try {
-    final modeString = await const MethodChannel(
-      'clipboard_service',
-    ).invokeMethod<String>('getLaunchUiMode');
-    if (modeString == 'appSwitcher') {
-      resolvedUiMode = UiMode.appSwitcher;
-    } else if (modeString == 'traditional') {
-      resolvedUiMode = UiMode.traditional;
-    }
-  } on Exception {
-    // 忽略平台调用失败，保持本地偏好
-  }
-
-  final initialPreferences = loadedPreferences.copyWith(uiMode: resolvedUiMode);
-  final hotkeyService = HotkeyService(preferencesService);
-  await hotkeyService.initialize();
-
-  // 设置全局快捷键服务实例
-  setHotkeyServiceInstance(hotkeyService);
-
   // 初始化自动更新服务
   try {
     await UpdateService().initialize();
@@ -122,10 +109,10 @@ Future<void> _runApp() async {
         userPreferencesProvider.overrideWith(
           (ref) => UserPreferencesNotifier.withInitial(initialPreferences),
         ),
-        // 同时覆盖 uiModeProvider，确保UI模式立即可用，避免闪动
-        uiModeProvider.overrideWith((ref) => initialPreferences.uiMode),
-      ],
+        ],
       child: const ClipFlowProApp(),
     ),
   );
 }
+
+
