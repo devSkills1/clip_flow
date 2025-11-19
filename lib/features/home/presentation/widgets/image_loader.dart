@@ -10,9 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// 优化的图片加载器 - 解决图片溢出和性能问题
-class OptimizedImageLoader extends StatefulWidget {
+class ImageLoader extends StatefulWidget {
   /// 优化的图片加载器
-  const OptimizedImageLoader({
+  const ImageLoader({
     required this.imagePath,
     required this.thumbnailData,
     required this.displaySize,
@@ -53,10 +53,10 @@ class OptimizedImageLoader extends StatefulWidget {
   final Widget Function(BuildContext, Widget, ImageChunkEvent?)? loadingBuilder;
 
   @override
-  State<OptimizedImageLoader> createState() => _OptimizedImageLoaderState();
+  State<ImageLoader> createState() => _ImageLoaderState();
 }
 
-class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
+class _ImageLoaderState extends State<ImageLoader>
     with AutomaticKeepAliveClientMixin {
   bool _useOriginalImage = false;
   bool _hasError = false;
@@ -71,7 +71,7 @@ class _OptimizedImageLoaderState extends State<OptimizedImageLoader>
   }
 
   @override
-  void didUpdateWidget(OptimizedImageLoader oldWidget) {
+  void didUpdateWidget(ImageLoader oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.useOriginal != oldWidget.useOriginal) {
       setState(() {
@@ -422,200 +422,4 @@ class ImageCacheManager {
   }
 
   int get cacheSize => _memoryCache.length;
-}
-
-/// 图片加载状态组件
-class ImageLoadingState {
-  const ImageLoadingState({
-    this.isLoading = false,
-    this.hasError = false,
-    this.error,
-    this.progress = 0.0,
-  });
-
-  final bool isLoading;
-  final bool hasError;
-  final Object? error;
-  final double progress;
-
-  ImageLoadingState copyWith({
-    bool? isLoading,
-    bool? hasError,
-    Object? error,
-    double? progress,
-  }) {
-    return ImageLoadingState(
-      isLoading: isLoading ?? this.isLoading,
-      hasError: hasError ?? this.hasError,
-      error: error ?? this.error,
-      progress: progress ?? this.progress,
-    );
-  }
-}
-
-/// 带进度的图片加载器
-class ProgressiveImageLoader extends StatefulWidget {
-  const ProgressiveImageLoader({
-    required this.imageProvider,
-    required this.displaySize,
-    this.placeholder,
-    this.errorWidget,
-    this.progressWidget,
-    super.key,
-  });
-
-  final ImageProvider imageProvider;
-  final Size displaySize;
-  final Widget? placeholder;
-  final Widget? errorWidget;
-  final Widget Function(double progress)? progressWidget;
-
-  @override
-  State<ProgressiveImageLoader> createState() => _ProgressiveImageLoaderState();
-}
-
-class _ProgressiveImageLoaderState extends State<ProgressiveImageLoader> {
-  ImageLoadingState _state = const ImageLoadingState();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadImage();
-  }
-
-  Future<void> _loadImage() async {
-    setState(() => _state = _state.copyWith(isLoading: true));
-
-    try {
-      // 模拟加载进度
-      for (var i = 0; i <= 100; i += 10) {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-        if (mounted) {
-          setState(() => _state = _state.copyWith(progress: i / 100.0));
-        }
-      }
-
-      final stream = widget.imageProvider.resolve(ImageConfiguration.empty);
-      final completer = Completer<ui.Image>();
-
-      // 监听图片加载
-      final listener = ImageStreamListener(
-        (ImageInfo info, bool sync) {
-          if (!completer.isCompleted) {
-            completer.complete(info.image);
-          }
-          if (mounted) {
-            setState(() => _state = const ImageLoadingState());
-          }
-        },
-        onError: (error, stackTrace) {
-          if (!completer.isCompleted) {
-            completer.completeError(error, stackTrace);
-          }
-          if (mounted) {
-            setState(
-              () => _state = _state.copyWith(
-                isLoading: false,
-                hasError: true,
-                error: error,
-              ),
-            );
-          }
-        },
-      );
-
-      stream.addListener(listener);
-    } on Exception catch (e) {
-      if (mounted) {
-        setState(
-          () => _state = _state.copyWith(
-            isLoading: false,
-            hasError: true,
-            error: e,
-          ),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_state.hasError) {
-      return widget.errorWidget ?? _buildErrorWidget();
-    }
-
-    if (_state.isLoading && _state.progress < 1.0) {
-      return widget.progressWidget?.call(_state.progress) ??
-          _buildProgressWidget(_state.progress);
-    }
-
-    return Image(
-      image: widget.imageProvider,
-      width: widget.displaySize.width,
-      height: widget.displaySize.height,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) {
-        return widget.errorWidget ?? _buildErrorWidget();
-      },
-    );
-  }
-
-  Widget _buildProgressWidget(double progress) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: widget.displaySize.width,
-      height: widget.displaySize.height,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: widget.displaySize.width * 0.6,
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  theme.colorScheme.primary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '${(progress * 100).round()}%',
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget() {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: widget.displaySize.width,
-      height: widget.displaySize.height,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.error_outline,
-          size: 32,
-          color: theme.colorScheme.error,
-        ),
-      ),
-    );
-  }
 }

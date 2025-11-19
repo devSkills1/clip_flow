@@ -3,7 +3,8 @@ import 'dart:ui' as ui;
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/modern_clip_item_card.dart';
+import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,104 +65,42 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     });
   }
 
-  /// 构建应用切换器专用的卡片包装器，复用 ModernClipItemCard
+  /// 构建应用切换器专用的卡片，用 GestureDetector 包装解决点击问题
   Widget _buildAppSwitcherCard(ClipItem item, int index) {
-    final isSelected = index == _selectedIndex;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: Spacing.s8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(Spacing.s12),
-        color: isSelected
-            ? Colors.white.withValues(alpha: 0.4)
-            : Colors.white.withValues(alpha: 0.15),
-        border: Border.all(
-          color: isSelected
-              ? Colors.white.withValues(alpha: 0.6)
-              : Colors.white.withValues(alpha: 0.2),
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  spreadRadius: 1,
-                ),
-              ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Spacing.s12),
-        child: ModernClipItemCard(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.s8),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedIndex = index;
+          });
+          ClipItemUtil.handleItemTap(item, ref, context: context);
+        },
+        child: ClipItemCard(
           key: ValueKey(item.id),
           item: item,
           displayMode: DisplayMode.compact, // 使用紧凑模式适合应用切换器
           onTap: () {
-            setState(() {
-              _selectedIndex = index;
-            });
-            _onItemTap(item);
+            // 卡片内部的点击事件，禁用避免重复触发
           },
           onDelete: () {
-            // 应用切换器中禁用删除功能
+            ClipItemUtil.handleItemDelete(item, ref, context: context);
+          },
+          onFavoriteToggle: () {
+            ClipItemUtil.handleFavoriteToggle(item, ref, context: context);
           },
           searchQuery: _searchController.text,
           enableOcrCopy: true,
           onOcrTextTap: () {
-            // OCR文本复制逻辑
-            if (item.ocrText != null && item.ocrText!.isNotEmpty) {
-              ref
-                  .read(clipboardServiceProvider)
-                  .setClipboardContent(item.copyWith(content: item.ocrText));
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '已复制OCR文本: ${item.ocrText!.substring(0, 50)}${item.ocrText!.length > 50 ? "..." : ""}',
-                    ),
-                    duration: const Duration(seconds: 1),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                );
-              }
-            }
+            // 使用统一的OCR处理逻辑
+            ClipItemUtil.handleOcrTextTap(item, ref, context: context);
           },
         ),
       ),
     );
   }
 
-  void _onItemTap(ClipItem item) {
-    // 复制到剪贴板
-    ref.read(clipboardServiceProvider).setClipboardContent(item);
-
-    // 显示提示
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '已复制: ${(item.content?.length ?? 0) > 50 ? "${item.content?.substring(0, 50)}..." : item.content ?? "未知内容"}',
-          ),
-          duration: const Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
-    }
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     // 监听剪贴板变化和历史列表变化
