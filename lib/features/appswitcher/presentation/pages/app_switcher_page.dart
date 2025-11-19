@@ -5,8 +5,9 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
+import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 应用切换器页面
@@ -107,7 +108,8 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     ref
       ..listen<AsyncValue<ClipItem>>(clipboardStreamProvider, (previous, next) {
         next.whenData((clipItem) {
-          _loadData(); // 重新加载数据以显示最新的项目
+          // 将新的剪贴板项目添加到历史记录
+          ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
         });
       })
       ..listen<List<ClipItem>>(clipboardHistoryProvider, (previous, next) {
@@ -141,75 +143,51 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                   margin: const EdgeInsets.all(24),
                   child: Row(
                     children: [
-                      // 搜索框
+                      // 搜索框 - 直接使用EnhancedSearchBar组件（不使用搜索建议）
                       Expanded(
-                        child: TextField(
+                        child: EnhancedSearchBar(
                           controller: _searchController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: '搜索剪贴板内容...',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                            ),
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              color: Colors.white,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.1),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(Spacing.s12),
-                              borderSide: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(Spacing.s12),
-                              borderSide: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(Spacing.s12),
-                              borderSide: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.4),
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.s16,
-                              vertical: Spacing.s12,
-                            ),
-                          ),
+                          hintText: '搜索剪贴板内容...',
                           onChanged: _filterItems,
+                          onClear: () {
+                            _searchController.clear();
+                            _filterItems('');
+                          },
                         ),
                       ),
                       const SizedBox(width: Spacing.s12),
-                      // 切换回传统UI的按钮
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          ref
-                              .read(userPreferencesProvider.notifier)
-                              .setUiMode(UiMode.traditional);
-                          // 切换界面模式后重新设置窗口并居中
-                          if (mounted) {
-                            await WindowManagementService.instance
-                                .applyUISettings(UiMode.traditional, context: context);
-                          }
-                        },
-                        icon: const Icon(Icons.arrow_back, size: 18),
-                        label: const Text('切回传统剪贴板'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          foregroundColor: Colors.white,
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.3),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(Spacing.s8),
+                      // 切换回传统UI的按钮 - 样式与EnhancedSearchBar保持一致
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: () async {
+                            ref
+                                .read(userPreferencesProvider.notifier)
+                                .setUiMode(UiMode.traditional);
+                            // 切换界面模式后重新设置窗口并居中
+                            if (mounted) {
+                              await WindowManagementService.instance
+                                  .applyUISettings(UiMode.traditional, context: context);
+                            }
+                          },
+                          icon: const Icon(Icons.arrow_back, size: 18),
+                          tooltip: '切回传统剪贴板',
+                          style: IconButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                           ),
                         ),
                       ),
