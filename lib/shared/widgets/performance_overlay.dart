@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+// Reason: Internal module with documented interfaces at higher level
 // 忽略公共成员API文档要求，因为这是内部性能监控组件，不需要对外暴露API文档
 // Internal performance monitoring component that doesn't require public API
 // documentation.
@@ -88,7 +89,7 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
   @override
   void dispose() {
     // 安全地释放资源
-    _metricsSubscription?.cancel();
+    unawaited(_metricsSubscription?.cancel());
     _metricsSubscription = null;
 
     _expandController.dispose();
@@ -204,7 +205,7 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
               child: GestureDetector(
                 onPanStart: (details) {
                   _isDragging = true;
-                  _dragController.forward();
+                  unawaited(_dragController.forward());
                 },
                 onPanUpdate: (details) {
                   if (_isDragging) {
@@ -228,7 +229,7 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
                 },
                 onPanEnd: (details) {
                   _isDragging = false;
-                  _dragController.reverse();
+                  unawaited(_dragController.reverse());
                 },
                 onTap: () {
                   // 防抖处理，避免快速点击
@@ -239,13 +240,13 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
                   });
 
                   if (_isExpanded) {
-                    _expandController.forward();
+                    unawaited(_expandController.forward());
                   } else {
-                    _expandController.reverse();
+                    unawaited(_expandController.reverse());
                   }
 
                   // 提供触觉反馈
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                 },
                 child: Material(
                   elevation: _isDragging ? 12 : (_isHovering ? 10 : 8),

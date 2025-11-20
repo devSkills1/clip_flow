@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
+import 'dart:async';
 
 /// The root application widget of ClipFlow Pro.
 /// Provides router configuration and light/dark themes.
@@ -40,24 +41,26 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
     ref.read(hotkeyServiceProvider).registerActionCallback(
       HotkeyAction.toggleWindow,
       () {
-        ref
-            .read(trayServiceProvider)
-            .when(
-              data: (trayService) => trayService.toggleWindow(),
-              loading: () {
-                // TrayService还在初始化中，忽略此次快捷键
-                Log.i('TrayService is initializing', tag: 'tray');
-              },
-              error: (error, stackTrace) {
-                // 记录错误但不阻塞用户操作
-                Log.e(
-                  'TrayService error',
-                  tag: 'tray',
-                  error: error,
-                  stackTrace: stackTrace,
-                );
-              },
-            );
+        unawaited(
+          ref
+              .read(trayServiceProvider)
+              .when(
+                data: (trayService) => trayService.toggleWindow(),
+                loading: () {
+                  // TrayService还在初始化中，忽略此次快捷键
+                  unawaited(Log.i('TrayService is initializing', tag: 'tray'));
+                },
+                error: (error, stackTrace) {
+                  // 记录错误但不阻塞用户操作
+                  unawaited(Log.e(
+                    'TrayService error',
+                    tag: 'tray',
+                    error: error,
+                    stackTrace: stackTrace,
+                  ));
+                },
+              ),
+        );
       },
     );
   }

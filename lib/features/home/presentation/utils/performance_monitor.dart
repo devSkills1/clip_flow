@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+// Reason: Internal module with documented interfaces at higher level
 // Public member documentation is handled inline for clarity.
 import 'dart:async';
 import 'dart:developer' as developer;

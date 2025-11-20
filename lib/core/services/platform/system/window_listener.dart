@@ -1,4 +1,5 @@
-// ignore_for_file: public_member_api_docs, avoid_setters_without_getters
+// ignore_for_file: public_member_api_docs
+// Reason: Internal service module with documented API interfaces in separate files, avoid_setters_without_getters
 /*
   解释忽略的诊断：
   - public_member_api_docs：该文件属于内部服务实现，不对外暴露公共 API，发布前会在核心公共接口处补全文档。
