@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
@@ -44,7 +45,6 @@ class _HomePageState extends ConsumerState<HomePage>
     super.initState();
     _initializeAnimations();
     _setupWindow();
-    _loadInitialData();
   }
 
   @override
@@ -79,100 +79,6 @@ class _HomePageState extends ConsumerState<HomePage>
         );
       }
     });
-  }
-
-  Future<void> _loadInitialData() async {
-    try {
-      // 从数据库加载历史记录
-      final recentItems = await DatabaseService.instance.getAllClipItems(
-        limit: 100,
-      );
-      if (recentItems.isEmpty) return;
-
-      final notifier = ref.read(clipboardHistoryProvider.notifier);
-      final validItems = <ClipItem>[];
-
-      for (final dbItem in recentItems) {
-        ClipItem? validItem;
-
-        switch (dbItem.type) {
-          case ClipType.text:
-          case ClipType.html:
-          case ClipType.rtf:
-          case ClipType.color:
-          case ClipType.url:
-          case ClipType.email:
-          case ClipType.json:
-          case ClipType.xml:
-          case ClipType.code:
-            validItem = dbItem;
-
-          case ClipType.image:
-          case ClipType.file:
-          case ClipType.audio:
-          case ClipType.video:
-            var filePath = dbItem.filePath ?? dbItem.content;
-
-            if (dbItem.type == ClipType.image &&
-                (filePath == null || filePath.isEmpty)) {
-              filePath = await _findImageFileForItem(dbItem);
-            }
-
-            if (filePath != null && await _isFileValid(filePath)) {
-              validItem = dbItem;
-            } else {
-              await DatabaseService.instance.deleteClipItem(dbItem.id);
-            }
-        }
-
-        if (validItem != null) {
-          validItems.add(validItem);
-        }
-      }
-
-      // 一次性设置所有有效项目，保持数据库返回的顺序（最新在前）
-      if (validItems.isNotEmpty) {
-        notifier.items = validItems;
-      }
-    } on Exception catch (e) {
-      // 静默失败，避免阻塞UI
-      unawaited(Log.e('Error loading initial data: $e'));
-    }
-  }
-
-  Future<bool> _isFileValid(String filePath) async {
-    if (filePath.isEmpty) return false;
-    return PathService.instance.fileExists(filePath);
-  }
-
-  Future<String?> _findImageFileForItem(ClipItem dbItem) async {
-    try {
-      final documentsDir = await PathService.instance.getDocumentsDirectory();
-      final mediaImagesDir = Directory('${documentsDir.path}/media/images');
-
-      if (!mediaImagesDir.existsSync()) return null;
-
-      final targetTime = dbItem.createdAt;
-      final targetIdPrefix = dbItem.id.substring(0, 8);
-
-      final files = await mediaImagesDir.list().toList();
-
-      for (final file in files) {
-        if (file is! File) continue;
-
-        final fileName = file.path.split('/').last;
-
-        if (fileName.contains(targetIdPrefix) ||
-            fileName.contains(targetTime.millisecondsSinceEpoch.toString())) {
-          return file.path;
-        }
-      }
-
-      return null;
-    } on Exception catch (e) {
-      await Log.e('Error finding image file for item: $e');
-      return null;
-    }
   }
 
   @override

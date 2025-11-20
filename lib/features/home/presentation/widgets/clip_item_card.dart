@@ -652,32 +652,7 @@ class _ClipItemCardState extends State<ClipItemCard>
       },
     );
 
-    // 优先使用缩略图
-    if (widget.item.thumbnail != null && widget.item.thumbnail!.isNotEmpty) {
-      Log.d(
-        'Using thumbnail for image display',
-        tag: 'ClipItemCard',
-        fields: {
-          'itemId': widget.item.id,
-          'thumbnailSize': widget.item.thumbnail!.length,
-        },
-      );
-      return Image.memory(
-        Uint8List.fromList(widget.item.thumbnail!),
-        width: displaySize.width,
-        height: displaySize.height,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        cacheWidth: displaySize.width.round(),
-        gaplessPlayback: true,
-        semanticLabel: '图片预览',
-        errorBuilder: (context, error, stackTrace) {
-          return _buildImageErrorPlaceholder(context, displaySize);
-        },
-      );
-    }
-
-    // 尝试加载原图
+    // 尝试加载原图（image/file类型必须通过file_path访问）
     if (widget.item.filePath != null && widget.item.filePath!.isNotEmpty) {
       return FutureBuilder<String?>(
         future: _resolveAbsoluteImagePath(widget.item.filePath!),
@@ -687,6 +662,15 @@ class _ClipItemCardState extends State<ClipItemCard>
           }
 
           if (snapshot.hasData && snapshot.data != null) {
+            // 文件存在，显示图片
+            Log.d(
+              'Image file found, displaying',
+              tag: 'ClipItemCard',
+              fields: {
+                'itemId': widget.item.id,
+                'filePath': snapshot.data,
+              },
+            );
             return Image.file(
               File(snapshot.data!),
               width: displaySize.width,
@@ -696,24 +680,45 @@ class _ClipItemCardState extends State<ClipItemCard>
               cacheWidth: displaySize.width.round(),
               semanticLabel: '图片预览',
               errorBuilder: (context, error, stackTrace) {
+                Log.w(
+                  'Failed to load image file',
+                  tag: 'ClipItemCard',
+                  error: error,
+                  fields: {
+                    'itemId': widget.item.id,
+                    'filePath': snapshot.data,
+                  },
+                );
                 return _buildImageErrorPlaceholder(context, displaySize);
               },
             );
+          } else {
+            // 文件不存在，记录错误日志
+            Log.e(
+              'Image file not found for display',
+              tag: 'ClipItemCard',
+              fields: {
+                'itemId': widget.item.id,
+                'filePath': widget.item.filePath,
+                'resolvedPath': snapshot.data,
+              },
+            );
+            return _buildImageErrorPlaceholder(context, displaySize);
           }
-
-          return _buildImagePlaceholder(context, displaySize);
         },
       );
+    } else {
+      // 没有文件路径，记录错误日志
+      Log.e(
+        'No file path available for image display',
+        tag: 'ClipItemCard',
+        fields: {
+          'itemId': widget.item.id,
+          'filePath': widget.item.filePath,
+        },
+      );
+      return _buildImageErrorPlaceholder(context, displaySize);
     }
-
-    Log.d(
-      'No thumbnail or file path available, showing placeholder',
-      tag: 'ClipItemCard',
-      fields: {
-        'itemId': widget.item.id,
-      },
-    );
-    return _buildImagePlaceholder(context, displaySize);
   }
 
   Widget _buildImageErrorPlaceholder(BuildContext context, Size size) {
