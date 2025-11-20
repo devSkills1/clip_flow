@@ -7,7 +7,8 @@ import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 应用切换器页面
@@ -27,6 +28,7 @@ class AppSwitcherPage extends ConsumerStatefulWidget {
 
 class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   int _selectedIndex = 0;
   List<ClipItem> _displayItems = [];
 
@@ -34,11 +36,16 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   void initState() {
     super.initState();
     _loadData();
+    // 自动滚动到选中项
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSelectedIndex();
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -64,41 +71,138 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
       _displayItems = filtered;
       _selectedIndex = filtered.isNotEmpty ? 0 : -1;
     });
+
+    // 滚动到新的选中项
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSelectedIndex();
+    });
   }
 
-  /// 构建应用切换器专用的卡片，用 GestureDetector 包装解决点击问题
+  void _navigateLeft() {
+    if (_displayItems.isNotEmpty && _selectedIndex > 0) {
+      setState(() {
+        _selectedIndex--;
+      });
+      _scrollToSelectedIndex();
+    }
+  }
+
+  void _navigateRight() {
+    if (_displayItems.isNotEmpty && _selectedIndex < _displayItems.length - 1) {
+      setState(() {
+        _selectedIndex++;
+      });
+      _scrollToSelectedIndex();
+    }
+  }
+
+  void _scrollToSelectedIndex() {
+    if (_scrollController.hasClients && _selectedIndex >= 0 && _displayItems.isNotEmpty) {
+      const cardWidth = 280.0;
+      const cardMargin = 32.0; // 16 + 16 horizontal margin
+      final totalCardWidth = cardWidth + cardMargin;
+      final screenWidth = MediaQuery.of(context).size.width;
+      final targetOffset = (_selectedIndex * totalCardWidth) - (screenWidth / 2) + (totalCardWidth / 2);
+
+      _scrollController.animateTo(
+        targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  
+  /// 构建应用切换器专用的卡片，带选中效果
   Widget _buildAppSwitcherCard(ClipItem item, int index) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.s8),
-      child: GestureDetector(
-        onTap: () {
+    final isSelected = index == _selectedIndex;
+
+    return Container(
+      width: 280,
+      margin: EdgeInsets.symmetric(
+        horizontal: isSelected ? 16 : 8,
+        vertical: 8,
+      ),
+      child: MouseRegion(
+        onEnter: (_) {
           setState(() {
             _selectedIndex = index;
           });
-          ClipItemUtil.handleItemTap(item, ref, context: context);
         },
-        child: ClipItemCard(
-          key: ValueKey(item.id),
-          item: item,
-          displayMode: DisplayMode.compact, // 使用紧凑模式适合应用切换器
-          onTap: () {
-            // 卡片内部的点击事件，禁用避免重复触发
-          },
-          onDelete: () {
-            ClipItemUtil.handleItemDelete(item, ref, context: context);
-          },
-          onFavoriteToggle: () {
-            ClipItemUtil.handleFavoriteToggle(item, ref, context: context);
-          },
-          searchQuery: _searchController.text,
-          enableOcrCopy: true,
-          onOcrTextTap: () {
-            // 使用统一的OCR处理逻辑
-            ClipItemUtil.handleOcrTextTap(item, ref, context: context);
-          },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.identity()
+            ..scale(isSelected ? 1.05 : 1.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+          ),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: isSelected ? 1.0 : 0.7,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected
+                      ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
+                      : Colors.transparent,
+                  width: 3,
+                ),
+              ),
+              child: ClipItemCard(
+                key: ValueKey(item.id),
+                item: item,
+                displayMode: DisplayMode.compact,
+                onTap: () {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                  // 点击图片时复制图片
+                  ClipItemUtil.handleItemTap(item, ref, context: context);
+                },
+                onDelete: () {
+                  ClipItemUtil.handleItemDelete(item, ref, context: context);
+                },
+                onFavoriteToggle: () {
+                  ClipItemUtil.handleFavoriteToggle(item, ref, context: context);
+                },
+                searchQuery: _searchController.text,
+                enableOcrCopy: true,
+                onOcrTextTap: () {
+                  // 点击OCR文字时只复制文字
+                  ClipItemUtil.handleOcrTextTap(item, ref, context: context);
+                },
+              ),
+            ),
+          ),
         ),
-      ),
-    );
+      ), // 关闭 AnimatedContainer
+      ), // 关闭 MouseRegion
+    ); // 关闭 Container
   }
 
   
@@ -118,20 +222,42 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
           _displayItems = next.toList();
           _selectedIndex = _displayItems.isNotEmpty ? 0 : -1;
         });
+        // 滚动到新的选中项
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToSelectedIndex();
+        });
       });
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _navigateLeft(),
+        const SingleActivator(LogicalKeyboardKey.arrowRight): () => _navigateRight(),
+        const SingleActivator(LogicalKeyboardKey.enter): () {
+          if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
+            ClipItemUtil.handleItemTap(_displayItems[_selectedIndex], ref, context: context);
+          }
+        },
+        const SingleActivator(LogicalKeyboardKey.space): () {
+          if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
+            ClipItemUtil.handleItemTap(_displayItems[_selectedIndex], ref, context: context);
+          }
+        },
+        const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.of(context).pop(),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.3),
+          color: Colors.black.withValues(alpha: 0.8),
         ),
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(
-            sigmaX: 15,
-            sigmaY: 15,
+            sigmaX: 20,
+            sigmaY: 20,
             tileMode: ui.TileMode.decal,
           ),
           child: Column(
@@ -196,78 +322,50 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                 ),
               ),
 
-              // 水平横向滚动的应用切换器
+              // macOS风格的应用切换器 - 居中显示，支持键盘导航
               Expanded(
                 child: _displayItems.isEmpty
-                    ? const Center(
-                        child: Text(
-                          '没有找到匹配的内容',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                      )
-                    : Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
+                    ? Center(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // 左箭头
-                            if (_displayItems.length > 1)
-                              IconButton(
-                                onPressed: _selectedIndex > 0
-                                    ? () {
-                                        setState(() {
-                                          _selectedIndex--;
-                                        });
-                                      }
-                                    : null,
-                                icon: const Icon(Icons.chevron_left),
+                            Icon(
+                              Icons.content_paste_search,
+                              size: 64,
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              '没有找到匹配的内容',
+                              style: TextStyle(
                                 color: Colors.white,
-                                iconSize: 20, // 与传统模式导航图标大小一致
-                              ),
-
-                            // 水平滚动视图 - 使用复用的 ModernClipItemCard
-                            Expanded(
-                              child: Builder(
-                                builder: (context) {
-                                  final itemWidth =
-                                      MediaQuery.of(context).size.width * 0.3;
-                                  return ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: _displayItems.length,
-                                    itemExtent: itemWidth,
-                                    itemBuilder: (context, index) {
-                                      final item = _displayItems[index];
-                                      return _buildAppSwitcherCard(item, index);
-                                    },
-                                  );
-                                },
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-
-                            // 右箭头
-                            if (_displayItems.length > 1)
-                              IconButton(
-                                onPressed:
-                                    _selectedIndex < _displayItems.length - 1
-                                    ? () {
-                                        setState(() {
-                                          _selectedIndex++;
-                                        });
-                                      }
-                                    : null,
-                                icon: const Icon(Icons.chevron_right),
-                                color: Colors.white,
-                                iconSize: 20, // 与传统模式导航图标大小一致
-                              ),
                           ],
+                        ),
+                      )
+                    : Center(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 48),
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            controller: _scrollController,
+                            itemCount: _displayItems.length,
+                            padding: EdgeInsets.zero,
+                            itemBuilder: (context, index) {
+                              final item = _displayItems[index];
+                              return _buildAppSwitcherCard(item, index);
+                            },
+                          ),
                         ),
                       ),
               ),
             ],
           ),
+        ),
+      ),
         ),
       ),
     );
