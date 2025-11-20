@@ -100,7 +100,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     if (_scrollController.hasClients && _selectedIndex >= 0 && _displayItems.isNotEmpty) {
       const cardWidth = 280.0;
       const cardMargin = 32.0; // 16 + 16 horizontal margin
-      final totalCardWidth = cardWidth + cardMargin;
+      const totalCardWidth = cardWidth + cardMargin;
       final screenWidth = MediaQuery.of(context).size.width;
       final targetOffset = (_selectedIndex * totalCardWidth) - (screenWidth / 2) + (totalCardWidth / 2);
 
@@ -230,8 +230,8 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
 
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _navigateLeft(),
-        const SingleActivator(LogicalKeyboardKey.arrowRight): () => _navigateRight(),
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): _navigateLeft,
+        const SingleActivator(LogicalKeyboardKey.arrowRight): _navigateRight,
         const SingleActivator(LogicalKeyboardKey.enter): () {
           if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
             ClipItemUtil.handleItemTap(_displayItems[_selectedIndex], ref, context: context);

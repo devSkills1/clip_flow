@@ -1,5 +1,6 @@
-import 'package:meta/meta.dart';
 import 'dart:io' show Platform;
+
+import 'package:meta/meta.dart';
 
 /// 快捷键修饰符
 enum HotkeyModifier {

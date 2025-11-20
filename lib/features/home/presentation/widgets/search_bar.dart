@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs
 // Simple search bar widget with Material Design 3 styling.
 import 'package:flutter/material.dart';
 
