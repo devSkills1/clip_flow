@@ -79,6 +79,25 @@ Future<void> _runApp() async {
 
   // 初始化服务
   await DatabaseService.instance.initialize();
+  
+  // 执行数据库文件路径修复（方案3：混合修复）
+  // 在应用启动时执行一次，修复无效的file_path并清理无效记录
+  try {
+    final repairReport = await DatabaseService.instance.repairFilePaths();
+    await Log.i(
+      'Database file path repair completed',
+      tag: 'Main',
+      fields: repairReport,
+    );
+  } on Exception catch (e) {
+    // 修复失败不影响应用启动
+    await Log.w(
+      'Database file path repair failed, continuing app startup',
+      tag: 'Main',
+      error: e,
+    );
+  }
+  
   await EncryptionService.instance.initialize();
 
   // 使用剪贴板管理器替代基础剪贴板服务

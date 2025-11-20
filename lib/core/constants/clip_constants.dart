@@ -61,6 +61,15 @@ class ClipConstants {
   static const String clipItemsTable = 'clip_items';
 
   /// 应用内相对文件路径
+  /// 媒体文件根目录
+  static const String mediaDir = 'media';
+
+  /// 图片文件目录
+  static const String mediaImagesDir = 'media/images';
+
+  /// 其他文件目录（音频、视频、文件等）
+  static const String mediaFilesDir = 'media/files';
+
   /// 缩略图目录
   static const String thumbnailsDir = 'thumbnails';
 

@@ -324,26 +324,39 @@ class BasicSidebar extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('确认清空'),
-        content: const Text('确定要清空所有剪贴板历史记录吗？\n此操作将删除所有历史数据，包括图片、文件等媒体文件。\n\n此操作不可撤销。'),
+        content:
+            const Text('确定要清空历史记录吗？\n\n此操作将删除所有【未收藏】的历史，保留收藏项。\n此操作不可撤销。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('取消'),
+          ),
+          // 新增一个“全部清空”按钮
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final historyNotifier =
+                  ref.read(clipboardHistoryProvider.notifier);
+              await historyNotifier.clearHistoryIncludingFavorites();
+            },
+            child: Text(
+              '全部清空',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
           ),
           FilledButton(
             onPressed: () async {
               // 关闭对话框
               Navigator.of(dialogContext).pop();
 
-              // 清空历史记录
-              final historyNotifier = ref.read(clipboardHistoryProvider.notifier);
+              // 清空历史记录（保留收藏）
+              final historyNotifier =
+                  ref.read(clipboardHistoryProvider.notifier);
               await historyNotifier.clearHistory();
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('清空'),
+            child: const Text('清空未收藏的'),
           ),
         ],
       ),

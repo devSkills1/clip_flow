@@ -190,10 +190,17 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
 
       // 只从内存中移除非收藏的项目
       state = state.where((item) => item.isFavorite).toList();
-    } on Exception catch (_) {
+    } on Exception catch (e) {
       // 即使数据库清空失败，也只保留收藏的项目
       state = state.where((item) => item.isFavorite).toList();
       // 可以在这里添加错误日志
+      unawaited(
+        Log.e(
+          'Failed to clear history (excluding favorites)',
+          tag: 'ClipboardHistoryNotifier',
+          error: e,
+        ),
+      );
     }
   }
 
@@ -204,10 +211,17 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
       await _databaseService.clearAllClipItems();
       // 清空内存状态
       state = [];
-    } on Exception catch (_) {
+    } on Exception catch (e) {
       // 即使数据库清空失败，也清空内存状态
       state = [];
       // 可以在这里添加错误日志
+      unawaited(
+        Log.e(
+          'Failed to clear history (including favorites)',
+          tag: 'ClipboardHistoryNotifier',
+          error: e,
+        ),
+      );
     }
   }
 

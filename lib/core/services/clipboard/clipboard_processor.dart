@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/models/clipboard_detection_result.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
@@ -573,13 +574,23 @@ class ClipboardProcessor {
           originalName: originalFileName,
           keepOriginalName: true,
         );
+
+        // 如果保存到磁盘失败，则整个处理失败
+        if (relativePath.isEmpty) {
+          await Log.e(
+            'Failed to save file to disk, aborting item creation.',
+            tag: 'ClipboardProcessor',
+            fields: {'originalPath': filePath},
+          );
+          return null;
+        }
       } on Exception catch (e) {
         await Log.e(
-          'Failed to save file data',
+          'Failed to save file data, aborting item creation.',
           tag: 'ClipboardProcessor',
           error: e,
         );
-        // 如果保存失败，继续使用原始路径，但这可能导致沙盒不可见
+        return null;
       }
 
       // 提取元数据（补充文件名与原始路径）
@@ -593,7 +604,7 @@ class ClipboardProcessor {
       if (fileType == ClipType.image) {
         // 优先使用保存后的文件生成缩略图
         try {
-          if (relativePath != null && relativePath.isNotEmpty) {
+          if (relativePath.isNotEmpty) {
             final documentsDirectory = await PathService.instance
                 .getDocumentsDirectory();
             final savedFilePath = '${documentsDirectory.path}/$relativePath';
@@ -621,9 +632,7 @@ class ClipboardProcessor {
       // 返回修改后的ClipItem，保持原有ID
       return originalItem.copyWith(
         type: fileType, // 更新文件类型（可能比检测到的更准确）
-        filePath: (relativePath != null && relativePath.isNotEmpty)
-            ? relativePath
-            : filePath, // 使用保存后的路径或原始路径
+        filePath: relativePath, // 强制使用保存后的相对路径
         thumbnail: thumbnail, // 添加缩略图
         metadata: mergedMetadata, // 合并元数据
         updatedAt: DateTime.now(), // 更新时间戳
@@ -891,7 +900,8 @@ class ClipboardProcessor {
         fileName = '${type}_${ts}_$hash.$ext';
       }
 
-      final relativeDir = type == 'image' ? 'media/images' : 'media/files';
+      final relativeDir =
+          type == 'image' ? ClipConstants.mediaImagesDir : ClipConstants.mediaFilesDir;
       final absoluteDir = '${dir.path}/$relativeDir';
       final absolutePath = '$absoluteDir/$fileName';
       final relativePath = '$relativeDir/$fileName';
