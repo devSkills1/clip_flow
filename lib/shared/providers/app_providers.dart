@@ -68,9 +68,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// 基于 [ClipboardHistoryNotifier] 的剪贴板历史状态提供者。
 final clipboardHistoryProvider =
     StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
-      final notifier = ClipboardHistoryNotifier(DatabaseService.instance)
-        // 预加载数据库中的最近记录，避免 AppSwitcher 首屏没有数据
-        ..preloadFromDatabase();
+      final notifier = ClipboardHistoryNotifier(DatabaseService.instance);
+      // 预加载数据库中的最近记录，避免 AppSwitcher 首屏没有数据
+      unawaited(notifier.preloadFromDatabase());
       return notifier;
     });
 
@@ -130,16 +130,20 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
             .map((e) => e.value),
       ];
 
-      Log.d(
-        'Moved existing item to top: ${item.id} (${item.type})',
-        tag: 'ClipboardHistoryNotifier',
+      unawaited(
+        Log.d(
+          'Moved existing item to top: ${item.id} (${item.type})',
+          tag: 'ClipboardHistoryNotifier',
+        ),
       );
     } else {
       // 添加新项目到列表开头
       state = [item, ...state];
-      Log.d(
-        'Added new item to top: ${item.id} (${item.type})',
-        tag: 'ClipboardHistoryNotifier',
+      unawaited(
+        Log.d(
+          'Added new item to top: ${item.id} (${item.type})',
+          tag: 'ClipboardHistoryNotifier',
+        ),
       );
 
       // 限制历史记录数量（优先保留收藏的项目）
@@ -487,7 +491,7 @@ class UserPreferences {
 class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 使用默认偏好初始化。
   UserPreferencesNotifier() : super(UserPreferences()) {
-    _loadPreferences();
+    unawaited(_loadPreferences());
   }
 
   /// 使用传入的初始偏好进行初始化。
@@ -496,13 +500,15 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     : super(initial) {
     // 完全同步初始化，不触发任何异步操作
     // 确保UI模式状态稳定，避免首屏闪动
-    Log.d(
-      'UserPreferencesNotifier initialized with UI mode: ${initial.uiMode}',
-      tag: 'UserPreferences',
-    );
+    unawaited(
+        Log.d(
+          'UserPreferencesNotifier initialized with UI mode: ${initial.uiMode}',
+          tag: 'UserPreferences',
+        ),
+      );
 
     // 延迟同步开机自启动状态，避免影响首屏渲染
-    Future.microtask(_syncAutostartStatus);
+    unawaited(Future.microtask(_syncAutostartStatus));
   }
 
   /// 偏好设置持久化服务
@@ -514,7 +520,7 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 用 [preferences] 替换当前偏好。
   set preferences(UserPreferences preferences) {
     state = preferences;
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 加载保存的偏好设置
@@ -615,7 +621,7 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 切换"最小化到托盘"偏好。
   void toggleMinimizeToTray() {
     state = state.copyWith(minimizeToTray: !state.minimizeToTray);
-    _savePreferences();
+    unawaited(_savePreferences());
 
     // 更新托盘服务的用户偏好设置
     TrayService().userPreferences = state;
@@ -624,37 +630,37 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 设置全局快捷键。
   void setGlobalHotkey(String hotkey) {
     state = state.copyWith(globalHotkey: hotkey);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置历史记录的最大保留条数。
   void setMaxHistoryItems(int maxItems) {
     state = state.copyWith(maxHistoryItems: maxItems);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 切换"启用加密"偏好。
   void toggleEncryption() {
     state = state.copyWith(enableEncryption: !state.enableEncryption);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 切换"启用 OCR"偏好。
   void toggleOCR() {
     state = state.copyWith(enableOCR: !state.enableOCR);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置显示语言代码（例如 'zh_CN'）。
   void setLanguage(String language) {
     state = state.copyWith(language: language);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置 OCR 识别语言（如 'auto', 'en-US', 'zh-Hans' 等）。
   void setOcrLanguage(String language) {
     state = state.copyWith(ocrLanguage: language);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置 OCR 最小置信度阈值 (0.0 - 1.0)。
@@ -662,19 +668,19 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     // 约束到合法区间
     final clamped = value.clamp(0.0, 1.0);
     state = state.copyWith(ocrMinConfidence: clamped);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置默认显示模式。
   void setDefaultDisplayMode(DisplayMode mode) {
     state = state.copyWith(defaultDisplayMode: mode);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 切换开发者模式。
   void toggleDeveloperMode() {
     state = state.copyWith(isDeveloperMode: !state.isDeveloperMode);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 切换性能监控覆盖层。
@@ -682,19 +688,19 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     state = state.copyWith(
       showPerformanceOverlay: !state.showPerformanceOverlay,
     );
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置UI界面模式。
   void setUiMode(UiMode mode) {
     state = state.copyWith(uiMode: mode);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 保存 AppSwitcher 模式的窗口宽度
   void setAppSwitcherWindowWidth(double? width) {
     state = state.copyWith(appSwitcherWindowWidth: width);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 // ignore_for_file: public_member_api_docs
+// Reason: Internal service module with documented API interfaces in separate files
 // 忽略公共成员API文档要求，因为这是内部服务，不需要对外暴露API文档
 
 import 'package:flutter/services.dart';

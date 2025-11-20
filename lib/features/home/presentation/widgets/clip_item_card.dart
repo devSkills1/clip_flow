@@ -1,5 +1,6 @@
 // This file uses extensive switch statements with exhaustive patterns that are
 // cleaner without default cases. Public member documentation is handled inline.
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -109,18 +110,18 @@ class _ClipItemCardState extends State<ClipItemCard>
 
   void _handleTapDown(TapDownDetails details) {
     setState(() => _isPressed = true);
-    _animationController.forward();
-    HapticFeedback.lightImpact();
+    unawaited(_animationController.forward());
+    unawaited(HapticFeedback.lightImpact());
   }
 
   void _handleTapUp(TapUpDetails details) {
     setState(() => _isPressed = false);
-    _animationController.reverse();
+    unawaited(_animationController.reverse());
   }
 
   void _handleTapCancel() {
     setState(() => _isPressed = false);
-    _animationController.reverse();
+    unawaited(_animationController.reverse());
   }
 
   void _handleMouseEnter(PointerEnterEvent event) {
@@ -338,7 +339,7 @@ class _ClipItemCardState extends State<ClipItemCard>
       child: IconButton.outlined(
         onPressed: () {
           // 添加触觉反馈
-          HapticFeedback.mediumImpact();
+          unawaited(HapticFeedback.mediumImpact());
           // 直接调用外部删除回调，确认对话框由主页处理
           widget.onDelete();
         },
@@ -472,31 +473,35 @@ class _ClipItemCardState extends State<ClipItemCard>
 
         // 添加调试日志
         if (widget.item.type == ClipType.image) {
-          Log.d(
-            'Image OCR status check',
-            tag: 'ClipItemCard',
-            fields: {
-              'itemId': widget.item.id,
-              'isOcrEnabled': isOcrEnabled,
-              'hasOcrText': hasOcrText,
-              'ocrTextLength': widget.item.ocrText?.length ?? 0,
-              'enableOcrCopy': widget.enableOcrCopy,
-            },
+          unawaited(
+            Log.d(
+              'Image OCR status check',
+              tag: 'ClipItemCard',
+              fields: {
+                'itemId': widget.item.id,
+                'isOcrEnabled': isOcrEnabled,
+                'hasOcrText': hasOcrText,
+                'ocrTextLength': widget.item.ocrText?.length ?? 0,
+                'enableOcrCopy': widget.enableOcrCopy,
+              },
+            ),
           );
         }
 
         // 如果开启OCR且有OCR文本，使用并排布局
         if (isOcrEnabled && hasOcrText) {
-          Log.d(
-            'Building image with OCR side-by-side layout',
-            tag: 'ClipItemCard',
-            fields: {
-              'itemId': widget.item.id,
-              'isOcrEnabled': isOcrEnabled,
-              'hasOcrText': hasOcrText,
-              'enableOcrCopy': widget.enableOcrCopy,
-              'hasOcrCallback': widget.onOcrTextTap != null,
-            },
+          unawaited(
+            Log.d(
+              'Building image with OCR side-by-side layout',
+              tag: 'ClipItemCard',
+              fields: {
+                'itemId': widget.item.id,
+                'isOcrEnabled': isOcrEnabled,
+                'hasOcrText': hasOcrText,
+                'enableOcrCopy': widget.enableOcrCopy,
+                'hasOcrCallback': widget.onOcrTextTap != null,
+              },
+            ),
           );
           return _buildImageWithOcrSideBySide(context, availableWidth, ref);
         }
@@ -637,18 +642,20 @@ class _ClipItemCardState extends State<ClipItemCard>
 
   Widget _buildImageContent(BuildContext context, Size displaySize) {
     // 添加调试日志
-    Log.d(
-      'Building image content',
-      tag: 'ClipItemCard',
-      fields: {
-        'itemId': widget.item.id,
-        'hasThumbnail':
-            widget.item.thumbnail != null && widget.item.thumbnail!.isNotEmpty,
-        'hasFilePath':
-            widget.item.filePath != null && widget.item.filePath!.isNotEmpty,
-        'thumbnailSize': widget.item.thumbnail?.length ?? 0,
-        'filePath': widget.item.filePath,
-      },
+    unawaited(
+      Log.d(
+        'Building image content',
+        tag: 'ClipItemCard',
+        fields: {
+          'itemId': widget.item.id,
+          'hasThumbnail':
+              widget.item.thumbnail != null && widget.item.thumbnail!.isNotEmpty,
+          'hasFilePath':
+              widget.item.filePath != null && widget.item.filePath!.isNotEmpty,
+          'thumbnailSize': widget.item.thumbnail?.length ?? 0,
+          'filePath': widget.item.filePath,
+        },
+      ),
     );
 
     // 尝试加载原图（image/file类型必须通过file_path访问）
@@ -662,13 +669,15 @@ class _ClipItemCardState extends State<ClipItemCard>
 
           if (snapshot.hasData && snapshot.data != null) {
             // 文件存在，显示图片
-            Log.d(
-              'Image file found, displaying',
-              tag: 'ClipItemCard',
-              fields: {
-                'itemId': widget.item.id,
-                'filePath': snapshot.data,
-              },
+            unawaited(
+              Log.d(
+                'Image file found, displaying',
+                tag: 'ClipItemCard',
+                fields: {
+                  'itemId': widget.item.id,
+                  'filePath': snapshot.data,
+                },
+              ),
             );
             return Image.file(
               File(snapshot.data!),
@@ -679,28 +688,32 @@ class _ClipItemCardState extends State<ClipItemCard>
               cacheWidth: displaySize.width.round(),
               semanticLabel: '图片预览',
               errorBuilder: (context, error, stackTrace) {
-                Log.w(
-                  'Failed to load image file',
-                  tag: 'ClipItemCard',
-                  error: error,
-                  fields: {
-                    'itemId': widget.item.id,
-                    'filePath': snapshot.data,
-                  },
+                unawaited(
+                  Log.w(
+                    'Failed to load image file',
+                    tag: 'ClipItemCard',
+                    error: error,
+                    fields: {
+                      'itemId': widget.item.id,
+                      'filePath': snapshot.data,
+                    },
+                  ),
                 );
                 return _buildImageErrorPlaceholder(context, displaySize);
               },
             );
           } else {
             // 文件不存在，记录错误日志
-            Log.e(
-              'Image file not found for display',
-              tag: 'ClipItemCard',
-              fields: {
-                'itemId': widget.item.id,
-                'filePath': widget.item.filePath,
-                'resolvedPath': snapshot.data,
-              },
+            unawaited(
+              Log.e(
+                'Image file not found for display',
+                tag: 'ClipItemCard',
+                fields: {
+                  'itemId': widget.item.id,
+                  'filePath': widget.item.filePath,
+                  'resolvedPath': snapshot.data,
+                },
+              ),
             );
             return _buildImageErrorPlaceholder(context, displaySize);
           }
@@ -708,13 +721,15 @@ class _ClipItemCardState extends State<ClipItemCard>
       );
     } else {
       // 没有文件路径，记录错误日志
-      Log.e(
-        'No file path available for image display',
-        tag: 'ClipItemCard',
-        fields: {
-          'itemId': widget.item.id,
-          'filePath': widget.item.filePath,
-        },
+      unawaited(
+        Log.e(
+          'No file path available for image display',
+          tag: 'ClipItemCard',
+          fields: {
+            'itemId': widget.item.id,
+            'filePath': widget.item.filePath,
+          },
+        ),
       );
       return _buildImageErrorPlaceholder(context, displaySize);
     }
@@ -830,19 +845,21 @@ class _ClipItemCardState extends State<ClipItemCard>
         child: InkWell(
           onTap: () {
             // 添加调试日志
-            Log.d(
-              'OCR area tapped',
-              tag: 'ClipItemCard',
-              fields: {
-                'itemId': widget.item.id,
-                'hasCallback': widget.onOcrTextTap != null,
-                'enableOcrCopy': widget.enableOcrCopy,
-                'ocrTextLength': ocrText.length,
-              },
+            unawaited(
+              Log.d(
+                'OCR area tapped',
+                tag: 'ClipItemCard',
+                fields: {
+                  'itemId': widget.item.id,
+                  'hasCallback': widget.onOcrTextTap != null,
+                  'enableOcrCopy': widget.enableOcrCopy,
+                  'ocrTextLength': ocrText.length,
+                },
+              ),
             );
 
             // 触觉反馈
-            HapticFeedback.lightImpact();
+            unawaited(HapticFeedback.lightImpact());
 
             // 调用OCR回调
             widget.onOcrTextTap?.call();
@@ -1613,7 +1630,7 @@ class _ClipItemCardState extends State<ClipItemCard>
 
   void _handleFavoriteToggle() {
     // 触发触觉反馈
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
 
     // 调用外部回调来更新收藏状态
     if (widget.onFavoriteToggle != null) {
