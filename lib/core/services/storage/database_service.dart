@@ -1404,8 +1404,8 @@ class DatabaseService {
       final itemsToDelete = <String>[];
 
       for (final item in items) {
-        final id = item['id'] as String;
-        final type = item['type'] as String;
+        final id = item['id']! as String;
+        final type = item['type']! as String;
         final filePathRaw = item['file_path'] as String?;
 
         // file_path为空，直接删除
@@ -1420,7 +1420,7 @@ class DatabaseService {
 
         // 如果是绝对路径，转换为相对路径
         if (filePathRaw.startsWith('/') ||
-            RegExp(r'^[A-Za-z]:').hasMatch(filePathRaw)) {
+            RegExp('^[A-Za-z]:').hasMatch(filePathRaw)) {
           if (filePathRaw.startsWith(documentsDir.path)) {
             fixedPath = filePathRaw.substring(documentsDir.path.length + 1);
           } else {
@@ -1432,7 +1432,7 @@ class DatabaseService {
         }
 
         // 规范化路径：移除开头的 / 或 ./
-        fixedPath = fixedPath!.replaceFirst(RegExp(r'^\.?/'), '');
+        fixedPath = fixedPath.replaceFirst(RegExp(r'^\.?/'), '');
 
         // 确保以 media/ 开头
         if (!fixedPath.startsWith(ClipConstants.mediaDir)) {

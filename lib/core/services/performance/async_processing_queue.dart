@@ -121,7 +121,6 @@ class AsyncProcessingQueue {
     );
     final completer = queueItem.completer = Completer<ClipItem?>();
 
-    // ignore: cascade_invocations - separate operations for clarity
     _pendingItems[id] = queueItem;
     _queue.add(queueItem);
 
@@ -160,7 +159,6 @@ class AsyncProcessingQueue {
       _processingIds.add(queueItem.id!);
 
       // 异步处理任务
-      // ignore: unawaited_futures - intentional fire-and-forget for performance
       unawaited(
         _processTask(queueItem)
             .then((_) {
@@ -169,7 +167,6 @@ class AsyncProcessingQueue {
             .catchError((Object error) {
               _processingIds.remove(queueItem.id);
               _totalFailed++;
-              // ignore: unawaited_futures - logging is fire-and-forget
               Log.e(
                 'Task processing failed',
                 tag: 'AsyncProcessingQueue',

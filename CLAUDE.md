@@ -1,711 +1,181 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+ClipFlow Pro - 跨平台剪贴板历史管理工具开发指南
 
-## Documentation Update Requirements
+## 项目概览
 
-**CRITICAL**: This documentation must be updated when any of the following occurs:
+**技术栈**: Flutter 3.19.0+ + Dart 3.9.0+ + Riverpod 3.0.0 + SQLite + Clean Architecture
+**平台支持**: macOS, Windows, Linux
+**架构模式**: Clean Architecture + 模块化服务层
 
-1. **Architecture Changes**: Any modifications to core architecture patterns, service modules, or dependency relationships
-2. **Major Feature Implementation**: New significant features that change how the application works
-3. **Technology Stack Updates**: Changes to frameworks, libraries, or core dependencies
-4. **Platform-Specific Changes**: Modifications to macOS, Windows, or Linux integration patterns
-5. **New Troubleshooting Patterns**: When new types of issues are discovered and resolved
-6. **Development Workflow Changes**: Updates to build processes, testing strategies, or development standards
+## 快速开始
 
-**Update Process**:
-- Add new sections or update existing ones to reflect the changes
-- Include practical examples and code snippets where helpful
-- Update troubleshooting guides with real-world solutions
-- Ensure all file paths and commands remain accurate
-- Add debugging commands for new problem types
-
-## Sub-Agent Usage Guidelines
-
-**Default Behavior**: Always prefer using specialized sub-agents for task execution rather than handling tasks directly. Sub-agents should be the default approach for:
-
-- Code development and implementation
-- Architecture and design tasks
-- Testing and quality assurance
-- Documentation and analysis
-- Performance optimization
-- Security reviews
-
-**When to Use Sub-Agents**:
-- Any complex multi-step task requiring specialized expertise
-- Tasks matching specific agent descriptions (flutter-expert, dart-pro, backend-architect, etc.)
-- Code reviews, security audits, performance analysis
-- Feature implementation, bug fixes, refactoring
-- Testing strategy and implementation
-- **Debugging complex issues**: Use `debugger` agent for analyzing logs, tracing errors, and investigating system failures
-
-**Exception**: Only handle tasks directly when they are simple, informational queries or when the task scope is too small to warrant agent delegation.
-
-## Development Commands
-
-### Environment Setup
+### 核心命令
 ```bash
-# Install dependencies
+# 环境设置
 flutter pub get
-
-# Run in development mode
 flutter run --dart-define=ENVIRONMENT=development
 
-# Build for specific platform and environment
-./scripts/build.sh dev macos        # Development macOS build
-./scripts/build.sh prod all         # Production build for all platforms
+# 构建
+./scripts/build.sh dev macos        # 开发构建
+./scripts/build.sh prod all         # 生产构建
 
-# Code quality checks
-flutter analyze
-dart format .
-dart fix --apply
-
-# Run tests
-flutter test
+# 代码质量
+flutter analyze                    # 代码分析
+dart format .                     # 代码格式化
+flutter test                      # 运行测试
 ```
 
-### Build Scripts
-The project includes comprehensive build scripts in `/scripts/`:
+### 构建脚本
+- `./scripts/build.sh` - 主构建脚本
+- `./scripts/version-manager.sh` - 版本管理
+- `./scripts/cleanup_apps.sh` - 应用清理
 
-- **`./scripts/build.sh`**: Main build script supporting development/production builds for all platforms
-- **`./scripts/version-manager.sh`**: Version management with automatic build numbering
-- **`./scripts/cleanup_apps.sh`**: Application cleanup with Spotlight index rebuilding
+## 核心架构
 
-### Build Examples
+### 服务模块组织
+```
+lib/core/services/
+├── clipboard/          # 剪贴板监控和处理
+├── analysis/           # 内容分析 (HTML, 代码, OCR)
+├── storage/            # 数据持久化和加密
+├── platform/           # 平台特定集成
+├── performance/        # 性能监控
+└── observability/      # 日志和错误处理
+```
+
+### 关键模式
+- **端口适配器模式**: 每个模块定义 `*_ports.dart` 接口
+- **依赖注入**: 使用 Riverpod providers
+- **ID生成统一化**: 使用 `IdGenerator.generateId()` 创建所有内容ID
+
+### 依赖关系
+```
+clipboard → analysis, storage, platform
+analysis → platform
+storage → platform/files
+operations → clipboard, analysis, storage
+observability ← all layers
+```
+
+## 开发标准
+
+### 代码质量
+- **静态分析**: `very_good_analysis` 规则
+- **覆盖率**: 全局 ≥70%, 核心模块 ≥80%
+- **格式化**: `dart format` (单引号, 尾随逗号)
+- **类型安全**: 启用严格推断和强制转换
+
+### 关键规则
+- ✅ 使用 `lib/core/services/logger` - 禁止 `print()`/`debugPrint()`
+- ✅ 错误处理: `try on Exception catch (e)` - 禁止通用 catch
+- ✅ 异步: 优先 async/await 而非 then()
+- ❌ 禁止使用 @deprecated 成员
+- ❌ 禁止硬编码密钥或敏感信息
+- ❌ Git 提交消息不得包含 AI/工具署名
+
+### UI/UX 标准
+- **Material 3**: 必须使用 Material Design 3
+- **国际化**: 所有 UI 文本使用 gen-l10n
+- **无障碍**: 支持 WCAG 2.1 AA 和 textScaleFactor 1.0-1.5
+- **动画**: 150-300ms, 标准曲线, 关键操作可取消
+
+## 性能优化
+
+### 关键指标
+- 帧时间 < 16ms (60fps 设备)
+- 图片加载: 使用 `OptimizedImageLoader`
+- 列表性能: `ListView.builder` + 分页
+- 内存管理: 适当处置资源
+
+### 已实现的优化
+- **52%** 更快的初始加载
+- **18%** 改善的滚动帧率
+- **37%** 减少的内存使用
+- **50%** 更快的图片加载
+
+## 故障排除
+
+### 热键问题
+1. 检查 macOS Console.app 中的 `ClipboardPlugin` 消息
+2. 验证 "Successfully registered Carbon hotkey" 消息
+3. 应用具有智能热键过滤，会根据当前应用变化
+4. 系统冲突时使用 `HotkeyService.resetToDefaults()` 重置
+
+### 调试命令
 ```bash
-# Development macOS build
-./scripts/build.sh dev macos
-
-# Production build for all platforms
-./scripts/build.sh prod all
-
-# Clean build
-./scripts/build.sh -c dev macos
-
-# Manual Flutter builds
-flutter build macos --release --dart-define=ENVIRONMENT=production
-flutter build windows --release
-flutter build linux --release
-```
-
-### Code Quality
-```bash
-# Code analysis and formatting
-flutter analyze
-dart format .
-dart fix --apply
-
-# Run tests
-flutter test
-
-# Run specific test file
-flutter test test/integration/test_clipboard.dart
-
-# Run tests with coverage
-flutter test --coverage
-genhtml coverage/lcov.info -o coverage/html
-
-# Dependency check
-flutter pub outdated
-
-# Clean build artifacts
-flutter clean
-```
-
-### Utilities
-```bash
-# Version management
-./scripts/version-manager.sh --version
-
-# Clean build artifacts
-flutter clean
-
-# Clean up old applications
-./scripts/cleanup_apps.sh
-```
-
-## Architecture Overview
-
-ClipFlow Pro follows **Clean Architecture** with a **modular service layer** organized by business domains:
-
-### Core Architecture Layers
-
-1. **Core Layer** (`lib/core/`): Business logic, models, and modular services
-2. **Feature Layer** (`lib/features/`): UI and business logic organized by features
-3. **Shared Layer** (`lib/shared/`): Cross-feature widgets, providers, and utilities
-
-### Modular Service Architecture
-
-The service layer is organized into domain-specific modules:
-
-- **clipboard/**: Core clipboard functionality and monitoring
-- **analysis/**: Content analysis (HTML, code, semantic recognition)
-- **storage/**: Data persistence, encryption, and database operations
-- **platform/**: Platform-specific integrations (permissions, hotkeys, OCR, tray)
-- **performance/**: Performance monitoring and async processing
-- **observability/**: Logging, error handling, and crash reporting
-- **operations/**: Cross-domain business operations
-
-Each module follows the **Port-Adapter Pattern**:
-- `*_ports.dart`: Defines interfaces and contracts
-- Implementation classes: Concrete implementations of ports
-- `index.dart`: Unified module exports
-
-### Key Dependencies
-- clipboard → analysis, storage, platform
-- analysis → platform
-- storage → platform/files
-- operations → clipboard, analysis, storage (via ports)
-- observability ← all layers (can be used by any layer)
-- platform ← bottom layer (no business service dependencies)
-
-## Project Structure
-
-### Service Module Pattern
-```
-lib/core/services/[module]/
-├── [module]_ports.dart          # Interface definitions
-├── [module]_service.dart        # Main service implementation
-├── [sub_module]/
-│   ├── [sub_module]_service.dart
-│   └── ...                     # Additional components
-└── index.dart                   # Unified exports
-```
-
-### Feature Organization
-```
-lib/features/[feature]/
-├── data/                        # Data layer implementations
-├── domain/                      # Business logic and entities
-│   ├── entities/
-│   ├── repositories/
-│   └── usecases/
-└── presentation/                # UI layer
-    ├── pages/
-    └── widgets/
-```
-
-### UI Components Architecture
-
-The home page uses modern UI components with optimized performance:
-
-- **ResponsiveHomeLayout**: Main layout manager with responsive grid
-- **ModernClipItemCard**: Enhanced card component fixing overflow issues
-- **EnhancedSearchBar**: Advanced search with real-time suggestions
-- **OptimizedImageLoader**: Smart image loading with caching
-
-### State Management
-
-Uses **Riverpod 3.0+** with:
-- `clipboardHistoryProvider`: In-memory clipboard history
-- `clipboardStreamProvider`: Real-time clipboard monitoring
-- `searchQueryProvider`: Search state management
-- `filterTypeProvider`: Filter selection state
-- `displayModeProvider`: Display mode preferences
-
-## Technology Stack
-
-- **Framework**: Flutter 3.19.0+ with Dart 3.9.0+
-- **State Management**: Riverpod 3.0.0
-- **Database**: SQLite with sqflite
-- **Encryption**: AES-256-GCM via encrypt package
-- **Routing**: go_router 16.2.1
-- **Logging**: Custom logger system + Sentry integration
-- **Architecture**: Clean Architecture + Modular Services
-- **Design System**: Material Design 3 with custom theme tokens
-
-## Development Standards
-
-### Code Quality
-- **Linting**: Uses very_good_analysis with custom rules in analysis_options.yaml
-- **Formatting**: dart format with single quotes and trailing commas
-- **Type Safety**: Strict inference, casts, and raw types enabled
-- **Performance**: const constructors preferred, rebuild boundaries optimized
-- **Coverage Requirements**: Global coverage ≥70%, core modules ≥80%
-
-### Key Patterns
-- **Dependency Injection**: Use Riverpod providers with interface-based dependencies
-- **Error Handling**: Force `try on Exception catch (e)` - no generic catch blocks
-- **Logging**: Use `lib/core/services/logger` - never use `print()` or `debugPrint()`
-- **Async**: Prefer async/await over then(), handle exceptions properly
-- **Git Commits**: Commit messages must not contain any Claude, AI, or automated tool references. **Strictly forbidden**:
-  - 🤖 Generated with [Claude Code](https://claude.com/claude-code)
-  - Co-Authored-By: Claude <noreply@anthropic.com>
-  - Any other AI/automated tool attribution
-- **Documentation Updates**: When making significant changes, always update this CLAUDE.md file according to the "Documentation Update Requirements" section at the top of this file.
-
-### Strict Development Standards
-
-#### API Usage Requirements
-- **Deprecated APIs**: Never use @deprecated members - CI treats deprecated warnings as failures
-- **Version Management**: Follow official Flutter/Dart version upgrade timeline (within 2 weeks of release)
-- **Migration**: Always follow official migration guides for API changes
-
-#### Code Structure Requirements
-- **Clean Architecture**: Strict separation of Presentation, Domain, and Data layers
-- **Layer Boundaries**: Presentation must not directly depend on Data - use UseCase/Repository interfaces
-- **Module Communication**: Cross-module communication through interfaces/events/routes only
-- **Naming Conventions**:
-  - Files/Directories: snake_case.dart
-  - Widget files match class names
-  - Test files: *_test.dart
-  - Async methods end with "Async"
-  - Stream variables explicitly named or marked with $
-
-#### Constants and Configuration
-- **No Hardcoding**: Magic numbers, strings, or colors forbidden
-- **Centralized Constants**: All constants in `lib/core/constants` with semantic naming
-- **Environment Config**: Use `--dart-define` for dev/staging/prod environments
-- **Design Tokens**: Colors, spacing, typography from unified sources
-
-#### UI/UX Standards
-- **Material 3**: Mandatory use of Material Design 3 with ColorScheme semantic tokens
-- **Internationalization**: All UI text must use gen-l10n from ARB files - no hardcoded strings
-- **Accessibility**: WCAG 2.1 AA compliance, support textScaleFactor 1.0-1.5, dark/high contrast modes
-- **Animations**: 150-300ms duration with standard curves, critical operations must be cancellable
-
-#### Security Requirements
-- **No Hardcoded Secrets**: Use .env + dart-define + Secret Manager
-- **Local Storage**: Use flutter_secure_storage for sensitive data
-- **Network**: HTTPS mandatory, consider TLS pinning for sensitive communications
-- **Data Sanitization**: Remove sensitive information from logs and clipboard data
-
-#### Performance Standards
-- **Widget Optimization**: Use const constructors,明确 Rebuild boundaries
-- **Lists and Images**: Use Sliver widgets with pagination, implement caching strategies
-- **Performance Targets**: Frame time < 16ms on 60fps devices for complex scenes
-- **Memory Management**: Proper disposal of resources, monitor memory usage
-
-### Testing Strategy
-- **Coverage Requirements**: Global coverage ≥70%, core modules ≥80% - CI fails if below threshold
-- **Test Types**:
-  - Unit tests for all service components
-  - Integration tests for end-to-end flows
-  - Golden tests for critical UI components
-  - Mock/Fake for external dependencies (network, time, platform interactions)
-- **Test Quality**:
-  - Use Given-When-Then naming/structure
-  - Use test data factories/fixtures
-  - Integration tests with integration_test package covering startup and critical flows
-  - Use fake_async for concurrent/async testing
-- **Documentation Comments**: Development phase may ignore `public_member_api_docs` warnings, but core public interfaces must be documented before release
-
-## Platform Considerations
-
-### macOS
-- Requires accessibility permissions for clipboard monitoring
-- Uses AppInfo-Dev.xcconfig/AppInfo-Prod.xcconfig for environment configs
-- Supports system tray integration
-
-### Windows
-- Uses WinRT APIs for OCR functionality
-- Requires appropriate Windows API permissions
-
-### Linux
-- Requires Tesseract for OCR functionality
-- Uses GTK system tray integration
-
-## Environment Configuration
-
-- **Development**: `--dart-define=ENVIRONMENT=development`
-- **Production**: `--dart-define=ENVIRONMENT=production`
-- Environment-specific configs in platform directories (macos/Runner/Configs/)
-
-## Performance Guidelines
-
-- Use const constructors wherever possible
-- Implement proper widget rebuild boundaries
-- Optimize list views with pagination and virtualization
-- Monitor memory usage with performance overlay
-- Use async processing queues for heavy operations
-
-## UI Optimization Implementation
-
-### Recent Enhancements
-
-The project has undergone significant UI optimization to address overflow issues and modernize the interface:
-
-#### Problem Resolution
-- **Layout Overflow**: Fixed nested constraint conflicts in card components
-- **Image Performance**: Implemented LRU caching and progressive loading
-- **Memory Management**: Optimized widget lifecycle and image disposal
-- **Responsiveness**: Added responsive grid layouts based on screen size
-
-#### New Components
-- **ModernClipItemCard**: Replaces legacy ClipItemCard with better constraint handling
-- **ResponsiveHomeLayout**: Dynamic layout manager with 1-3 column grids
-- **EnhancedSearchBar**: Real-time search with suggestions and filters
-- **OptimizedImageLoader**: Smart image loading with memory management
-
-#### Performance Metrics
-- **52% faster initial load times**
-- **18% improved scroll frame rates**
-- **37% reduced memory usage**
-- **50% faster image loading**
-
-### Integration
-New UI components are backward compatible and can be integrated via simple route replacements:
-
-```dart
-// Use enhanced components
-ResponsiveHomeLayout()  // Instead of original HomePage()
-ModernClipItemCard() // Enhanced card with overflow fixes
-```
-
-## Troubleshooting Common Issues
-
-### Hotkey/Global Shortcuts Issues
-
-When troubleshooting hotkey problems:
-
-1. **Check Native Logs**: Monitor macOS Console.app for `ClipboardPlugin` messages
-2. **Verify Registration**: Look for "Successfully registered Carbon hotkey" messages in Flutter logs
-3. **Application-Aware Filtering**: Be aware that app uses intelligent hotkey filtering that varies by current foreground application
-4. **System Conflicts**: Some hotkeys may be rejected if they conflict with system shortcuts or developer tools
-5. **Reset Configuration**: Use `HotkeyService.resetToDefaults()` to restore default hotkey configurations
-
-### Key Files for Hotkey Issues
-- `macos/Runner/ClipboardPlugin.swift` - Native hotkey registration and filtering logic
-- `lib/core/services/platform/input/hotkey_service.dart` - Dart-side hotkey management
-- `lib/core/models/hotkey_config.dart` - Default hotkey configurations
-
-### Debugging Commands
-```bash
-# Monitor Flutter logs for hotkey registration
+# 监控 Flutter 日志
 flutter run -d macos --dart-define=ENVIRONMENT=development
 
-# Check system logs (macOS)
+# 系统日志检查 (macOS)
 log stream --predicate 'process == "ClipFlow Pro"' --info
 
-# Enable desktop support (if needed)
-flutter config --enable-macos-desktop
-flutter config --enable-windows-desktop
-flutter config --enable-linux-desktop
+# 性能分析
+flutter run --profile
 ```
 
-### Common Build Issues
+### 常见问题
+- **macOS 构建失败**: 检查辅助功能权限
+- **内存问题**: 使用 `OptimizedImageLoader` 处理大图片
+- **列表性能**: 实现分页处理大量历史记录
 
-#### macOS Build Failures
-- **Permission Errors**: Ensure accessibility permissions are granted for clipboard monitoring
-- **Code Signing**: Production builds require proper developer certificates
-- **Xcode Version**: Use Xcode 15.0+ for Flutter 3.19 compatibility
+## 关键架构组件
 
-#### Memory Issues
-- **Image Loading**: Use `OptimizedImageLoader` for large images
-- **List Performance**: Implement pagination for large clipboard histories
-- **Cache Management**:定期清理 LRU 缓存避免内存泄漏
+### ID生成和去重系统
+- **IdGenerator**: 统一 SHA256 哈希 ID 生成
+- **DeduplicationService**: 集中化去重逻辑
+- **关键原则**: 仅在需要写入数据库时生成ID
 
-### Performance Debugging
+### 正确流程:
 ```dart
-// Enable performance overlay in development
-userPreferencesProvider.showPerformanceOverlay = true;
-
-// Monitor specific operations
-Log.d('Operation started', tag: 'performance', fields: {
-  'operation': 'clipboard_processing',
-  'timestamp': DateTime.now().millisecondsSinceEpoch,
-});
-
-// Use performance service
-final perfService = ref.read(performanceServiceProvider);
-perfService.startTimer('clipboard_operation');
-// ... perform operation
-perfService.endTimer('clipboard_operation');
-```
-
-## Critical Architecture Components
-
-### ID Generation and Deduplication System
-
-The application implements a **unified ID generation and deduplication system** to prevent duplicate clipboard entries:
-
-#### Core Components
-
-1. **IdGenerator** (`lib/core/services/id_generator.dart`)
-   - Centralized ID generation using SHA256 hashing
-   - Content-based ID generation for all clipboard types
-   - Handles color normalization, file identifier extraction, and text processing
-   - Generates consistent 64-character hash strings
-
-2. **DeduplicationService** (`lib/core/services/deduplication_service.dart`)
-   - Singleton service for centralized deduplication logic
-   - Checks database for existing content before creating new entries
-   - Updates timestamps and merges metadata for duplicates
-   - Provides batch deduplication capabilities
-
-#### Critical Implementation Rule
-
-**ID generation should ONLY occur when content needs to be written to database/sandbox.**
-
-The correct flow:
-```dart
-// 1. Detect clipboard content
+// 1. 检测剪贴板内容
 final detectionResult = await _universalDetector.detect(clipboardData);
-final tempItem = detectionResult.createClipItem();
 
-// 2. Check cache first (no ID generation yet)
+// 2. 先检查缓存 (不生成ID)
 if (await _isCachedByContent(tempItem)) return null;
 
-// 3. ONLY when determined to save, generate ID
-final contentHash = IdGenerator.generateId(
-  tempItem.type, tempItem.content, tempItem.filePath, tempItem.metadata,
-);
-final item = tempItem.copyWith(id: contentHash);
+// 3. 确定保存时才生成ID
+final contentHash = IdGenerator.generateId(type, content, filePath, metadata);
 ```
 
-#### Anti-Patterns to Avoid
+## 测试策略
 
-- ❌ Multiple ID generation strategies in different parts of code
-- ❌ Using truncated hashes (16-char) vs full SHA256 hashes (64-char)
-- ❌ Generating IDs for temporary operations or caching
-- ❌ Content-based logic in UI components instead of services
+### 测试类型
+- **单元测试**: 所有服务组件
+- **集成测试**: 使用 `integration_test` 包
+- **Widget测试**: 关键UI组件
+- **Golden测试**: 视觉回归
 
-#### Key Architectural Decisions
-
-- **Single Source of Truth**: Only `IdGenerator.generateId()` creates IDs
-- **Content Consistency**: Same content always generates same ID regardless of source
-- **Cache Integration**: Cache checks use content signatures, not full IDs
-- **Database Deduplication**: Database queries use the unified ID for exact matching
-
-This system solves the critical issue where identical content (like color #0F1319) would create multiple database entries due to inconsistent ID generation.
-
-## Advanced Development Patterns
-
-### Service Module Implementation
-
-When creating new service modules:
-
-1. **Define Port Interface First**: Always start with `*_ports.dart` to define contracts
-2. **Implement Concrete Classes**: Create service implementations that fulfill ports
-3. **Use Dependency Injection**: Register services via Riverpod providers
-4. **Handle Errors Gracefully**: Use proper exception handling with logging
-
-Example pattern:
-```dart
-// my_service_ports.dart
-abstract class MyServicePort {
-  Future<void> doSomething();
-}
-
-// my_service.dart
-class MyService implements MyServicePort {
-  @override
-  Future<void> doSomething() async {
-    try {
-      // Implementation
-    } on Exception catch (e) {
-      Log.e('Service error', tag: 'my_service', error: e);
-      rethrow;
-    }
-  }
-}
-
-// providers.dart
-final myServiceProvider = Provider<MyServicePort>((ref) {
-  return MyService();
-});
-```
-
-### Cross-Platform Abstractions
-
-For platform-specific functionality:
-
-1. **Define Common Interface**: Use port pattern for cross-platform APIs
-2. **Implement Platform Channels**: Create native implementations in each platform
-3. **Use Fallbacks**: Provide graceful degradation for unsupported features
-4. **Test on All Platforms**: Ensure functionality works across macOS, Windows, Linux
-
-### State Management Best Practices
-
-```dart
-// Use async providers for data loading
-final dataProvider = FutureProvider<List<Data>>((ref) async {
-  final service = ref.read(myServiceProvider);
-  return await service.loadData();
-});
-
-// Use stream providers for real-time data
-final streamProvider = StreamProvider<Event>((ref) {
-  final service = ref.read(myServiceProvider);
-  return service.eventStream;
-});
-
-// Use state notifier for mutable state
-class MyNotifier extends StateNotifier<MyState> {
-  MyNotifier(this._service) : super(const MyState.initial());
-
-  final MyServicePort _service;
-
-  Future<void> updateData() async {
-    state = const MyState.loading();
-    try {
-      final data = await _service.getData();
-      state = MyState.loaded(data);
-    } on Exception catch (e) {
-      state = MyState.error(e);
-      Log.e('Failed to update data', error: e);
-    }
-  }
-}
-
-final myNotifierProvider = StateNotifierProvider<MyNotifier, MyState>((ref) {
-  return MyNotifier(ref.read(myServiceProvider));
-});
-```
-
-## Integration Testing
-
-### End-to-End Test Structure
-```
-test/integration/
-├── test_clipboard.dart           # Core clipboard functionality
-├── test_clipboard_permissions.dart  # Permission handling
-├── test_poller_status.dart       # Polling mechanism
-└── diagnose_clipboard.dart       # Diagnostic utilities
-```
-
-### Running Integration Tests
+### 运行测试
 ```bash
-# Run all integration tests
-flutter test test/integration/
-
-# Run specific test
-flutter test test/integration/test_clipboard.dart
-
-# Run with coverage
-flutter test --coverage
-genhtml coverage/lcov.info -o coverage/html
+flutter test                              # 所有测试
+flutter test test/integration/            # 集成测试
+flutter test --coverage                   # 带覆盖率
 ```
 
-## Release Process
+## 发布流程
 
-### Version Management
-The project uses automated version management:
-
-1. **Semantic Versioning**: Follow MAJOR.MINOR.PATCH format
-2. **Build Numbers**: Auto-generated YYYYMMDDNN format (date + counter)
-3. **Release Branches**: Use feature branches, merge to main via PR
-
+### 版本管理
 ```bash
-# Check current version
-./scripts/version-manager.sh --info
-
-# Create release build
-./scripts/build.sh prod all
-
-# Tag release (after successful build)
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push origin v1.0.0
+./scripts/version-manager.sh --info       # 检查版本
+./scripts/build.sh prod all              # 生产构建
 ```
 
-### Pre-Release Checklist
-- [ ] All tests passing (unit + integration)
-- [ ] Code quality checks passing (`flutter analyze`)
-- [ ] Documentation updated (including this CLAUDE.md)
-- [ ] Version number updated in pubspec.yaml
-- [ ] Build tested on all target platforms
-- [ ] Performance benchmarks within acceptable range
-- [ ] Security scan passed (if applicable)
+### 发布前检查清单
+- [ ] 所有测试通过
+- [ ] 代码质量检查通过 (`flutter analyze`)
+- [ ] 文档已更新
+- [ ] 版本号已更新
+- [ ] 所有平台构建测试
 
-### Post-Release Tasks
-- [ ] Upload build artifacts to distribution platform
-- [ ] Create GitHub Release with changelog
-- [ ] Update documentation website
-- [ ] Notify stakeholders of release
-- [ ] Monitor crash reports and errors
+## 环境配置
 
-## Emergency Procedures
-
-### Critical Bug Fixes
-1. **Create Hotfix Branch**: `git checkout -b hotfix/critical-bug`
-2. **Implement Fix**: Minimal change to resolve issue
-3. **Test Thoroughly**: Ensure fix doesn't introduce regressions
-4. **Fast-Track Release**: Use emergency release process
-5. **Communicate**: Notify users of fix and update
-
-### Performance Degradation
-1. **Enable Performance Monitoring**: Use built-in performance overlay
-2. **Collect Metrics**: Log key performance indicators
-3. **Profile Application**: Use Flutter DevTools
-4. **Identify Bottlenecks**: Check CPU, memory, and I/O usage
-5. **Optimize**: Apply targeted optimizations
-
-### Data Corruption
-1. **Stop Application**: Prevent further data modification
-2. **Backup Database**: Preserve current state
-3. **Run Diagnostics**: Use built-in diagnostic tools
-4. **Repair Data**: Attempt data recovery if possible
-5. **Restore from Backup**: If available and necessary
-
-## Security Considerations
-
-### Data Protection
-- **Encryption**: All sensitive data encrypted at rest using AES-256-GCM
-- **Key Management**: Keys derived from user credentials, not stored
-- **Permissions**: Minimal permissions requested, clearly explained
-- **Data Retention**: Configurable cleanup policies for old data
-
-### Platform Security
-- **macOS**: App notarization required for distribution
-- **Windows**: Code signing recommended for trust
-- **Linux**: Package signatures for package managers
-
-### Secure Coding Practices
-- No hardcoded secrets or API keys
-- Input validation for all user data
-- Safe handling of file paths and URLs
-- Proper error handling without information disclosure
-
-## Frequently Asked Questions
-
-### Q: How do I add a new clipboard data type?
-A:
-1. Update `ClipType` enum in `lib/core/models/clip_item.dart`
-2. Add detection logic in `ClipboardDetector`
-3. Implement processing in `ClipboardProcessor`
-4. Add UI handling in relevant widgets
-5. Write tests for new functionality
-
-### Q: How do I debug platform-specific issues?
-A:
-1. Check platform-specific logs (Console.app on macOS)
-2. Use Flutter DevTools for debugging
-3. Enable verbose logging: `Log.minLevel = LogLevel.trace`
-4. Use native debugging tools when necessary
-
-### Q: How do I optimize memory usage?
-A:
-1. Use image caching with size limits
-2. Implement pagination for large lists
-3. Dispose resources properly in widget lifecycle
-4. Monitor memory usage with performance overlay
-5. Use `ListView.builder` for long lists
-
-### Q: How do I handle async operations properly?
-A:
-1. Always use try-catch with specific exception types
-2. Use async/await instead of then() when possible
-3. Handle loading states in UI
-4. Cancel ongoing operations when widgets dispose
-5. Log errors with context for debugging
-
-## Resources and References
-
-### Official Documentation
-- [Flutter Documentation](https://docs.flutter.dev/)
-- [Riverpod Documentation](https://riverpod.dev/)
-- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-
-### Community Resources
-- [Flutter Discord](https://discord.gg/flutter)
-- [Stack Overflow](https://stackoverflow.com/questions/tagged/flutter)
-- [Reddit r/Flutter](https://www.reddit.com/r/Flutter/)
-
-### Internal Resources
-- Project Wiki: [Link to internal wiki if available]
-- Design Documents: Check `/docs/` directory
-- API Documentation: Generated from code comments
+- **开发**: `--dart-define=ENVIRONMENT=development`
+- **生产**: `--dart-define=ENVIRONMENT=production`
+- 配置文件位于平台目录 (如 `macos/Runner/Configs/`)
 
 ---
 
-Remember: This documentation is a living document. Keep it updated as the project evolves. When in doubt, prioritize code clarity, testability, and user experience.
+**文档更新触发条件**: 架构变更、主要功能实现、技术栈更新、平台特定变更、新的故障排除模式、开发工作流变更
+
+**sub-agent 使用**: 优先使用专门的 sub-agents 处理复杂任务，特别是 flutter-expert, dart-pro, backend-architect 等具有特定专业知识的代理。

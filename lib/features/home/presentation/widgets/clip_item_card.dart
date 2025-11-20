@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, no_default_cases
 // This file uses extensive switch statements with exhaustive patterns that are
 // cleaner without default cases. Public member documentation is handled inline.
 import 'dart:io';

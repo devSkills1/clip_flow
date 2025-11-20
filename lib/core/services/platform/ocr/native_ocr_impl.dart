@@ -62,7 +62,7 @@ class NativeOcrImpl implements OcrService {
       fields: {
         'imageSize': imageBytes.length,
         'language': language,
-        if (minConfidence != null) 'minConfidence': minConfidence,
+        'minConfidence': ?minConfidence,
         'platform': _platformInfo,
       },
     );
