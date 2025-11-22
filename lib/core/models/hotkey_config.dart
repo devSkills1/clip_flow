@@ -63,12 +63,14 @@ class HotkeyConfig {
     return HotkeyConfig(
       action: HotkeyAction.values.firstWhere(
         (a) => a.name == json['action'],
+        orElse: () => throw FormatException('Invalid action: ${json['action']}'),
       ),
       key: json['key'] as String,
       modifiers: (json['modifiers'] as List<dynamic>)
           .map(
             (m) => HotkeyModifier.values.firstWhere(
               (mod) => mod.name == m,
+              orElse: () => throw FormatException('Invalid modifier: $m'),
             ),
           )
           .toSet(),
