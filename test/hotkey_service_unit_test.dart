@@ -136,9 +136,9 @@ void main() {
         orElse: () => throw Exception('toggleWindow config not found'),
       );
 
-      expect(toggleWindowConfig.key, equals('v'));
+      expect(toggleWindowConfig.key, equals('`'));
       expect(toggleWindowConfig.modifiers, contains(HotkeyModifier.command));
-      expect(toggleWindowConfig.modifiers, contains(HotkeyModifier.shift));
+      expect(toggleWindowConfig.modifiers, contains(HotkeyModifier.alt));
     });
   });
 
