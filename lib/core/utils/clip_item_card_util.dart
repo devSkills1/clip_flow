@@ -289,13 +289,16 @@ class ClipItemUtil {
         flutter_services.ClipboardData(text: item.ocrText!),
       );
 
-      // 更新数据库中对应的OCR文本记录（如果存在ocrTextId）
-      if (item.ocrTextId != null) {
-        final updatedOcrItem = await _updateOcrTextRecord(item);
-        if (updatedOcrItem != null) {
-          ref.read(clipboardHistoryProvider.notifier).addItem(updatedOcrItem);
-        }
-      }
+      // 只复制到剪贴板，剪贴板监控会自动处理后续更新
+      // 这避免了双重更新：
+      // 1. Clipboard.setData 触发剪贴板监控
+      // 2. 监控检测到变化 → 自动更新数据库和UI
+      // 
+      // 之前的手动更新会导致：
+      // 1. 更新了关联的OCR记录
+      // 2. 监控又创建了一个新的文本记录
+      // 3. 导致数据重复和UI跳动
+
 
       await Log.i(
         'OCR text copied successfully',
