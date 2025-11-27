@@ -14,8 +14,9 @@ class IdGenerator {
     ClipType type,
     String? content,
     String? filePath,
-    Map<String, dynamic> metadata,
-  ) {
+    Map<String, dynamic> metadata, {
+    List<int>? binaryBytes,
+  }) {
     String contentString;
 
     switch (type) {
@@ -32,6 +33,13 @@ class IdGenerator {
       case ClipType.file:
       case ClipType.audio:
       case ClipType.video:
+        // 如果有二进制数据，优先使用数据的哈希
+        if (binaryBytes != null && binaryBytes.isNotEmpty) {
+          final digest = sha256.convert(binaryBytes);
+          contentString = '${type.name}_bytes:${digest.toString()}';
+          break;
+        }
+
         // 二进制类型使用文件名（去除时间戳）或元数据
         String fileIdentifier;
 

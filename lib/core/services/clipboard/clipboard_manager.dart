@@ -129,15 +129,23 @@ class ClipboardManager {
       final existingItem = await _database.getClipItemById(clipItem.id);
       if (existingItem != null) {
         await Log.d(
-          'Clip item already exists in database, updating UI only',
+          'Clip item already exists in database, updating timestamp',
           tag: 'OptimizedClipboardManager',
           fields: {
             'id': clipItem.id,
             'type': clipItem.type.name,
           },
         );
-        // 即使数据库中已存在，仍然需要更新UI以确保该项目显示在最前面
-        _safeAddToUiStream(existingItem.copyWith(updatedAt: DateTime.now()));
+
+        // 更新数据库中的时间戳
+        final updatedItem = existingItem.copyWith(
+          updatedAt: DateTime.now(),
+          createdAt: DateTime.now(),
+        );
+        await _database.updateClipItem(updatedItem);
+
+        // 更新UI以确保该项目显示在最前面
+        _safeAddToUiStream(updatedItem);
         return;
       }
 
