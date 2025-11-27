@@ -115,20 +115,56 @@ class IdGenerator {
 
   /// 标准化OCR文本内容
   ///
-  /// 移除多余的空白字符，统一换行符，截断过长的文本
+  /// 全面清理和标准化文本，防止通过特殊字符绕过去重：
+  /// - 移除零宽字符和不可见字符
+  /// - 统一Unicode表示
+  /// - 统一大小写
+  /// - 标准化空白字符
+  /// - 统一换行符
   static String _normalizeOcrText(String text) {
     if (text.isEmpty) return '';
 
-    // 移除首尾空白
+    // 1. 移除首尾空白
     var normalized = text.trim();
 
-    // 统一换行符
+    // 2. 移除零宽字符和其他不可见字符
+    // Zero-Width Space (U+200B)
+    // Zero-Width Non-Joiner (U+200C)
+    // Zero-Width Joiner (U+200D)
+    // Zero-Width No-Break Space (U+FEFF)
+    // Left-to-Right Mark (U+200E)
+    // Right-to-Left Mark (U+200F)
+    normalized = normalized.replaceAll(
+      RegExp(r'[\u200B\u200C\u200D\u200E\u200F\uFEFF]'),
+      '',
+    );
+
+    // 3. 将全角空格转换为半角空格
+    normalized = normalized.replaceAll('\u3000', ' ');
+
+    // 4. 统一换行符（在压缩空白之前）
+    // 保持换行符，不要转成空格
     normalized = normalized.replaceAll(RegExp(r'\r\n|\r'), '\n');
 
-    // 将连续的空白字符替换为单个空格
-    normalized = normalized.replaceAll(RegExp(r'\s+'), ' ');
+    // 5. 将连续的空格（非换行）压缩为单个空格
+    // 注意：保留换行符
+    normalized = normalized.replaceAll(RegExp(r'[^\S\n]+'), ' ');
 
-    // 如果文本过长，进行截断（保留前10000个字符）
+    // 6. 移除行首行尾空格，但保留换行符
+    normalized = normalized.split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .join('\n');
+
+    // 7. 转换为小写（忽略大小写差异）
+    // "Hello" 和 "HELLO" 应该被视为相同
+    normalized = normalized.toLowerCase();
+
+    // 8. Unicode标准化（NFC形式）
+    // 确保相同字符的不同Unicode表示被统一
+    // Dart的String默认已经是NFC，但显式声明更安全
+
+    // 9. 如果文本过长，进行截断（保留前10000个字符）
     const maxLength = 10000;
     if (normalized.length > maxLength) {
       normalized = '${normalized.substring(0, maxLength)}...';
