@@ -137,10 +137,12 @@ class ClipboardManager {
           },
         );
 
-        // 更新数据库中的时间戳
+        // 更新数据库中的访问时间戳
+        // 注意：保持createdAt不变，只更新updatedAt
+        // createdAt代表首次创建时间，应该保持不变以维护审计追踪
         final updatedItem = existingItem.copyWith(
           updatedAt: DateTime.now(),
-          createdAt: DateTime.now(),
+          // ✅ 不修改createdAt，保持数据完整性
         );
         await _database.updateClipItem(updatedItem);
 

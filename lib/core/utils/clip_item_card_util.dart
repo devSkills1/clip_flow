@@ -180,10 +180,11 @@ class ClipItemUtil {
       // 复制到剪贴板
       await ref.read(clipboardServiceProvider).setClipboardContent(item);
 
-      // 更新数据库中的时间戳
+      // 更新数据库中的访问时间戳
+      // 保持createdAt不变，只更新updatedAt
       final updatedItem = item.copyWith(
         updatedAt: DateTime.now(),
-        createdAt: DateTime.now(),
+        // ✅ 不修改createdAt，保持原始创建时间
       );
       await _updateItemRecord(updatedItem);
 
@@ -542,10 +543,11 @@ class ClipItemUtil {
       // 获取OCR文本记录
       final ocrRecord = await database.getClipItemById(imageItem.ocrTextId!);
       if (ocrRecord != null) {
-        // 更新OCR文本记录的时间戳
+        // 更新OCR文本记录的访问时间戳
+        // 保持createdAt不变，只更新updatedAt
         final updatedOcrRecord = ocrRecord.copyWith(
           updatedAt: DateTime.now(),
-          createdAt: DateTime.now(),
+          // ✅ 不修改createdAt，保持原始创建时间
         );
         await database.updateClipItem(updatedOcrRecord);
 
