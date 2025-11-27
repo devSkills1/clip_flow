@@ -890,7 +890,9 @@ class ClipboardProcessor {
       }
 
       // 计算文件名哈希（用于去重/避免冲突）
-      final hash = sha256.convert(bytes).toString().substring(0, 8);
+      // 使用完整哈希或较长前缀以确保唯一性
+      final hash = sha256.convert(bytes).toString();
+      final shortHash = hash.substring(0, 16); // 使用16位哈希
 
       // 原始名称清理：去除非法字符，限制长度，支持中文文件名
       String sanitizedBase(String name) {
@@ -926,11 +928,12 @@ class ClipboardProcessor {
       if (keepOriginalName && originalName != null && originalName.isNotEmpty) {
         final base = sanitizedBase(originalName);
         // 使用更简洁的格式：原始名_哈希.扩展名
-        // 哈希已经足够唯一，无需时间戳
-        fileName = '${base}_$hash.$ext';
+        // 移除时间戳，确保相同内容生成相同文件名
+        fileName = '${base}_$shortHash.$ext';
       } else {
-        // 保持原有命名策略：type_时间戳_哈希.扩展名
-        fileName = '${type}_${ts}_$hash.$ext';
+        // 移除时间戳，仅使用类型和哈希
+        // 确保相同内容生成相同文件名，支持基于文件的去重
+        fileName = '${type}_$shortHash.$ext';
       }
 
       final relativeDir =

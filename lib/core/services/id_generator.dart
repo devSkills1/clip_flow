@@ -16,6 +16,7 @@ class IdGenerator {
     String? filePath,
     Map<String, dynamic> metadata, {
     List<int>? binaryBytes,
+    String? fileContentHash, // ✅ 支持预计算的哈希（用于大文件流式处理）
   }) {
     String contentString;
 
@@ -33,7 +34,14 @@ class IdGenerator {
       case ClipType.file:
       case ClipType.audio:
       case ClipType.video:
-        // 如果有二进制数据，优先使用数据的哈希
+      case ClipType.video:
+        // 1. 优先使用预计算的哈希（流式处理大文件）
+        if (fileContentHash != null && fileContentHash.isNotEmpty) {
+          contentString = '${type.name}_bytes:$fileContentHash';
+          break;
+        }
+
+        // 2. 如果有二进制数据，使用数据的哈希（小文件/内存数据）
         if (binaryBytes != null && binaryBytes.isNotEmpty) {
           final digest = sha256.convert(binaryBytes);
           contentString = '${type.name}_bytes:${digest.toString()}';
