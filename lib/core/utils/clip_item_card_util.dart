@@ -180,6 +180,16 @@ class ClipItemUtil {
       // 复制到剪贴板
       await ref.read(clipboardServiceProvider).setClipboardContent(item);
 
+      // 更新数据库中的时间戳
+      final updatedItem = item.copyWith(
+        updatedAt: DateTime.now(),
+        createdAt: DateTime.now(),
+      );
+      await _updateItemRecord(updatedItem);
+
+      // 更新UI状态（将项目移动到顶部）
+      ref.read(clipboardHistoryProvider.notifier).addItem(updatedItem);
+
       // 显示提示
       if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -198,7 +208,7 @@ class ClipItemUtil {
       }
 
       await Log.d(
-        'Item copied successfully',
+        'Item copied and updated successfully',
         tag: 'ClipItemUtil',
         fields: {
           'itemId': item.id,
@@ -286,7 +296,10 @@ class ClipItemUtil {
 
       // 更新数据库中对应的OCR文本记录（如果存在ocrTextId）
       if (item.ocrTextId != null) {
-        await _updateOcrTextRecord(item);
+        final updatedOcrItem = await _updateOcrTextRecord(item);
+        if (updatedOcrItem != null) {
+          ref.read(clipboardHistoryProvider.notifier).addItem(updatedOcrItem);
+        }
       }
 
       await Log.i(
@@ -498,8 +511,31 @@ class ClipItemUtil {
     }
   }
 
+  /// 更新项目记录的时间戳
+  static Future<void> _updateItemRecord(ClipItem item) async {
+    try {
+      final database = DatabaseService.instance;
+      await database.updateClipItem(item);
+
+      await Log.d(
+        'Updated item record timestamp',
+        tag: 'ClipItemUtil',
+        fields: {
+          'itemId': item.id,
+          'itemType': item.type.name,
+        },
+      );
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to update item record',
+        tag: 'ClipItemUtil',
+        error: e,
+      );
+    }
+  }
+
   /// 更新OCR文本记录的时间戳
-  static Future<void> _updateOcrTextRecord(ClipItem imageItem) async {
+  static Future<ClipItem?> _updateOcrTextRecord(ClipItem imageItem) async {
     try {
       final database = DatabaseService.instance;
 
@@ -507,7 +543,10 @@ class ClipItemUtil {
       final ocrRecord = await database.getClipItemById(imageItem.ocrTextId!);
       if (ocrRecord != null) {
         // 更新OCR文本记录的时间戳
-        final updatedOcrRecord = ocrRecord.copyWith(updatedAt: DateTime.now());
+        final updatedOcrRecord = ocrRecord.copyWith(
+          updatedAt: DateTime.now(),
+          createdAt: DateTime.now(),
+        );
         await database.updateClipItem(updatedOcrRecord);
 
         await Log.d(
@@ -518,6 +557,7 @@ class ClipItemUtil {
             'imageId': imageItem.id,
           },
         );
+        return updatedOcrRecord;
       }
     } on Exception catch (e) {
       await Log.e(
@@ -527,6 +567,7 @@ class ClipItemUtil {
       );
       // 不阻止复制操作，只记录错误
     }
+    return null;
   }
 
   /// 显示OCR错误消息

@@ -59,12 +59,45 @@ class ClipboardProcessor {
       // 创建临时ClipItem（不包含ID）用于内容检查
       final tempItem = detectionResult.createClipItem();
 
+      // 获取原始二进制数据用于生成内容哈希
+      // 这对于图片等二进制类型至关重要，确保基于内容而非文件名去重
+      Uint8List? binaryData;
+      if (tempItem.type == ClipType.image ||
+          tempItem.type == ClipType.file ||
+          tempItem.type == ClipType.audio ||
+          tempItem.type == ClipType.video) {
+        // 尝试从原始数据中获取二进制内容
+        if (detectionResult.originalData != null) {
+          // 优先使用图片数据
+          binaryData = detectionResult.originalData!.getFormat<Uint8List>(
+            ClipboardFormat.image,
+          );
+          
+          // 如果没有图片数据但是文件类型，尝试读取文件
+          if (binaryData == null && tempItem.filePath != null) {
+            try {
+              final file = File(tempItem.filePath!);
+              if (await file.exists()) {
+                binaryData = await file.readAsBytes();
+              }
+            } catch (e) {
+              await Log.w(
+                'Failed to read file for hash generation',
+                tag: 'ClipboardProcessor',
+                error: e,
+              );
+            }
+          }
+        }
+      }
+
       // 始终使用统一的ID生成器生成哈希（作为内容标识）
       final contentHash = IdGenerator.generateId(
         tempItem.type,
         tempItem.content,
         tempItem.filePath,
         tempItem.metadata,
+        binaryBytes: binaryData, // 使用原始二进制数据而非thumbnail
       );
 
       // 检查缓存（使用统一的哈希）
@@ -493,7 +526,7 @@ class ClipboardProcessor {
       }
 
       // 获取原始ClipItem并修改它，保持原有ID
-      final originalItem = detectionResult.createClipItem();
+      final originalItem = detectionResult.createClipItem(id: contentHash);
 
       // 合并metadata，确保不丢失原有信息
       final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata)
@@ -622,7 +655,7 @@ class ClipboardProcessor {
       }
 
       // 获取原始ClipItem并修改它，保持原有ID
-      final originalItem = detectionResult.createClipItem();
+      final originalItem = detectionResult.createClipItem(id: contentHash);
 
       // 合并metadata，确保不丢失原有信息
       final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata)
