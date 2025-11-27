@@ -32,7 +32,7 @@ class ClipboardProcessor {
 
   // 缓存配置
   static const int _maxCacheSize = 100;
-  static const Duration _cacheExpiry = Duration(hours: 24);
+  static const Duration _cacheExpiry = Duration(hours: 1); // 缩短缓存过期时间 (漏洞#8)
   static const int _maxContentLength = 1024 * 1024; // 1MB
   static const int _maxMemoryUsage = 50 * 1024 * 1024; // 50MB
 
@@ -736,6 +736,19 @@ class ClipboardProcessor {
 
   /// 更新缓存（优化版本）
   void _updateCache(String contentHash, ClipItem item) {
+    // 验证哈希一致性 (漏洞#7)
+    if (item.id != contentHash) {
+      Log.w(
+        'Cache update ignored: contentHash mismatch',
+        tag: 'ClipboardProcessor',
+        fields: {
+          'contentHash': contentHash,
+          'itemId': item.id,
+        },
+      );
+      return;
+    }
+
     final now = DateTime.now();
 
     // 检查内存使用情况
