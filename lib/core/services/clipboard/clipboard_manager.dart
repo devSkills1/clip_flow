@@ -310,7 +310,8 @@ class ClipboardManager {
     final stopwatch = Stopwatch()..start();
 
     try {
-      await _database.batchInsertClipItems(items);
+      // 显式启用事务以确保原子性 (漏洞#9)
+      await _database.batchInsertClipItems(items, useTransaction: true);
 
       stopwatch.stop();
 
