@@ -177,19 +177,13 @@ class ClipItemUtil {
     BuildContext? context,
   }) async {
     try {
-      // 复制到剪贴板
+      // 只复制到剪贴板，剪贴板监控会自动处理后续更新
+      // 这避免了双重更新：
+      // 1. setClipboardContent 触发剪贴板监控
+      // 2. 监控检测到变化 → 自动更新数据库和UI
+      // 
+      // ❌ 不要在这里手动更新数据库或UI，会导致重复操作
       await ref.read(clipboardServiceProvider).setClipboardContent(item);
-
-      // 更新数据库中的访问时间戳
-      // 保持createdAt不变，只更新updatedAt
-      final updatedItem = item.copyWith(
-        updatedAt: DateTime.now(),
-        // ✅ 不修改createdAt，保持原始创建时间
-      );
-      await _updateItemRecord(updatedItem);
-
-      // 更新UI状态（将项目移动到顶部）
-      ref.read(clipboardHistoryProvider.notifier).addItem(updatedItem);
 
       // 显示提示
       if (context != null && context.mounted) {
@@ -209,7 +203,7 @@ class ClipItemUtil {
       }
 
       await Log.d(
-        'Item copied and updated successfully',
+        'Item copied to clipboard, monitoring will handle updates',
         tag: 'ClipItemUtil',
         fields: {
           'itemId': item.id,
