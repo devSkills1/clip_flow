@@ -71,6 +71,12 @@ flutter build windows
 flutter build linux
 ```
 
+### 环境切换（可选）
+
+- 使用脚本：`./scripts/switch-env.sh dev|prod|status` 会更新构建配置并写入当前环境。
+- 使用 `dart-define`：`flutter run --dart-define=ENVIRONMENT=prod` 或 `flutter build macos --dart-define=ENVIRONMENT=prod`。
+- 详细发布流程请参考 `docs/build-release-guide.md` 与 `docs/USAGE.md`。
+
 ### 平台特定配置
 
 #### macOS
@@ -159,6 +165,7 @@ flutter build linux
    - 自动识别图片中的文字
    - 支持多种图片格式
    - 识别结果可搜索和复制
+   - Linux/Windows 需先安装 Tesseract/WinRT 依赖，参阅 `docs/OCR_IMPLEMENTATION.md`
 
 ### 高级功能
 
@@ -399,6 +406,10 @@ platform ← 最底层 (不依赖业务服务)
 ## 🤝 贡献指南
 
 我们欢迎所有形式的贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
+
+- 统一执行 `flutter analyze`、`dart format`, `flutter test --coverage`
+- 遵循 Conventional Commits 与 README 中的编码规范
+- 新增平台依赖或脚本时同步更新 `docs/` 相关指南
 
 ### 开发流程
 
