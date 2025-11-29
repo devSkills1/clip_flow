@@ -176,6 +176,17 @@ class ClipItemUtil {
     WidgetRef ref, {
     BuildContext? context,
   }) async {
+    // 🔍 调试：确认方法被调用
+    await Log.i(
+      '🟢 handleItemTap CALLED',
+      tag: 'ClipItemUtil',
+      fields: {
+        'itemId': item.id,
+        'itemType': item.type.name,
+        'content': item.content?.substring(0, math.min(20, item.content?.length ?? 0)) ?? 'null',
+      },
+    );
+
     try {
       // 只复制到剪贴板，剪贴板监控会自动处理后续更新
       // 这避免了双重更新：
@@ -183,7 +194,18 @@ class ClipItemUtil {
       // 2. 监控检测到变化 → 自动更新数据库和UI
       // 
       // ❌ 不要在这里手动更新数据库或UI，会导致重复操作
+      await Log.d(
+        '📋 Calling setClipboardContent',
+        tag: 'ClipItemUtil',
+        fields: {'itemType': item.type.name},
+      );
+      
       await ref.read(clipboardServiceProvider).setClipboardContent(item);
+      
+      await Log.i(
+        '✅ setClipboardContent completed',
+        tag: 'ClipItemUtil',
+      );
 
       // 显示提示
       if (context != null && context.mounted) {
@@ -211,7 +233,11 @@ class ClipItemUtil {
         },
       );
     } on Exception catch (e) {
-      await Log.e('Failed to copy item', tag: 'ClipItemUtil', error: e);
+      await Log.e(
+        '❌ handleItemTap FAILED',
+        tag: 'ClipItemUtil',
+        error: e,
+      );
 
       if (context != null && context.mounted) {
         _showErrorMessage(context, '复制失败：$e');
