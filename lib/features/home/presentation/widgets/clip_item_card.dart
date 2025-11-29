@@ -179,12 +179,16 @@ class _ClipItemCardState extends State<ClipItemCard>
                   child: Material(
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(_getBorderRadius()),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: _getMaxCardHeight(context),
-                        minHeight: _getMinCardHeight(context),
+                    child: InkWell(
+                      onTap: widget.onTap,
+                      borderRadius: BorderRadius.circular(_getBorderRadius()),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: _getMaxCardHeight(context),
+                          minHeight: _getMinCardHeight(context),
+                        ),
+                        child: _buildCardContent(context),
                       ),
-                      child: _buildCardContent(context),
                     ),
                   ),
                 ),
