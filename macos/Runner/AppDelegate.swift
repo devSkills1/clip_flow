@@ -19,6 +19,9 @@ class AppDelegate: FlutterAppDelegate {
     if let controller = mainFlutterWindow?.contentViewController as? FlutterViewController {
       let registrar = controller.registrar(forPlugin: "ClipboardPlugin")
       ClipboardPlugin.register(with: registrar)
+
+      let icloudRegistrar = controller.registrar(forPlugin: "ICloudSyncPlugin")
+      ICloudSyncPlugin.register(with: icloudRegistrar)
     }
   }
   

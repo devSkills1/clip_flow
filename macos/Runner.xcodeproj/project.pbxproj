@@ -30,6 +30,7 @@
 		5BB12AB89BDD1CDC615A06E2 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DE620B64C20678D0581FE30 /* Pods_RunnerTests.framework */; };
 		99EC41EF72CC60BDA4EEB4FF /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2783F0D305E6D58C1E15C52 /* Pods_Runner.framework */; };
 		CB1234567890ABCD12345678 /* ClipboardPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1234567890ABCD12345679 /* ClipboardPlugin.swift */; };
+		CB1234567890ABCD12345690 /* ICloudSyncPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1234567890ABCD12345691 /* ICloudSyncPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -75,6 +76,7 @@
 		33CC10F02044A3C60003C045 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		33CC10F22044A3C60003C045 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Runner/Assets.xcassets; sourceTree = "<group>"; };
 		CB1234567890ABCD12345679 /* ClipboardPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPlugin.swift; sourceTree = "<group>"; };
+		CB1234567890ABCD12345691 /* ICloudSyncPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudSyncPlugin.swift; sourceTree = "<group>"; };
 		33CC10F52044A3C60003C045 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		33CC10F72044A3C60003C045 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Runner/Info.plist; sourceTree = "<group>"; };
 		33CC11122044BFA00003C045 /* MainFlutterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterWindow.swift; sourceTree = "<group>"; };
@@ -180,6 +182,7 @@
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
 				CB1234567890ABCD12345679 /* ClipboardPlugin.swift */,
+				CB1234567890ABCD12345691 /* ICloudSyncPlugin.swift */,
 				33E51913231747F40026EE4D /* DebugProfile.entitlements */,
 				33E51914231749380026EE4D /* Release.entitlements */,
 				33CC11242044D66E0003C045 /* Resources */,
@@ -444,6 +447,7 @@
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
 				CB1234567890ABCD12345678 /* ClipboardPlugin.swift in Sources */,
+				CB1234567890ABCD12345690 /* ICloudSyncPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

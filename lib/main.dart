@@ -1,11 +1,16 @@
+import 'dart:io' show Platform;
+
 import 'package:clip_flow_pro/app.dart';
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow_pro/core/services/sync/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,7 +84,7 @@ Future<void> _runApp() async {
 
   // 初始化服务
   await DatabaseService.instance.initialize();
-  
+
   // 执行数据库文件路径修复（方案3：混合修复）
   // 在应用启动时执行一次，修复无效的file_path并清理无效记录
   try {
@@ -97,7 +102,9 @@ Future<void> _runApp() async {
       error: e,
     );
   }
-  
+
+  await _initializeICloudSyncIfNeeded();
+
   await EncryptionService.instance.initialize();
 
   // 使用剪贴板管理器替代基础剪贴板服务
@@ -132,4 +139,82 @@ Future<void> _runApp() async {
       child: const ClipFlowProApp(),
     ),
   );
+}
+
+Future<void> _initializeICloudSyncIfNeeded() async {
+  if (kIsWeb || !Platform.isMacOS) return;
+
+  final service = ICloudSyncService.instance;
+  try {
+    const config = ICloudSyncConfig(
+      containerId: ClipConstants.icloudContainerId,
+      recordType: ClipConstants.icloudRecordType,
+      subscriptionId: ClipConstants.icloudSubscriptionId,
+    );
+    await service.configure(config);
+    await _pushLocalItemsToICloud(service);
+    await _pullRemoteItemsFromICloud(service);
+  } on PlatformException catch (e, stackTrace) {
+    await Log.w(
+      'Failed to bootstrap iCloud sync',
+      tag: 'Main',
+      error: e,
+      stackTrace: stackTrace,
+    );
+  } on Exception catch (e, stackTrace) {
+    await Log.w(
+      'Unexpected iCloud bootstrap error',
+      tag: 'Main',
+      error: e,
+      stackTrace: stackTrace,
+    );
+  }
+}
+
+Future<void> _pushLocalItemsToICloud(ICloudSyncService service) async {
+  final items = await DatabaseService.instance.getAllClipItems(
+    limit: ClipConstants.maxHistoryItems,
+  );
+
+  if (items.isEmpty) return;
+
+  await Log.i(
+    'Uploading local clips to iCloud',
+    tag: 'Main',
+    fields: {'count': items.length},
+  );
+
+  for (final clip in items) {
+    await service.upsertClipItem(clip);
+  }
+}
+
+Future<void> _pullRemoteItemsFromICloud(ICloudSyncService service) async {
+  final remoteItems = await service.fetchRemoteClips();
+  if (remoteItems.isEmpty) return;
+
+  await Log.i(
+    'Merging remote clips from iCloud',
+    tag: 'Main',
+    fields: {'count': remoteItems.length},
+  );
+
+  for (final clip in remoteItems) {
+    try {
+      final existing = await DatabaseService.instance.getClipItemById(clip.id);
+      final shouldReplace = existing == null ||
+          existing.updatedAt.isBefore(clip.updatedAt);
+      if (shouldReplace) {
+        await DatabaseService.instance.insertClipItem(clip);
+      }
+    } on Exception catch (e, stackTrace) {
+      await Log.w(
+        'Failed to merge remote clip',
+        tag: 'Main',
+        fields: {'id': clip.id},
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
 }

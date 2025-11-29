@@ -276,6 +276,15 @@ class ClipConstants {
 
   /// 文件大小单位换算（1 KB = 1024 B）
   static const int bytesInKB = 1024;
+
+  /// iCloud container identifier used for macOS sync.
+  static const String icloudContainerId = 'iCloud.com.example.clipflowpro';
+
+  /// CloudKit record type storing clipboard entries.
+  static const String icloudRecordType = 'ClipItem';
+
+  /// Subscription identifier for change notifications.
+  static const String icloudSubscriptionId = 'clipflow_sync_subscription';
 }
 
 //// 动画常量

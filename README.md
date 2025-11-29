@@ -83,6 +83,13 @@ flutter config --enable-macos-desktop
 flutter build macos
 ```
 
+#### iCloud 同步（macOS）
+
+1. 在 `lib/core/constants/clip_constants.dart` 中将 `icloudContainerId` 更新为你的 CloudKit 容器 ID（例如 `iCloud.com.yourteam.clipflowpro`）。
+2. 在 Xcode 的 Runner target 中启用 iCloud → CloudKit 能力，并确保 Debug/Release entitlements 中的容器 ID 与上一步保持一致。
+3. 使用 `flutter run -d macos` 之前，登录目标 Apple ID 并确认系统“Apple ID → iCloud”已开启“云盘”。
+4. 首次启动会自动把本地历史推送到 iCloud 并拉取远端记录；如需清理，可在 App 偏好设置中清空本地历史再重新登录。
+
 #### Windows
 
 ```bash

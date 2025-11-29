@@ -7,6 +7,7 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
+import 'package:clip_flow_pro/core/services/sync/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/features/appswitcher/presentation/pages/app_switcher_page.dart';
 import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
@@ -25,7 +26,10 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 //// 路由提供者
 /// 全局路由器提供者，定义应用路由表与初始路由。
 final clipRepositoryProvider = Provider<ClipRepository>((ref) {
-  return ClipRepositoryImpl(DatabaseService.instance);
+  return ClipRepositoryImpl(
+    DatabaseService.instance,
+    icloudSyncService: ICloudSyncService.instance,
+  );
 });
 
 //// 路由提供者
