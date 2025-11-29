@@ -62,6 +62,32 @@ import Vision
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 
+    func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+        cleanup()
+    }
+
+    deinit {
+        cleanup()
+    }
+
+    private func cleanup() {
+        if let monitor = globalEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalEventMonitor = nil
+        }
+        
+        // Unregister all hotkeys
+        // Create a copy of keys to avoid modification during iteration
+        let actions = Array(registeredHotkeys.keys)
+        for action in actions {
+            _ = unregisterGlobalHotkey(action: action)
+        }
+        
+        stopCarbonEventHandler()
+        channel = nil
+        NSLog("ClipboardPlugin: Cleanup completed")
+    }
+
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "test":

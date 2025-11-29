@@ -72,7 +72,7 @@ class MainFlutterWindow: NSWindow {
 
     // 手动注册 ClipboardPlugin
     ClipboardPlugin.register(with: flutterViewController.registrar(forPlugin: "ClipboardPlugin"))
-    ICloudSyncPlugin.register(with: flutterViewController.registrar(forPlugin: "ICloudSyncPlugin"))
+    // ICloudSyncPlugin.register(with: flutterViewController.registrar(forPlugin: "ICloudSyncPlugin"))
 
     print("✅ Flutter plugins registered successfully")
   }
