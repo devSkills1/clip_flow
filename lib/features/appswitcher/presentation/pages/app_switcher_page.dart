@@ -1,12 +1,13 @@
 import 'dart:ui' as ui;
 
-import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar.dart';
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow_pro/shared/widgets/window_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -119,10 +120,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
 
     return Container(
       width: 280,
-      margin: EdgeInsets.symmetric(
-        horizontal: isSelected ? 16 : 8,
-        vertical: 8,
-      ),
+      margin: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       child: MouseRegion(
         onEnter: (_) {
           setState(() {
@@ -205,6 +203,59 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     ); // 关闭 Container
   }
 
+  Widget _buildWindowHeader(S l10n) {
+    return ModernWindowHeader(
+      title: l10n.appName,
+      subtitle: l10n.appSwitcherTitle,
+      margin: const EdgeInsets.fromLTRB(32, 16, 32, 10),
+      actions: [
+        _buildBackAction(l10n),
+      ],
+      compact: true,
+      showTitle: false,
+      showLeading: false,
+      center: _buildSearchBar(l10n),
+    );
+  }
+
+  Widget _buildBackAction(S l10n) {
+    return FilledButton.tonalIcon(
+      icon: const Icon(Icons.view_sidebar_rounded, size: 18),
+      label: Text(l10n.headerActionBackTraditional),
+      onPressed: () async {
+        await _switchToTraditional();
+      },
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(S l10n) {
+    return EnhancedSearchBar(
+      controller: _searchController,
+      hintText: l10n.searchHint,
+      onChanged: _filterItems,
+      onClear: () {
+        _searchController.clear();
+        _filterItems('');
+      },
+      dense: true,
+    );
+  }
+
+  Future<void> _switchToTraditional() async {
+    ref.read(userPreferencesProvider.notifier).setUiMode(UiMode.traditional);
+    if (!mounted) {
+      return;
+    }
+    await WindowManagementService.instance.applyUISettings(
+      UiMode.traditional,
+      context: context,
+      userPreferences: ref.read(userPreferencesProvider),
+    );
+  }
+
   
   @override
   Widget build(BuildContext context) {
@@ -227,6 +278,8 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
           _scrollToSelectedIndex();
         });
       });
+
+    final l10n = S.of(context)!;
 
     return CallbackShortcuts(
       bindings: {
@@ -262,65 +315,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
           ),
           child: Column(
             children: [
-              // 顶部搜索框和切换按钮 - 占总宽度一半，居中显示
-              Center(
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.5,
-                  margin: const EdgeInsets.all(24),
-                  child: Row(
-                    children: [
-                      // 搜索框 - 直接使用EnhancedSearchBar组件（不使用搜索建议）
-                      Expanded(
-                        child: EnhancedSearchBar(
-                          controller: _searchController,
-                          hintText: '搜索剪贴板内容...',
-                          onChanged: _filterItems,
-                          onClear: () {
-                            _searchController.clear();
-                            _filterItems('');
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.s12),
-                      // 切换回传统UI的按钮 - 样式与EnhancedSearchBar保持一致
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: IconButton(
-                          onPressed: () async {
-                            ref
-                                .read(userPreferencesProvider.notifier)
-                                .setUiMode(UiMode.traditional);
-                            // 切换界面模式后重新设置窗口并居中
-                            if (mounted) {
-                              await WindowManagementService.instance
-                                  .applyUISettings(UiMode.traditional, context: context);
-                            }
-                          },
-                          icon: const Icon(Icons.arrow_back, size: 18),
-                          tooltip: '切回传统剪贴板',
-                          style: IconButton.styleFrom(
-                            foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildWindowHeader(l10n),
 
               // macOS风格的应用切换器 - 居中显示，支持键盘导航
               Expanded(
@@ -348,12 +343,12 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                       )
                     : Center(
                         child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 48),
+                          margin: const EdgeInsets.symmetric(horizontal: 15),
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             controller: _scrollController,
                             itemCount: _displayItems.length,
-                            padding: EdgeInsets.zero,
+                            padding: const EdgeInsets.only(bottom: 15),
                             itemBuilder: (context, index) {
                               final item = _displayItems[index];
                               return _buildAppSwitcherCard(item, index);

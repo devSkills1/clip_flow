@@ -8,6 +8,11 @@
   "@homeTitle": {
     "description": "Title for home page"
   },
+
+  "appSwitcherTitle": "App Switcher",
+  "@appSwitcherTitle": {
+    "description": "Title for App Switcher mode"
+  },
   "settingsTitle": "Settings",
   "@settingsTitle": {
     "description": "Title for settings page"
@@ -155,6 +160,26 @@
   "actionFeedbackSubtitle": "Report bugs or suggestions",
   "@actionFeedbackSubtitle": {"description": "About - Feedback - subtitle"},
 
+  "headerActionOpenAppSwitcher": "Switch to compact mode",
+  "@headerActionOpenAppSwitcher": {
+    "description": "Button label for switching to App Switcher mode"
+  },
+
+  "headerActionBackTraditional": "Back to classic",
+  "@headerActionBackTraditional": {
+    "description": "Button label for returning to the traditional UI"
+  },
+
+  "windowMinimizeTooltip": "Minimize window",
+  "@windowMinimizeTooltip": {
+    "description": "Tooltip for the window minimize action"
+  },
+
+  "windowCloseTooltip": "Close window",
+  "@windowCloseTooltip": {
+    "description": "Tooltip for the window close action"
+  },
+
   "aboutVersionTitle": "Version",
   "@aboutVersionTitle": {"description": "About - Version - title"},
 
@@ -166,6 +191,12 @@
 
   "homeEmptySubtitle": "Copy something to get started",
   "@homeEmptySubtitle": {"description": "Home - empty state subtitle"},
+
+  "searchEmptyTitle": "No matching results",
+  "@searchEmptyTitle": {"description": "Search empty state title"},
+
+  "searchEmptySubtitle": "Try another keyword or adjust filters",
+  "@searchEmptySubtitle": {"description": "Search empty state subtitle"},
 
   "snackCopiedPrefix": "Copied: {text}",
   "@snackCopiedPrefix": {

@@ -83,6 +83,8 @@ class WindowManagementService {
         ),
       );
 
+      await _applyFramelessChrome();
+
       await Log.i('Applied default window settings');
     } on Exception catch (e, stackTrace) {
       await Log.e(
@@ -373,6 +375,7 @@ class WindowManagementService {
     bool enableLogging = true,
     bool applyDelay = true,
   }) async {
+    await _applyFramelessChrome();
     const traditionalWidth = ClipConstants.minWindowWidth;
     const traditionalHeight = ClipConstants.minWindowHeight;
 
@@ -406,6 +409,7 @@ class WindowManagementService {
     bool applyDelay = true,
     UserPreferences? userPreferences,
   }) async {
+    await _applyFramelessChrome();
     // 获取屏幕尺寸和用户偏好宽度
     final screenInfo = await getMainScreenInfo();
 
@@ -437,6 +441,23 @@ class WindowManagementService {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
     await center();
+  }
+
+  Future<void> _applyFramelessChrome() async {
+    try {
+      await windowManager.setAsFrameless();
+      await windowManager.setTitleBarStyle(
+        TitleBarStyle.hidden,
+        windowButtonVisibility: false,
+      );
+    } on Exception catch (e, stackTrace) {
+      await Log.w(
+        'Failed to enforce frameless chrome',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'WindowManagementService',
+      );
+    }
   }
 
   // ========== 集成的 ScreenService 静态方法 ==========

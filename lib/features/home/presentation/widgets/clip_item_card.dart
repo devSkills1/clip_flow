@@ -1025,9 +1025,10 @@ class _ClipItemCardState extends State<ClipItemCard>
             fileName,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
             textAlign: TextAlign.center,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           if (fileSize > 0) ...[

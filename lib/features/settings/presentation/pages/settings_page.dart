@@ -194,8 +194,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ModernRadioListTile<UiMode>(
                       value: UiMode.traditional,
                       groupValue: preferences.uiMode,
-                      title: const Text('传统剪贴板'),
-                      subtitle: const Text('经典的剪贴板历史管理界面'),
+                      title: const Text('经典模式'),
+                      subtitle: const Text('传统的剪贴板管理界面'),
                       onChanged: (UiMode? value) async {
                         if (value != null) {
                           ref
@@ -217,7 +217,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ModernRadioListTile<UiMode>(
                       value: UiMode.appSwitcher,
                       groupValue: preferences.uiMode,
-                      title: const Text('应用切换器'),
+                      title: const Text('简洁模式'),
                       subtitle: const Text('类似 macOS Cmd+Tab 的切换界面'),
                       onChanged: (UiMode? value) async {
                         if (value != null) {

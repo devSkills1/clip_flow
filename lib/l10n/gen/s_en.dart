@@ -15,6 +15,9 @@ class SEn extends S {
   String get homeTitle => 'Home';
 
   @override
+  String get appSwitcherTitle => 'App Switcher';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -162,6 +165,18 @@ class SEn extends S {
   String get actionFeedbackSubtitle => 'Report bugs or suggestions';
 
   @override
+  String get headerActionOpenAppSwitcher => 'Switch to compact mode';
+
+  @override
+  String get headerActionBackTraditional => 'Back to classic';
+
+  @override
+  String get windowMinimizeTooltip => 'Minimize window';
+
+  @override
+  String get windowCloseTooltip => 'Close window';
+
+  @override
   String get aboutVersionTitle => 'Version';
 
   @override
@@ -172,6 +187,12 @@ class SEn extends S {
 
   @override
   String get homeEmptySubtitle => 'Copy something to get started';
+
+  @override
+  String get searchEmptyTitle => 'No matching results';
+
+  @override
+  String get searchEmptySubtitle => 'Try another keyword or adjust filters';
 
   @override
   String snackCopiedPrefix(String text) {
