@@ -72,15 +72,15 @@ class ClipboardProcessor {
           binaryData = detectionResult.originalData!.getFormat<Uint8List>(
             ClipboardFormat.image,
           );
-          
+
           // 如果没有图片数据但是文件类型，尝试读取文件
           if (binaryData == null && tempItem.filePath != null) {
             try {
               final file = File(tempItem.filePath!);
-              if (await file.exists()) {
+              if (file.existsSync()) {
                 binaryData = await file.readAsBytes();
               }
-            } catch (e) {
+            } on Exception catch (e) {
               await Log.w(
                 'Failed to read file for hash generation',
                 tag: 'ClipboardProcessor',
@@ -738,13 +738,15 @@ class ClipboardProcessor {
   void _updateCache(String contentHash, ClipItem item) {
     // 验证哈希一致性 (漏洞#7)
     if (item.id != contentHash) {
-      Log.w(
-        'Cache update ignored: contentHash mismatch',
-        tag: 'ClipboardProcessor',
-        fields: {
-          'contentHash': contentHash,
-          'itemId': item.id,
-        },
+      unawaited(
+        Log.w(
+          'Cache update ignored: contentHash mismatch',
+          tag: 'ClipboardProcessor',
+          fields: {
+            'contentHash': contentHash,
+            'itemId': item.id,
+          },
+        ),
       );
       return;
     }
@@ -890,7 +892,6 @@ class ClipboardProcessor {
   }) async {
     try {
       final dir = await PathService.instance.getDocumentsDirectory();
-      final ts = DateTime.now().millisecondsSinceEpoch;
 
       // 计算扩展名：优先使用建议扩展名，其次取原始文件名的扩展名
       String ext;
@@ -949,8 +950,9 @@ class ClipboardProcessor {
         fileName = '${type}_$shortHash.$ext';
       }
 
-      final relativeDir =
-          type == 'image' ? ClipConstants.mediaImagesDir : ClipConstants.mediaFilesDir;
+      final relativeDir = type == 'image'
+          ? ClipConstants.mediaImagesDir
+          : ClipConstants.mediaFilesDir;
       final absoluteDir = '${dir.path}/$relativeDir';
       final absolutePath = '$absoluteDir/$fileName';
       final relativePath = '$relativeDir/$fileName';

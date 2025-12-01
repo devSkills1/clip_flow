@@ -22,8 +22,7 @@ class ClipboardManager {
   ClipboardManager._internal();
 
   /// 单例实例
-  static final ClipboardManager _instance =
-      ClipboardManager._internal();
+  static final ClipboardManager _instance = ClipboardManager._internal();
 
   /// 剪贴板轮询器
   final ClipboardPoller _poller = ClipboardPoller();
@@ -80,7 +79,7 @@ class ClipboardManager {
 
     // 保存剩余的批量数据
     if (_writeBuffer.isNotEmpty) {
-      _flushWriteBuffer();
+      unawaited(_flushWriteBuffer());
     }
   }
 
@@ -311,7 +310,7 @@ class ClipboardManager {
 
     try {
       // 显式启用事务以确保原子性 (漏洞#9)
-      await _database.batchInsertClipItems(items, useTransaction: true);
+      await _database.batchInsertClipItems(items);
 
       stopwatch.stop();
 
@@ -341,10 +340,12 @@ class ClipboardManager {
 
   /// 处理错误
   void _handleError(String error) {
-    Log.e(
-      'Clipboard monitoring error',
-      tag: 'OptimizedClipboardManager',
-      error: Exception(error),
+    unawaited(
+      Log.e(
+        'Clipboard monitoring error',
+        tag: 'OptimizedClipboardManager',
+        error: Exception(error),
+      ),
     );
   }
 

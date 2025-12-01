@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
@@ -11,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
-import 'dart:async';
 
 /// The root application widget of ClipFlow Pro.
 /// Provides router configuration and light/dark themes.
@@ -52,12 +52,14 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
                 },
                 error: (error, stackTrace) {
                   // 记录错误但不阻塞用户操作
-                  unawaited(Log.e(
-                    'TrayService error',
-                    tag: 'tray',
-                    error: error,
-                    stackTrace: stackTrace,
-                  ));
+                  unawaited(
+                    Log.e(
+                      'TrayService error',
+                      tag: 'tray',
+                      error: error,
+                      stackTrace: stackTrace,
+                    ),
+                  );
                 },
               ),
         );
