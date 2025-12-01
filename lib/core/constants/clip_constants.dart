@@ -262,9 +262,6 @@ class ClipConstants {
   /// 主题模式
   static const String settingThemeMode = 'theme_mode';
 
-  /// 默认显示模式
-  static const String settingDisplayMode = 'display_mode';
-
   /// 网格间距（逻辑像素）
   static const double gridSpacing = 16;
 

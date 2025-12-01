@@ -373,19 +373,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               _buildListTile(
                 title:
-                    l10n?.appearanceDefaultDisplayModeTitle ??
-                    I18nFallbacks.settings.appearanceDefaultDisplayModeTitle,
-                subtitle: _getDisplayModeText(
-                  context,
-                  preferences.defaultDisplayMode,
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  _showDisplayModeDialog(context, ref);
-                },
-              ),
-              _buildListTile(
-                title:
                     l10n?.appearanceLanguageTitle ??
                     I18nFallbacks.settings.appearanceLanguageTitle,
                 subtitle: _getLanguageText(context, preferences.language),
@@ -656,17 +643,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  String _getDisplayModeText(BuildContext context, DisplayMode mode) {
-    switch (mode) {
-      case DisplayMode.compact:
-        return l10n?.displayCompact ?? I18nFallbacks.settings.displayCompact;
-      case DisplayMode.normal:
-        return l10n?.displayNormal ?? I18nFallbacks.settings.displayNormal;
-      case DisplayMode.preview:
-        return l10n?.displayPreview ?? I18nFallbacks.settings.displayPreview;
-    }
-  }
-
   String _getLanguageText(BuildContext context, String language) {
     switch (language) {
       case 'zh_CN':
@@ -810,99 +786,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onChanged: (value) {
                     if (value != null) {
                       ref.read(themeModeProvider.notifier).state = value;
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showDisplayModeDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          S.of(context)?.dialogDisplayModeTitle ??
-              I18nFallbacks.settings.dialogDisplayModeTitle,
-        ),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            var selectedMode = ref
-                .read(userPreferencesProvider)
-                .defaultDisplayMode;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ModernRadioListTile<DisplayMode>(
-                  title: Text(
-                    S.of(context)?.displayCompact ??
-                        I18nFallbacks.settings.displayCompact,
-                  ),
-                  subtitle: Text(
-                    S.of(context)?.displayCompactDesc ??
-                        I18nFallbacks.settings.displayCompactDesc,
-                  ),
-                  value: DisplayMode.compact,
-                  groupValue: selectedMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedMode = value;
-                      });
-                      ref
-                          .read(userPreferencesProvider.notifier)
-                          .setDefaultDisplayMode(value);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-                ModernRadioListTile<DisplayMode>(
-                  title: Text(
-                    S.of(context)?.displayNormal ??
-                        I18nFallbacks.settings.displayNormal,
-                  ),
-                  subtitle: Text(
-                    S.of(context)?.displayNormalDesc ??
-                        I18nFallbacks.settings.displayNormalDesc,
-                  ),
-                  value: DisplayMode.normal,
-                  groupValue: selectedMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedMode = value;
-                      });
-                      ref
-                          .read(userPreferencesProvider.notifier)
-                          .setDefaultDisplayMode(value);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-                ModernRadioListTile<DisplayMode>(
-                  title: Text(
-                    S.of(context)?.displayPreview ??
-                        I18nFallbacks.settings.displayPreview,
-                  ),
-                  subtitle: Text(
-                    S.of(context)?.displayPreviewDesc ??
-                        I18nFallbacks.settings.displayPreviewDesc,
-                  ),
-                  value: DisplayMode.preview,
-                  groupValue: selectedMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedMode = value;
-                      });
-                      ref
-                          .read(userPreferencesProvider.notifier)
-                          .setDefaultDisplayMode(value);
                       Navigator.of(context).pop();
                     }
                   },
