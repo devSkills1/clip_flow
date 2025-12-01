@@ -35,11 +35,24 @@ class ToastView extends StatelessWidget {
     Duration duration = const Duration(seconds: 2),
   }) {
     final overlay = Overlay.of(context);
+    final sanitizedMessage = message.trim();
+    if (sanitizedMessage.isEmpty) {
+      unawaited(
+        Log.w(
+          'Skipping toast with empty message',
+          tag: 'ToastView',
+          fields: {
+            'originalLength': message.length,
+          },
+        ),
+      );
+      return;
+    }
 
     _toastQueue.add(
       _ToastRequest(
         overlay: overlay,
-        message: message,
+        message: sanitizedMessage,
         icon: icon,
         iconColor: iconColor,
         duration: duration,
