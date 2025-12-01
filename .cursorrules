@@ -20,9 +20,9 @@ You are an expert Flutter and Dart developer working on "ClipFlow Pro", a cross-
 - **Logging**: NEVER use `print()` or `debugPrint()`. Use `lib/core/services/logger`.
 - **Error Handling**: Catch specific exceptions (`try on Exception catch (e)`). Avoid generic `catch (e)`.
 - **Async**: Always use `async`/`await`. Avoid `.then()`.
-- **Deprecation**: Do not use `@deprecated` members.
+- **Deprecation**: STRICTLY FORBIDDEN to use `@deprecated` members or APIs. Always find the modern replacement.
 - **Secrets**: NO hardcoded keys or sensitive data.
-- **Commits**: Git commit messages must NOT contain AI/tool signatures.
+- **Commits**: Git commit messages must be in Chinese and must NOT contain AI/tool signatures.
 
 ## 4. Architecture & Patterns
 - **Structure**:
@@ -47,3 +47,28 @@ You are an expert Flutter and Dart developer working on "ClipFlow Pro", a cross-
 ## 7. Documentation
 - Update `.gemini/project_memory.md` if significant architectural changes occur.
 - Read `CLAUDE.md` for detailed project history and specific troubleshooting steps.
+
+## 8. Agent Workflow Expectations
+- Respond in Chinese while keeping any code comments in English.
+- Prefer straightforward, reusable solutions and avoid over‑engineering.
+- Watch cyclomatic complexity and reuse modules or helpers whenever possible.
+- Apply design patterns only when they simplify modules and reinforce clear boundaries.
+- Scope edits to the relevant module to avoid unnecessary cross‑feature impact.
+
+## 9. Advanced Flutter Guidelines
+- **Riverpod**: Prefer `NotifierProvider` and `AsyncNotifierProvider` over `StateProvider`. Use `autoDispose` by default unless caching is explicitly required.
+- **Immutability**: All State and Model classes MUST be immutable. Use `freezed` or `equatable`.
+- **Widgets**: 
+  - ALWAYS use `const` constructors where possible.
+  - Split large build methods into separate `StatelessWidget` classes, NOT helper methods.
+- **Platform Channels**: Wrap ALL `MethodChannel` calls in `try-catch` handling `PlatformException`.
+- **Assets**: Avoid hardcoded asset strings. Use generated asset classes or constants.
+
+## 10. Project Specific Standards
+- **Naming**: Use descriptive suffixes for files: `_page.dart`, `_widget.dart`, `_repository.dart`, `_service.dart`, `_provider.dart`.
+- **Database**: 
+  - Complex updates MUST use `transaction`.
+  - Schema changes MUST include version migration scripts.
+- **Desktop UX**: 
+  - All interactive elements MUST be keyboard accessible (Focusable).
+  - Support standard shortcuts (Enter to submit, Esc to cancel) in dialogs/forms.
