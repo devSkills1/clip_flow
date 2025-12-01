@@ -201,13 +201,15 @@ class AsyncProcessingQueue {
           .timeout(
             _taskTimeout,
             onTimeout: () {
-              Log.w(
-                'Task timeout',
-                tag: 'AsyncProcessingQueue',
-                fields: {
-                  'taskId': queueItem.id,
-                  'timeout': _taskTimeout.inSeconds,
-                },
+              unawaited(
+                Log.w(
+                  'Task timeout',
+                  tag: 'AsyncProcessingQueue',
+                  fields: {
+                    'taskId': queueItem.id,
+                    'timeout': _taskTimeout.inSeconds,
+                  },
+                ),
               );
               return null;
             },

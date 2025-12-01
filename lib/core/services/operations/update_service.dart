@@ -308,7 +308,7 @@ class UpdateService {
   void scheduleBackgroundCheck() {
     // 每24小时检查一次更新
     Timer.periodic(const Duration(hours: 24), (timer) {
-      checkForUpdates(silent: true);
+      unawaited(checkForUpdates(silent: true));
     });
   }
 

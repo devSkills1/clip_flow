@@ -34,7 +34,6 @@ class IdGenerator {
       case ClipType.file:
       case ClipType.audio:
       case ClipType.video:
-      case ClipType.video:
         // 1. 优先使用预计算的哈希（流式处理大文件）
         if (fileContentHash != null && fileContentHash.isNotEmpty) {
           contentString = '${type.name}_bytes:$fileContentHash';
@@ -159,7 +158,8 @@ class IdGenerator {
     normalized = normalized.replaceAll(RegExp(r'[^\S\n]+'), ' ');
 
     // 6. 移除行首行尾空格，但保留换行符
-    normalized = normalized.split('\n')
+    normalized = normalized
+        .split('\n')
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
         .join('\n');

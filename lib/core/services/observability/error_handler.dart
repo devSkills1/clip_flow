@@ -206,25 +206,27 @@ class ErrorHandler {
     String? title,
     VoidCallback? onRetry,
   }) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title ?? '错误'),
-        content: Text(message),
-        actions: [
-          if (onRetry != null)
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                onRetry();
-              },
-              child: const Text('重试'),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(title ?? '错误'),
+          content: Text(message),
+          actions: [
+            if (onRetry != null)
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onRetry();
+                },
+                child: const Text('重试'),
+              ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('确定'),
             ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
