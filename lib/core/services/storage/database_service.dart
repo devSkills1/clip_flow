@@ -438,6 +438,113 @@ class DatabaseService {
     await _deleteMediaDirectorySafe();
   }
 
+  /// 清理超出最大历史记录数的旧项目
+  ///
+  /// 保留所有收藏项和最新的 [maxItems] 条非收藏项。
+  /// 超出限制的旧项目将被删除（包括数据库记录和关联的媒体文件）。
+  ///
+  /// 参数：
+  /// - maxItems：最大保留的历史记录数（不包括收藏项）
+  Future<void> cleanupExcessItems(int maxItems) async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    await Log.i(
+      'Starting cleanup of excess items',
+      tag: 'DatabaseService',
+      fields: {'maxItems': maxItems},
+    );
+
+    try {
+      // 1. 获取当前总记录数
+      final totalCount = await getClipItemsCount();
+      final favoriteCount = await getFavoriteClipItemsCount();
+      final nonFavoriteCount = totalCount - favoriteCount;
+
+      await Log.d(
+        'Current database stats',
+        tag: 'DatabaseService',
+        fields: {
+          'totalCount': totalCount,
+          'favoriteCount': favoriteCount,
+          'nonFavoriteCount': nonFavoriteCount,
+          'maxItems': maxItems,
+        },
+      );
+
+      // 2. 如果非收藏项数量未超过限制，无需清理
+      if (nonFavoriteCount <= maxItems) {
+        await Log.d(
+          'No cleanup needed - within limit',
+          tag: 'DatabaseService',
+        );
+        return;
+      }
+
+      // 3. 计算需要删除的数量
+      final excessCount = nonFavoriteCount - maxItems;
+
+      // 4. 查询需要删除的旧项目（非收藏项，按创建时间升序，取最旧的 excessCount 条）
+      final itemsToDelete = await _database!.query(
+        ClipConstants.clipItemsTable,
+        columns: ['id', 'file_path'],
+        where: 'is_favorite = ?',
+        whereArgs: [0],
+        orderBy: 'created_at ASC',
+        limit: excessCount,
+      );
+
+      if (itemsToDelete.isEmpty) {
+        await Log.d(
+          'No items to delete',
+          tag: 'DatabaseService',
+        );
+        return;
+      }
+
+      await Log.i(
+        'Deleting excess items',
+        tag: 'DatabaseService',
+        fields: {'count': itemsToDelete.length},
+      );
+
+      // 5. 批量删除数据库记录
+      final idsToDelete = itemsToDelete
+          .map((row) => row['id'] as String)
+          .toList();
+
+      await _database!.delete(
+        ClipConstants.clipItemsTable,
+        where: 'id IN (${List.filled(idsToDelete.length, '?').join(',')})',
+        whereArgs: idsToDelete,
+      );
+
+      // 6. 删除关联的媒体文件
+      for (final row in itemsToDelete) {
+        final filePath = row['file_path'] as String?;
+        if (filePath != null && filePath.isNotEmpty) {
+          await _deleteMediaFileSafe(filePath);
+        }
+      }
+
+      await Log.i(
+        'Cleanup completed successfully',
+        tag: 'DatabaseService',
+        fields: {
+          'deletedCount': itemsToDelete.length,
+          'remainingNonFavorites': maxItems,
+        },
+      );
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to cleanup excess items',
+        tag: 'DatabaseService',
+        error: e,
+      );
+      // 不重新抛出异常，避免影响主流程
+    }
+  }
+
   /// 获取所有剪贴项（按创建时间倒序）
   ///
   /// 参数：
