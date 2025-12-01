@@ -101,14 +101,18 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   /// 从数据库预加载最近的剪贴项到内存状态（按创建时间倒序）
   Future<void> preloadFromDatabase({int? limit}) async {
     try {
-      final fetchLimit = _normalizeLimit(limit ?? _maxHistoryItems);
+      // 使用传入的 limit 或默认的 _maxHistoryItems
+      final effectiveLimit = _normalizeLimit(limit ?? _maxHistoryItems);
       
       // 先清理数据库中超出限制的旧记录
       await _databaseService.cleanupExcessItems(_maxHistoryItems);
       
-      final items = await _databaseService.getAllClipItems(limit: fetchLimit);
+      // 从数据库获取指定数量的记录
+      // 由于数据库查询已经使用了 limit，返回的结果不会超过 effectiveLimit
+      final items = await _databaseService.getAllClipItems(limit: effectiveLimit);
       if (items.isNotEmpty) {
-        state = items.take(_maxHistoryItems).toList();
+        // 直接使用查询结果，无需再次截断
+        state = items;
         unawaited(
           Log.d(
             'Preloaded ${items.length} items into clipboard history',
