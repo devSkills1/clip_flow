@@ -7,6 +7,7 @@ import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow_pro/shared/widgets/toast_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as flutter_services;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -101,9 +102,7 @@ class ClipItemUtil {
       case ClipType.text:
       case ClipType.html:
       case ClipType.rtf:
-        return content.length > 50
-            ? '${content.substring(0, 50)}...'
-            : content;
+        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
       case ClipType.image:
         final width = item.metadata['width'] as int? ?? 0;
         final height = item.metadata['height'] as int? ?? 0;
@@ -112,23 +111,22 @@ class ClipItemUtil {
         final fileName = item.metadata['fileName'] as String? ?? '未知文件';
         return fileName;
       case ClipType.color:
-        final colorHex = content.isNotEmpty ? content : AppColors.defaultColorHex;
+        final colorHex = content.isNotEmpty
+            ? content
+            : AppColors.defaultColorHex;
         return '颜色 $colorHex';
       case ClipType.url:
-        return content.length > 50
-            ? '${content.substring(0, 50)}...'
-            : content;
+        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
       case ClipType.email:
         return content;
       case ClipType.json:
       case ClipType.xml:
       case ClipType.code:
-        return content.length > 50
-            ? '${content.substring(0, 50)}...'
-            : content;
+        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
       case ClipType.audio:
       case ClipType.video:
-        final fileName = item.metadata['fileName'] as String? ??
+        final fileName =
+            item.metadata['fileName'] as String? ??
             (content.isNotEmpty ? content : '${item.type.name}文件');
         return fileName;
     }
@@ -183,7 +181,12 @@ class ClipItemUtil {
       fields: {
         'itemId': item.id,
         'itemType': item.type.name,
-        'content': item.content?.substring(0, math.min(20, item.content?.length ?? 0)) ?? 'null',
+        'content':
+            item.content?.substring(
+              0,
+              math.min(20, item.content?.length ?? 0),
+            ) ??
+            'null',
       },
     );
 
@@ -192,35 +195,30 @@ class ClipItemUtil {
       // 这避免了双重更新：
       // 1. setClipboardContent 触发剪贴板监控
       // 2. 监控检测到变化 → 自动更新数据库和UI
-      // 
+      //
       // ❌ 不要在这里手动更新数据库或UI，会导致重复操作
       await Log.d(
         '📋 Calling setClipboardContent',
         tag: 'ClipItemUtil',
         fields: {'itemType': item.type.name},
       );
-      
+
       await ref.read(clipboardServiceProvider).setClipboardContent(item);
-      
+
       await Log.i(
         '✅ setClipboardContent completed',
         tag: 'ClipItemUtil',
       );
 
       // 显示提示
+      // 显示提示
       if (context != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              S.of(context)?.snackCopiedPrefix(_getItemPreview(item)) ??
-                  I18nFallbacks.common.snackCopiedPrefix(_getItemPreview(item)),
-            ),
-            duration: const Duration(seconds: 1),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        ToastView.show(
+          context,
+          S.of(context)?.snackCopiedPrefix(_getItemPreview(item)) ??
+              I18nFallbacks.common.snackCopiedPrefix(_getItemPreview(item)),
+          icon: Icons.check_circle_rounded,
+          iconColor: Theme.of(context).colorScheme.primary,
         );
       }
 
@@ -261,7 +259,8 @@ class ClipItemUtil {
         'hasOcrText': item.ocrText != null,
         'ocrTextLength': item.ocrText?.length ?? 0,
         'ocrTextId': item.ocrTextId,
-        'ocrTextPreview': item.ocrText?.substring(
+        'ocrTextPreview':
+            item.ocrText?.substring(
               0,
               math.min(50, item.ocrText?.length ?? 0),
             ) ??
@@ -319,12 +318,11 @@ class ClipItemUtil {
       // 这避免了双重更新：
       // 1. Clipboard.setData 触发剪贴板监控
       // 2. 监控检测到变化 → 自动更新数据库和UI
-      // 
+      //
       // 之前的手动更新会导致：
       // 1. 更新了关联的OCR记录
       // 2. 监控又创建了一个新的文本记录
       // 3. 导致数据重复和UI跳动
-
 
       await Log.i(
         'OCR text copied successfully',
@@ -337,18 +335,11 @@ class ClipItemUtil {
       );
 
       if (context != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '✅ OCR文本已复制到剪贴板 (${item.ocrText!.length}字符)',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
+        ToastView.show(
+          context,
+          'OCR文本已复制到剪贴板 (${item.ocrText!.length}字符)',
+          icon: Icons.text_fields,
+          iconColor: Theme.of(context).colorScheme.primary,
         );
       }
     } on Exception catch (e) {
@@ -598,16 +589,11 @@ class ClipItemUtil {
   /// 显示OCR错误消息
   static void _showOcrErrorMessage(BuildContext? context, String message) {
     if (context != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('⚠️ $message'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+      ToastView.show(
+        context,
+        message,
+        icon: Icons.warning_amber_rounded,
+        iconColor: Theme.of(context).colorScheme.error,
       );
     }
   }
@@ -615,16 +601,11 @@ class ClipItemUtil {
   /// 显示错误消息
   static void _showErrorMessage(BuildContext? context, String message) {
     if (context != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+      ToastView.show(
+        context,
+        message,
+        icon: Icons.error_outline_rounded,
+        iconColor: Theme.of(context).colorScheme.error,
       );
     }
   }
