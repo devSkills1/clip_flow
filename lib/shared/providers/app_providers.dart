@@ -166,9 +166,11 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
           tag: 'ClipboardHistoryNotifier',
         ),
       );
-
-      _enforceHistoryLimit();
     }
+
+    // 无论是更新还是添加，都需要执行限制检查
+    // 防止在频繁更新现有项时内存超出限制
+    _enforceHistoryLimit();
   }
 
   /// 更新最大历史记录条数，并立即应用限制。
