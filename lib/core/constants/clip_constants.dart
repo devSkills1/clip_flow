@@ -80,8 +80,8 @@ class ClipConstants {
   static const String logsDir = 'logs';
 
   /// 限制值（容量/数量/长度）
-  /// 历史记录最大条数
-  static const int maxHistoryItems = 1000;
+  /// 历史记录最大条数（默认值）
+  static const int maxHistoryItems = 500;
 
   /// 缩略图最大边长（px）
   static const int maxThumbnailSize = 200;
