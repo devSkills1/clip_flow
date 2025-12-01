@@ -109,6 +109,12 @@ abstract class S {
   /// **'Home'**
   String get homeTitle;
 
+  /// Title for App Switcher mode
+  ///
+  /// In en, this message translates to:
+  /// **'App Switcher'**
+  String get appSwitcherTitle;
+
   /// Title for settings page
   ///
   /// In en, this message translates to:
@@ -379,6 +385,30 @@ abstract class S {
   /// **'Report bugs or suggestions'**
   String get actionFeedbackSubtitle;
 
+  /// Button label for switching to App Switcher mode
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to compact mode'**
+  String get headerActionOpenAppSwitcher;
+
+  /// Button label for returning to the traditional UI
+  ///
+  /// In en, this message translates to:
+  /// **'Back to classic'**
+  String get headerActionBackTraditional;
+
+  /// Tooltip for the window minimize action
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize window'**
+  String get windowMinimizeTooltip;
+
+  /// Tooltip for the window close action
+  ///
+  /// In en, this message translates to:
+  /// **'Close window'**
+  String get windowCloseTooltip;
+
   /// About - Version - title
   ///
   /// In en, this message translates to:
@@ -402,6 +432,18 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Copy something to get started'**
   String get homeEmptySubtitle;
+
+  /// Search empty state title
+  ///
+  /// In en, this message translates to:
+  /// **'No matching results'**
+  String get searchEmptyTitle;
+
+  /// Search empty state subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Try another keyword or adjust filters'**
+  String get searchEmptySubtitle;
 
   /// Home - copied snackbar
   ///

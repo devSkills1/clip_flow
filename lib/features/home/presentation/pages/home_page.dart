@@ -13,6 +13,7 @@ import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar.dart
     show EnhancedSearchBar;
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow_pro/shared/widgets/window_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -79,7 +80,7 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = S.of(context);
+    final l10n = S.of(context)!;
     final clipboardHistory = ref.watch(clipboardHistoryProvider);
     final searchQuery = ref.watch(searchQueryProvider);
     final filterOption = ref.watch(filterTypeProvider);
@@ -127,8 +128,8 @@ class _HomePageState extends ConsumerState<HomePage>
             Expanded(
               child: Column(
                 children: [
-                  // 顶部搜索栏
-                  _buildSearchBar(),
+                  // 自定义窗口头部
+                  _buildWindowHeader(l10n),
 
                   // 主内容区域
                   Expanded(
@@ -148,50 +149,66 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: EnhancedSearchBar(
-        controller: _searchController,
-        hintText: '搜索剪贴板内容...',
-        onChanged: (String query) {
-          ref.read(searchQueryProvider.notifier).state = query;
-        },
-        onClear: () {
-          _searchController.clear();
-          ref.read(searchQueryProvider.notifier).state = '';
-        },
-        onSubmitted: (String query) {
-          // 可以添加搜索提交逻辑
-        },
-        suggestions: _getSearchSuggestions(),
-        onSuggestionSelected: (String suggestion) {
-          _searchController.text = suggestion;
-          ref.read(searchQueryProvider.notifier).state = suggestion;
-        },
+  Widget _buildWindowHeader(S l10n) {
+    return ModernWindowHeader(
+      title: l10n.appName,
+      subtitle: l10n.homeTitle,
+      actions: [
+        _buildModeSwitchAction(l10n),
+      ],
+      compact: true,
+      showTitle: false,
+      showLeading: false,
+      center: _buildSearchField(l10n),
+    );
+  }
+
+  Widget _buildModeSwitchAction(S l10n) {
+    return FilledButton.tonalIcon(
+      icon: const Icon(Icons.space_dashboard_rounded, size: 18),
+      label: Text(l10n.headerActionOpenAppSwitcher),
+      onPressed: () async {
+        await _switchToAppSwitcher();
+      },
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       ),
     );
   }
 
-  List<String> _getSearchSuggestions() {
-    // 从历史记录中获取搜索建议
-    final history = ref.read(clipboardHistoryProvider);
-    final suggestions = <String>[];
-
-    for (final item in history.take(10)) {
-      if (item.content != null && item.content!.length < 50) {
-        suggestions.add(item.content!);
-      }
+  Future<void> _switchToAppSwitcher() async {
+    ref.read(userPreferencesProvider.notifier).setUiMode(UiMode.appSwitcher);
+    if (!mounted) {
+      return;
     }
+    await WindowManagementService.instance.applyUISettings(
+      UiMode.appSwitcher,
+      context: context,
+      userPreferences: ref.read(userPreferencesProvider),
+    );
+  }
 
-    return suggestions.toSet().toList();
+  Widget _buildSearchField(S l10n) {
+    return EnhancedSearchBar(
+      controller: _searchController,
+      hintText: l10n.searchHint,
+      onChanged: (String query) {
+        ref.read(searchQueryProvider.notifier).state = query;
+      },
+      onClear: () {
+        _searchController.clear();
+        ref.read(searchQueryProvider.notifier).state = '';
+      },
+      onSubmitted: (String query) {},
+      dense: true,
+    );
   }
 
   Widget _buildContentArea(
     String searchQuery,
     List<ClipItem> filteredItems,
     DisplayMode displayMode,
-    S? l10n,
+    S l10n,
   ) {
     // 如果有搜索查询，使用搜索结果
     if (searchQuery.isNotEmpty) {
@@ -239,10 +256,10 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
-  Widget _buildEmptyState(S? l10n) {
+  Widget _buildEmptyState(S l10n) {
     return EnhancedEmptyState(
-      title: l10n?.homeEmptyTitle ?? I18nFallbacks.home.emptyTitle,
-      subtitle: l10n?.homeEmptySubtitle ?? I18nFallbacks.home.emptySubtitle,
+      title: l10n.homeEmptyTitle,
+      subtitle: l10n.homeEmptySubtitle,
       icon: Icons.content_paste_outlined,
       actions: [
         TextButton.icon(
@@ -254,10 +271,10 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
-  Widget _buildEmptySearchState(S? l10n) {
-    return const EnhancedEmptyState(
-      title: '未找到匹配内容',
-      subtitle: '尝试使用其他关键词或调整筛选条件',
+  Widget _buildEmptySearchState(S l10n) {
+    return EnhancedEmptyState(
+      title: l10n.searchEmptyTitle,
+      subtitle: l10n.searchEmptySubtitle,
       icon: Icons.search_off,
     );
   }

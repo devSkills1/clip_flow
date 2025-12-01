@@ -15,6 +15,9 @@ class SZh extends S {
   String get homeTitle => '首页';
 
   @override
+  String get appSwitcherTitle => '应用切换器';
+
+  @override
   String get settingsTitle => '设置';
 
   @override
@@ -154,6 +157,18 @@ class SZh extends S {
   String get actionFeedbackSubtitle => '报告Bug或建议';
 
   @override
+  String get headerActionOpenAppSwitcher => '切换简洁模式';
+
+  @override
+  String get headerActionBackTraditional => '回到经典模式';
+
+  @override
+  String get windowMinimizeTooltip => '最小化窗口';
+
+  @override
+  String get windowCloseTooltip => '关闭窗口';
+
+  @override
   String get aboutVersionTitle => '版本';
 
   @override
@@ -164,6 +179,12 @@ class SZh extends S {
 
   @override
   String get homeEmptySubtitle => '复制一些内容开始使用吧';
+
+  @override
+  String get searchEmptyTitle => '未找到匹配内容';
+
+  @override
+  String get searchEmptySubtitle => '尝试调整关键词或筛选条件';
 
   @override
   String snackCopiedPrefix(String text) {

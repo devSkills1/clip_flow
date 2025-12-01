@@ -59,9 +59,9 @@ Future<void> _runApp() async {
     center: true,
     backgroundColor: Color(AppColors.white),
     skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.normal,
+    titleBarStyle: TitleBarStyle.hidden,
     alwaysOnTop: false,
-    windowButtonVisibility: true,
+    windowButtonVisibility: false,
   );
 
   /// 主函数
