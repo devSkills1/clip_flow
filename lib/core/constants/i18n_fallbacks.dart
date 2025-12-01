@@ -206,9 +206,6 @@ class _SettingsFallback {
   /// 外观：主题模式 标题
   String get appearanceThemeModeTitle => '主题模式';
 
-  /// 外观：默认显示模式 标题
-  String get appearanceDefaultDisplayModeTitle => '默认显示模式';
-
   /// 外观：语言 标题
   String get appearanceLanguageTitle => '语言';
 
@@ -253,9 +250,6 @@ class _SettingsFallback {
 
   /// 弹窗：选择主题模式 标题
   String get dialogThemeTitle => '选择主题模式';
-
-  /// 弹窗：选择默认显示模式 标题
-  String get dialogDisplayModeTitle => '选择默认显示模式';
 
   /// 弹窗：选择语言 标题
   String get dialogLanguageTitle => '选择语言';

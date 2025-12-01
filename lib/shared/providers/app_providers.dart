@@ -352,7 +352,6 @@ class UserPreferences {
     this.ocrLanguage = 'auto',
     this.ocrMinConfidence = 0.5,
     this.language = 'zh_CN',
-    this.defaultDisplayMode = DisplayMode.normal,
     this.uiMode = UiMode.traditional,
     this.isDeveloperMode = false,
     this.showPerformanceOverlay = false,
@@ -371,10 +370,6 @@ class UserPreferences {
       ocrLanguage: (json['ocrLanguage'] as String?) ?? 'auto',
       ocrMinConfidence: ((json['ocrMinConfidence'] as num?) ?? 0.5).toDouble(),
       language: (json['language'] as String?) ?? 'zh_CN',
-      defaultDisplayMode: DisplayMode.values.firstWhere(
-        (e) => e.name == (json['defaultDisplayMode'] as String?),
-        orElse: () => DisplayMode.normal,
-      ),
       uiMode: UiMode.values.firstWhere(
         (e) => e.name == (json['uiMode'] as String?),
         orElse: () => UiMode.traditional,
@@ -413,9 +408,6 @@ class UserPreferences {
   /// 显示语言代码（如 'zh_CN'）
   final String language;
 
-  /// 默认显示模式
-  final DisplayMode defaultDisplayMode;
-
   /// UI 界面模式（传统剪贴板/应用切换器）
   final UiMode uiMode;
 
@@ -439,7 +431,6 @@ class UserPreferences {
     String? ocrLanguage,
     double? ocrMinConfidence,
     String? language,
-    DisplayMode? defaultDisplayMode,
     UiMode? uiMode,
     bool? isDeveloperMode,
     bool? showPerformanceOverlay,
@@ -455,7 +446,6 @@ class UserPreferences {
       ocrLanguage: ocrLanguage ?? this.ocrLanguage,
       ocrMinConfidence: ocrMinConfidence ?? this.ocrMinConfidence,
       language: language ?? this.language,
-      defaultDisplayMode: defaultDisplayMode ?? this.defaultDisplayMode,
       uiMode: uiMode ?? this.uiMode,
       isDeveloperMode: isDeveloperMode ?? this.isDeveloperMode,
       showPerformanceOverlay:
@@ -477,7 +467,6 @@ class UserPreferences {
       'ocrLanguage': ocrLanguage,
       'ocrMinConfidence': ocrMinConfidence,
       'language': language,
-      'defaultDisplayMode': defaultDisplayMode.name,
       'uiMode': uiMode.name,
       'isDeveloperMode': isDeveloperMode,
       'showPerformanceOverlay': showPerformanceOverlay,
@@ -501,11 +490,11 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     // 完全同步初始化，不触发任何异步操作
     // 确保UI模式状态稳定，避免首屏闪动
     unawaited(
-        Log.d(
-          'UserPreferencesNotifier initialized with UI mode: ${initial.uiMode}',
-          tag: 'UserPreferences',
-        ),
-      );
+      Log.d(
+        'UserPreferencesNotifier initialized with UI mode: ${initial.uiMode}',
+        tag: 'UserPreferences',
+      ),
+    );
 
     // 延迟同步开机自启动状态，避免影响首屏渲染
     unawaited(Future.microtask(_syncAutostartStatus));
@@ -668,12 +657,6 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     // 约束到合法区间
     final clamped = value.clamp(0.0, 1.0);
     state = state.copyWith(ocrMinConfidence: clamped);
-    unawaited(_savePreferences());
-  }
-
-  /// 设置默认显示模式。
-  void setDefaultDisplayMode(DisplayMode mode) {
-    state = state.copyWith(defaultDisplayMode: mode);
     unawaited(_savePreferences());
   }
 
