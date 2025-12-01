@@ -584,6 +584,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _showMaxHistoryDialog(BuildContext context, WidgetRef ref) {
+    // 提供更丰富的预设值选项
+    const presetValues = [50, 100, 200, 500, 1000, 2000, 5000];
+    
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -619,8 +622,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       fillColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerHighest,
+                      helperText: '建议值：100-2000',
+                      helperMaxLines: 1,
                     ),
-                    items: [100, 200, 500, 1000, 2000].map((value) {
+                    items: presetValues.map((value) {
                       return DropdownMenuItem(
                         value: value,
                         child: Text(
