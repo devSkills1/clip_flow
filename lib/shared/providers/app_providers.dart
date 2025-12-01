@@ -68,9 +68,20 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// 基于 [ClipboardHistoryNotifier] 的剪贴板历史状态提供者。
 final clipboardHistoryProvider =
     StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
-      final notifier = ClipboardHistoryNotifier(DatabaseService.instance);
+      final preferences = ref.read(userPreferencesProvider);
+      final notifier = ClipboardHistoryNotifier(
+        DatabaseService.instance,
+        maxHistoryItems: preferences.maxHistoryItems,
+      );
       // 预加载数据库中的最近记录，避免 AppSwitcher 首屏没有数据
       unawaited(notifier.preloadFromDatabase());
+
+      // 监听用户偏好中的最大历史条数变化
+      ref.listen<UserPreferences>(userPreferencesProvider, (previous, next) {
+        if (previous?.maxHistoryItems != next.maxHistoryItems) {
+          notifier.updateMaxHistoryLimit(next.maxHistoryItems);
+        }
+      });
       return notifier;
     });
 
@@ -78,16 +89,26 @@ final clipboardHistoryProvider =
 /// 管理剪贴项：新增/删除/收藏/搜索，并限制列表大小。
 class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   /// 使用空列表初始化历史记录。
-  ClipboardHistoryNotifier(this._databaseService) : super([]);
+  ClipboardHistoryNotifier(
+    this._databaseService, {
+    required int maxHistoryItems,
+  })  : _maxHistoryItems = _normalizeLimit(maxHistoryItems),
+        super([]);
 
   final DatabaseService _databaseService;
+  int _maxHistoryItems;
 
   /// 从数据库预加载最近的剪贴项到内存状态（按创建时间倒序）
-  Future<void> preloadFromDatabase({int limit = 100}) async {
+  Future<void> preloadFromDatabase({int? limit}) async {
     try {
-      final items = await _databaseService.getAllClipItems(limit: limit);
+      final fetchLimit = _normalizeLimit(limit ?? _maxHistoryItems);
+      
+      // 先清理数据库中超出限制的旧记录
+      await _databaseService.cleanupExcessItems(_maxHistoryItems);
+      
+      final items = await _databaseService.getAllClipItems(limit: fetchLimit);
       if (items.isNotEmpty) {
-        state = items;
+        state = items.take(_maxHistoryItems).toList();
         unawaited(
           Log.d(
             'Preloaded ${items.length} items into clipboard history',
@@ -146,21 +167,35 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
         ),
       );
 
-      // 限制历史记录数量（优先保留收藏的项目）
-      if (state.length > 500) {
-        // 先提取所有收藏的项目
-        final favorites = state.where((item) => item.isFavorite).toList();
-        final nonFavorites = state.where((item) => !item.isFavorite).toList();
-
-        // 保留所有收藏的项目，并从非收藏项目中取最新的直到总数达到500
-        final remainingNonFavorites = nonFavorites
-            .take(500 - favorites.length)
-            .toList();
-
-        // 收藏项目在前，非收藏项目在后
-        state = [...favorites, ...remainingNonFavorites];
-      }
+      _enforceHistoryLimit();
     }
+  }
+
+  /// 更新最大历史记录条数，并立即应用限制。
+  void updateMaxHistoryLimit(int newLimit) {
+    final normalized = _normalizeLimit(newLimit);
+    if (normalized == _maxHistoryItems) {
+      return;
+    }
+    _maxHistoryItems = normalized;
+    _enforceHistoryLimit();
+    
+    // 同时清理数据库中超出限制的旧记录
+    unawaited(
+      _databaseService.cleanupExcessItems(normalized).then((_) {
+        Log.d(
+          'Database cleanup completed after limit update',
+          tag: 'ClipboardHistoryNotifier',
+          fields: {'newLimit': normalized},
+        );
+      }).catchError((error) {
+        Log.w(
+          'Database cleanup failed after limit update',
+          tag: 'ClipboardHistoryNotifier',
+          error: error,
+        );
+      }),
+    );
   }
 
   /// 按 [id] 移除项目。
@@ -259,6 +294,31 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
           tags.contains(lowercaseQuery) ||
           ocrText.contains(lowercaseQuery);
     }).toList();
+  }
+
+  /// 确保历史记录数量不超过限制，优先保留收藏项。
+  void _enforceHistoryLimit() {
+    if (state.length <= _maxHistoryItems) {
+      return;
+    }
+
+    final favorites = state.where((item) => item.isFavorite).toList();
+    if (favorites.length >= _maxHistoryItems) {
+      state = favorites.take(_maxHistoryItems).toList();
+      return;
+    }
+
+    final remainingSlots = _maxHistoryItems - favorites.length;
+    final nonFavorites = state.where((item) => !item.isFavorite).toList();
+    final nonFavoriteLimit = remainingSlots > 0 ? remainingSlots : 0;
+    final remainingNonFavorites =
+        nonFavorites.take(nonFavoriteLimit).toList();
+
+    state = [...favorites, ...remainingNonFavorites];
+  }
+
+  static int _normalizeLimit(int limit) {
+    return limit <= 0 ? 1 : limit;
   }
 }
 
