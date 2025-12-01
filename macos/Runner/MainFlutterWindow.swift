@@ -35,7 +35,8 @@ class MainFlutterWindow: NSWindow {
   private func configureWindow() {
     // 窗口基本属性
     self.title = ClipConstants.appName
-    self.titlebarAppearsTransparent = false
+    self.titlebarAppearsTransparent = true
+    self.titleVisibility = .hidden
     self.isMovable = true
     self.isMovableByWindowBackground = true
 
@@ -44,7 +45,8 @@ class MainFlutterWindow: NSWindow {
     self.maxSize = NSSize(width: ClipConstants.maxWindowWidth, height: ClipConstants.maxWindowHeight)
 
     // 窗口样式
-    self.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+    self.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+    hideSystemWindowButtons()
 
     // 窗口层级和外观
     self.level = .normal
@@ -74,6 +76,16 @@ class MainFlutterWindow: NSWindow {
     ClipboardPlugin.register(with: flutterViewController.registrar(forPlugin: "ClipboardPlugin"))
 
     print("✅ Flutter plugins registered successfully")
+  }
+
+  private func hideSystemWindowButtons() {
+    self.standardWindowButton(.closeButton)?.isHidden = true
+    self.standardWindowButton(.miniaturizeButton)?.isHidden = true
+    self.standardWindowButton(.zoomButton)?.isHidden = true
+
+    if #available(macOS 11.0, *) {
+      self.toolbarStyle = .unifiedCompact
+    }
   }
 
   // MARK: - 窗口配置
