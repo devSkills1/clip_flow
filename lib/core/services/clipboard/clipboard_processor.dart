@@ -891,7 +891,7 @@ class ClipboardProcessor {
     bool keepOriginalName = false,
   }) async {
     try {
-      final dir = await PathService.instance.getDocumentsDirectory();
+      final dir = await PathService.instance.getApplicationSupportDirectory();
 
       // 计算扩展名：优先使用建议扩展名，其次取原始文件名的扩展名
       String ext;

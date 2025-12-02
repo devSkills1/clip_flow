@@ -983,17 +983,17 @@ class DatabaseService {
   /// 参数：
   /// - relativePath：相对路径，如 'media/image.jpg'
   Future<String> _resolveAbsoluteMediaPath(String relativePath) async {
-    final documentsDirectory = await PathService.instance
-        .getDocumentsDirectory();
-    return join(documentsDirectory.path, relativePath);
+    final supportDirectory = await PathService.instance
+        .getApplicationSupportDirectory();
+    return join(supportDirectory.path, relativePath);
   }
 
   /// 安全删除整个媒体目录
   Future<void> _deleteMediaDirectorySafe() async {
     try {
-      final documentsDirectory = await PathService.instance
-          .getDocumentsDirectory();
-      final mediaDirectory = Directory(join(documentsDirectory.path, 'media'));
+      final supportDirectory = await PathService.instance
+          .getApplicationSupportDirectory();
+      final mediaDirectory = Directory(join(supportDirectory.path, 'media'));
       if (mediaDirectory.existsSync()) {
         await mediaDirectory.delete(recursive: true);
       }
@@ -1015,9 +1015,9 @@ class DatabaseService {
         whereArgs: [0],
       );
 
-      final documentsDirectory = await PathService.instance
-          .getDocumentsDirectory();
-      final mediaDirectory = Directory(join(documentsDirectory.path, 'media'));
+      final supportDirectory = await PathService.instance
+          .getApplicationSupportDirectory();
+      final mediaDirectory = Directory(join(supportDirectory.path, 'media'));
 
       if (mediaDirectory.existsSync()) {
         // 删除非收藏项目的文件
@@ -1050,9 +1050,9 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
-    final documentsDirectory = await PathService.instance
+    final supportDirectory = await PathService.instance
         .getDocumentsDirectory();
-    final mediaRoot = Directory(join(documentsDirectory.path, 'media'));
+    final mediaRoot = Directory(join(supportDirectory.path, 'media'));
     if (!mediaRoot.existsSync()) return 0;
 
     // 读取数据库中所有 file_path 引用
@@ -1064,7 +1064,7 @@ class DatabaseService {
     final referenced = rows
         .map((r) => r['file_path'] as String?)
         .where((p) => p != null && p.isNotEmpty)
-        .map((p) => join(documentsDirectory.path, p))
+        .map((p) => join(supportDirectory.path, p))
         .toSet();
 
     final cutoff = DateTime.now().subtract(Duration(days: retainDays));
@@ -1506,7 +1506,7 @@ class DatabaseService {
         return report;
       }
 
-      final documentsDir = await PathService.instance.getDocumentsDirectory();
+      final supportDir = await PathService.instance.getApplicationSupportDirectory();
       final itemsToUpdate = <Map<String, dynamic>>[];
       final itemsToDelete = <String>[];
 
@@ -1528,8 +1528,8 @@ class DatabaseService {
         // 如果是绝对路径，转换为相对路径
         if (filePathRaw.startsWith('/') ||
             RegExp('^[A-Za-z]:').hasMatch(filePathRaw)) {
-          if (filePathRaw.startsWith(documentsDir.path)) {
-            fixedPath = filePathRaw.substring(documentsDir.path.length + 1);
+          if (filePathRaw.startsWith(supportDir.path)) {
+            fixedPath = filePathRaw.substring(supportDir.path.length + 1);
           } else {
             // 绝对路径但不在文档目录下，删除
             itemsToDelete.add(id);
@@ -1559,7 +1559,7 @@ class DatabaseService {
         }
 
         // 验证文件是否存在
-        final absolutePath = join(documentsDir.path, fixedPath);
+        final absolutePath = join(supportDir.path, fixedPath);
         final file = File(absolutePath);
         if (file.existsSync()) {
           if (fixedPath != filePathRaw) {
