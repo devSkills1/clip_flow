@@ -64,8 +64,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final preferences = ref.watch(userPreferencesProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -112,6 +110,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ref
                       .read(userPreferencesProvider.notifier)
                       .toggleMinimizeToTray();
+                },
+              ),
+              _buildSwitchTile(
+                title:
+                    l10n?.generalAutoHideTitle ??
+                    I18nFallbacks.settings.generalAutoHideTitle,
+                subtitle:
+                    l10n?.generalAutoHideSubtitle ??
+                    I18nFallbacks.settings.generalAutoHideSubtitle,
+                value: preferences.autoHideEnabled,
+                onChanged: (value) {
+                  ref
+                      .read(userPreferencesProvider.notifier)
+                      .setAutoHideEnabled(value);
+                  if (value) {
+                    ref.read(autoHideServiceProvider).startMonitoring();
+                  } else {
+                    ref.read(autoHideServiceProvider).stopMonitoring();
+                  }
                 },
               ),
               // 性能监控覆盖层开关（在所有构建类型中可用）
@@ -209,17 +226,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         I18nFallbacks.settings.ocrLanguageSubtitle,
                   ),
                   trailing: FutureBuilder<List<String>>(
-                    future:
-                        OcrServiceFactory.getInstance().getAvailableLanguages(),
-                    initialData:
-                        OcrServiceFactory.getInstance().getSupportedLanguages(),
+                    future: OcrServiceFactory.getInstance()
+                        .getAvailableLanguages(),
+                    initialData: OcrServiceFactory.getInstance()
+                        .getSupportedLanguages(),
                     builder: (context, snapshot) {
                       final languages = snapshot.data ?? ['auto'];
                       // 确保当前选中的语言在列表中，否则回退到 'auto'
                       final selectedValue =
                           languages.contains(preferences.ocrLanguage)
-                              ? preferences.ocrLanguage
-                              : 'auto';
+                          ? preferences.ocrLanguage
+                          : 'auto';
 
                       return DropdownButton<String>(
                         value: selectedValue,
@@ -596,7 +613,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void _showMaxHistoryDialog(BuildContext context, WidgetRef ref) {
     // 提供更丰富的预设值选项
     const presetValues = [50, 100, 200, 500, 1000, 2000, 5000];
-    
+
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(

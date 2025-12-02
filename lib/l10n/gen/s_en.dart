@@ -47,6 +47,13 @@ class SEn extends S {
       'Minimize to tray when closing the window';
 
   @override
+  String get generalAutoHideTitle => 'Auto-hide window';
+
+  @override
+  String get generalAutoHideSubtitle =>
+      'Hide after inactivity; works on cold start and Cmd + Option + ` toggle';
+
+  @override
   String get generalGlobalHotkeyTitle => 'Global hotkey';
 
   @override

@@ -42,6 +42,12 @@
   "generalMinimizeToTraySubtitle": "关闭窗口时最小化到系统托盘",
   "@generalMinimizeToTraySubtitle": {"description": "常规-最小化到系统托盘-说明"},
 
+  "generalAutoHideTitle": "自动隐藏窗口",
+  "@generalAutoHideTitle": {"description": "常规-自动隐藏-标题"},
+
+  "generalAutoHideSubtitle": "静置后自动隐藏，冷启动与 Cmd + Option + ` 唤起均生效",
+  "@generalAutoHideSubtitle": {"description": "常规-自动隐藏-说明"},
+
   "generalGlobalHotkeyTitle": "全局快捷键",
   "@generalGlobalHotkeyTitle": {"description": "常规-全局快捷键-标题"},
 
