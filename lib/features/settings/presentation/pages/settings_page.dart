@@ -31,6 +31,16 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   S? get l10n => S.of(context);
   int _versionTapCount = 0;
+  late final Future<List<String>> _availableOcrLanguagesFuture;
+  late final List<String> _supportedOcrLanguages;
+
+  @override
+  void initState() {
+    super.initState();
+    final ocrService = OcrServiceFactory.getInstance();
+    _supportedOcrLanguages = ocrService.getSupportedLanguages();
+    _availableOcrLanguagesFuture = ocrService.getAvailableLanguages();
+  }
 
   void _handleVersionTap() {
     setState(() {
@@ -38,24 +48,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     });
 
     if (_versionTapCount >= 7) {
-      // 激活开发者模式
-      ref.read(userPreferencesProvider.notifier).toggleDeveloperMode();
+      final isDeveloperModeEnabled = ref
+          .read(userPreferencesProvider)
+          .isDeveloperMode;
 
-      // 显示提示
+      if (!isDeveloperModeEnabled) {
+        ref.read(userPreferencesProvider.notifier).toggleDeveloperMode();
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.read(userPreferencesProvider).isDeveloperMode
-                ? l10n?.developerModeActive ??
-                      I18nFallbacks.settings.developerModeActive
-                : l10n?.developerModeInactive ??
-                      I18nFallbacks.settings.developerModeInactive,
+            l10n?.developerModeActive ??
+                I18nFallbacks.settings.developerModeActive,
           ),
           duration: const Duration(seconds: 2),
         ),
       );
 
-      // 重置计数
       _versionTapCount = 0;
     }
   }
@@ -100,9 +110,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     I18nFallbacks.settings.generalAutoStartSubtitle,
                 value: preferences.autoStart,
                 onChanged: (value) async {
-                  await ref
-                      .read(userPreferencesProvider.notifier)
-                      .toggleAutoStart();
+                  await _handleAutoStartToggle();
                 },
               ),
               _buildSwitchTile(
@@ -233,10 +241,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         I18nFallbacks.settings.ocrLanguageSubtitle,
                   ),
                   trailing: FutureBuilder<List<String>>(
-                    future: OcrServiceFactory.getInstance()
-                        .getAvailableLanguages(),
-                    initialData: OcrServiceFactory.getInstance()
-                        .getSupportedLanguages(),
+                    future: _availableOcrLanguagesFuture,
+                    initialData: _supportedOcrLanguages,
                     builder: (context, snapshot) {
                       final languages = snapshot.data ?? ['auto'];
                       // 确保当前选中的语言在列表中，否则回退到 'auto'
@@ -608,6 +614,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
+  Future<void> _handleAutoStartToggle() async {
+    try {
+      await ref.read(userPreferencesProvider.notifier).toggleAutoStart();
+    } on Exception catch (e) {
+      if (!mounted) {
+        return;
+      }
+      _showErrorSnackBar(
+        l10n?.generalAutoStartErrorMessage(e.toString()) ??
+            I18nFallbacks.settings.generalAutoStartErrorMessage(e.toString()),
+      );
+    }
+  }
+
   void _showHotkeyDialog(BuildContext context, WidgetRef ref) {
     showDialog<void>(
       context: context,
@@ -656,7 +676,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       fillColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerHighest,
-                      helperText: '建议值：100-2000',
+                      helperText:
+                          l10n?.dialogMaxHistoryHelperText ??
+                          I18nFallbacks.settings.dialogMaxHistoryHelperText,
                       helperMaxLines: 1,
                     ),
                     items: presetValues.map((value) {

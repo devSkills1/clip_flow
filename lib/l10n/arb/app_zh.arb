@@ -36,6 +36,14 @@
   "generalAutoStartSubtitle": "应用启动时自动运行",
   "@generalAutoStartSubtitle": {"description": "常规-开机自启动-说明"},
 
+  "generalAutoStartErrorMessage": "更新开机自启动失败：{error}",
+  "@generalAutoStartErrorMessage": {
+    "description": "常规-开机自启动-错误提示",
+    "placeholders": {
+      "error": {"type": "String", "example": "权限不足"}
+    }
+  },
+
   "generalMinimizeToTrayTitle": "最小化到系统托盘",
   "@generalMinimizeToTrayTitle": {"description": "常规-最小化到系统托盘-标题"},
 
@@ -151,6 +159,9 @@
 
   "dialogMaxHistoryFieldLabel": "历史记录数量",
   "@dialogMaxHistoryFieldLabel": {"description": "对话框-最大历史-字段标签"},
+
+  "dialogMaxHistoryHelperText": "建议值：100-2000",
+  "@dialogMaxHistoryHelperText": {"description": "对话框-最大历史-辅助文案"},
 
   "dialogThemeTitle": "选择主题模式",
   "@dialogThemeTitle": {"description": "对话框-选择主题-标题"},

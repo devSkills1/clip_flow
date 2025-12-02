@@ -36,6 +36,14 @@
   "generalAutoStartSubtitle": "Automatically run when the system starts",
   "@generalAutoStartSubtitle": {"description": "General - Auto start - subtitle"},
 
+  "generalAutoStartErrorMessage": "Failed to update startup setting: {error}",
+  "@generalAutoStartErrorMessage": {
+    "description": "General - Auto start toggle error message",
+    "placeholders": {
+      "error": {"type": "String", "example": "Permission denied"}
+    }
+  },
+
   "generalMinimizeToTrayTitle": "Minimize to tray",
   "@generalMinimizeToTrayTitle": {"description": "General - Minimize to tray - title"},
 
@@ -151,6 +159,11 @@
 
   "dialogMaxHistoryFieldLabel": "History items",
   "@dialogMaxHistoryFieldLabel": {"description": "Dialog - Max history - field label"},
+
+  "dialogMaxHistoryHelperText": "Recommended range: 100-2000",
+  "@dialogMaxHistoryHelperText": {
+    "description": "Dialog - Max history - helper text"
+  },
 
   "dialogThemeTitle": "Choose theme mode",
   "@dialogThemeTitle": {"description": "Dialog - Choose theme - title"},

@@ -10,14 +10,14 @@ import 'package:flutter/services.dart';
 /// - Windows: Windows.Media.Ocr API ✅ 已实现
 /// - Linux: Tesseract OCR ✅ 已实现
 class NativeOcrImpl implements OcrService {
-  /// 初始化Future
-  late final Future<void> _initFuture;
-
   /// 构造函数，异步预取语言列表，不阻塞构造
   NativeOcrImpl() {
     // 异步预取语言列表，不阻塞构造
     _initFuture = _fetchSupportedLanguages();
   }
+
+  /// 初始化Future
+  late final Future<void> _initFuture;
 
   static const MethodChannel _channel = MethodChannel('clipboard_service');
 
