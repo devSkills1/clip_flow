@@ -136,3 +136,9 @@ local_config.json
 # 备份文件
 *.backup
 *.bak.*
+
+# Flutter 插件注册器（自动生成文件）
+**/flutter/generated_plugin_registrant.cc
+**/flutter/generated_plugin_registrant.swift
+**/flutter/generated_plugins.cmake
+**/flutter/generated_plugins.dart
