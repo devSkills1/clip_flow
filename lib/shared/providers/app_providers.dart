@@ -2,6 +2,7 @@
 // 该文件包含应用级别的Provider定义，主要用于内部状态管理，不作为公共API使用
 import 'dart:async';
 
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
