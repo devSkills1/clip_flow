@@ -22,7 +22,7 @@ You are an expert Flutter and Dart developer working on "ClipFlow Pro", a cross-
 - **Async**: Always use `async`/`await`. Avoid `.then()`.
 - **Deprecation**: STRICTLY FORBIDDEN to use `@deprecated` members or APIs. Always find the modern replacement.
 - **Secrets**: NO hardcoded keys or sensitive data.
-- **Commits**: Git commit messages must be in Chinese and must NOT contain AI/tool signatures.
+- **Commits**: Git commit messages must be in Chinese and must NOT contain AI/tool signatures or any CLAUDE-related information.
 
 ## 4. Architecture & Patterns
 - **Structure**:
