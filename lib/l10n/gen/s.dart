@@ -193,6 +193,18 @@ abstract class S {
   /// **'Current hotkey: {hotkey}'**
   String generalGlobalHotkeySubtitle(String hotkey);
 
+  /// General - Auto-hide hotkey - title
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-hide hotkey'**
+  String get generalAutoHideHotkeyTitle;
+
+  /// General - Auto-hide hotkey - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Current hotkey: {hotkey}'**
+  String generalAutoHideHotkeySubtitle(String hotkey);
+
   /// General - Max history - title
   ///
   /// In en, this message translates to:

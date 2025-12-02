@@ -62,6 +62,14 @@ class SEn extends S {
   }
 
   @override
+  String get generalAutoHideHotkeyTitle => 'Auto-hide hotkey';
+
+  @override
+  String generalAutoHideHotkeySubtitle(String hotkey) {
+    return 'Current hotkey: $hotkey';
+  }
+
+  @override
   String get generalMaxHistoryTitle => 'Max history items';
 
   @override

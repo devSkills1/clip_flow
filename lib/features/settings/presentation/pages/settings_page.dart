@@ -64,6 +64,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final preferences = ref.watch(userPreferencesProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final toggleWindowHotkeyConfig = ref
+        .read(hotkeyServiceProvider)
+        .getHotkeyConfig(
+          HotkeyAction.toggleWindow,
+        );
+    final autoHideHotkeyLabel =
+        toggleWindowHotkeyConfig?.displayString ?? preferences.globalHotkey;
 
     return Scaffold(
       appBar: AppBar(
@@ -131,6 +138,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   }
                 },
               ),
+              _buildListTile(
+                title:
+                    l10n?.generalAutoHideHotkeyTitle ??
+                    I18nFallbacks.settings.generalAutoHideHotkeyTitle,
+                subtitle:
+                    l10n?.generalAutoHideHotkeySubtitle(
+                      autoHideHotkeyLabel,
+                    ) ??
+                    I18nFallbacks.settings.generalAutoHideHotkeySubtitle(
+                      autoHideHotkeyLabel,
+                    ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  _showHotkeyDialog(context, ref);
+                },
+              ),
               // 性能监控覆盖层开关（在所有构建类型中可用）
               _buildSwitchTile(
                 title:
@@ -144,22 +167,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ref
                       .read(userPreferencesProvider.notifier)
                       .togglePerformanceOverlay();
-                },
-              ),
-              _buildListTile(
-                title:
-                    l10n?.generalGlobalHotkeyTitle ??
-                    I18nFallbacks.settings.generalGlobalHotkeyTitle,
-                subtitle:
-                    l10n?.generalGlobalHotkeySubtitle(
-                      preferences.globalHotkey,
-                    ) ??
-                    I18nFallbacks.settings.generalGlobalHotkeySubtitle(
-                      preferences.globalHotkey,
-                    ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  _showHotkeyDialog(context, ref);
                 },
               ),
               _buildListTile(

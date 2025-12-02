@@ -59,6 +59,14 @@ class SZh extends S {
   }
 
   @override
+  String get generalAutoHideHotkeyTitle => '自动隐藏快捷键';
+
+  @override
+  String generalAutoHideHotkeySubtitle(String hotkey) {
+    return '当前快捷键：$hotkey';
+  }
+
+  @override
   String get generalMaxHistoryTitle => '最大历史记录数';
 
   @override

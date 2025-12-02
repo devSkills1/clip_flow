@@ -171,14 +171,19 @@ class _SettingsFallback {
   String get generalAutoHideTitle => '自动隐藏窗口';
 
   /// 常规：自动隐藏 副标题
-  String get generalAutoHideSubtitle =>
-      '静置后自动隐藏，冷启动与 Cmd + Option + ` 唤起均生效';
+  String get generalAutoHideSubtitle => '静置后自动隐藏，冷启动与 Cmd + Option + ` 唤起均生效';
 
   /// 常规：全局快捷键 标题
   String get generalGlobalHotkeyTitle => '全局快捷键';
 
   /// 常规：全局快捷键 副标题（直接显示组合键）
   String generalGlobalHotkeySubtitle(String hotkey) => hotkey;
+
+  /// 常规：自动隐藏快捷键 标题
+  String get generalAutoHideHotkeyTitle => '自动隐藏快捷键';
+
+  /// 常规：自动隐藏快捷键 副标题
+  String generalAutoHideHotkeySubtitle(String hotkey) => '当前快捷键：$hotkey';
 
   /// 常规：最大历史记录数 标题
   String get generalMaxHistoryTitle => '最大历史记录数';
@@ -439,7 +444,8 @@ class _SettingsFallback {
   String get feedbackEmailSubject => 'ClipFlow Pro 反馈与建议';
 
   /// 邮件反馈正文
-  String get feedbackEmailBody => '请在这里描述您的反馈或建议...\n\n---\n应用版本: ${ClipConstants.appVersion}\n系统平台: ${Platform.operatingSystem}';
+  String get feedbackEmailBody =>
+      '请在这里描述您的反馈或建议...\n\n---\n应用版本: ${ClipConstants.appVersion}\n系统平台: ${Platform.operatingSystem}';
 
   /// 问题报告标题
   String get feedbackIssueTitle => '问题报告';
