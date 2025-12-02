@@ -518,7 +518,7 @@ class ClipboardProcessor {
       try {
         thumbnail = await _generateFileThumbnail(
           File(
-            '${(await PathService.instance.getDocumentsDirectory()).path}/$relativePath',
+            '${(await PathService.instance.getApplicationSupportDirectory()).path}/$relativePath',
           ),
         );
       } on Exception catch (_) {
@@ -638,9 +638,9 @@ class ClipboardProcessor {
         // 优先使用保存后的文件生成缩略图
         try {
           if (relativePath.isNotEmpty) {
-            final documentsDirectory = await PathService.instance
-                .getDocumentsDirectory();
-            final savedFilePath = '${documentsDirectory.path}/$relativePath';
+            final supportDirectory = await PathService.instance
+                .getApplicationSupportDirectory();
+            final savedFilePath = '${supportDirectory.path}/$relativePath';
             if (await PathService.instance.fileExists(savedFilePath)) {
               thumbnail = await _generateFileThumbnail(File(savedFilePath));
             } else {
