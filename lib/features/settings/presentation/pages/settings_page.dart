@@ -208,25 +208,35 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     l10n?.ocrLanguageSubtitle ??
                         I18nFallbacks.settings.ocrLanguageSubtitle,
                   ),
-                  trailing: DropdownButton<String>(
-                    value: preferences.ocrLanguage,
-                    items: OcrServiceFactory.getInstance()
-                        .getSupportedLanguages()
-                        .map(
-                          (lang) {
-                            return DropdownMenuItem(
-                              value: lang,
-                              child: Text(lang),
-                            );
-                          },
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref
-                            .read(userPreferencesProvider.notifier)
-                            .setOcrLanguage(value);
-                      }
+                  trailing: FutureBuilder<List<String>>(
+                    future:
+                        OcrServiceFactory.getInstance().getAvailableLanguages(),
+                    initialData:
+                        OcrServiceFactory.getInstance().getSupportedLanguages(),
+                    builder: (context, snapshot) {
+                      final languages = snapshot.data ?? ['auto'];
+                      // 确保当前选中的语言在列表中，否则回退到 'auto'
+                      final selectedValue =
+                          languages.contains(preferences.ocrLanguage)
+                              ? preferences.ocrLanguage
+                              : 'auto';
+
+                      return DropdownButton<String>(
+                        value: selectedValue,
+                        items: languages.map((lang) {
+                          return DropdownMenuItem(
+                            value: lang,
+                            child: Text(lang),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            ref
+                                .read(userPreferencesProvider.notifier)
+                                .setOcrLanguage(value);
+                          }
+                        },
+                      );
                     },
                   ),
                 ),
