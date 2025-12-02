@@ -24,6 +24,15 @@ class TrayService with TrayListener {
   Completer<void>? _initializing;
   UserPreferences? _userPreferences;
 
+  /// 托盘交互回调（用于通知外部托盘已被激活，例如重置自动隐藏状态）
+  VoidCallback? onTrayInteraction;
+
+  /// 窗口显示回调
+  VoidCallback? onWindowShown;
+
+  /// 窗口隐藏回调
+  VoidCallback? onWindowHidden;
+
   /// 初始化系统托盘服务（并发安全）
   Future<void> initialize([UserPreferences? userPreferences]) async {
     if (_isInitialized) {
@@ -143,6 +152,7 @@ class TrayService with TrayListener {
     try {
       final windowService = WindowManagementService.instance;
       await windowService.showAndFocus();
+      onWindowShown?.call();
       await Log.i('Window shown and focused via WindowManagementService');
     } on Exception catch (e, stackTrace) {
       await Log.e(
@@ -158,6 +168,7 @@ class TrayService with TrayListener {
     try {
       final windowService = WindowManagementService.instance;
       await windowService.hide();
+      onWindowHidden?.call();
       await Log.i('Window hidden via WindowManagementService');
     } on Exception catch (e, stackTrace) {
       await Log.e(
@@ -281,7 +292,8 @@ class TrayService with TrayListener {
   @override
   void onTrayIconMouseDown() {
     // 托盘图标被点击
-    toggleWindow();
+    onTrayInteraction?.call();
+    unawaited(toggleWindow());
   }
 
   @override
@@ -295,14 +307,15 @@ class TrayService with TrayListener {
     // 处理托盘菜单项点击
     switch (menuItem.key) {
       case 'show':
-        showWindow();
+        onTrayInteraction?.call();
+        unawaited(showWindow());
       case 'hide':
-        hideWindow();
+        unawaited(hideWindow());
       case 'settings':
         // 显示设置页面
-        showWindow();
+        unawaited(showWindow());
       case 'quit':
-        exitApp();
+        unawaited(exitApp());
     }
   }
 }

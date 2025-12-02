@@ -42,6 +42,12 @@
   "generalMinimizeToTraySubtitle": "Minimize to tray when closing the window",
   "@generalMinimizeToTraySubtitle": {"description": "General - Minimize to tray - subtitle"},
 
+  "generalAutoHideTitle": "Auto-hide window",
+  "@generalAutoHideTitle": {"description": "General - Auto hide - title"},
+
+  "generalAutoHideSubtitle": "Hide after inactivity; works on cold start and Cmd + Option + ` toggle",
+  "@generalAutoHideSubtitle": {"description": "General - Auto hide - subtitle"},
+
   "generalGlobalHotkeyTitle": "Global hotkey",
   "@generalGlobalHotkeyTitle": {"description": "General - Global hotkey - title"},
 

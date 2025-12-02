@@ -2,7 +2,6 @@
 // Switch statements use exhaustive patterns without default cases.
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';

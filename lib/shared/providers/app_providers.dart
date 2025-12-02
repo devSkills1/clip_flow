@@ -7,6 +7,7 @@ import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/features/appswitcher/presentation/pages/app_switcher_page.dart';
@@ -422,7 +423,9 @@ class UserPreferences {
     this.uiMode = UiMode.traditional,
     this.isDeveloperMode = false,
     this.showPerformanceOverlay = false,
+    this.autoHideEnabled = true,
     this.appSwitcherWindowWidth,
+    this.autoHideTimeoutSeconds = 3,
   });
 
   /// 从 JSON Map 创建 [UserPreferences] 实例。
@@ -444,7 +447,9 @@ class UserPreferences {
       isDeveloperMode: (json['isDeveloperMode'] as bool?) ?? false,
       showPerformanceOverlay:
           (json['showPerformanceOverlay'] as bool?) ?? false,
+      autoHideEnabled: (json['autoHideEnabled'] as bool?) ?? true,
       appSwitcherWindowWidth: json['appSwitcherWindowWidth'] as double?,
+      autoHideTimeoutSeconds: (json['autoHideTimeoutSeconds'] as int?) ?? 3,
     );
   }
 
@@ -484,8 +489,14 @@ class UserPreferences {
   /// 是否显示性能监控覆盖层
   final bool showPerformanceOverlay;
 
+  /// 是否启用自动隐藏
+  final bool autoHideEnabled;
+
   /// AppSwitcher 模式的窗口宽度（null 表示使用默认计算值）
   final double? appSwitcherWindowWidth;
+
+  /// 自动隐藏超时时间（秒）
+  final int autoHideTimeoutSeconds;
 
   /// 返回复制的新实例，并按需覆盖指定字段。
   UserPreferences copyWith({
@@ -501,7 +512,9 @@ class UserPreferences {
     UiMode? uiMode,
     bool? isDeveloperMode,
     bool? showPerformanceOverlay,
+    bool? autoHideEnabled,
     double? appSwitcherWindowWidth,
+    int? autoHideTimeoutSeconds,
   }) {
     return UserPreferences(
       autoStart: autoStart ?? this.autoStart,
@@ -517,8 +530,11 @@ class UserPreferences {
       isDeveloperMode: isDeveloperMode ?? this.isDeveloperMode,
       showPerformanceOverlay:
           showPerformanceOverlay ?? this.showPerformanceOverlay,
+      autoHideEnabled: autoHideEnabled ?? this.autoHideEnabled,
       appSwitcherWindowWidth:
           appSwitcherWindowWidth ?? this.appSwitcherWindowWidth,
+      autoHideTimeoutSeconds:
+          autoHideTimeoutSeconds ?? this.autoHideTimeoutSeconds,
     );
   }
 
@@ -537,7 +553,9 @@ class UserPreferences {
       'uiMode': uiMode.name,
       'isDeveloperMode': isDeveloperMode,
       'showPerformanceOverlay': showPerformanceOverlay,
+      'autoHideEnabled': autoHideEnabled,
       'appSwitcherWindowWidth': appSwitcherWindowWidth,
+      'autoHideTimeoutSeconds': autoHideTimeoutSeconds,
     };
   }
 }
@@ -683,6 +701,12 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     TrayService().userPreferences = state;
   }
 
+  /// 设置自动隐藏开关。
+  void setAutoHideEnabled(bool enabled) {
+    state = state.copyWith(autoHideEnabled: enabled);
+    unawaited(_savePreferences());
+  }
+
   /// 设置全局快捷键。
   void setGlobalHotkey(String hotkey) {
     state = state.copyWith(globalHotkey: hotkey);
@@ -798,6 +822,34 @@ final trayServiceProvider = FutureProvider<TrayService>((ref) async {
   final trayService = TrayService();
   final userPreferences = ref.watch(userPreferencesProvider);
 
+  // 设置托盘交互回调
+  trayService.onTrayInteraction = () {
+    // ignore: avoid_print
+    print('🔍 [AppProviders] onTrayInteraction triggered');
+    ref.read(windowActivationSourceProvider.notifier).state =
+        WindowActivationSource.tray;
+    ref.read(autoHideServiceProvider).stopMonitoring();
+  };
+
+  // 设置窗口显示/隐藏回调
+  trayService.onWindowShown = () {
+    final source = ref.read(windowActivationSourceProvider);
+    // ignore: avoid_print
+    print('🔍 [AppProviders] onWindowShown triggered. Source: $source');
+    final autoHideEnabled = ref.read(userPreferencesProvider).autoHideEnabled;
+    if (autoHideEnabled) {
+      ref.read(autoHideServiceProvider).startMonitoring();
+    } else {
+      ref.read(autoHideServiceProvider).stopMonitoring();
+    }
+  };
+
+  trayService.onWindowHidden = () {
+    // ignore: avoid_print
+    print('🔍 [AppProviders] onWindowHidden triggered');
+    ref.read(autoHideServiceProvider).stopMonitoring();
+  };
+
   // 初始化托盘服务
   await trayService.initialize(userPreferences);
 
@@ -807,6 +859,41 @@ final trayServiceProvider = FutureProvider<TrayService>((ref) async {
   });
 
   return trayService;
+});
+
+/// 窗口激活来源提供者
+/// 记录窗口是通过快捷键唤起还是托盘图标唤起
+final windowActivationSourceProvider = StateProvider<WindowActivationSource>(
+  (ref) => WindowActivationSource.none,
+);
+
+/// 自动隐藏服务提供者
+final autoHideServiceProvider = Provider<AutoHideService>((ref) {
+  final service = AutoHideService(ref);
+  final preferences = ref.read(userPreferencesProvider);
+  if (preferences.autoHideEnabled) {
+    service.startMonitoring();
+  }
+
+  ref.listen<UserPreferences>(userPreferencesProvider, (previous, next) {
+    final previousValue = previous?.autoHideEnabled ?? false;
+    final nextValue = next.autoHideEnabled;
+    if (previousValue != nextValue) {
+      if (nextValue) {
+        service.startMonitoring();
+      } else {
+        service.stopMonitoring();
+      }
+      return;
+    }
+
+    if (nextValue &&
+        previous?.autoHideTimeoutSeconds != next.autoHideTimeoutSeconds) {
+      service.startMonitoring();
+    }
+  });
+
+  return service;
 });
 
 /// 窗口监听器提供者

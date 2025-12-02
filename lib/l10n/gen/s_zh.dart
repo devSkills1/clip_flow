@@ -45,6 +45,12 @@ class SZh extends S {
   String get generalMinimizeToTraySubtitle => '关闭窗口时最小化到系统托盘';
 
   @override
+  String get generalAutoHideTitle => '自动隐藏窗口';
+
+  @override
+  String get generalAutoHideSubtitle => '静置后自动隐藏，冷启动与 Cmd + Option + ` 唤起均生效';
+
+  @override
   String get generalGlobalHotkeyTitle => '全局快捷键';
 
   @override

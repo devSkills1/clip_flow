@@ -16,6 +16,7 @@ import Vision
         let ignoreRepeat: Bool
         let lastTriggerTime: CFTimeInterval  // 添加防抖时间戳
         let carbonHotKeyRef: EventHotKeyRef?  // Carbon热键引用
+        let hotKeyID: UInt32?  // Carbon热键ID
     }
 
     // 注册的快捷键
@@ -1323,7 +1324,8 @@ import Vision
             modifiers: modifiers,
             ignoreRepeat: ignoreRepeat,
             lastTriggerTime: currentTime,
-            carbonHotKeyRef: carbonHotKeyRef
+            carbonHotKeyRef: carbonHotKeyRef,
+            hotKeyID: hotKeyID.id
         )
 
         // 设置Carbon事件处理器
@@ -1348,7 +1350,8 @@ import Vision
             modifiers: modifiers,
             ignoreRepeat: ignoreRepeat,
             lastTriggerTime: currentTime,
-            carbonHotKeyRef: nil
+            carbonHotKeyRef: nil,
+            hotKeyID: nil
         )
 
         // 如果这是第一个快捷键，启动全局监听器
@@ -1451,9 +1454,8 @@ import Vision
 
         // 查找对应的动作
         for (action, hotkeyInfo) in registeredHotkeys {
-            if let carbonRef = hotkeyInfo.carbonHotKeyRef {
-                // 通过Carbon热键引用匹配
-                // 注意：这里简化了匹配逻辑，实际可能需要更复杂的映射
+            if let registeredID = hotkeyInfo.hotKeyID, registeredID == hotKeyID.id {
+                // 匹配到正确的 ID
                 let currentTime = CACurrentMediaTime()
 
                 // 防抖检查
@@ -1468,7 +1470,8 @@ import Vision
                     modifiers: hotkeyInfo.modifiers,
                     ignoreRepeat: hotkeyInfo.ignoreRepeat,
                     lastTriggerTime: currentTime,
-                    carbonHotKeyRef: carbonRef
+                    carbonHotKeyRef: hotkeyInfo.carbonHotKeyRef,
+                    hotKeyID: hotkeyInfo.hotKeyID
                 )
                 registeredHotkeys[action] = updatedHotkey
 
@@ -1478,6 +1481,7 @@ import Vision
                 }
 
                 NSLog("ClipboardPlugin: Carbon hotkey pressed for action: %@", action)
+                // 找到匹配的 ID 后立即退出
                 break
             }
         }
@@ -1517,7 +1521,8 @@ import Vision
                 modifiers: hotkey.modifiers,
                 ignoreRepeat: hotkey.ignoreRepeat,
                 lastTriggerTime: currentTime,
-                carbonHotKeyRef: hotkey.carbonHotKeyRef
+                carbonHotKeyRef: hotkey.carbonHotKeyRef,
+                hotKeyID: hotkey.hotKeyID
             )
             registeredHotkeys[action] = updatedHotkey
 

@@ -4,11 +4,13 @@ import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
 import 'package:clip_flow_pro/core/models/hotkey_config.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:clip_flow_pro/shared/widgets/performance_overlay.dart'
     as custom;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
@@ -32,15 +34,34 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
     windowManager.addListener(initialListener);
     // 窗口监听器内部（Provider）已监听用户偏好变化，这里不再使用 ref.listen，避免运行时限制
 
+    // 监听键盘事件以重置自动隐藏计时器
+    HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+
     // 注册toggleWindow快捷键回调
     _registerToggleWindowCallback();
+
+    // 冷启动初始化自动隐藏服务，确保无需快捷键也能生效
+    ref.read(autoHideServiceProvider);
+  }
+
+  bool _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      ref.read(autoHideServiceProvider).onUserInteraction();
+    }
+    return false; // 不拦截事件
   }
 
   /// 注册toggleWindow快捷键回调
   void _registerToggleWindowCallback() {
     ref.read(hotkeyServiceProvider).registerActionCallback(
       HotkeyAction.toggleWindow,
-      () {
+      () async {
+        // ignore: avoid_print
+        print('🔍 [App] Hotkey toggleWindow triggered');
+        // 标记为快捷键唤起
+        ref.read(windowActivationSourceProvider.notifier).state =
+            WindowActivationSource.hotkey;
+
         unawaited(
           ref
               .read(trayServiceProvider)
@@ -49,6 +70,7 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
                 loading: () {
                   // TrayService还在初始化中，忽略此次快捷键
                   unawaited(Log.i('TrayService is initializing', tag: 'tray'));
+                  return Future.value();
                 },
                 error: (error, stackTrace) {
                   // 记录错误但不阻塞用户操作
@@ -60,6 +82,7 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
                       stackTrace: stackTrace,
                     ),
                   );
+                  return Future.value();
                 },
               ),
         );
@@ -69,6 +92,7 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     // 组件销毁时移除监听器
     try {
       final currentListener = ref.read(windowListenerProvider);
@@ -117,13 +141,22 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
       ],
       supportedLocales: S.supportedLocales,
       builder: (context, child) {
-        return Stack(
-          children: [
-            child!,
-            // 性能监控覆盖层（启用时显示，支持 release）
-            if (userPreferences.showPerformanceOverlay)
-              const custom.PerformanceOverlay(),
-          ],
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) =>
+              ref.read(autoHideServiceProvider).onUserInteraction(),
+          onPointerMove: (_) =>
+              ref.read(autoHideServiceProvider).onUserInteraction(),
+          onPointerHover: (_) =>
+              ref.read(autoHideServiceProvider).onUserInteraction(),
+          child: Stack(
+            children: [
+              child!,
+              // 性能监控覆盖层（启用时显示，支持 release）
+              if (userPreferences.showPerformanceOverlay)
+                const custom.PerformanceOverlay(),
+            ],
+          ),
         );
       },
     );

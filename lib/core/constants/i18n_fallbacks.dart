@@ -167,6 +167,13 @@ class _SettingsFallback {
   /// 常规：最小化到系统托盘 副标题
   String get generalMinimizeToTraySubtitle => '关闭窗口时最小化到系统托盘';
 
+  /// 常规：自动隐藏 标题
+  String get generalAutoHideTitle => '自动隐藏窗口';
+
+  /// 常规：自动隐藏 副标题
+  String get generalAutoHideSubtitle =>
+      '静置后自动隐藏，冷启动与 Cmd + Option + ` 唤起均生效';
+
   /// 常规：全局快捷键 标题
   String get generalGlobalHotkeyTitle => '全局快捷键';
 

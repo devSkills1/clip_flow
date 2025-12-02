@@ -169,6 +169,18 @@ abstract class S {
   /// **'Minimize to tray when closing the window'**
   String get generalMinimizeToTraySubtitle;
 
+  /// General - Auto hide - title
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-hide window'**
+  String get generalAutoHideTitle;
+
+  /// General - Auto hide - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Hide after inactivity; works on cold start and Cmd + Option + ` toggle'**
+  String get generalAutoHideSubtitle;
+
   /// General - Global hotkey - title
   ///
   /// In en, this message translates to:
