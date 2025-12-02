@@ -59,6 +59,19 @@
     }
   },
 
+  "generalAutoHideHotkeyTitle": "自动隐藏快捷键",
+  "@generalAutoHideHotkeyTitle": {
+    "description": "常规-自动隐藏快捷键-标题"
+  },
+
+  "generalAutoHideHotkeySubtitle": "当前快捷键：{hotkey}",
+  "@generalAutoHideHotkeySubtitle": {
+    "description": "常规-自动隐藏快捷键-当前值",
+    "placeholders": {
+      "hotkey": {"type": "String", "example": "Cmd+Option+`"}
+    }
+  },
+
   "generalMaxHistoryTitle": "最大历史记录数",
   "@generalMaxHistoryTitle": {"description": "常规-最大历史记录数-标题"},
 

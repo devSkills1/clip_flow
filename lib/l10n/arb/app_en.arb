@@ -59,6 +59,19 @@
     }
   },
 
+  "generalAutoHideHotkeyTitle": "Auto-hide hotkey",
+  "@generalAutoHideHotkeyTitle": {
+    "description": "General - Auto-hide hotkey - title"
+  },
+
+  "generalAutoHideHotkeySubtitle": "Current hotkey: {hotkey}",
+  "@generalAutoHideHotkeySubtitle": {
+    "description": "General - Auto-hide hotkey - subtitle",
+    "placeholders": {
+      "hotkey": {"type": "String", "example": "Cmd+Option+`"}
+    }
+  },
+
   "generalMaxHistoryTitle": "Max history items",
   "@generalMaxHistoryTitle": {"description": "General - Max history - title"},
 
