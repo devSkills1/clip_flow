@@ -773,26 +773,7 @@ class _ClipItemCardState extends State<ClipItemCard>
     );
   }
 
-  Widget _buildImagePlaceholder(BuildContext context, Size size) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: size.width,
-      height: size.height,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.image_outlined,
-          size: 32,
-          color: theme.colorScheme.outline,
-        ),
-      ),
-    );
-  }
-
+  
   Widget _buildLoadingPlaceholder(BuildContext context, Size size) {
     final theme = Theme.of(context);
 
