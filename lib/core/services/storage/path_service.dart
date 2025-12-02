@@ -43,20 +43,20 @@ class PathService {
 
   /// 获取数据库路径
   Future<String> getDatabasePath(String databaseName) async {
-    final documentsDir = await getDocumentsDirectory();
-    return '${documentsDir.path}/$databaseName';
+    final supportDir = await getApplicationSupportDirectory();
+    return '${supportDir.path}/$databaseName';
   }
 
   /// 获取日志目录路径
   Future<String> getLogsDirectoryPath() async {
-    final documentsDir = await getDocumentsDirectory();
-    return '${documentsDir.path}/logs';
+    final supportDir = await getApplicationSupportDirectory();
+    return '${supportDir.path}/logs';
   }
 
   /// 获取文件保存路径
   Future<String> getFileSavePath(String fileName) async {
-    final documentsDir = await getDocumentsDirectory();
-    return '${documentsDir.path}/$fileName';
+    final supportDir = await getApplicationSupportDirectory();
+    return '${supportDir.path}/$fileName';
   }
 
   /// 获取下载目录路径（使用临时目录）
@@ -102,9 +102,9 @@ class PathService {
         return path; // 已经是绝对路径，直接返回
       }
 
-      // 相对路径：拼接应用文档目录
-      final documentsDir = await getDocumentsDirectory();
-      return p.join(documentsDir.path, path);
+      // 相对路径：拼接应用支持目录
+      final supportDir = await getApplicationSupportDirectory();
+      return p.join(supportDir.path, path);
     } on Exception catch (_) {
       // 如果转换失败，返回原始路径
       return path;
