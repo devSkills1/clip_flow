@@ -1,4 +1,7 @@
 // ignore_for_file: public_member_api_docs - 内部依赖注入配置文件，不需要对外暴露API文档
+// ignore_for_file: avoid_positional_boolean_parameters - setAutoHideEnabled 是合理的 setter 方法
+// ignore_for_file: discarded_futures - 日志调用是故意 fire-and-forget 的，不需要等待
+// ignore_for_file: cascade_invocations - 对同一对象设置不同属性是合理的
 // 该文件包含应用级别的Provider定义，主要用于内部状态管理，不作为公共API使用
 import 'dart:async';
 
@@ -189,21 +192,19 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     _enforceHistoryLimit();
     
     // 同时清理数据库中超出限制的旧记录
-    unawaited(
-      _databaseService.cleanupExcessItems(normalized).then((_) {
-        Log.d(
-          'Database cleanup completed after limit update',
-          tag: 'ClipboardHistoryNotifier',
-          fields: {'newLimit': normalized},
-        );
-      }).catchError((error) {
-        Log.w(
-          'Database cleanup failed after limit update',
-          tag: 'ClipboardHistoryNotifier',
-          error: error,
-        );
-      }),
-    );
+  _databaseService.cleanupExcessItems(normalized).then((_) {
+      Log.d(
+        'Database cleanup completed after limit update',
+        tag: 'ClipboardHistoryNotifier',
+        fields: {'newLimit': normalized},
+      );
+    }).catchError((Object error) {
+      Log.w(
+        'Database cleanup failed after limit update',
+        tag: 'ClipboardHistoryNotifier',
+        error: error,
+      );
+    });
   }
 
   /// 按 [id] 移除项目。
@@ -824,18 +825,13 @@ final trayServiceProvider = FutureProvider<TrayService>((ref) async {
 
   // 设置托盘交互回调
   trayService.onTrayInteraction = () {
-    // ignore: avoid_print
-    print('🔍 [AppProviders] onTrayInteraction triggered');
     ref.read(windowActivationSourceProvider.notifier).state =
         WindowActivationSource.tray;
     ref.read(autoHideServiceProvider).stopMonitoring();
   };
 
-  // 设置窗口显示/隐藏回调
+  // 设置窗口显示回调
   trayService.onWindowShown = () {
-    final source = ref.read(windowActivationSourceProvider);
-    // ignore: avoid_print
-    print('🔍 [AppProviders] onWindowShown triggered. Source: $source');
     final autoHideEnabled = ref.read(userPreferencesProvider).autoHideEnabled;
     if (autoHideEnabled) {
       ref.read(autoHideServiceProvider).startMonitoring();
@@ -844,9 +840,8 @@ final trayServiceProvider = FutureProvider<TrayService>((ref) async {
     }
   };
 
+  // 设置窗口隐藏回调
   trayService.onWindowHidden = () {
-    // ignore: avoid_print
-    print('🔍 [AppProviders] onWindowHidden triggered');
     ref.read(autoHideServiceProvider).stopMonitoring();
   };
 

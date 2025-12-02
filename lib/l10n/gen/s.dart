@@ -157,6 +157,12 @@ abstract class S {
   /// **'Automatically run when the system starts'**
   String get generalAutoStartSubtitle;
 
+  /// General - Auto start toggle error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update startup setting: {error}'**
+  String generalAutoStartErrorMessage(String error);
+
   /// General - Minimize to tray - title
   ///
   /// In en, this message translates to:
@@ -354,6 +360,12 @@ abstract class S {
   /// In en, this message translates to:
   /// **'History items'**
   String get dialogMaxHistoryFieldLabel;
+
+  /// Dialog - Max history - helper text
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended range: 100-2000'**
+  String get dialogMaxHistoryHelperText;
 
   /// Dialog - Choose theme - title
   ///

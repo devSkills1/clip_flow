@@ -39,6 +39,11 @@ class SZh extends S {
   String get generalAutoStartSubtitle => '应用启动时自动运行';
 
   @override
+  String generalAutoStartErrorMessage(String error) {
+    return '更新开机自启动失败：$error';
+  }
+
+  @override
   String get generalMinimizeToTrayTitle => '最小化到系统托盘';
 
   @override
@@ -142,6 +147,9 @@ class SZh extends S {
 
   @override
   String get dialogMaxHistoryFieldLabel => '历史记录数量';
+
+  @override
+  String get dialogMaxHistoryHelperText => '建议值：100-2000';
 
   @override
   String get dialogThemeTitle => '选择主题模式';

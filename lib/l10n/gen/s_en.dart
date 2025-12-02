@@ -40,6 +40,11 @@ class SEn extends S {
       'Automatically run when the system starts';
 
   @override
+  String generalAutoStartErrorMessage(String error) {
+    return 'Failed to update startup setting: $error';
+  }
+
+  @override
   String get generalMinimizeToTrayTitle => 'Minimize to tray';
 
   @override
@@ -151,6 +156,9 @@ class SEn extends S {
 
   @override
   String get dialogMaxHistoryFieldLabel => 'History items';
+
+  @override
+  String get dialogMaxHistoryHelperText => 'Recommended range: 100-2000';
 
   @override
   String get dialogThemeTitle => 'Choose theme mode';

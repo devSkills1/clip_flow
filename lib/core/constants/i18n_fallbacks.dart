@@ -191,6 +191,9 @@ class _SettingsFallback {
   /// 常规：最大历史记录数 副标题（显示条数）
   String generalMaxHistorySubtitle(int count) => '$count 条';
 
+  /// 常规：开机自启动切换错误
+  String generalAutoStartErrorMessage(String error) => '更新开机自启动失败: $error';
+
   /// 安全：启用加密 标题
   String get securityEnableEncryptionTitle => '启用加密';
 
@@ -259,6 +262,9 @@ class _SettingsFallback {
 
   /// 弹窗：设置最大历史记录数 输入框标签
   String get dialogMaxHistoryFieldLabel => '历史记录数量';
+
+  /// 弹窗：设置最大历史记录数 Helper
+  String get dialogMaxHistoryHelperText => '建议值：100-2000';
 
   /// 弹窗：选择主题模式 标题
   String get dialogThemeTitle => '选择主题模式';
