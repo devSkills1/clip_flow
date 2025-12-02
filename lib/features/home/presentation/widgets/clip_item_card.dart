@@ -1298,7 +1298,7 @@ class _ClipItemCardState extends State<ClipItemCard>
         return file.existsSync() ? path : null;
       }
 
-      final dir = await PathService.instance.getDocumentsDirectory();
+      final dir = await PathService.instance.getApplicationSupportDirectory();
       final abs = p.join(dir.path, path);
       final file = File(abs);
       return file.existsSync() ? abs : null;
