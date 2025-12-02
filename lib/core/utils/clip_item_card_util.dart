@@ -4,7 +4,6 @@ import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:clip_flow_pro/shared/widgets/toast_view.dart';
@@ -83,11 +82,6 @@ class ClipItemCardUtil {
   static IconData getIcon(ClipItem item) {
     return getIconConfig(item).icon;
   }
-
-  /// 获取剪贴板项目的图标颜色
-  static Color getIconColor(ClipItem item) {
-    return getIconConfig(item).color;
-  }
 }
 
 /// 剪贴板项目工具类
@@ -150,24 +144,7 @@ class ClipItemUtil {
     }
   }
 
-  /// 格式化日期显示（带时间）
-  static String formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return '刚刚';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}分钟前';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}小时前';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
-    } else {
-      return '${dateTime.month}/${dateTime.day} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    }
-  }
-
+  
   /// 处理项目点击复制
   static Future<void> handleItemTap(
     ClipItem item,
@@ -526,66 +503,7 @@ class ClipItemUtil {
     }
   }
 
-  /// 更新项目记录的时间戳
-  static Future<void> _updateItemRecord(ClipItem item) async {
-    try {
-      final database = DatabaseService.instance;
-      await database.updateClipItem(item);
-
-      await Log.d(
-        'Updated item record timestamp',
-        tag: 'ClipItemUtil',
-        fields: {
-          'itemId': item.id,
-          'itemType': item.type.name,
-        },
-      );
-    } on Exception catch (e) {
-      await Log.e(
-        'Failed to update item record',
-        tag: 'ClipItemUtil',
-        error: e,
-      );
-    }
-  }
-
-  /// 更新OCR文本记录的时间戳
-  static Future<ClipItem?> _updateOcrTextRecord(ClipItem imageItem) async {
-    try {
-      final database = DatabaseService.instance;
-
-      // 获取OCR文本记录
-      final ocrRecord = await database.getClipItemById(imageItem.ocrTextId!);
-      if (ocrRecord != null) {
-        // 更新OCR文本记录的访问时间戳
-        // 保持createdAt不变，只更新updatedAt
-        final updatedOcrRecord = ocrRecord.copyWith(
-          updatedAt: DateTime.now(),
-          // ✅ 不修改createdAt，保持原始创建时间
-        );
-        await database.updateClipItem(updatedOcrRecord);
-
-        await Log.d(
-          'Updated OCR text record timestamp',
-          tag: 'ClipItemUtil',
-          fields: {
-            'ocrTextId': imageItem.ocrTextId,
-            'imageId': imageItem.id,
-          },
-        );
-        return updatedOcrRecord;
-      }
-    } on Exception catch (e) {
-      await Log.e(
-        'Failed to update OCR text record',
-        tag: 'ClipItemUtil',
-        error: e,
-      );
-      // 不阻止复制操作，只记录错误
-    }
-    return null;
-  }
-
+  
   /// 显示OCR错误消息
   static void _showOcrErrorMessage(BuildContext? context, String message) {
     if (context != null && context.mounted) {
