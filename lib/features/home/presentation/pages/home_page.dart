@@ -356,7 +356,6 @@ class _HomePageState extends ConsumerState<HomePage>
     ClipItemUtil.handleItemDelete(item, ref, context: context);
   }
 
-  
   Future<void> _onItemFavoriteToggle(ClipItem item) async {
     await ClipItemUtil.handleFavoriteToggle(item, ref, context: context);
   }
@@ -366,7 +365,6 @@ class _HomePageState extends ConsumerState<HomePage>
     await ClipItemUtil.handleOcrTextTap(item, ref, context: context);
   }
 
-  
   void _showUserGuide() {
     showDialog<void>(
       context: context,

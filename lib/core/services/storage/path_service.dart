@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 /// 路径管理服务
 ///
@@ -25,19 +25,19 @@ class PathService {
   ///
   /// 首次调用时会触发权限请求，后续调用使用缓存
   Future<Directory> getDocumentsDirectory() async {
-    _documentsDirectory ??= await getApplicationDocumentsDirectory();
+    _documentsDirectory ??= await path_provider.getApplicationDocumentsDirectory();
     return _documentsDirectory!;
   }
 
   /// 获取临时目录
   Future<Directory> getTemporaryDirectory() async {
-    _temporaryDirectory ??= await getTemporaryDirectory();
+    _temporaryDirectory ??= await path_provider.getTemporaryDirectory();
     return _temporaryDirectory!;
   }
 
   /// 获取应用支持目录
   Future<Directory> getApplicationSupportDirectory() async {
-    _applicationSupportDirectory ??= await getApplicationSupportDirectory();
+    _applicationSupportDirectory ??= await path_provider.getApplicationSupportDirectory();
     return _applicationSupportDirectory!;
   }
 
