@@ -90,61 +90,75 @@ class ClipItemUtil {
   ClipItemUtil._();
 
   /// 获取剪贴板项目的标题
-  static String getItemTitle(ClipItem item) {
+  static String getItemTitle(ClipItem item, {S? l10n}) {
+    final strings = l10n;
+    const fallback = I18nFallbacks.common;
     final content = item.content ?? '';
+    final previewText = _truncateContent(content);
+
     switch (item.type) {
       case ClipType.text:
       case ClipType.html:
       case ClipType.rtf:
-        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
+      case ClipType.url:
+      case ClipType.email:
+      case ClipType.json:
+      case ClipType.xml:
+      case ClipType.code:
+        return previewText;
       case ClipType.image:
         final width = item.metadata['width'] as int? ?? 0;
         final height = item.metadata['height'] as int? ?? 0;
-        return width > 0 && height > 0 ? '图片 $width×$height' : '图片';
+        final label = strings?.clipTypeImage ?? fallback.clipTypeImage;
+        if (width > 0 && height > 0) {
+          return '$label $width×$height';
+        }
+        return label;
       case ClipType.file:
-        final fileName = item.metadata['fileName'] as String? ?? '未知文件';
-        return fileName;
+      case ClipType.audio:
+      case ClipType.video:
+        return _resolveFileName(item, strings);
       case ClipType.color:
         final colorHex = content.isNotEmpty
             ? content
             : AppColors.defaultColorHex;
-        return '颜色 $colorHex';
-      case ClipType.url:
-        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
-      case ClipType.email:
-        return content;
-      case ClipType.json:
-      case ClipType.xml:
-      case ClipType.code:
-        return content.length > 50 ? '${content.substring(0, 50)}...' : content;
-      case ClipType.audio:
-      case ClipType.video:
-        final fileName =
-            item.metadata['fileName'] as String? ??
-            (content.isNotEmpty ? content : '${item.type.name}文件');
-        return fileName;
+        final colorLabel =
+            strings?.previewColor(colorHex) ??
+            '${fallback.labelColor}: $colorHex';
+        return colorLabel;
     }
   }
 
   /// 格式化日期显示（相对时间）
-  static String formatDate(DateTime dateTime) {
+  static String formatDate(
+    DateTime dateTime, {
+    S? l10n,
+    Locale? locale,
+  }) {
+    final strings = l10n;
+    const fallback = I18nFallbacks.common;
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return '刚刚';
+      return strings?.timeJustNow ?? fallback.timeJustNow;
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}分钟前';
+      return strings?.timeMinutesAgo(difference.inMinutes) ??
+          fallback.timeMinutesAgo(difference.inMinutes);
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}小时前';
+      return strings?.timeHoursAgo(difference.inHours) ??
+          fallback.timeHoursAgo(difference.inHours);
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
+      return strings?.timeDaysAgo(difference.inDays) ??
+          fallback.timeDaysAgo(difference.inDays);
     } else {
-      return DateFormat('yyyy-MM-dd').format(dateTime);
+      final localeName = locale != null
+          ? locale.toLanguageTag()
+          : Intl.getCurrentLocale();
+      return DateFormat.yMMMd(localeName).format(dateTime);
     }
   }
 
-  
   /// 处理项目点击复制
   static Future<void> handleItemTap(
     ClipItem item,
@@ -190,10 +204,14 @@ class ClipItemUtil {
       // 显示提示
       // 显示提示
       if (context != null && context.mounted) {
+        final localized = S.of(context);
+        final previewLabel = _getItemPreview(item, l10n: localized);
+        final snackText = localized != null
+            ? localized.snackCopiedPrefix(previewLabel)
+            : I18nFallbacks.common.snackCopiedPrefix(previewLabel);
         ToastView.show(
           context,
-          S.of(context)?.snackCopiedPrefix(_getItemPreview(item)) ??
-              I18nFallbacks.common.snackCopiedPrefix(_getItemPreview(item)),
+          snackText,
           icon: Icons.check_circle_rounded,
           iconColor: Theme.of(context).colorScheme.primary,
         );
@@ -441,22 +459,30 @@ class ClipItemUtil {
   }
 
   /// 获取项目预览文本
-  static String _getItemPreview(ClipItem item) {
+  static String _getItemPreview(ClipItem item, {S? l10n}) {
+    final strings = l10n;
+    const fallback = I18nFallbacks.common;
+
     switch (item.type) {
       case ClipType.image:
         final width = item.metadata['width'] as int? ?? 0;
         final height = item.metadata['height'] as int? ?? 0;
         final format = item.metadata['format'] as String?;
-        return '${I18nFallbacks.common.labelImage} '
-            '($width x $height, ${format ?? I18nFallbacks.common.unknown})';
+        final resolvedFormat =
+            format?.toUpperCase() ??
+            (strings?.unknownFormat ?? fallback.unknown);
+        return strings?.previewImage(width, height, resolvedFormat) ??
+            '${fallback.labelImage} ($width x $height, $resolvedFormat)';
       case ClipType.file:
-        final fileName =
-            item.metadata['fileName'] as String? ??
-            I18nFallbacks.common.unknown;
-        return '${I18nFallbacks.common.labelFile}: $fileName';
+      case ClipType.audio:
+      case ClipType.video:
+        final fileName = _resolveFileName(item, strings);
+        return strings?.previewFile(fileName) ??
+            '${fallback.labelFile}: $fileName';
       case ClipType.color:
         final colorHex = item.content ?? AppColors.defaultColorHex;
-        return '${I18nFallbacks.common.labelColor}: $colorHex';
+        return strings?.previewColor(colorHex) ??
+            '${fallback.labelColor}: $colorHex';
       case ClipType.text:
       case ClipType.html:
       case ClipType.rtf:
@@ -465,14 +491,31 @@ class ClipItemUtil {
       case ClipType.json:
       case ClipType.xml:
       case ClipType.code:
-      case ClipType.audio:
-      case ClipType.video:
         final content = item.content ?? '';
-        if (content.length > 50) {
-          return '${content.substring(0, 50)}...';
-        }
-        return content;
+        return _truncateContent(content);
     }
+  }
+
+  static String _truncateContent(String value, {int maxLength = 50}) {
+    if (value.length <= maxLength) {
+      return value;
+    }
+    return '${value.substring(0, maxLength)}...';
+  }
+
+  static String _resolveFileName(ClipItem item, S? l10n) {
+    const fallback = I18nFallbacks.common;
+    final metadataName = item.metadata['fileName'];
+    if (metadataName is String && metadataName.trim().isNotEmpty) {
+      return metadataName.trim();
+    }
+
+    final content = item.content?.trim();
+    if (content != null && content.isNotEmpty) {
+      return content;
+    }
+
+    return l10n?.unknownFile ?? fallback.unknown;
   }
 
   /// 执行实际的删除操作
@@ -503,7 +546,6 @@ class ClipItemUtil {
     }
   }
 
-  
   /// 显示OCR错误消息
   static void _showOcrErrorMessage(BuildContext? context, String message) {
     if (context != null && context.mounted) {

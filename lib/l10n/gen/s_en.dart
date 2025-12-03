@@ -109,8 +109,7 @@ class SEn extends S {
       'OCR text detected but the feature is disabled. Enable it in Settings.';
 
   @override
-  String get clipCardOcrFailedHint =>
-      'OCR failed or confidence is below the minimum threshold.';
+  String get clipCardOcrFailedHint => 'OCR failed or confidence too low.';
 
   @override
   String get appearanceThemeModeTitle => 'Theme mode';
@@ -262,6 +261,21 @@ class SEn extends S {
   @override
   String previewColor(String hex) {
     return 'Color: $hex';
+  }
+
+  @override
+  String compactStatCharacters(String count) {
+    return 'Ch $count';
+  }
+
+  @override
+  String compactStatWords(String count) {
+    return 'Wd $count';
+  }
+
+  @override
+  String compactStatLines(String count) {
+    return 'Ln $count';
   }
 
   @override

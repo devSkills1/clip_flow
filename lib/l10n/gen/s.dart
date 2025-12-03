@@ -268,7 +268,7 @@ abstract class S {
   /// Clip item card hint shown when OCR recognition fails
   ///
   /// In en, this message translates to:
-  /// **'OCR failed or confidence is below the minimum threshold.'**
+  /// **'OCR failed or confidence too low.'**
   String get clipCardOcrFailedHint;
 
   /// Appearance - Theme mode - title
@@ -546,6 +546,24 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Color: {hex}'**
   String previewColor(String hex);
+
+  /// Compact stats chip label for character count
+  ///
+  /// In en, this message translates to:
+  /// **'Ch {count}'**
+  String compactStatCharacters(String count);
+
+  /// Compact stats chip label for word count
+  ///
+  /// In en, this message translates to:
+  /// **'Wd {count}'**
+  String compactStatWords(String count);
+
+  /// Compact stats chip label for line count
+  ///
+  /// In en, this message translates to:
+  /// **'Ln {count}'**
+  String compactStatLines(String count);
 
   /// Home - preview - unknown format
   ///

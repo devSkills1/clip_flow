@@ -121,7 +121,7 @@
     "description": "Clip item card hint shown when OCR text exists but OCR is globally disabled"
   },
 
-  "clipCardOcrFailedHint": "OCR failed or confidence is below the minimum threshold.",
+  "clipCardOcrFailedHint": "OCR failed or confidence too low.",
   "@clipCardOcrFailedHint": {
     "description": "Clip item card hint shown when OCR recognition fails"
   },
@@ -291,6 +291,30 @@
   "@previewColor": {
     "description": "Home - preview - color",
     "placeholders": {"hex": {"type": "String", "example": "#FFAA00"}}
+  },
+
+  "compactStatCharacters": "Ch {count}",
+  "@compactStatCharacters": {
+    "description": "Compact stats chip label for character count",
+    "placeholders": {
+      "count": {"type": "String", "example": "1.2k"}
+    }
+  },
+
+  "compactStatWords": "Wd {count}",
+  "@compactStatWords": {
+    "description": "Compact stats chip label for word count",
+    "placeholders": {
+      "count": {"type": "String", "example": "250"}
+    }
+  },
+
+  "compactStatLines": "Ln {count}",
+  "@compactStatLines": {
+    "description": "Compact stats chip label for line count",
+    "placeholders": {
+      "count": {"type": "String", "example": "12"}
+    }
   },
 
   "unknownFormat": "Unknown",

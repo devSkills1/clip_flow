@@ -120,6 +120,15 @@ class _CommonFallback {
 
   /// 剪贴板类型：代码
   String get clipTypeCode => '代码';
+
+  /// 紧凑统计：字符
+  String statCharacters(String count) => '$count字符';
+
+  /// 紧凑统计：单词
+  String statWords(String count) => '$count词';
+
+  /// 紧凑统计：行数
+  String statLines(String count) => '$count行';
 }
 
 class _HomeFallback {
