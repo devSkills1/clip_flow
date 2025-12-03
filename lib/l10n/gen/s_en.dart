@@ -302,7 +302,20 @@ class SEn extends S {
   String get filterClearHistoryButton => 'Clear History';
 
   @override
+  String get filterClearSearchButton => 'Clear Search';
+
+  @override
+  String get filterClearAllUnfavoritedButton => 'Clear Unfavorited';
+
+  @override
+  String get filterClearAllButton => 'Clear All';
+
+  @override
   String get filterConfirmClearTitle => 'Confirm Clear';
+
+  @override
+  String get filterConfirmClearContent =>
+      'Are you sure you want to clear the history?\n\nThis will delete all [unfavorited] items and keep favorites.\nThis action cannot be undone.';
 
   @override
   String get searchHint => 'Search clipboard history...';

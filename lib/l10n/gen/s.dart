@@ -625,11 +625,35 @@ abstract class S {
   /// **'Clear History'**
   String get filterClearHistoryButton;
 
+  /// Sidebar - clear search button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Search'**
+  String get filterClearSearchButton;
+
+  /// Sidebar - clear all unfavorited button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Unfavorited'**
+  String get filterClearAllUnfavoritedButton;
+
+  /// Sidebar - clear all button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get filterClearAllButton;
+
   /// Sidebar - confirm clear dialog title
   ///
   /// In en, this message translates to:
   /// **'Confirm Clear'**
   String get filterConfirmClearTitle;
+
+  /// Sidebar - confirm clear dialog content
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to clear the history?\n\nThis will delete all [unfavorited] items and keep favorites.\nThis action cannot be undone.'**
+  String get filterConfirmClearContent;
 
   /// Search box hint text
   ///

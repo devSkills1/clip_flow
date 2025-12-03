@@ -326,8 +326,20 @@
   "filterClearHistoryButton": "清空历史",
   "@filterClearHistoryButton": {"description": "侧边栏-清空历史按钮"},
 
+  "filterClearSearchButton": "清空搜索",
+  "@filterClearSearchButton": {"description": "侧边栏-清空搜索按钮"},
+
+  "filterClearAllUnfavoritedButton": "清空未收藏的",
+  "@filterClearAllUnfavoritedButton": {"description": "侧边栏-清空未收藏按钮"},
+
+  "filterClearAllButton": "全部清空",
+  "@filterClearAllButton": {"description": "侧边栏-全部清空按钮"},
+
   "filterConfirmClearTitle": "确认清空",
   "@filterConfirmClearTitle": {"description": "侧边栏-确认清空对话框标题"},
+
+  "filterConfirmClearContent": "确定要清空历史记录吗？\n\n此操作将删除所有【未收藏】的历史，保留收藏项。\n此操作不可撤销。",
+  "@filterConfirmClearContent": {"description": "侧边栏-确认清空对话框内容"},
 
   "searchHint": "搜索剪贴板历史...",
   "@searchHint": {"description": "搜索框提示文本"},

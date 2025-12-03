@@ -293,7 +293,20 @@ class SZh extends S {
   String get filterClearHistoryButton => '清空历史';
 
   @override
+  String get filterClearSearchButton => '清空搜索';
+
+  @override
+  String get filterClearAllUnfavoritedButton => '清空未收藏的';
+
+  @override
+  String get filterClearAllButton => '全部清空';
+
+  @override
   String get filterConfirmClearTitle => '确认清空';
+
+  @override
+  String get filterConfirmClearContent =>
+      '确定要清空历史记录吗？\n\n此操作将删除所有【未收藏】的历史，保留收藏项。\n此操作不可撤销。';
 
   @override
   String get searchHint => '搜索剪贴板历史...';

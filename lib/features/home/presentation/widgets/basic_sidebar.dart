@@ -1,3 +1,4 @@
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,6 +83,8 @@ class BasicSidebar extends ConsumerWidget {
     FilterOption filterType,
     ThemeData theme,
   ) {
+    final l10n = S.of(context)!;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -90,7 +93,7 @@ class BasicSidebar extends ConsumerWidget {
             context: context,
             ref: ref,
             icon: Icons.home_rounded,
-            label: '全部',
+            label: l10n.filterTypeAll,
             isSelected: filterType == FilterOption.all,
             onTap: () =>
                 ref.read(filterTypeProvider.notifier).state = FilterOption.all,
@@ -100,7 +103,7 @@ class BasicSidebar extends ConsumerWidget {
             context: context,
             ref: ref,
             icon: Icons.text_fields_rounded,
-            label: '文本',
+            label: l10n.filterTypeText,
             isSelected: filterType == FilterOption.text,
             onTap: () =>
                 ref.read(filterTypeProvider.notifier).state = FilterOption.text,
@@ -110,17 +113,17 @@ class BasicSidebar extends ConsumerWidget {
             context: context,
             ref: ref,
             icon: Icons.image_rounded,
-            label: '图片',
+            label: l10n.filterTypeImage,
             isSelected: filterType == FilterOption.image,
             onTap: () => ref.read(filterTypeProvider.notifier).state =
                 FilterOption.image,
             theme: theme,
           ),
-            _buildNavButton(
+          _buildNavButton(
             context: context,
             ref: ref,
             icon: Icons.link_rounded,
-            label: '文件',
+            label: l10n.filterTypeFile,
             isSelected: filterType == FilterOption.file,
             onTap: () =>
                 ref.read(filterTypeProvider.notifier).state = FilterOption.file,
@@ -130,7 +133,7 @@ class BasicSidebar extends ConsumerWidget {
             context: context,
             ref: ref,
             icon: Icons.colorize_rounded,
-            label: '颜色',
+            label: l10n.filterTypeColor,
             isSelected: filterType == FilterOption.color,
             onTap: () => ref.read(filterTypeProvider.notifier).state =
                 FilterOption.color,
@@ -226,6 +229,7 @@ class BasicSidebar extends ConsumerWidget {
     ThemeData theme,
   ) {
     final colorScheme = theme.colorScheme;
+    final l10n = S.of(context)!;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -243,7 +247,7 @@ class BasicSidebar extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: _buildActionButton(
               icon: Icons.clear_all_rounded,
-              label: '清空搜索',
+              label: l10n.filterClearSearchButton,
               onTap: () => ref.read(searchQueryProvider.notifier).state = '',
               theme: theme,
             ),
@@ -254,7 +258,7 @@ class BasicSidebar extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: _buildActionButton(
             icon: Icons.delete_sweep_rounded,
-            label: '清空历史',
+            label: l10n.filterClearHistoryButton,
             onTap: () => _showClearHistoryDialog(context, ref),
             theme: theme,
           ),
@@ -265,7 +269,7 @@ class BasicSidebar extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: _buildActionButton(
             icon: Icons.settings_rounded,
-            label: '设置',
+            label: l10n.filterSettingsButton,
             onTap: () => context.push('/settings'),
             theme: theme,
           ),
@@ -320,27 +324,29 @@ class BasicSidebar extends ConsumerWidget {
 
   /// 显示清空历史确认对话框
   void _showClearHistoryDialog(BuildContext context, WidgetRef ref) {
+    final l10n = S.of(context)!;
+
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('确认清空'),
-        content:
-            const Text('确定要清空历史记录吗？\n\n此操作将删除所有【未收藏】的历史，保留收藏项。\n此操作不可撤销。'),
+        title: Text(l10n.filterConfirmClearTitle),
+        content: Text(l10n.filterConfirmClearContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
+            child: Text(l10n.actionCancel),
           ),
           // 新增一个“全部清空”按钮
           TextButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
-              final historyNotifier =
-                  ref.read(clipboardHistoryProvider.notifier);
+              final historyNotifier = ref.read(
+                clipboardHistoryProvider.notifier,
+              );
               await historyNotifier.clearHistoryIncludingFavorites();
             },
             child: Text(
-              '全部清空',
+              l10n.filterClearAllButton,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -352,11 +358,12 @@ class BasicSidebar extends ConsumerWidget {
               Navigator.of(dialogContext).pop();
 
               // 清空历史记录（保留收藏）
-              final historyNotifier =
-                  ref.read(clipboardHistoryProvider.notifier);
+              final historyNotifier = ref.read(
+                clipboardHistoryProvider.notifier,
+              );
               await historyNotifier.clearHistory();
             },
-            child: const Text('清空未收藏的'),
+            child: Text(l10n.filterClearAllUnfavoritedButton),
           ),
         ],
       ),
