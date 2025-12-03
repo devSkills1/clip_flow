@@ -80,6 +80,19 @@
     }
   },
 
+  "generalAutoHideTimeoutTitle": "自动隐藏延迟",
+  "@generalAutoHideTimeoutTitle": {
+    "description": "常规-自动隐藏延迟-标题"
+  },
+
+  "generalAutoHideTimeoutSubtitle": "无操作后 {seconds} 秒自动隐藏",
+  "@generalAutoHideTimeoutSubtitle": {
+    "description": "常规-自动隐藏延迟-说明",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "3"}
+    }
+  },
+
   "generalMaxHistoryTitle": "最大历史记录数",
   "@generalMaxHistoryTitle": {"description": "常规-最大历史记录数-标题"},
 

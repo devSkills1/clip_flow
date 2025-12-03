@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
 import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
@@ -40,6 +41,19 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     // 自动滚动到选中项
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelectedIndex();
+
+      // 在页面初始化时检查并启动自动隐藏监控
+      if (!mounted) return;
+      final autoHideEnabled = ref.read(userPreferencesProvider).autoHideEnabled;
+      if (autoHideEnabled) {
+        ref.read(autoHideServiceProvider).startMonitoring();
+        unawaited(
+          Log.i(
+            'AppSwitcherPage initialized, auto-hide monitoring started',
+            tag: 'AppSwitcherPage',
+          ),
+        );
+      }
     });
   }
 
@@ -48,6 +62,11 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 处理用户交互，重置自动隐藏定时器
+  void _onUserInteraction() {
+    ref.read(autoHideServiceProvider).onUserInteraction();
   }
 
   Future<void> _loadData() async {
@@ -98,12 +117,17 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   }
 
   void _scrollToSelectedIndex() {
-    if (_scrollController.hasClients && _selectedIndex >= 0 && _displayItems.isNotEmpty) {
+    if (_scrollController.hasClients &&
+        _selectedIndex >= 0 &&
+        _displayItems.isNotEmpty) {
       const cardWidth = 280.0;
       const cardMargin = 32.0; // 16 + 16 horizontal margin
       const totalCardWidth = cardWidth + cardMargin;
       final screenWidth = MediaQuery.of(context).size.width;
-      final targetOffset = (_selectedIndex * totalCardWidth) - (screenWidth / 2) + (totalCardWidth / 2);
+      final targetOffset =
+          (_selectedIndex * totalCardWidth) -
+          (screenWidth / 2) +
+          (totalCardWidth / 2);
 
       _scrollController.animateTo(
         targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
@@ -113,7 +137,6 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     }
   }
 
-  
   /// 构建应用切换器专用的卡片，带选中效果
   Widget _buildAppSwitcherCard(ClipItem item, int index) {
     final isSelected = index == _selectedIndex;
@@ -130,14 +153,15 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()
-            ..scale(isSelected ? 1.05 : 1.0),
+          transform: Matrix4.identity()..scale(isSelected ? 1.05 : 1.0),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.4),
                       blurRadius: 20,
                       spreadRadius: 2,
                     ),
@@ -155,50 +179,54 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                     ),
                   ],
           ),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: isSelected ? 1.0 : 0.7,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected
-                      ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
-                      : Colors.transparent,
-                  width: 3,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: isSelected ? 1.0 : 0.7,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
+                        : Colors.transparent,
+                    width: 3,
+                  ),
                 ),
-              ),
-              child: ClipItemCard(
-                key: ValueKey(item.id),
-                item: item,
-                displayMode: DisplayMode.compact,
-                onTap: () {
-                  setState(() {
-                    _selectedIndex = index;
-                  });
-                  // 点击图片时复制图片
-                  ClipItemUtil.handleItemTap(item, ref, context: context);
-                },
-                onDelete: () {
-                  ClipItemUtil.handleItemDelete(item, ref, context: context);
-                },
-                onFavoriteToggle: () {
-                  ClipItemUtil.handleFavoriteToggle(item, ref, context: context);
-                },
-                searchQuery: _searchController.text,
-                enableOcrCopy: true,
-                onOcrTextTap: () {
-                  // 点击OCR文字时只复制文字
-                  ClipItemUtil.handleOcrTextTap(item, ref, context: context);
-                },
+                child: ClipItemCard(
+                  key: ValueKey(item.id),
+                  item: item,
+                  displayMode: DisplayMode.compact,
+                  onTap: () {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                    // 点击图片时复制图片
+                    ClipItemUtil.handleItemTap(item, ref, context: context);
+                  },
+                  onDelete: () {
+                    ClipItemUtil.handleItemDelete(item, ref, context: context);
+                  },
+                  onFavoriteToggle: () {
+                    ClipItemUtil.handleFavoriteToggle(
+                      item,
+                      ref,
+                      context: context,
+                    );
+                  },
+                  searchQuery: _searchController.text,
+                  enableOcrCopy: true,
+                  onOcrTextTap: () {
+                    // 点击OCR文字时只复制文字
+                    ClipItemUtil.handleOcrTextTap(item, ref, context: context);
+                  },
+                ),
               ),
             ),
           ),
-        ),
-      ), // 关闭 AnimatedContainer
+        ), // 关闭 AnimatedContainer
       ), // 关闭 MouseRegion
     ); // 关闭 Container
   }
@@ -256,7 +284,6 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     );
   }
 
-  
   @override
   Widget build(BuildContext context) {
     // 监听剪贴板变化和历史列表变化
@@ -281,88 +308,111 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
 
     final l10n = S.of(context)!;
 
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.arrowLeft): _navigateLeft,
-        const SingleActivator(LogicalKeyboardKey.arrowRight): _navigateRight,
-        const SingleActivator(LogicalKeyboardKey.enter): () {
-          if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
-            ClipItemUtil.handleItemTap(_displayItems[_selectedIndex], ref, context: context);
-          }
-        },
-        const SingleActivator(LogicalKeyboardKey.space): () {
-          if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
-            ClipItemUtil.handleItemTap(_displayItems[_selectedIndex], ref, context: context);
-          }
-        },
-        const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.of(context).pop(),
-      },
-      child: Focus(
-        autofocus: true,
-        child: Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.8),
-        ),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(
-            sigmaX: 20,
-            sigmaY: 20,
-            tileMode: ui.TileMode.decal,
-          ),
-          child: Column(
-            children: [
-              _buildWindowHeader(l10n),
+    // 包装在 MouseRegion 和 Listener 中以捕获用户交互
+    return MouseRegion(
+      onHover: (_) => _onUserInteraction(),
+      child: Listener(
+        onPointerDown: (_) => _onUserInteraction(),
+        onPointerMove: (_) => _onUserInteraction(),
+        onPointerSignal: (_) => _onUserInteraction(), // 捕获滚动事件
+        child: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.arrowLeft): _navigateLeft,
+            const SingleActivator(LogicalKeyboardKey.arrowRight):
+                _navigateRight,
+            const SingleActivator(LogicalKeyboardKey.enter): () {
+              if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
+                ClipItemUtil.handleItemTap(
+                  _displayItems[_selectedIndex],
+                  ref,
+                  context: context,
+                );
+              }
+            },
+            const SingleActivator(LogicalKeyboardKey.space): () {
+              if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
+                ClipItemUtil.handleItemTap(
+                  _displayItems[_selectedIndex],
+                  ref,
+                  context: context,
+                );
+              }
+            },
+            const SingleActivator(LogicalKeyboardKey.escape): () =>
+                Navigator.of(context).pop(),
+          },
+          child: Focus(
+            autofocus: true,
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.8),
+                ),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(
+                    sigmaX: 20,
+                    sigmaY: 20,
+                    tileMode: ui.TileMode.decal,
+                  ),
+                  child: Column(
+                    children: [
+                      _buildWindowHeader(l10n),
 
-              // macOS风格的应用切换器 - 居中显示，支持键盘导航
-              Expanded(
-                child: _displayItems.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.content_paste_search,
-                              size: 64,
-                              color: Colors.white.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              '没有找到匹配的内容',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
+                      // macOS风格的应用切换器 - 居中显示，支持键盘导航
+                      Expanded(
+                        child: _displayItems.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.content_paste_search,
+                                      size: 64,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      '没有找到匹配的内容',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Center(
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 15,
+                                  ),
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    controller: _scrollController,
+                                    itemCount: _displayItems.length,
+                                    padding: const EdgeInsets.only(bottom: 15),
+                                    itemBuilder: (context, index) {
+                                      final item = _displayItems[index];
+                                      return _buildAppSwitcherCard(item, index);
+                                    },
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : Center(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 15),
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            controller: _scrollController,
-                            itemCount: _displayItems.length,
-                            padding: const EdgeInsets.only(bottom: 15),
-                            itemBuilder: (context, index) {
-                              final item = _displayItems[index];
-                              return _buildAppSwitcherCard(item, index);
-                            },
-                          ),
-                        ),
                       ),
+                    ],
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-        ),
-      ),
-    );
+        ), // 关闭 CallbackShortcuts
+      ), // 关闭 Listener
+    ); // 关闭 MouseRegion
   }
 }

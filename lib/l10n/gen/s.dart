@@ -211,6 +211,18 @@ abstract class S {
   /// **'Current hotkey: {hotkey}'**
   String generalAutoHideHotkeySubtitle(String hotkey);
 
+  /// General - Auto-hide delay - title
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-hide delay'**
+  String get generalAutoHideTimeoutTitle;
+
+  /// General - Auto-hide delay - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Hide after {seconds} seconds of inactivity'**
+  String generalAutoHideTimeoutSubtitle(int seconds);
+
   /// General - Max history - title
   ///
   /// In en, this message translates to:

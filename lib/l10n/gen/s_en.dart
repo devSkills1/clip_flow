@@ -75,6 +75,14 @@ class SEn extends S {
   }
 
   @override
+  String get generalAutoHideTimeoutTitle => 'Auto-hide delay';
+
+  @override
+  String generalAutoHideTimeoutSubtitle(int seconds) {
+    return 'Hide after $seconds seconds of inactivity';
+  }
+
+  @override
   String get generalMaxHistoryTitle => 'Max history items';
 
   @override

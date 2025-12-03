@@ -41,6 +41,21 @@ class _HomePageState extends ConsumerState<HomePage>
     super.initState();
     _initializeAnimations();
     _setupWindow();
+
+    // 在页面初始化时检查并启动自动隐藏监控
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final autoHideEnabled = ref.read(userPreferencesProvider).autoHideEnabled;
+      if (autoHideEnabled) {
+        ref.read(autoHideServiceProvider).startMonitoring();
+        unawaited(
+          Log.i(
+            'HomePage initialized, auto-hide monitoring started',
+            tag: 'HomePage',
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -75,6 +90,11 @@ class _HomePageState extends ConsumerState<HomePage>
         );
       }
     });
+  }
+
+  /// 处理用户交互，重置自动隐藏定时器
+  void _onUserInteraction() {
+    ref.read(autoHideServiceProvider).onUserInteraction();
   }
 
   @override
@@ -114,38 +134,47 @@ class _HomePageState extends ConsumerState<HomePage>
       searchQuery,
     );
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Row(
-          children: [
-            // 基础侧边栏 - 简单稳定
-            const BasicSidebar(),
+    // 包装在 MouseRegion 和 Listener 中以捕获用户交互
+    return MouseRegion(
+      onHover: (_) => _onUserInteraction(),
+      child: Listener(
+        onPointerDown: (_) => _onUserInteraction(),
+        onPointerMove: (_) => _onUserInteraction(),
+        onPointerSignal: (_) => _onUserInteraction(), // 捕获滚动事件
+        child: Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Row(
+              children: [
+                // 基础侧边栏 - 简单稳定
+                const BasicSidebar(),
 
-            // 主内容区域
-            Expanded(
-              child: Column(
-                children: [
-                  // 自定义窗口头部
-                  _buildWindowHeader(l10n),
+                // 主内容区域
+                Expanded(
+                  child: Column(
+                    children: [
+                      // 自定义窗口头部
+                      _buildWindowHeader(l10n),
 
-                  // 主内容区域
-                  Expanded(
-                    child: _buildContentArea(
-                      searchQuery,
-                      filteredItems,
-                      displayMode,
-                      l10n,
-                    ),
+                      // 主内容区域
+                      Expanded(
+                        child: _buildContentArea(
+                          searchQuery,
+                          filteredItems,
+                          displayMode,
+                          l10n,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        ), // 关闭 Scaffold
+      ), // 关闭 Listener
+    ); // 关闭 MouseRegion
   }
 
   Widget _buildWindowHeader(S l10n) {

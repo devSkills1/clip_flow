@@ -24,44 +24,75 @@ class AutoHideService {
   final Ref _ref;
   Timer? _inactivityTimer;
   final Stopwatch _interactionStopwatch = Stopwatch();
-  bool get _isEnabled => _ref.read(userPreferencesProvider).autoHideEnabled;
+
+  /// 检查自动隐藏功能是否启用
+  /// 只检查用户偏好设置，不再检查页面状态
+  /// 页面状态由各页面的生命周期方法控制（startMonitoring/stopMonitoring）
+  bool get _isEnabled {
+    return _ref.read(userPreferencesProvider).autoHideEnabled;
+  }
 
   Duration get _timeoutDuration {
     final seconds = _ref.read(userPreferencesProvider).autoHideTimeoutSeconds;
-    final clampedSeconds = seconds < 3
-        ? 3
-        : (seconds > 30 ? 30 : seconds);
+    final clampedSeconds = seconds < 3 ? 3 : (seconds > 30 ? 30 : seconds);
     return Duration(seconds: clampedSeconds);
   }
 
   /// Start monitoring for inactivity.
   void startMonitoring() {
-    if (!_isEnabled) {
+    final enabled = _isEnabled;
+    unawaited(
+      Log.i(
+        'AutoHideService: startMonitoring called (enabled=$enabled, hasTimer=${_inactivityTimer != null})',
+        tag: 'AutoHideService',
+      ),
+    );
+
+    if (!enabled) {
       _resetStopwatch();
       _cancelTimer();
+      unawaited(
+        Log.d(
+          'AutoHideService: Monitoring not started (auto-hide disabled in preferences)',
+          tag: 'AutoHideService',
+        ),
+      );
       return;
     }
     _cancelTimer();
-    unawaited(
-      Log.d('AutoHideService: Started monitoring', tag: 'AutoHideService'),
-    );
-
     _markInteraction();
     _startTimer();
+    unawaited(
+      Log.i(
+        'AutoHideService: Monitoring started successfully',
+        tag: 'AutoHideService',
+      ),
+    );
   }
 
   /// Stop monitoring.
   void stopMonitoring() {
     final hadTimer = _inactivityTimer != null;
     final hadStopwatch = _interactionStopwatch.isRunning;
+
+    unawaited(
+      Log.i(
+        'AutoHideService: stopMonitoring called (hadTimer=$hadTimer, hadStopwatch=$hadStopwatch)',
+        tag: 'AutoHideService',
+      ),
+    );
+
     _cancelTimer();
     _resetStopwatch();
-    if (!hadTimer && !hadStopwatch) {
-      return;
+
+    if (hadTimer || hadStopwatch) {
+      unawaited(
+        Log.i(
+          'AutoHideService: Monitoring stopped successfully',
+          tag: 'AutoHideService',
+        ),
+      );
     }
-    unawaited(
-      Log.d('AutoHideService: Stopped monitoring', tag: 'AutoHideService'),
-    );
   }
 
   /// Call this when user interacts with the app.

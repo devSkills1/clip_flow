@@ -80,6 +80,19 @@
     }
   },
 
+  "generalAutoHideTimeoutTitle": "Auto-hide delay",
+  "@generalAutoHideTimeoutTitle": {
+    "description": "General - Auto-hide delay - title"
+  },
+
+  "generalAutoHideTimeoutSubtitle": "Hide after {seconds} seconds of inactivity",
+  "@generalAutoHideTimeoutSubtitle": {
+    "description": "General - Auto-hide delay - subtitle",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "3"}
+    }
+  },
+
   "generalMaxHistoryTitle": "Max history items",
   "@generalMaxHistoryTitle": {"description": "General - Max history - title"},
 
