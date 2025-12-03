@@ -351,6 +351,21 @@ class SEn extends S {
   String get clipTypeImage => 'Image';
 
   @override
+  String get formatCountThousand => 'k';
+
+  @override
+  String get formatCountTenThousand => 'k';
+
+  @override
+  String get formatCountHundredMillion => 'M';
+
+  @override
+  String get formatCountMillion => 'M';
+
+  @override
+  String get formatCountBillion => 'B';
+
+  @override
   String get clipTypeColor => 'Color';
 
   @override

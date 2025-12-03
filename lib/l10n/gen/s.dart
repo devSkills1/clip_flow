@@ -709,6 +709,36 @@ abstract class S {
   /// **'Image'**
   String get clipTypeImage;
 
+  /// Number formatting - thousand unit
+  ///
+  /// In en, this message translates to:
+  /// **'k'**
+  String get formatCountThousand;
+
+  /// Number formatting - ten thousand unit
+  ///
+  /// In en, this message translates to:
+  /// **'k'**
+  String get formatCountTenThousand;
+
+  /// Number formatting - hundred million unit
+  ///
+  /// In en, this message translates to:
+  /// **'M'**
+  String get formatCountHundredMillion;
+
+  /// Number formatting - million unit
+  ///
+  /// In en, this message translates to:
+  /// **'M'**
+  String get formatCountMillion;
+
+  /// Number formatting - billion unit
+  ///
+  /// In en, this message translates to:
+  /// **'B'**
+  String get formatCountBillion;
+
   /// Clipboard type - color
   ///
   /// In en, this message translates to:

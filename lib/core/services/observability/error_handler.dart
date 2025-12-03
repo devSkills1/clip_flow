@@ -13,10 +13,12 @@ class ErrorHandler {
     // 捕获Flutter框架错误
     FlutterError.onError = (FlutterErrorDetails details) {
       // 记录到日志
-      Log.e(
-        'Flutter Error: ${details.exception}',
-        error: details.exception,
-        stackTrace: details.stack,
+      unawaited(
+        Log.e(
+          'Flutter Error: ${details.exception}',
+          error: details.exception,
+          stackTrace: details.stack,
+        ),
       );
 
       // 上报到崩溃监控
@@ -40,10 +42,12 @@ class ErrorHandler {
     // 捕获异步错误
     PlatformDispatcher.instance.onError = (error, stack) {
       // 记录到日志
-      Log.e(
-        'Platform Error: $error',
-        error: error,
-        stackTrace: stack,
+      unawaited(
+        Log.e(
+          'Platform Error: $error',
+          error: error,
+          stackTrace: stack,
+        ),
       );
 
       // 上报到崩溃监控
@@ -63,10 +67,12 @@ class ErrorHandler {
       },
       (error, stack) {
         // 记录到日志
-        Log.e(
-          'Zone Error: $error',
-          error: error,
-          stackTrace: stack,
+        unawaited(
+          Log.e(
+            'Zone Error: $error',
+            error: error,
+            stackTrace: stack,
+          ),
         );
 
         // 上报到崩溃监控

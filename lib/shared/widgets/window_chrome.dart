@@ -198,15 +198,20 @@ class _DefaultLeading extends StatelessWidget {
 
 /// macOS-inspired window control dots.
 class WindowControlButtons extends StatelessWidget {
+  /// Creates a WindowControlButtons.
   const WindowControlButtons({
     this.onMinimize,
     this.onClose,
     super.key,
   });
 
+  /// 最小化回调
   final Future<void> Function()? onMinimize;
+
+  /// 关闭回调
   final Future<void> Function()? onClose;
 
+  /// 最小化处理
   Future<void> _handleMinimize() async {
     if (onMinimize != null) {
       await onMinimize!();

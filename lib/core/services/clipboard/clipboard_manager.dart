@@ -92,11 +92,13 @@ class ClipboardManager {
       try {
         _uiController.add(item);
       } on Exception catch (e) {
-        Log.w(
-          'Failed to add item to UI stream - controller may be closed',
-          tag: 'OptimizedClipboardManager',
-          error: e,
-          fields: {'id': item.id},
+        unawaited(
+          Log.w(
+            'Failed to add item to UI stream - controller may be closed',
+            tag: 'OptimizedClipboardManager',
+            error: e,
+            fields: {'id': item.id},
+          ),
         );
       }
     }
