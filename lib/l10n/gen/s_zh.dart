@@ -254,6 +254,21 @@ class SZh extends S {
   }
 
   @override
+  String compactStatCharacters(String count) {
+    return '$count字符';
+  }
+
+  @override
+  String compactStatWords(String count) {
+    return '$count词';
+  }
+
+  @override
+  String compactStatLines(String count) {
+    return '$count行';
+  }
+
+  @override
   String get unknownFormat => '未知格式';
 
   @override

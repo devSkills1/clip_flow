@@ -291,6 +291,30 @@
     "placeholders": {"hex": {"type": "String", "example": "#FFAA00"}}
   },
 
+  "compactStatCharacters": "{count}字符",
+  "@compactStatCharacters": {
+    "description": "紧凑统计徽章-字符数量",
+    "placeholders": {
+      "count": {"type": "String", "example": "1.2万"}
+    }
+  },
+
+  "compactStatWords": "{count}词",
+  "@compactStatWords": {
+    "description": "紧凑统计徽章-词语数量",
+    "placeholders": {
+      "count": {"type": "String", "example": "250"}
+    }
+  },
+
+  "compactStatLines": "{count}行",
+  "@compactStatLines": {
+    "description": "紧凑统计徽章-行数",
+    "placeholders": {
+      "count": {"type": "String", "example": "12"}
+    }
+  },
+
   "unknownFormat": "未知格式",
   "@unknownFormat": {"description": "首页-预览-未知格式"},
 

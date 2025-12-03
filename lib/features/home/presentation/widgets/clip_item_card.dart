@@ -338,9 +338,10 @@ class _ClipItemCardState extends State<ClipItemCard>
 
   Widget _buildDeleteButton(BuildContext context) {
     final theme = Theme.of(context);
+    final deleteLabel = I18nCommonUtil.getActionDelete(context);
 
     return Semantics(
-      label: '删除',
+      label: deleteLabel,
       button: true,
       child: IconButton.outlined(
         onPressed: () {
@@ -363,7 +364,7 @@ class _ClipItemCardState extends State<ClipItemCard>
           padding: EdgeInsets.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        tooltip: '删除',
+        tooltip: deleteLabel,
       ),
     );
   }
@@ -400,18 +401,18 @@ class _ClipItemCardState extends State<ClipItemCard>
       case ClipType.image:
         return _buildImagePreview(context, availableWidth, availableHeight);
       case ClipType.file:
+      case ClipType.audio:
+      case ClipType.video:
         return _buildFilePreview(context);
       case ClipType.text:
       case ClipType.rtf:
       case ClipType.html:
-      case ClipType.audio:
-      case ClipType.video:
       case ClipType.url:
       case ClipType.email:
       case ClipType.json:
       case ClipType.xml:
       case ClipType.code:
-        return _buildTextPreview(context, availableWidth);
+        return _buildTextPreview(context);
     }
   }
 
@@ -1066,8 +1067,9 @@ class _ClipItemCardState extends State<ClipItemCard>
 
   Widget _buildFilePreview(BuildContext context) {
     final theme = Theme.of(context);
-    final fileName = widget.item.metadata['fileName'] as String? ?? '未知文件';
+    final fileName = _resolveFileName(context);
     final fileSize = widget.item.metadata['fileSize'] as int? ?? 0;
+    final durationLabel = _resolveMediaDurationLabel();
     final fileIcon = _getFileIcon();
 
     return Container(
@@ -1100,15 +1102,31 @@ class _ClipItemCardState extends State<ClipItemCard>
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          if (fileSize > 0) ...[
+          if (fileSize > 0 || durationLabel != null) ...[
             const SizedBox(height: 2),
-            Text(
-              _formatFileSize(fileSize),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Wrap(
+              spacing: 6,
+              alignment: WrapAlignment.center,
+              children: [
+                if (fileSize > 0)
+                  Text(
+                    _formatFileSize(fileSize),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (durationLabel != null)
+                  Text(
+                    durationLabel,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
             ),
           ],
         ],
@@ -1116,7 +1134,7 @@ class _ClipItemCardState extends State<ClipItemCard>
     );
   }
 
-  Widget _buildTextPreview(BuildContext context, double availableWidth) {
+  Widget _buildTextPreview(BuildContext context) {
     final content = widget.item.content ?? '';
     final theme = Theme.of(context);
 
@@ -1134,11 +1152,16 @@ class _ClipItemCardState extends State<ClipItemCard>
       height: 1.4,
     );
 
-    return SizedBox(
-      width: double.infinity,
-      child: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: _buildTextContent(context, content, textStyle),
+    final previewText = _resolveTextPreviewContent(content);
+    final maxLines = _resolveTextPreviewLines();
+
+    return Align(
+      alignment: Alignment.topLeft,
+      child: _buildTextContent(
+        context,
+        previewText,
+        textStyle,
+        maxLines,
       ),
     );
   }
@@ -1147,12 +1170,14 @@ class _ClipItemCardState extends State<ClipItemCard>
     BuildContext context,
     String content,
     TextStyle? style,
+    int maxLines,
   ) {
     if (widget.searchQuery == null || widget.searchQuery!.isEmpty) {
       return Text(
         content,
         style: style,
-        overflow: TextOverflow.clip,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
       );
     }
 
@@ -1161,7 +1186,8 @@ class _ClipItemCardState extends State<ClipItemCard>
       return Text(
         content,
         style: style,
-        overflow: TextOverflow.clip,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
       );
     }
 
@@ -1172,8 +1198,10 @@ class _ClipItemCardState extends State<ClipItemCard>
       style ?? const TextStyle(),
     );
 
-    return RichText(
-      text: TextSpan(children: spans),
+    return Text.rich(
+      TextSpan(children: spans),
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -1222,6 +1250,37 @@ class _ClipItemCardState extends State<ClipItemCard>
         ),
       ],
     );
+  }
+
+  String _resolveTextPreviewContent(String content) {
+    final limit = _resolveMaxPreviewCharacters();
+    if (content.length <= limit) {
+      return content;
+    }
+    final truncated = content.substring(0, limit).trimRight();
+    return '$truncated…';
+  }
+
+  int _resolveTextPreviewLines() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 5;
+      case DisplayMode.normal:
+        return 8;
+      case DisplayMode.preview:
+        return 14;
+    }
+  }
+
+  int _resolveMaxPreviewCharacters() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 400;
+      case DisplayMode.normal:
+        return 900;
+      case DisplayMode.preview:
+        return 1800;
+    }
   }
 
   // 辅助方法和配置
@@ -1450,6 +1509,35 @@ class _ClipItemCardState extends State<ClipItemCard>
     }
   }
 
+  String _resolveFileName(BuildContext context) {
+    final metadataName = widget.item.metadata['fileName'];
+    if (metadataName is String && metadataName.trim().isNotEmpty) {
+      return metadataName.trim();
+    }
+
+    final content = widget.item.content;
+    if (content != null && content.trim().isNotEmpty) {
+      return content.trim();
+    }
+
+    return S.of(context)?.unknownFile ?? I18nFallbacks.common.unknown;
+  }
+
+  String? _resolveMediaDurationLabel() {
+    final durationMs = widget.item.metadata['durationMs'] as int?;
+    final durationSecondsRaw = widget.item.metadata['durationSeconds'];
+    final durationFromSeconds = durationSecondsRaw is num
+        ? (durationSecondsRaw * 1000).round()
+        : null;
+    final resolvedDurationMs = durationMs ?? durationFromSeconds;
+
+    if (resolvedDurationMs == null || resolvedDurationMs <= 0) {
+      return null;
+    }
+
+    return _formatDuration(resolvedDurationMs);
+  }
+
   String _getTypeLabel() {
     switch (widget.item.type) {
       case ClipType.text:
@@ -1469,15 +1557,15 @@ class _ClipItemCardState extends State<ClipItemCard>
       case ClipType.video:
         return I18nCommonUtil.getClipTypeVideo(context);
       case ClipType.url:
-        return 'URL';
+        return I18nCommonUtil.getClipTypeUrl(context);
       case ClipType.email:
-        return 'Email';
+        return I18nCommonUtil.getClipTypeEmail(context);
       case ClipType.json:
-        return 'JSON';
+        return I18nCommonUtil.getClipTypeJson(context);
       case ClipType.xml:
-        return 'XML';
+        return I18nCommonUtil.getClipTypeXml(context);
       case ClipType.code:
-        return 'Code';
+        return I18nCommonUtil.getClipTypeCode(context);
     }
   }
 
@@ -1486,15 +1574,19 @@ class _ClipItemCardState extends State<ClipItemCard>
     final contentPreview = _getContentPreview();
     final timeAgo = _getTimeAgo(context);
 
-    return '$typeLabel：$contentPreview，$timeAgo';
+    return '$typeLabel: $contentPreview, $timeAgo';
   }
 
   String _getContentPreview() {
-    return ClipItemUtil.getItemTitle(widget.item);
+    return ClipItemUtil.getItemTitle(widget.item, l10n: S.of(context));
   }
 
   String _getTimeAgo(BuildContext context) {
-    return ClipItemUtil.formatDate(widget.item.createdAt);
+    return ClipItemUtil.formatDate(
+      widget.item.createdAt,
+      l10n: S.of(context),
+      locale: Localizations.maybeLocaleOf(context),
+    );
   }
 
   Widget _buildCompactStatsOrMetadata(BuildContext context) {
@@ -1502,8 +1594,6 @@ class _ClipItemCardState extends State<ClipItemCard>
       case ClipType.text:
       case ClipType.rtf:
       case ClipType.html:
-      case ClipType.audio:
-      case ClipType.video:
       case ClipType.url:
       case ClipType.email:
       case ClipType.json:
@@ -1515,6 +1605,8 @@ class _ClipItemCardState extends State<ClipItemCard>
         return _buildCompactImageMetadata(context);
 
       case ClipType.file:
+      case ClipType.audio:
+      case ClipType.video:
         return _buildCompactFileMetadata(context);
 
       case ClipType.color:
@@ -1576,11 +1668,27 @@ class _ClipItemCardState extends State<ClipItemCard>
 
   Widget _buildCompactContentStats(BuildContext context) {
     final content = widget.item.content ?? '';
+    final l10n = S.of(context);
+    const fallback = I18nFallbacks.common;
 
     // 计算统计信息
     final charCount = content.length;
     final wordCount = _calculateWordCount(content);
     final lineCount = content.split('\n').length;
+
+    final charCountText = _formatCount(charCount);
+    final wordCountText = _formatCount(wordCount);
+    final lineCountText = _formatCount(lineCount);
+
+    final charLabel =
+        l10n?.compactStatCharacters(charCountText) ??
+        fallback.statCharacters(charCountText);
+    final wordLabel =
+        l10n?.compactStatWords(wordCountText) ??
+        fallback.statWords(wordCountText);
+    final lineLabel =
+        l10n?.compactStatLines(lineCountText) ??
+        fallback.statLines(lineCountText);
 
     return Wrap(
       spacing: 6,
@@ -1589,20 +1697,20 @@ class _ClipItemCardState extends State<ClipItemCard>
         _buildCompactStatChip(
           context,
           Icons.text_fields,
-          '${_formatCount(charCount)}字符',
+          charLabel,
         ),
         if (wordCount > 0)
           _buildCompactStatChip(
             context,
             Icons.space_bar,
-            '${_formatCount(wordCount)}词',
+            wordLabel,
           ),
         // 在紧凑模式下隐藏行数以节省空间，避免越界
         if (lineCount > 1 && widget.displayMode != DisplayMode.compact)
           _buildCompactStatChip(
             context,
             Icons.format_align_left,
-            '${_formatCount(lineCount)}行',
+            lineLabel,
           ),
       ],
     );
@@ -1648,6 +1756,7 @@ class _ClipItemCardState extends State<ClipItemCard>
 
     final fileSize = widget.item.metadata['fileSize'] as int?;
     final fileType = widget.item.metadata['fileType'] as String?;
+    final durationLabel = _resolveMediaDurationLabel();
 
     if (fileType != null) {
       metadataItems.add(
@@ -1660,6 +1769,15 @@ class _ClipItemCardState extends State<ClipItemCard>
           context,
           Icons.storage,
           _formatFileSize(fileSize),
+        ),
+      );
+    }
+    if (durationLabel != null) {
+      metadataItems.add(
+        _buildCompactStatChip(
+          context,
+          Icons.av_timer,
+          durationLabel,
         ),
       );
     }
@@ -1729,6 +1847,18 @@ class _ClipItemCardState extends State<ClipItemCard>
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  String _formatDuration(int milliseconds) {
+    final duration = Duration(milliseconds: milliseconds);
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+
+    if (hours > 0) {
+      return '$hours:$minutes:$seconds';
+    }
+    return '$minutes:$seconds';
   }
 
   int _calculateWordCount(String content) {
