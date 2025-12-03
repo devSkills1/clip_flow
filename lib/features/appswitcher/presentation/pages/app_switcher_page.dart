@@ -235,7 +235,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     return ModernWindowHeader(
       title: l10n.appName,
       subtitle: l10n.appSwitcherTitle,
-      margin: const EdgeInsets.fromLTRB(32, 16, 32, 10),
+      margin: const EdgeInsets.fromLTRB(23, 16, 23, 10),
       actions: [
         _buildBackAction(l10n),
       ],
