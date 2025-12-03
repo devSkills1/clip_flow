@@ -328,8 +328,20 @@
   "filterClearHistoryButton": "Clear History",
   "@filterClearHistoryButton": {"description": "Sidebar - clear history button"},
 
+  "filterClearSearchButton": "Clear Search",
+  "@filterClearSearchButton": {"description": "Sidebar - clear search button"},
+
+  "filterClearAllUnfavoritedButton": "Clear Unfavorited",
+  "@filterClearAllUnfavoritedButton": {"description": "Sidebar - clear all unfavorited button"},
+
+  "filterClearAllButton": "Clear All",
+  "@filterClearAllButton": {"description": "Sidebar - clear all button"},
+
   "filterConfirmClearTitle": "Confirm Clear",
   "@filterConfirmClearTitle": {"description": "Sidebar - confirm clear dialog title"},
+
+  "filterConfirmClearContent": "Are you sure you want to clear the history?\n\nThis will delete all [unfavorited] items and keep favorites.\nThis action cannot be undone.",
+  "@filterConfirmClearContent": {"description": "Sidebar - confirm clear dialog content"},
 
   "searchHint": "Search clipboard history...",
   "@searchHint": {"description": "Search box hint text"},
