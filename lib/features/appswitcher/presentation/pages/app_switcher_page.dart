@@ -37,6 +37,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   void initState() {
     super.initState();
     _loadData();
+    _scrollController.addListener(_handleScrollActivity);
     // 自动滚动到选中项
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelectedIndex();
@@ -58,6 +59,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScrollActivity);
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -66,6 +68,13 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   /// 处理用户交互，重置自动隐藏定时器
   void _onUserInteraction() {
     ref.read(autoHideServiceProvider).onUserInteraction();
+  }
+
+  void _handleScrollActivity() {
+    if (!mounted) {
+      return;
+    }
+    _onUserInteraction();
   }
 
   Future<void> _loadData() async {
@@ -271,8 +280,12 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     return EnhancedSearchBar(
       controller: _searchController,
       hintText: l10n.searchHint,
-      onChanged: _filterItems,
+      onChanged: (query) {
+        _onUserInteraction();
+        _filterItems(query);
+      },
       onClear: () {
+        _onUserInteraction();
         _searchController.clear();
         _filterItems('');
       },
