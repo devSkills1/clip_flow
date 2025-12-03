@@ -134,6 +134,12 @@ class _HomeFallback {
 
   /// 搜索提示
   String get searchHint => '搜索剪贴板历史...';
+
+  /// OCR 文本存在但功能被关闭提示
+  String get ocrDisabledHint => '检测到OCR文本，但OCR功能已禁用。请在设置中启用。';
+
+  /// OCR 识别失败提示
+  String get ocrFailedHint => 'OCR识别失败，请稍后重试。';
 }
 
 class _SettingsFallback {

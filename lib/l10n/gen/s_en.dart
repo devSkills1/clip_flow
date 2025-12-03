@@ -105,6 +105,14 @@ class SEn extends S {
       'Automatically recognize text in images';
 
   @override
+  String get clipCardOcrDisabledHint =>
+      'OCR text detected but the feature is disabled. Enable it in Settings.';
+
+  @override
+  String get clipCardOcrFailedHint =>
+      'OCR failed or confidence is below the minimum threshold.';
+
+  @override
   String get appearanceThemeModeTitle => 'Theme mode';
 
   @override

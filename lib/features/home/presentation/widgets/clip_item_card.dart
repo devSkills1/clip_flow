@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:clip_flow_pro/core/constants/colors.dart';
+import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
@@ -370,23 +371,34 @@ class _ClipItemCardState extends State<ClipItemCard>
   Widget _buildContentArea(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final effectiveMaxHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : _getMaxCardHeight(context);
         return ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: constraints.maxWidth,
-            maxHeight: constraints.maxHeight,
+            maxHeight: effectiveMaxHeight,
           ),
-          child: _buildContentPreview(context, constraints.maxWidth),
+          child: _buildContentPreview(
+            context,
+            constraints.maxWidth,
+            effectiveMaxHeight,
+          ),
         );
       },
     );
   }
 
-  Widget _buildContentPreview(BuildContext context, double availableWidth) {
+  Widget _buildContentPreview(
+    BuildContext context,
+    double availableWidth,
+    double availableHeight,
+  ) {
     switch (widget.item.type) {
       case ClipType.color:
         return _buildColorPreview(context);
       case ClipType.image:
-        return _buildImagePreview(context, availableWidth);
+        return _buildImagePreview(context, availableWidth, availableHeight);
       case ClipType.file:
         return _buildFilePreview(context);
       case ClipType.text:
@@ -467,14 +479,22 @@ class _ClipItemCardState extends State<ClipItemCard>
     );
   }
 
-  Widget _buildImagePreview(BuildContext context, double availableWidth) {
+  Widget _buildImagePreview(
+    BuildContext context,
+    double availableWidth,
+    double availableHeight,
+  ) {
     return Consumer(
       builder: (context, ref, child) {
         // 获取OCR设置状态
         final preferences = ref.watch(userPreferencesProvider);
         final isOcrEnabled = preferences.enableOCR;
         final hasOcrText =
-            widget.item.ocrText != null && widget.item.ocrText!.isNotEmpty;
+            widget.item.ocrText != null &&
+            widget.item.ocrText!.trim().isNotEmpty;
+        final ocrErrorRaw = widget.item.metadata['ocrError'] as String?;
+        final hasOcrError =
+            ocrErrorRaw != null && ocrErrorRaw.trim().isNotEmpty;
 
         // 添加调试日志
         if (widget.item.type == ClipType.image) {
@@ -488,13 +508,15 @@ class _ClipItemCardState extends State<ClipItemCard>
                 'hasOcrText': hasOcrText,
                 'ocrTextLength': widget.item.ocrText?.length ?? 0,
                 'enableOcrCopy': widget.enableOcrCopy,
+                'hasOcrError': hasOcrError,
+                'layoutMode': isOcrEnabled ? 'side_by_side' : 'image_only',
               },
             ),
           );
         }
 
-        // 如果开启OCR且有OCR文本，使用并排布局
-        if (isOcrEnabled && hasOcrText) {
+        // 如果开启OCR，始终使用并排布局
+        if (isOcrEnabled) {
           unawaited(
             Log.d(
               'Building image with OCR side-by-side layout',
@@ -505,63 +527,28 @@ class _ClipItemCardState extends State<ClipItemCard>
                 'hasOcrText': hasOcrText,
                 'enableOcrCopy': widget.enableOcrCopy,
                 'hasOcrCallback': widget.onOcrTextTap != null,
+                'hasOcrError': hasOcrError,
+                'layoutMode': 'side_by_side',
               },
             ),
           );
-          return _buildImageWithOcrSideBySide(context, availableWidth, ref);
+          return _buildImageWithOcrSideBySide(
+            context,
+            availableWidth,
+            availableHeight,
+            hasOcrText: hasOcrText,
+            hasOcrError: hasOcrError,
+          );
         }
 
-        // 否则使用垂直布局（仅图片）
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 图片预览
-            Flexible(
-              child: _buildImageWidget(context, availableWidth),
-            ),
-
-            // 如果OCR被禁用但有OCR文本，显示提示
-            if (!isOcrEnabled && hasOcrText)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outline.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '检测到OCR文本，但OCR功能已禁用。请在设置中启用。',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
+        // OCR关闭：仅展示图片
+        return Align(
+          alignment: Alignment.topLeft,
+          child: _buildImageWidget(
+            context,
+            availableWidth,
+            maxHeight: availableHeight,
+          ),
         );
       },
     );
@@ -570,46 +557,135 @@ class _ClipItemCardState extends State<ClipItemCard>
   Widget _buildImageWithOcrSideBySide(
     BuildContext context,
     double availableWidth,
-    WidgetRef ref,
-  ) {
+    double availableHeight, {
+    required bool hasOcrText,
+    required bool hasOcrError,
+  }) {
     // 计算间距
     const spacing = 8.0; // 固定间距
 
     // 计算可用宽度（减去间距后，平分给图片和OCR）
     final remainingWidth = availableWidth - spacing;
     final imageWidth = remainingWidth / 2; // 图片和OCR各占一半
+    final safeHeight = availableHeight.isFinite && availableHeight > 0
+        ? availableHeight
+        : null;
+    final resolvedMaxHeight = _resolveImageHeightConstraint(safeHeight);
     final imageDisplaySize = _calculateImageDisplaySize(imageWidth);
+    final constrainedSize = _clampImageSize(
+      imageDisplaySize,
+      resolvedMaxHeight,
+    );
 
-    return SizedBox(
-      width: availableWidth,
-      height: imageDisplaySize.height, // 明确设置整个Row的高度
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch, // 让子项拉伸到填满高度
-        children: [
-          // 左侧：图片预览
-          SizedBox(
-            width: imageWidth,
-            child: _buildImageWidget(context, imageWidth),
-          ),
-
-          // 间距
-          const SizedBox(width: spacing),
-
-          // 右侧：OCR文本 - 填充剩余空间和高度
-          Expanded(
-            child: _buildCompactOcrTextPreviewWithHeight(
-              context,
-              imageDisplaySize.height,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: resolvedMaxHeight,
+      ),
+      child: SizedBox(
+        width: availableWidth,
+        height: constrainedSize.height,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch, // 让子项拉伸到填满高度
+          children: [
+            // 左侧：图片预览
+            SizedBox(
+              width: imageWidth,
+              child: _buildImageWidget(
+                context,
+                imageWidth,
+                maxHeight: constrainedSize.height,
+              ),
             ),
-          ),
-        ],
+
+            // 间距
+            const SizedBox(width: spacing),
+
+            // 右侧：OCR文本 - 填充剩余空间和高度
+            Expanded(
+              child: hasOcrText
+                  ? _buildCompactOcrTextPreviewWithHeight(
+                      context,
+                      constrainedSize.height,
+                    )
+                  : _buildOcrFallbackPanel(
+                      context,
+                      constrainedSize.height,
+                      isError: hasOcrError || !hasOcrText,
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildImageWidget(BuildContext context, double availableWidth) {
+  Widget _buildOcrFallbackPanel(
+    BuildContext context,
+    double height, {
+    bool isError = false,
+  }) {
+    final theme = Theme.of(context);
+    final message = I18nCommonUtil.getText(
+      context,
+      (l10n) => l10n.clipCardOcrFailedHint,
+      I18nFallbacks.home.ocrFailedHint,
+    );
+    final foregroundColor = isError
+        ? theme.colorScheme.error
+        : theme.colorScheme.onSurfaceVariant;
+    final backgroundColor = isError
+        ? theme.colorScheme.errorContainer.withValues(alpha: 0.4)
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final borderColor = isError
+        ? theme.colorScheme.error.withValues(alpha: 0.4)
+        : theme.colorScheme.outline.withValues(alpha: 0.2);
+
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 20,
+                color: foregroundColor,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: foregroundColor,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageWidget(
+    BuildContext context,
+    double availableWidth, {
+    double? maxHeight,
+  }) {
     final theme = Theme.of(context);
     final imageDisplaySize = _calculateImageDisplaySize(availableWidth);
+    final constrainedSize = _clampImageSize(
+      imageDisplaySize,
+      _resolveImageHeightConstraint(maxHeight),
+    );
 
     return Material(
       color: Colors.transparent,
@@ -623,8 +699,8 @@ class _ClipItemCardState extends State<ClipItemCard>
         splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
         highlightColor: theme.colorScheme.primary.withValues(alpha: 0.05),
         child: Container(
-          width: imageDisplaySize.width,
-          height: imageDisplaySize.height,
+          width: constrainedSize.width,
+          height: constrainedSize.height,
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest.withValues(
               alpha: 0.5,
@@ -638,7 +714,7 @@ class _ClipItemCardState extends State<ClipItemCard>
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: _buildImageContent(context, imageDisplaySize),
+            child: _buildImageContent(context, constrainedSize),
           ),
         ),
       ),
@@ -752,8 +828,7 @@ class _ClipItemCardState extends State<ClipItemCard>
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: _buildAdaptivePlaceholderBody(
           children: [
             Icon(
               Icons.broken_image,
@@ -786,8 +861,7 @@ class _ClipItemCardState extends State<ClipItemCard>
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: _buildAdaptivePlaceholderBody(
           children: [
             SizedBox(
               width: 24,
@@ -808,6 +882,19 @@ class _ClipItemCardState extends State<ClipItemCard>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdaptivePlaceholderBody({required List<Widget> children}) {
+    return ClipRect(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: children,
         ),
       ),
     );
@@ -1253,22 +1340,63 @@ class _ClipItemCardState extends State<ClipItemCard>
       },
     );
 
-    // 从metadata中获取图片尺寸
     final metadataWidth = widget.item.metadata['width'] as int?;
     final metadataHeight = widget.item.metadata['height'] as int?;
-
-    if (metadataWidth == null || metadataHeight == null) {
-      return Size(maxWidth, maxWidth * 0.75); // 默认4:3比例
-    }
-
-    final originWidth = metadataWidth.toDouble();
-    final originHeight = metadataHeight.toDouble();
-    final aspectRatio = originWidth / originHeight;
+    final aspectRatio = _resolveAspectRatio(metadataWidth, metadataHeight);
+    final originWidth = metadataWidth?.toDouble() ?? maxWidth;
 
     final displayWidth = math.min(maxWidth, originWidth);
-    final displayHeight = displayWidth / aspectRatio;
+    final maxHeightFromMode = _getImageHeightLimit();
+    final maxWidthFromHeight = maxHeightFromMode * aspectRatio;
+    final constrainedWidth = math.min(displayWidth, maxWidthFromHeight);
+    final displayHeight = constrainedWidth / aspectRatio;
 
-    return Size(displayWidth, displayHeight);
+    return Size(constrainedWidth, displayHeight);
+  }
+
+  double _resolveAspectRatio(int? width, int? height) {
+    if (width == null || height == null || height <= 0) {
+      return 4 / 3;
+    }
+    if (width <= 0) {
+      return 4 / 3;
+    }
+    return width / height;
+  }
+
+  double _getImageHeightLimit() {
+    switch (widget.displayMode) {
+      case DisplayMode.compact:
+        return 90;
+      case DisplayMode.normal:
+        return 180;
+      case DisplayMode.preview:
+        return 340;
+    }
+  }
+
+  double _resolveImageHeightConstraint(double? constraintHeight) {
+    final modeLimit = _getImageHeightLimit();
+    if (constraintHeight == null || !constraintHeight.isFinite) {
+      return modeLimit;
+    }
+    return math.min(constraintHeight, modeLimit);
+  }
+
+  Size _clampImageSize(Size original, double? maxHeight) {
+    if (maxHeight == null || !maxHeight.isFinite || maxHeight <= 0) {
+      return original;
+    }
+
+    if (original.height <= maxHeight) {
+      return original;
+    }
+
+    final aspectRatio = original.width / original.height;
+    final clampedHeight = maxHeight;
+    final clampedWidth = clampedHeight * aspectRatio;
+
+    return Size(clampedWidth, clampedHeight);
   }
 
   Future<String?> _resolveAbsoluteImagePath(String path) async {

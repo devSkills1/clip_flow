@@ -259,6 +259,18 @@ abstract class S {
   /// **'Automatically recognize text in images'**
   String get securityEnableOcrSubtitle;
 
+  /// Clip item card hint shown when OCR text exists but OCR is globally disabled
+  ///
+  /// In en, this message translates to:
+  /// **'OCR text detected but the feature is disabled. Enable it in Settings.'**
+  String get clipCardOcrDisabledHint;
+
+  /// Clip item card hint shown when OCR recognition fails
+  ///
+  /// In en, this message translates to:
+  /// **'OCR failed or confidence is below the minimum threshold.'**
+  String get clipCardOcrFailedHint;
+
   /// Appearance - Theme mode - title
   ///
   /// In en, this message translates to:
