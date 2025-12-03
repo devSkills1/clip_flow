@@ -12,6 +12,7 @@ import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
 import 'package:clip_flow_pro/core/utils/color_utils.dart';
 import 'package:clip_flow_pro/core/utils/i18n_common_util.dart';
+import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -653,7 +654,8 @@ class _ClipItemCardState extends State<ClipItemCard>
         fields: {
           'itemId': widget.item.id,
           'hasThumbnail':
-              widget.item.thumbnail != null && widget.item.thumbnail!.isNotEmpty,
+              widget.item.thumbnail != null &&
+              widget.item.thumbnail!.isNotEmpty,
           'hasFilePath':
               widget.item.filePath != null && widget.item.filePath!.isNotEmpty,
           'thumbnailSize': widget.item.thumbnail?.length ?? 0,
@@ -773,7 +775,6 @@ class _ClipItemCardState extends State<ClipItemCard>
     );
   }
 
-  
   Widget _buildLoadingPlaceholder(BuildContext context, Size size) {
     final theme = Theme.of(context);
 
@@ -1393,6 +1394,58 @@ class _ClipItemCardState extends State<ClipItemCard>
     }
   }
 
+  String _formatCount(int count) {
+    final l10n = S.of(context);
+    if (l10n == null) return count.toString();
+
+    final locale = Localizations.localeOf(context);
+
+    // 根据语言选择不同的格式化策略
+    if (locale.languageCode == 'zh') {
+      return _formatCountChinese(count, l10n);
+    } else {
+      return _formatCountEnglish(count, l10n);
+    }
+  }
+
+  // 中文环境：
+  // - 5,000 → 5000
+  // - 12,000 → 1.2万+
+  // - 1,000,000 → 100万+
+  // - 150,000,000 → 1.5亿+
+  String _formatCountChinese(int count, S l10n) {
+    if (count < 10000) return count.toString();
+    // 1万 - 1亿
+    if (count < 100000000) {
+      final value = (count / 10000).toStringAsFixed(1);
+      final unit = l10n.formatCountTenThousand;
+      return '${value.endsWith(".0") ? value.substring(0, value.length - 2) : value}$unit+';
+    }
+    // 1亿以上
+    final value = (count / 100000000).toStringAsFixed(1);
+    final unit = l10n.formatCountHundredMillion;
+    return '${value.endsWith(".0") ? value.substring(0, value.length - 2) : value}$unit+';
+  }
+
+  // 英文环境：
+  // - 5,000 → 5k
+  // - 12,000 → 12k
+  // - 1,000,000 → 1M
+  // - 150,000,000 → 150M
+  String _formatCountEnglish(int count, S l10n) {
+    if (count < 1000) return count.toString();
+    if (count < 1000000) {
+      final value = (count / 1000).toStringAsFixed(1);
+      return '${value.endsWith(".0") ? value.substring(0, value.length - 2) : value}${l10n.formatCountThousand}';
+    }
+    if (count < 1000000000) {
+      final value = (count / 1000000).toStringAsFixed(1);
+      return '${value.endsWith(".0") ? value.substring(0, value.length - 2) : value}${l10n.formatCountMillion}';
+    }
+    final value = (count / 1000000000).toStringAsFixed(1);
+    return '${value.endsWith(".0") ? value.substring(0, value.length - 2) : value}${l10n.formatCountBillion}';
+  }
+
   Widget _buildCompactContentStats(BuildContext context) {
     final content = widget.item.content ?? '';
 
@@ -1405,14 +1458,23 @@ class _ClipItemCardState extends State<ClipItemCard>
       spacing: 6,
       runSpacing: 3,
       children: [
-        _buildCompactStatChip(context, Icons.text_fields, '$charCount字符'),
+        _buildCompactStatChip(
+          context,
+          Icons.text_fields,
+          '${_formatCount(charCount)}字符',
+        ),
         if (wordCount > 0)
-          _buildCompactStatChip(context, Icons.space_bar, '$wordCount词'),
-        if (lineCount > 1)
+          _buildCompactStatChip(
+            context,
+            Icons.space_bar,
+            '${_formatCount(wordCount)}词',
+          ),
+        // 在紧凑模式下隐藏行数以节省空间，避免越界
+        if (lineCount > 1 && widget.displayMode != DisplayMode.compact)
           _buildCompactStatChip(
             context,
             Icons.format_align_left,
-            '$lineCount行',
+            '${_formatCount(lineCount)}行',
           ),
       ],
     );

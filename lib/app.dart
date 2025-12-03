@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
@@ -56,8 +57,6 @@ class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
     ref.read(hotkeyServiceProvider).registerActionCallback(
       HotkeyAction.toggleWindow,
       () async {
-        // ignore: avoid_print
-        print('🔍 [App] Hotkey toggleWindow triggered');
         // 标记为快捷键唤起
         ref.read(windowActivationSourceProvider.notifier).state =
             WindowActivationSource.hotkey;

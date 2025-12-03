@@ -287,6 +287,21 @@ class _SettingsFallback {
   /// 设置页操作：检查更新 标题
   String get actionCheckUpdateTitle => '检查更新';
 
+  /// 数字格式化：千单位
+  String get formatCountThousand => '千';
+
+  /// 数字格式化：万单位
+  String get formatCountTenThousand => '万';
+
+  /// 数字格式化：亿单位
+  String get formatCountHundredMillion => '亿';
+
+  /// 数字格式化：百万单位
+  String get formatCountMillion => '百万';
+
+  /// 数字格式化：十亿单位
+  String get formatCountBillion => '十亿';
+
   /// 设置页操作：检查更新 副标题
   String get actionCheckUpdateSubtitle => '检查最新版本';
 

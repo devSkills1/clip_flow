@@ -342,6 +342,21 @@ class SZh extends S {
   String get clipTypeImage => '图片';
 
   @override
+  String get formatCountThousand => '千';
+
+  @override
+  String get formatCountTenThousand => '万';
+
+  @override
+  String get formatCountHundredMillion => '亿';
+
+  @override
+  String get formatCountMillion => '百万';
+
+  @override
+  String get formatCountBillion => '十亿';
+
+  @override
   String get clipTypeColor => '颜色';
 
   @override

@@ -227,18 +227,22 @@ class PermissionService {
   /// 清除特定权限的缓存
   void clearCache(PermissionType type) {
     _permissionCache.remove(type);
-    Log.d(
-      'Permission cache cleared: $type',
-      tag: 'permission_service',
+    unawaited(
+      Log.d(
+        'Permission cache cleared: $type',
+        tag: 'permission_service',
+      ),
     );
   }
 
   /// 清除所有权限缓存
   void clearAllCache() {
     _permissionCache.clear();
-    Log.d(
-      'All permission cache cleared',
-      tag: 'permission_service',
+    unawaited(
+      Log.d(
+        'All permission cache cleared',
+        tag: 'permission_service',
+      ),
     );
   }
 
@@ -330,9 +334,11 @@ class PermissionService {
     }
 
     if (expiredKeys.isNotEmpty) {
-      Log.d(
-        'Cleaned up ${expiredKeys.length} expired permission cache entries',
-        tag: 'permission_service',
+      unawaited(
+        Log.d(
+          'Cleaned up ${expiredKeys.length} expired permission cache entries',
+          tag: 'permission_service',
+        ),
       );
     }
   }

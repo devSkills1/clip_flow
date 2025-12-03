@@ -379,6 +379,21 @@
   "clipTypeImage": "Image",
   "@clipTypeImage": {"description": "Clipboard type - image"},
 
+  "formatCountThousand": "k",
+  "@formatCountThousand": {"description": "Number formatting - thousand unit"},
+
+  "formatCountTenThousand": "k",
+  "@formatCountTenThousand": {"description": "Number formatting - ten thousand unit"},
+
+  "formatCountHundredMillion": "M",
+  "@formatCountHundredMillion": {"description": "Number formatting - hundred million unit"},
+
+  "formatCountMillion": "M",
+  "@formatCountMillion": {"description": "Number formatting - million unit"},
+
+  "formatCountBillion": "B",
+  "@formatCountBillion": {"description": "Number formatting - billion unit"},
+
   "clipTypeColor": "Color",
   "@clipTypeColor": {"description": "Clipboard type - color"},
 

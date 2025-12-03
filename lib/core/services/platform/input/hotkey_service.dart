@@ -273,13 +273,13 @@ class HotkeyService {
   /// 注册快捷键动作回调
   void registerActionCallback(HotkeyAction action, VoidCallback callback) {
     _actionCallbacks[action] = callback;
-    Log.d('注册快捷键动作回调', tag: _tag, fields: {'action': action.name});
+    unawaited(Log.d('注册快捷键动作回调', tag: _tag, fields: {'action': action.name}));
   }
 
   /// 取消注册快捷键动作回调
   void unregisterActionCallback(HotkeyAction action) {
     _actionCallbacks.remove(action);
-    Log.d('取消注册快捷键动作回调', tag: _tag, fields: {'action': action.name});
+    unawaited(Log.d('取消注册快捷键动作回调', tag: _tag, fields: {'action': action.name}));
   }
 
   /// 注册快捷键

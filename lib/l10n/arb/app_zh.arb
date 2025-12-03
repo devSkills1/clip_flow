@@ -377,6 +377,21 @@
   "clipTypeImage": "图片",
   "@clipTypeImage": {"description": "剪贴板类型-图片"},
 
+  "formatCountThousand": "千",
+  "@formatCountThousand": {"description": "数字格式化-千单位"},
+
+  "formatCountTenThousand": "万",
+  "@formatCountTenThousand": {"description": "数字格式化-万单位"},
+
+  "formatCountHundredMillion": "亿",
+  "@formatCountHundredMillion": {"description": "数字格式化-亿单位"},
+
+  "formatCountMillion": "百万",
+  "@formatCountMillion": {"description": "数字格式化-百万单位"},
+
+  "formatCountBillion": "十亿",
+  "@formatCountBillion": {"description": "数字格式化-十亿单位"},
+
   "clipTypeColor": "颜色",
   "@clipTypeColor": {"description": "剪贴板类型-颜色"},
 
