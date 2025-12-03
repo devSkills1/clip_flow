@@ -4,6 +4,19 @@ import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 
 /// Color utilities for validating and converting between HEX/RGB/HSL.
 class ColorUtils {
+  static final RegExp _hexColorRegExp = RegExp(ClipConstants.hexColorPattern);
+  static final RegExp _rgbColorRegExp = RegExp(ClipConstants.rgbColorPattern);
+  static final RegExp _rgbaColorRegExp = RegExp(ClipConstants.rgbaColorPattern);
+  static final RegExp _hslColorRegExp = RegExp(ClipConstants.hslColorPattern);
+  static final RegExp _hslaColorRegExp = RegExp(ClipConstants.hslaColorPattern);
+  static final RegExp _hex3RegExp = RegExp(r'^#[0-9A-Fa-f]{3}$');
+  static final RegExp _hex4RegExp = RegExp(r'^#[0-9A-Fa-f]{4}$');
+  static final RegExp _hex6RegExp = RegExp(r'^#[0-9A-Fa-f]{6}$');
+  static final RegExp _hex8RegExp = RegExp(r'^#[0-9A-Fa-f]{8}$');
+  static final RegExp _shortHexRegExp = RegExp(r'^[0-9A-Fa-f]{3,4}$');
+  static final RegExp _longHexRegExp = RegExp(r'^[0-9A-Fa-f]{6}$');
+  static final RegExp _longHexWithAlphaRegExp = RegExp(r'^[0-9A-Fa-f]{8}$');
+
   // 检测是否为颜色值
   /// Returns true if [value] matches supported color formats (HEX/RGB/HSL).
   static bool isColorValue(String value) {
@@ -29,19 +42,16 @@ class ColorUtils {
   // HEX颜色检测（支持 #RGB/#RRGGBB 以及带透明度的 #RGBA/#RRGGBBAA）、
   // 兼容有#号、无#号
   static bool _isHexColor(String value) {
-    final hexPattern = RegExp(ClipConstants.hexColorPattern);
-    return hexPattern.hasMatch(value);
+    return _hexColorRegExp.hasMatch(value);
   }
 
   // RGB颜色检测（仅检测 rgb(r,g,b) 格式）
   static bool _isRgbColor(String value) {
-    final rgbPattern = RegExp(ClipConstants.rgbColorPattern);
-
-    if (!rgbPattern.hasMatch(value)) {
+    if (!_rgbColorRegExp.hasMatch(value)) {
       return false;
     }
 
-    final match = rgbPattern.firstMatch(value);
+    final match = _rgbColorRegExp.firstMatch(value);
     if (match == null) return false;
 
     final r = int.parse(match.group(1)!);
@@ -53,13 +63,11 @@ class ColorUtils {
 
   // RGBA颜色检测（专门检测 rgba(r,g,b,a) 格式）
   static bool _isRgbaColor(String value) {
-    final rgbaPattern = RegExp(ClipConstants.rgbaColorPattern);
-
-    if (!rgbaPattern.hasMatch(value)) {
+    if (!_rgbaColorRegExp.hasMatch(value)) {
       return false;
     }
 
-    final match = rgbaPattern.firstMatch(value);
+    final match = _rgbaColorRegExp.firstMatch(value);
     if (match == null) return false;
 
     final r = int.parse(match.group(1)!);
@@ -76,10 +84,9 @@ class ColorUtils {
 
   // HSL颜色检测（仅检测 hsl(h,s%,l%) 格式）
   static bool _isHslColor(String value) {
-    final hslPattern = RegExp(ClipConstants.hslColorPattern);
-    if (!hslPattern.hasMatch(value)) return false;
+    if (!_hslColorRegExp.hasMatch(value)) return false;
 
-    final match = hslPattern.firstMatch(value);
+    final match = _hslColorRegExp.firstMatch(value);
     if (match == null) return false;
 
     final h = int.parse(match.group(1)!);
@@ -91,10 +98,9 @@ class ColorUtils {
 
   // HSLA颜色检测（专门检测 hsla(h,s%,l%,a) 格式）
   static bool _isHslaColor(String value) {
-    final hslaPattern = RegExp(ClipConstants.hslaColorPattern);
-    if (!hslaPattern.hasMatch(value)) return false;
+    if (!_hslaColorRegExp.hasMatch(value)) return false;
 
-    final match = hslaPattern.firstMatch(value);
+    final match = _hslaColorRegExp.firstMatch(value);
     if (match == null) return false;
 
     final h = int.parse(match.group(1)!);
@@ -113,42 +119,19 @@ class ColorUtils {
   /// Converts HEX (supports #RGB/#RGBA/#RRGGBB/#RRGGBBAA) to RGB map.
   /// Returns {'r':R,'g':G,'b':B}.
   static Map<String, int> hexToRgb(String hex) {
-    var processedHex = hex.replaceFirst('#', '');
-    if (processedHex.length == 3) {
-      // #RGB => #RRGGBB
-      processedHex = processedHex.split('').map((c) => c + c).join();
-    } else if (processedHex.length == 4) {
-      // #RGBA => #RRGGBBAA
-      processedHex = processedHex.split('').map((c) => c + c).join();
-    }
-
-    if (processedHex.length == 8) {
-      // #RRGGBBAA => 仅取 RRGGBB，忽略末尾 AA
-      processedHex = processedHex.substring(0, 6);
-    }
-
-    final r = int.parse(
-      processedHex.substring(0, 2),
-      radix: ClipConstants.hexRadix,
-    );
-    final g = int.parse(
-      processedHex.substring(2, 4),
-      radix: ClipConstants.hexRadix,
-    );
-    final b = int.parse(
-      processedHex.substring(4, 6),
-      radix: ClipConstants.hexRadix,
-    );
-
-    return {'r': r, 'g': g, 'b': b};
+    final color = hexToColor(hex);
+    return {
+      'r': _channelR(color),
+      'g': _channelG(color),
+      'b': _channelB(color),
+    };
   }
 
   // RGB转HEX
   /// Converts RGB to hex string (#RRGGBB).
   static String rgbToHex(int r, int g, int b) {
-    return '#${r.toRadixString(16).padLeft(2, '0')}'
-        '${g.toRadixString(16).padLeft(2, '0')}'
-        '${b.toRadixString(16).padLeft(2, '0')}';
+    String component(int value) => value.toRadixString(16).padLeft(2, '0');
+    return '#${component(r)}${component(g)}${component(b)}'.toUpperCase();
   }
 
   // HEX转HSL
@@ -302,13 +285,17 @@ class ColorUtils {
     bool withHash = true,
     bool upperCase = false,
   }) {
-    final r = (color.r * 255).round() & 0xff;
-    final g = (color.g * 255).round() & 0xff;
-    final b = (color.b * 255).round() & 0xff;
-    final a = (color.a * 255).round() & 0xff;
-
-    final hex = includeAlpha ? '$r$g$b$a' : '$r$g$b'; // 使用 CSS 风格的 RRGGBBAA
-    final out = withHash ? '#$hex' : hex;
+    String component(int value) => value.toRadixString(16).padLeft(2, '0');
+    final buffer = StringBuffer();
+    if (withHash) buffer.write('#');
+    buffer
+      ..write(component(_channelR(color)))
+      ..write(component(_channelG(color)))
+      ..write(component(_channelB(color)));
+    if (includeAlpha) {
+      buffer.write(component(_channelA(color)));
+    }
+    final out = buffer.toString();
     return upperCase ? out.toUpperCase() : out;
   }
 
@@ -319,24 +306,38 @@ class ColorUtils {
     final trimmed = color.trim();
 
     // 如果已经是 #RRGGBB 格式，直接返回
-    if (RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(trimmed)) {
+    if (_hex6RegExp.hasMatch(trimmed)) {
       return trimmed.toUpperCase();
     }
 
+    if (_hex8RegExp.hasMatch(trimmed)) {
+      return '#${trimmed.substring(1, 7)}'.toUpperCase();
+    }
+
     // 如果是 #RGB 格式，转换为 #RRGGBB
-    if (RegExp(r'^#[0-9A-Fa-f]{3}$').hasMatch(trimmed)) {
+    if (_hex3RegExp.hasMatch(trimmed)) {
       final hex = trimmed.substring(1);
       final expanded = hex.split('').map((c) => c + c).join();
       return '#$expanded'.toUpperCase();
     }
 
+    if (_hex4RegExp.hasMatch(trimmed)) {
+      final hex = trimmed.substring(1);
+      final expanded = hex.split('').map((c) => c + c).join();
+      return '#${expanded.substring(0, 6)}'.toUpperCase();
+    }
+
     // 如果没有 # 号的 6 位十六进制，添加 # 号
-    if (RegExp(r'^[0-9A-Fa-f]{6}$').hasMatch(trimmed)) {
+    if (_longHexRegExp.hasMatch(trimmed)) {
       return '#$trimmed'.toUpperCase();
     }
 
+    if (_longHexWithAlphaRegExp.hasMatch(trimmed)) {
+      return '#${trimmed.substring(0, 6)}'.toUpperCase();
+    }
+
     // 如果是 3 位无 # 号，转换为 #RRGGBB
-    if (RegExp(r'^[0-9A-Fa-f]{3}$').hasMatch(trimmed)) {
+    if (_shortHexRegExp.hasMatch(trimmed)) {
       final expanded = trimmed.split('').map((c) => c + c).join();
       return '#$expanded'.toUpperCase();
     }
@@ -362,20 +363,39 @@ class ColorUtils {
       throw FormatException('Invalid hex color: $hex');
     }
 
-    // #RGB/#RGBA -> #RRGGBB/#RRGGBBAA
-    if (value.length == 3 || value.length == 4) {
+    final normalized = _normalizeToArgb(value);
+    final argb = int.parse(normalized, radix: ClipConstants.hexRadix);
+    return Color(argb);
+  }
+
+  static String _normalizeToArgb(String input) {
+    var value = input;
+    if (_shortHexRegExp.hasMatch(value)) {
       value = value.split('').map((c) => c + c).join();
     }
 
-    // 若无透明度，默认 0xFF
     if (value.length == 6) {
-      value = 'FF$value'; // AARRGGBB
-    } else if (value.length == 8) {
-      // 从 RRGGBBAA 转为 AARRGGBB（Color 构造函数使用 ARGB）
-      value = value.substring(6, 8) + value.substring(0, 6);
+      return 'FF${value.toUpperCase()}';
     }
 
-    final argb = int.parse(value, radix: ClipConstants.hexRadix);
-    return Color(argb);
+    if (value.length == 8) {
+      final rgb = value.substring(0, 6).toUpperCase();
+      final alpha = value.substring(6, 8).toUpperCase();
+      return '$alpha$rgb';
+    }
+
+    throw FormatException('Unsupported hex format: $input');
+  }
+
+  static int _channelR(Color color) => _channelFromUnit(color.r);
+  static int _channelG(Color color) => _channelFromUnit(color.g);
+  static int _channelB(Color color) => _channelFromUnit(color.b);
+  static int _channelA(Color color) => _channelFromUnit(color.a);
+
+  static int _channelFromUnit(double value) {
+    final scaled = (value * 255.0).round();
+    if (scaled < 0) return 0;
+    if (scaled > 255) return 255;
+    return scaled;
   }
 }
