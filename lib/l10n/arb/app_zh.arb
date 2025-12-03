@@ -116,6 +116,16 @@
   "securityEnableOcrSubtitle": "自动识别图片中的文字",
   "@securityEnableOcrSubtitle": {"description": "安全-启用OCR-说明"},
 
+  "clipCardOcrDisabledHint": "检测到OCR文本，但OCR功能已禁用。请在设置中启用。",
+  "@clipCardOcrDisabledHint": {
+    "description": "卡片提示：存在OCR文本但功能被全局关闭"
+  },
+
+  "clipCardOcrFailedHint": "OCR识别失败，或置信度低于阈值。",
+  "@clipCardOcrFailedHint": {
+    "description": "卡片提示：OCR识别失败"
+  },
+
   "appearanceThemeModeTitle": "主题模式",
   "@appearanceThemeModeTitle": {"description": "外观-主题模式-标题"},
 

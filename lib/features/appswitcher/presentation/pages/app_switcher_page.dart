@@ -8,7 +8,6 @@ import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.
 import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
-import 'package:clip_flow_pro/shared/widgets/window_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -232,17 +231,26 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
   }
 
   Widget _buildWindowHeader(S l10n) {
-    return ModernWindowHeader(
-      title: l10n.appName,
-      subtitle: l10n.appSwitcherTitle,
+    return Container(
       margin: const EdgeInsets.fromLTRB(23, 16, 23, 10),
-      actions: [
-        _buildBackAction(l10n),
-      ],
-      compact: true,
-      showTitle: false,
-      showLeading: false,
-      center: _buildSearchBar(l10n),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.5,
+          ),
+          child: Row(
+            children: [
+              // 搜索框在左边
+              Expanded(
+                child: _buildSearchBar(l10n),
+              ),
+              const SizedBox(width: 16),
+              // 返回按钮在右边
+              _buildBackAction(l10n),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

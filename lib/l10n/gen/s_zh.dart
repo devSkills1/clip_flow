@@ -100,6 +100,12 @@ class SZh extends S {
   String get securityEnableOcrSubtitle => '自动识别图片中的文字';
 
   @override
+  String get clipCardOcrDisabledHint => '检测到OCR文本，但OCR功能已禁用。请在设置中启用。';
+
+  @override
+  String get clipCardOcrFailedHint => 'OCR识别失败，或置信度低于阈值。';
+
+  @override
   String get appearanceThemeModeTitle => '主题模式';
 
   @override

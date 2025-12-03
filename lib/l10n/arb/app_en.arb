@@ -116,6 +116,16 @@
   "securityEnableOcrSubtitle": "Automatically recognize text in images",
   "@securityEnableOcrSubtitle": {"description": "Security - Enable OCR - subtitle"},
 
+  "clipCardOcrDisabledHint": "OCR text detected but the feature is disabled. Enable it in Settings.",
+  "@clipCardOcrDisabledHint": {
+    "description": "Clip item card hint shown when OCR text exists but OCR is globally disabled"
+  },
+
+  "clipCardOcrFailedHint": "OCR failed or confidence is below the minimum threshold.",
+  "@clipCardOcrFailedHint": {
+    "description": "Clip item card hint shown when OCR recognition fails"
+  },
+
   "appearanceThemeModeTitle": "Theme mode",
   "@appearanceThemeModeTitle": {"description": "Appearance - Theme mode - title"},
 
