@@ -66,6 +66,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
     final iconPadding = widget.dense ? 8.0 : 12.0;
     final fontSize = widget.dense ? 14.0 : 16.0;
     final fieldHeight = widget.dense ? 40.0 : 56.0;
+    final suffixSize = widget.dense ? 36.0 : 48.0;
 
     return SizedBox(
       height: fieldHeight,
@@ -106,24 +107,29 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
             minWidth: widget.dense ? 36 : 48,
             minHeight: widget.dense ? 36 : 48,
           ),
-          suffixIcon: widget.controller.text.isNotEmpty
-              ? IconButton(
-                  onPressed: () {
-                    widget.onClear();
-                    _focusNode.unfocus();
-                  },
-                  icon: Icon(
-                    Icons.clear,
-                    color: theme.colorScheme.onSurface.withValues(
-                      alpha: .7,
+          suffixIcon: SizedBox(
+            width: suffixSize,
+            height: suffixSize,
+            child: widget.controller.text.isNotEmpty
+                ? IconButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () {
+                      widget.onClear();
+                      _focusNode.unfocus();
+                    },
+                    icon: Icon(
+                      Icons.clear,
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.7,
+                      ),
                     ),
-                  ),
-                  tooltip: '清除',
-                )
-              : null,
-          suffixIconConstraints: BoxConstraints(
-            minWidth: widget.dense ? 36 : 48,
-            minHeight: widget.dense ? 36 : 48,
+                    tooltip: '清除',
+                  )
+                : const SizedBox.shrink(),
+          ),
+          suffixIconConstraints: BoxConstraints.tightFor(
+            width: suffixSize,
+            height: suffixSize,
           ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
