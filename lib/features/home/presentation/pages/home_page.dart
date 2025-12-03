@@ -181,6 +181,7 @@ class _HomePageState extends ConsumerState<HomePage>
     return ModernWindowHeader(
       title: l10n.appName,
       subtitle: l10n.homeTitle,
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       actions: [
         _buildModeSwitchAction(l10n),
       ],
