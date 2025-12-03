@@ -72,6 +72,14 @@ class SZh extends S {
   }
 
   @override
+  String get generalAutoHideTimeoutTitle => '自动隐藏延迟';
+
+  @override
+  String generalAutoHideTimeoutSubtitle(int seconds) {
+    return '无操作后 $seconds 秒自动隐藏';
+  }
+
+  @override
   String get generalMaxHistoryTitle => '最大历史记录数';
 
   @override

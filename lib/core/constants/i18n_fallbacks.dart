@@ -185,6 +185,12 @@ class _SettingsFallback {
   /// 常规：自动隐藏快捷键 副标题
   String generalAutoHideHotkeySubtitle(String hotkey) => '当前快捷键：$hotkey';
 
+  /// 常规：自动隐藏延迟 标题
+  String get generalAutoHideTimeoutTitle => '自动隐藏延迟';
+
+  /// 常规：自动隐藏延迟 副标题（显示秒数）
+  String generalAutoHideTimeoutSubtitle(int seconds) => '无操作后 $seconds 秒自动隐藏';
+
   /// 常规：最大历史记录数 标题
   String get generalMaxHistoryTitle => '最大历史记录数';
 

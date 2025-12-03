@@ -27,6 +27,9 @@ import 'package:go_router/go_router.dart';
 /// 应用主题模式（系统/浅色/深色）的状态提供者。
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
+/// 设置页可见状态
+final settingsVisibleProvider = StateProvider<bool>((ref) => false);
+
 //// 路由提供者
 /// 全局路由器提供者，定义应用路由表与初始路由。
 final clipRepositoryProvider = Provider<ClipRepository>((ref) {
@@ -97,8 +100,8 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   ClipboardHistoryNotifier(
     this._databaseService, {
     required int maxHistoryItems,
-  })  : _maxHistoryItems = _normalizeLimit(maxHistoryItems),
-        super([]);
+  }) : _maxHistoryItems = _normalizeLimit(maxHistoryItems),
+       super([]);
 
   final DatabaseService _databaseService;
   int _maxHistoryItems;
@@ -108,13 +111,15 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     try {
       // 使用传入的 limit 或默认的 _maxHistoryItems
       final effectiveLimit = _normalizeLimit(limit ?? _maxHistoryItems);
-      
+
       // 先清理数据库中超出限制的旧记录
       await _databaseService.cleanupExcessItems(_maxHistoryItems);
-      
+
       // 从数据库获取指定数量的记录
       // 由于数据库查询已经使用了 limit，返回的结果不会超过 effectiveLimit
-      final items = await _databaseService.getAllClipItems(limit: effectiveLimit);
+      final items = await _databaseService.getAllClipItems(
+        limit: effectiveLimit,
+      );
       if (items.isNotEmpty) {
         // 直接使用查询结果，无需再次截断
         state = items;
@@ -190,21 +195,24 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     }
     _maxHistoryItems = normalized;
     _enforceHistoryLimit();
-    
+
     // 同时清理数据库中超出限制的旧记录
-  _databaseService.cleanupExcessItems(normalized).then((_) {
-      Log.d(
-        'Database cleanup completed after limit update',
-        tag: 'ClipboardHistoryNotifier',
-        fields: {'newLimit': normalized},
-      );
-    }).catchError((Object error) {
-      Log.w(
-        'Database cleanup failed after limit update',
-        tag: 'ClipboardHistoryNotifier',
-        error: error,
-      );
-    });
+    _databaseService
+        .cleanupExcessItems(normalized)
+        .then((_) {
+          Log.d(
+            'Database cleanup completed after limit update',
+            tag: 'ClipboardHistoryNotifier',
+            fields: {'newLimit': normalized},
+          );
+        })
+        .catchError((Object error) {
+          Log.w(
+            'Database cleanup failed after limit update',
+            tag: 'ClipboardHistoryNotifier',
+            error: error,
+          );
+        });
   }
 
   /// 按 [id] 移除项目。
@@ -320,8 +328,7 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
     final remainingSlots = _maxHistoryItems - favorites.length;
     final nonFavorites = state.where((item) => !item.isFavorite).toList();
     final nonFavoriteLimit = remainingSlots > 0 ? remainingSlots : 0;
-    final remainingNonFavorites =
-        nonFavorites.take(nonFavoriteLimit).toList();
+    final remainingNonFavorites = nonFavorites.take(nonFavoriteLimit).toList();
 
     state = [...favorites, ...remainingNonFavorites];
   }
@@ -435,7 +442,8 @@ class UserPreferences {
       autoStart: (json['autoStart'] as bool?) ?? false,
       minimizeToTray: (json['minimizeToTray'] as bool?) ?? true,
       globalHotkey: (json['globalHotkey'] as String?) ?? 'Cmd+Shift+V',
-      maxHistoryItems: (json['maxHistoryItems'] as int?) ?? ClipConstants.maxHistoryItems,
+      maxHistoryItems:
+          (json['maxHistoryItems'] as int?) ?? ClipConstants.maxHistoryItems,
       enableEncryption: (json['enableEncryption'] as bool?) ?? true,
       enableOCR: (json['enableOCR'] as bool?) ?? true,
       ocrLanguage: (json['ocrLanguage'] as String?) ?? 'auto',
@@ -705,6 +713,14 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 设置自动隐藏开关。
   void setAutoHideEnabled(bool enabled) {
     state = state.copyWith(autoHideEnabled: enabled);
+    unawaited(_savePreferences());
+  }
+
+  /// 设置自动隐藏超时时间（秒）。
+  void setAutoHideTimeout(int seconds) {
+    // 约束到合法区间 (3-30秒)
+    final clamped = seconds.clamp(3, 30);
+    state = state.copyWith(autoHideTimeoutSeconds: clamped);
     unawaited(_savePreferences());
   }
 

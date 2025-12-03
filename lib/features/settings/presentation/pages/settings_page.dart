@@ -6,6 +6,7 @@ import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/hotkey_config.dart';
+import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
@@ -34,12 +35,59 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late final Future<List<String>> _availableOcrLanguagesFuture;
   late final List<String> _supportedOcrLanguages;
 
+  // 保存服务引用，以便在 dispose 中安全使用
+  late final AutoHideService _autoHideService;
+  late final bool _autoHideEnabled;
+
   @override
   void initState() {
     super.initState();
     final ocrService = OcrServiceFactory.getInstance();
     _supportedOcrLanguages = ocrService.getSupportedLanguages();
     _availableOcrLanguagesFuture = ocrService.getAvailableLanguages();
+
+    // 保存引用以便在 dispose 中使用
+    _autoHideService = ref.read(autoHideServiceProvider);
+    _autoHideEnabled = ref.read(userPreferencesProvider).autoHideEnabled;
+
+    // 停止自动隐藏定时器（用户在设置页面时不应该被打断）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _autoHideService.stopMonitoring();
+      unawaited(
+        Log.i(
+          'Settings page opened, auto-hide monitoring stopped',
+          tag: 'SettingsPage',
+        ),
+      );
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 确保在设置页面中自动隐藏始终处于停止状态
+    // 即使页面重建也要保持停止
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _autoHideService.stopMonitoring();
+    });
+  }
+
+  @override
+  void dispose() {
+    // 设置页面关闭时，如果用户开启了自动隐藏，则重新启动监控
+    // 使用在 initState 中保存的引用，避免在 dispose 中使用 ref
+    if (_autoHideEnabled) {
+      _autoHideService.startMonitoring();
+      unawaited(
+        Log.i(
+          'Settings page closed, auto-hide monitoring restarted',
+          tag: 'SettingsPage',
+        ),
+      );
+    }
+    super.dispose();
   }
 
   void _handleVersionTap() {
