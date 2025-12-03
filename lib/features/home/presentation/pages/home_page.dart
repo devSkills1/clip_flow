@@ -41,6 +41,7 @@ class _HomePageState extends ConsumerState<HomePage>
     super.initState();
     _initializeAnimations();
     _setupWindow();
+    _scrollController.addListener(_handleScrollActivity);
 
     // 在页面初始化时检查并启动自动隐藏监控
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -60,6 +61,7 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScrollActivity);
     _searchController.dispose();
     _scrollController.dispose();
     _fadeController.dispose();
@@ -95,6 +97,13 @@ class _HomePageState extends ConsumerState<HomePage>
   /// 处理用户交互，重置自动隐藏定时器
   void _onUserInteraction() {
     ref.read(autoHideServiceProvider).onUserInteraction();
+  }
+
+  void _handleScrollActivity() {
+    if (!mounted) {
+      return;
+    }
+    _onUserInteraction();
   }
 
   @override
@@ -222,9 +231,11 @@ class _HomePageState extends ConsumerState<HomePage>
       controller: _searchController,
       hintText: l10n.searchHint,
       onChanged: (String query) {
+        _onUserInteraction();
         ref.read(searchQueryProvider.notifier).state = query;
       },
       onClear: () {
+        _onUserInteraction();
         _searchController.clear();
         ref.read(searchQueryProvider.notifier).state = '';
       },
