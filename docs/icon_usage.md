@@ -76,7 +76,6 @@ ClipFlow Pro/
 │   └── icon_generator.html                 # HTML 生成器（可选）
 │
 └── docs/
-    ├── icon_design.md            # 设计说明
     └── icon_usage.md             # 使用指南（本文件）
 ```
 
@@ -174,11 +173,7 @@ git commit -m "feat(ui): 更新应用图标设计
 
 ### 获取帮助
 
-- 查看 `docs/icon_design.md` 了解设计理念
-- 检查 `scripts/generate_icons.py` 脚本日志
+- 检查 `scripts/fresh_clipboard_icon_generator.py` 脚本日志
 - 使用 `flutter doctor` 检查环境配置
 
 ---
-
-*最后更新：2025-01-01*  
-*版本：v1.0*
