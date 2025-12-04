@@ -55,7 +55,7 @@ class ClipboardService {
       _isShuttingDown = false;
 
       // 检查剪贴板权限
-      final permissionStatus = await PermissionService.instance.checkPermission(
+      final permissionStatus = await PermissionService().checkPermission(
         PermissionType.clipboard,
       );
 
@@ -124,7 +124,7 @@ class ClipboardService {
 
     try {
       // 检查剪贴板权限（使用缓存，避免重复弹框）
-      final permissionStatus = await PermissionService.instance.checkPermission(
+      final permissionStatus = await PermissionService().checkPermission(
         PermissionType.clipboard,
       );
 
@@ -267,7 +267,7 @@ class ClipboardService {
   Future<ClipType?> getCurrentClipboardType() async {
     try {
       // 检查剪贴板权限
-      final permissionStatus = await PermissionService.instance.checkPermission(
+      final permissionStatus = await PermissionService().checkPermission(
         PermissionType.clipboard,
       );
 
@@ -302,7 +302,7 @@ class ClipboardService {
   Future<bool> hasClipboardContent() async {
     try {
       // 检查剪贴板权限
-      final permissionStatus = await PermissionService.instance.checkPermission(
+      final permissionStatus = await PermissionService().checkPermission(
         PermissionType.clipboard,
       );
 

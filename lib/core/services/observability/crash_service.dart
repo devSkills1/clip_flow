@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:flutter/foundation.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
-/// 崩溃监控服务
+/// 崩溃监控服务 (Local Only Version)
 ///
-/// 负责应用崩溃和错误的监控、上报和分析
+/// 负责应用崩溃和错误的监控和本地记录
+/// 注意：此版本已移除 Sentry 上报功能，仅保留本地日志记录
 class CrashService {
   /// 工厂构造：返回崩溃监控服务单例
   factory CrashService() => _instance;
@@ -28,52 +28,12 @@ class CrashService {
     }
 
     try {
-      await SentryFlutter.init(
-        (options) {
-          // 使用开发环境的DSN，生产环境需要替换
-          // 如果没有配置SENTRY_DSN环境变量，在开发模式下禁用远程上报
-          const sentryDsn = String.fromEnvironment('SENTRY_DSN');
-          if (sentryDsn.isEmpty && kDebugMode) {
-            // 开发模式下，如果没有配置DSN，则禁用Sentry上报
-            options.dsn = null;
-            // 注意：这里不能使用await，因为在options配置回调中
-            if (kDebugMode) {
-              print(
-                'Sentry DSN not configured, '
-                'crash reporting disabled in debug mode',
-              );
-            }
-          } else {
-            options.dsn = sentryDsn.isEmpty
-                ? 'https://your-dsn@sentry.io/project-id'
-                : sentryDsn;
-          }
-
-          // 设置环境
-          options
-            ..environment = kDebugMode ? 'development' : 'production'
-            // 设置发布版本
-            ..release = 'clip_flow_pro@1.0.0+1'
-            // 采样率设置
-            ..tracesSampleRate = kDebugMode ? 1.0 : 0.1
-            // 启用自动会话跟踪
-            ..enableAutoSessionTracking = true
-            // 设置用户上下文
-            ..beforeSend = (event, hint) {
-              // 在发送前可以修改事件或过滤敏感信息
-              return _filterSensitiveData(event);
-            };
-        },
-      );
-
-      // 设置用户上下文
+      // 设置初始上下文信息（仅本地记录）
       await _setUserContext();
-
-      // 设置标签
       await _setTags();
 
       _isInitialized = true;
-      await Log.i('CrashService initialized successfully');
+      await Log.i('CrashService initialized successfully (local only mode)');
     } on Exception catch (e, stackTrace) {
       await Log.e(
         'Failed to initialize CrashService: $e',
@@ -84,157 +44,94 @@ class CrashService {
     }
   }
 
-  /// 上报错误
+  /// 上报错误（本地记录）
   static Future<void> reportError(
     dynamic error,
     StackTrace? stackTrace, {
     String? context,
     Map<String, dynamic>? extra,
-    SentryLevel level = SentryLevel.error,
+    // 保持 SentryLevel 参数兼容性，但不再使用
+    @Deprecated('No longer used - kept for API compatibility') dynamic level,
   }) async {
-    try {
-      await Sentry.captureException(
-        error,
-        stackTrace: stackTrace,
-        withScope: (scope) {
-          if (context != null) {
-            scope.setContexts('error_context', {'message': context});
-          }
-
-          if (extra != null) {
-            for (final entry in extra.entries) {
-              scope.setContexts(entry.key, {'value': entry.value});
-            }
-          }
-
-          scope.level = level;
-        },
-      );
-
-      // 同时记录到本地日志
-      await Log.e(
-        'Error reported to Sentry: $error',
-        error: error,
-        stackTrace: stackTrace,
-        fields: extra,
-      );
-    } on Exception catch (e) {
-      // 如果Sentry上报失败，至少记录到本地日志
-      await Log.e(
-        'Failed to report error to Sentry: $e, Original error: $error',
-        error: e,
-      );
-    }
+    // 直接记录到本地日志
+    await Log.e(
+      'Error recorded locally: $error${context != null ? ' (Context: $context)' : ''}',
+      error: error,
+      stackTrace: stackTrace,
+      fields: extra,
+    );
   }
 
-  /// 上报消息
+  /// 上报消息（本地记录）
   static Future<void> reportMessage(
     String message, {
-    SentryLevel level = SentryLevel.info,
+    @Deprecated('No longer used - kept for API compatibility') dynamic level,
     Map<String, dynamic>? extra,
   }) async {
-    try {
-      await Sentry.captureMessage(
-        message,
-        level: level,
-        withScope: (scope) {
-          if (extra != null) {
-            for (final entry in extra.entries) {
-              scope.setContexts(entry.key, {'value': entry.value});
-            }
-          }
-        },
-      );
-    } on Exception catch (e) {
-      await Log.e('Failed to report message to Sentry: $e');
-    }
+    await Log.i(
+      'Message recorded locally: $message',
+      fields: extra,
+    );
   }
 
-  /// 添加面包屑
+  /// 添加面包屑（本地记录）
   static Future<void> addBreadcrumb(
     String message, {
     String? category,
-    SentryLevel level = SentryLevel.info,
+    @Deprecated('No longer used - kept for API compatibility') dynamic level,
     Map<String, dynamic>? data,
   }) async {
-    try {
-      await Sentry.addBreadcrumb(
-        Breadcrumb(
-          message: message,
-          category: category,
-          level: level,
-          data: data,
-        ),
-      );
-    } on Exception catch (e) {
-      await Log.e('Failed to add breadcrumb: $e');
-    }
+    await Log.d(
+      'Breadcrumb: $message${category != null ? ' (Category: $category)' : ''}',
+      fields: data,
+    );
   }
 
-  /// 设置用户上下文
+  /// 设置用户上下文（本地记录）
   static Future<void> setUserContext({
     String? userId,
     String? email,
     String? username,
     Map<String, dynamic>? extra,
   }) async {
-    try {
-      await Sentry.configureScope((scope) {
-        scope.setUser(
-          SentryUser(
-            id: userId,
-            email: email,
-            username: username,
-            data: extra,
-          ),
-        );
-      });
-    } on Exception catch (e) {
-      await Log.e('Failed to set user context: $e');
-    }
+    await Log.i(
+      'User context set: ${userId ?? 'anonymous'}',
+      fields: {
+        'user_id': userId,
+        'email': email,
+        'username': username,
+        ...?extra,
+      },
+    );
   }
 
-  /// 设置自定义上下文信息
+  /// 设置自定义上下文信息（本地记录）
   static Future<void> setContext(
     String key,
     Map<String, dynamic> context,
   ) async {
-    await Sentry.configureScope((scope) {
-      scope.setContexts(key, context);
-    });
-  }
-
-  /// 设置额外信息
-  static Future<void> setExtra(String key, dynamic value) async {
-    await Sentry.configureScope((scope) {
-      scope.setContexts('extra', {key: value});
-    });
-  }
-
-  /// 设置标签
-  static Future<void> setTag(String key, String value) async {
-    try {
-      await Sentry.configureScope((scope) {
-        scope.setTag(key, value);
-      });
-    } on Exception catch (e) {
-      await Log.e('Failed to set tag: $e');
-    }
-  }
-
-  /// 开始性能事务
-  static ISentrySpan startTransaction(
-    String name,
-    String operation, {
-    String? description,
-  }) {
-    return Sentry.startTransaction(
-      name,
-      operation,
-      description: description,
+    await Log.d(
+      'Context set: $key',
+      fields: {key: context},
     );
   }
 
+  /// 设置额外信息（本地记录）
+  static Future<void> setExtra(String key, dynamic value) async {
+    await Log.d(
+      'Extra info set: $key',
+      fields: {'extra_$key': value},
+    );
+  }
+
+  /// 设置标签（本地记录）
+  static Future<void> setTag(String key, String value) async {
+    await Log.d(
+      'Tag set: $key = $value',
+    );
+  }
+
+  
   /// 设置初始用户上下文
   Future<void> _setUserContext() async {
     await setUserContext(
@@ -252,19 +149,7 @@ class CrashService {
     await setTag('platform', Platform.operatingSystem);
     await setTag('environment', kDebugMode ? 'debug' : 'release');
     await setTag('app_name', 'clip_flow_pro');
-  }
-
-  /// 过滤敏感数据
-  SentryEvent? _filterSensitiveData(SentryEvent event) {
-    // 过滤可能包含敏感信息的字段
-    final filteredEvent = event.copyWith();
-
-    // 可以在这里过滤特定的上下文信息
-    // 例如：filteredEvent.contexts.removeWhere(
-    //   (key, value) => key.contains('sensitive')
-    // );
-
-    return filteredEvent;
+    await setTag('mode', 'local_only');
   }
 
   /// 销毁服务
@@ -272,9 +157,8 @@ class CrashService {
     if (!_isInitialized) return;
 
     try {
-      await Sentry.close();
       _isInitialized = false;
-      await Log.i('CrashService disposed');
+      await Log.i('CrashService disposed (local only mode)');
     } on Exception catch (e) {
       await Log.e('Failed to dispose CrashService: $e');
     }

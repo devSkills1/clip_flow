@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 /// 路径管理服务
 ///
@@ -25,38 +25,38 @@ class PathService {
   ///
   /// 首次调用时会触发权限请求，后续调用使用缓存
   Future<Directory> getDocumentsDirectory() async {
-    _documentsDirectory ??= await getApplicationDocumentsDirectory();
+    _documentsDirectory ??= await path_provider.getApplicationDocumentsDirectory();
     return _documentsDirectory!;
   }
 
   /// 获取临时目录
   Future<Directory> getTemporaryDirectory() async {
-    _temporaryDirectory ??= await getTemporaryDirectory();
+    _temporaryDirectory ??= await path_provider.getTemporaryDirectory();
     return _temporaryDirectory!;
   }
 
   /// 获取应用支持目录
   Future<Directory> getApplicationSupportDirectory() async {
-    _applicationSupportDirectory ??= await getApplicationSupportDirectory();
+    _applicationSupportDirectory ??= await path_provider.getApplicationSupportDirectory();
     return _applicationSupportDirectory!;
   }
 
   /// 获取数据库路径
   Future<String> getDatabasePath(String databaseName) async {
-    final documentsDir = await getDocumentsDirectory();
-    return '${documentsDir.path}/$databaseName';
+    final supportDir = await getApplicationSupportDirectory();
+    return '${supportDir.path}/$databaseName';
   }
 
   /// 获取日志目录路径
   Future<String> getLogsDirectoryPath() async {
-    final documentsDir = await getDocumentsDirectory();
-    return '${documentsDir.path}/logs';
+    final supportDir = await getApplicationSupportDirectory();
+    return '${supportDir.path}/logs';
   }
 
   /// 获取文件保存路径
   Future<String> getFileSavePath(String fileName) async {
-    final documentsDir = await getDocumentsDirectory();
-    return '${documentsDir.path}/$fileName';
+    final supportDir = await getApplicationSupportDirectory();
+    return '${supportDir.path}/$fileName';
   }
 
   /// 获取下载目录路径（使用临时目录）
@@ -102,9 +102,9 @@ class PathService {
         return path; // 已经是绝对路径，直接返回
       }
 
-      // 相对路径：拼接应用文档目录
-      final documentsDir = await getDocumentsDirectory();
-      return p.join(documentsDir.path, path);
+      // 相对路径：拼接应用支持目录
+      final supportDir = await getApplicationSupportDirectory();
+      return p.join(supportDir.path, path);
     } on Exception catch (_) {
       // 如果转换失败，返回原始路径
       return path;

@@ -1,16 +1,22 @@
 // ignore_for_file: public_member_api_docs - 内部依赖注入配置文件，不需要对外暴露API文档
+// ignore_for_file: avoid_positional_boolean_parameters - setAutoHideEnabled 是合理的 setter 方法
+// ignore_for_file: discarded_futures - 日志调用是故意 fire-and-forget 的，不需要等待
+// ignore_for_file: cascade_invocations - 对同一对象设置不同属性是合理的
 // 该文件包含应用级别的Provider定义，主要用于内部状态管理，不作为公共API使用
 import 'dart:async';
 
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/routes.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
-import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
-import 'package:clip_flow_pro/features/home/presentation/pages/enhanced_home_page.dart';
+import 'package:clip_flow_pro/features/classic/data/repositories/clip_repository_impl.dart';
+import 'package:clip_flow_pro/features/classic/domain/repositories/clip_repository.dart';
+import 'package:clip_flow_pro/features/classic/presentation/pages/classic_mode_page.dart';
+import 'package:clip_flow_pro/features/compact/presentation/pages/compact_mode_page.dart';
 import 'package:clip_flow_pro/features/settings/presentation/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,12 +27,34 @@ import 'package:go_router/go_router.dart';
 /// 应用主题模式（系统/浅色/深色）的状态提供者。
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
+/// 设置页可见状态
+final settingsVisibleProvider = StateProvider<bool>((ref) => false);
+
 //// 路由提供者
 /// 全局路由器提供者，定义应用路由表与初始路由。
 final clipRepositoryProvider = Provider<ClipRepository>((ref) {
   return ClipRepositoryImpl(DatabaseService.instance);
 });
+
 //// 路由提供者
+/// 动态主页组件，根据UI模式切换不同的页面
+class DynamicHomePage extends ConsumerWidget {
+  const DynamicHomePage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 直接读取uiModeProvider，确保使用预加载的值避免闪动
+    final uiMode = ref.watch(uiModeProvider);
+
+    switch (uiMode) {
+      case UiMode.classic:
+        return const ClassicModePage();
+      case UiMode.compact:
+        return const CompactModePage();
+    }
+  }
+}
+
 /// 全局路由器提供者，定义应用路由表与初始路由。
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -34,7 +62,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const EnhancedHomePage(),
+        builder: (context, state) => const DynamicHomePage(),
       ),
       GoRoute(
         path: AppRoutes.settings,
@@ -48,16 +76,70 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// 基于 [ClipboardHistoryNotifier] 的剪贴板历史状态提供者。
 final clipboardHistoryProvider =
     StateNotifierProvider<ClipboardHistoryNotifier, List<ClipItem>>((ref) {
-      return ClipboardHistoryNotifier(DatabaseService.instance);
+      final preferences = ref.read(userPreferencesProvider);
+      final notifier = ClipboardHistoryNotifier(
+        DatabaseService.instance,
+        maxHistoryItems: preferences.maxHistoryItems,
+      );
+      // 预加载数据库中的最近记录，避免 AppSwitcher 首屏没有数据
+      unawaited(notifier.preloadFromDatabase());
+
+      // 监听用户偏好中的最大历史条数变化
+      ref.listen<UserPreferences>(userPreferencesProvider, (previous, next) {
+        if (previous?.maxHistoryItems != next.maxHistoryItems) {
+          notifier.updateMaxHistoryLimit(next.maxHistoryItems);
+        }
+      });
+      return notifier;
     });
 
 //// 剪贴板历史通知器
 /// 管理剪贴项：新增/删除/收藏/搜索，并限制列表大小。
 class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
   /// 使用空列表初始化历史记录。
-  ClipboardHistoryNotifier(this._databaseService) : super([]);
+  ClipboardHistoryNotifier(
+    this._databaseService, {
+    required int maxHistoryItems,
+  }) : _maxHistoryItems = _normalizeLimit(maxHistoryItems),
+       super([]);
 
   final DatabaseService _databaseService;
+  int _maxHistoryItems;
+
+  /// 从数据库预加载最近的剪贴项到内存状态（按创建时间倒序）
+  Future<void> preloadFromDatabase({int? limit}) async {
+    try {
+      // 使用传入的 limit 或默认的 _maxHistoryItems
+      final effectiveLimit = _normalizeLimit(limit ?? _maxHistoryItems);
+
+      // 先清理数据库中超出限制的旧记录
+      await _databaseService.cleanupExcessItems(_maxHistoryItems);
+
+      // 从数据库获取指定数量的记录
+      // 由于数据库查询已经使用了 limit，返回的结果不会超过 effectiveLimit
+      final items = await _databaseService.getAllClipItems(
+        limit: effectiveLimit,
+      );
+      if (items.isNotEmpty) {
+        // 直接使用查询结果，无需再次截断
+        state = items;
+        unawaited(
+          Log.d(
+            'Preloaded ${items.length} items into clipboard history',
+            tag: 'ClipboardHistoryNotifier',
+          ),
+        );
+      }
+    } on Exception catch (e) {
+      unawaited(
+        Log.w(
+          'Failed to preload history',
+          tag: 'ClipboardHistoryNotifier',
+          error: e,
+        ),
+      );
+    }
+  }
 
   /// 添加新项目；若内容重复则仅更新其时间戳并前置。
   void addItem(ClipItem item) {
@@ -83,25 +165,54 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
             .map((e) => e.value),
       ];
 
-      Log.d('Moved existing item to top: ${item.id} (${item.type})', tag: 'ClipboardHistoryNotifier');
+    unawaited(
+        Log.d(
+          'Moved existing item to top: ${item.id} (${item.type})',
+          tag: 'ClipboardHistoryNotifier',
+        ),
+      );
     } else {
       // 添加新项目到列表开头
       state = [item, ...state];
-      Log.d('Added new item to top: ${item.id} (${item.type})', tag: 'ClipboardHistoryNotifier');
-
-      // 限制历史记录数量（优先保留收藏的项目）
-      if (state.length > 500) {
-        // 先提取所有收藏的项目
-        final favorites = state.where((item) => item.isFavorite).toList();
-        final nonFavorites = state.where((item) => !item.isFavorite).toList();
-
-        // 保留所有收藏的项目，并从非收藏项目中取最新的直到总数达到500
-        final remainingNonFavorites = nonFavorites.take(500 - favorites.length).toList();
-
-        // 收藏项目在前，非收藏项目在后
-        state = [...favorites, ...remainingNonFavorites];
-      }
+      unawaited(
+        Log.d(
+          'Added new item to top: ${item.id} (${item.type})',
+          tag: 'ClipboardHistoryNotifier',
+        ),
+      );
     }
+
+    // 无论是更新还是添加，都需要执行限制检查
+    // 防止在频繁更新现有项时内存超出限制
+    _enforceHistoryLimit();
+  }
+
+  /// 更新最大历史记录条数，并立即应用限制。
+  void updateMaxHistoryLimit(int newLimit) {
+    final normalized = _normalizeLimit(newLimit);
+    if (normalized == _maxHistoryItems) {
+      return;
+    }
+    _maxHistoryItems = normalized;
+    _enforceHistoryLimit();
+
+    // 同时清理数据库中超出限制的旧记录
+    _databaseService
+        .cleanupExcessItems(normalized)
+        .then((_) {
+          Log.d(
+            'Database cleanup completed after limit update',
+            tag: 'ClipboardHistoryNotifier',
+            fields: {'newLimit': normalized},
+          );
+        })
+        .catchError((Object error) {
+          Log.w(
+            'Database cleanup failed after limit update',
+            tag: 'ClipboardHistoryNotifier',
+            error: error,
+          );
+        });
   }
 
   /// 按 [id] 移除项目。
@@ -135,10 +246,17 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
 
       // 只从内存中移除非收藏的项目
       state = state.where((item) => item.isFavorite).toList();
-    } on Exception catch (_) {
+    } on Exception catch (e) {
       // 即使数据库清空失败，也只保留收藏的项目
       state = state.where((item) => item.isFavorite).toList();
       // 可以在这里添加错误日志
+      unawaited(
+        Log.e(
+          'Failed to clear history (excluding favorites)',
+          tag: 'ClipboardHistoryNotifier',
+          error: e,
+        ),
+      );
     }
   }
 
@@ -149,10 +267,17 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
       await _databaseService.clearAllClipItems();
       // 清空内存状态
       state = [];
-    } on Exception catch (_) {
+    } on Exception catch (e) {
       // 即使数据库清空失败，也清空内存状态
       state = [];
       // 可以在这里添加错误日志
+      unawaited(
+        Log.e(
+          'Failed to clear history (including favorites)',
+          tag: 'ClipboardHistoryNotifier',
+          error: e,
+        ),
+      );
     }
   }
 
@@ -186,6 +311,30 @@ class ClipboardHistoryNotifier extends StateNotifier<List<ClipItem>> {
           tags.contains(lowercaseQuery) ||
           ocrText.contains(lowercaseQuery);
     }).toList();
+  }
+
+  /// 确保历史记录数量不超过限制，优先保留收藏项。
+  void _enforceHistoryLimit() {
+    if (state.length <= _maxHistoryItems) {
+      return;
+    }
+
+    final favorites = state.where((item) => item.isFavorite).toList();
+    if (favorites.length >= _maxHistoryItems) {
+      state = favorites.take(_maxHistoryItems).toList();
+      return;
+    }
+
+    final remainingSlots = _maxHistoryItems - favorites.length;
+    final nonFavorites = state.where((item) => !item.isFavorite).toList();
+    final nonFavoriteLimit = remainingSlots > 0 ? remainingSlots : 0;
+    final remainingNonFavorites = nonFavorites.take(nonFavoriteLimit).toList();
+
+    state = [...favorites, ...remainingNonFavorites];
+  }
+
+  static int _normalizeLimit(int limit) {
+    return limit <= 0 ? 1 : limit;
   }
 }
 
@@ -241,10 +390,21 @@ final filterTypeProvider = StateProvider<FilterOption>(
 /// UI 列表/网格的显示密度枚举。
 enum DisplayMode { compact, normal, preview }
 
+//// UI 模式（传统剪贴板/应用切换器）
+/// UI 界面模式枚举，用于切换不同的UI风格。
+enum UiMode { classic, compact }
+
 //// 显示模式提供者
 /// 当前 UI 显示模式（紧凑/默认/预览）的状态提供者。
 final displayModeProvider = StateProvider<DisplayMode>(
   (ref) => DisplayMode.normal,
+);
+
+//// UI 模式提供者
+/// 当前 UI 界面模式（传统剪贴板/应用切换器）的状态提供者。
+/// 从 userPreferencesProvider 中读取状态，确保同步。
+final uiModeProvider = Provider<UiMode>(
+  (ref) => ref.watch(userPreferencesProvider).uiMode,
 );
 
 //// 用户偏好设置提供者
@@ -262,15 +422,18 @@ class UserPreferences {
     this.autoStart = false,
     this.minimizeToTray = true,
     this.globalHotkey = 'Cmd+Shift+V',
-    this.maxHistoryItems = 500,
+    this.maxHistoryItems = ClipConstants.maxHistoryItems,
     this.enableEncryption = true,
     this.enableOCR = true,
     this.ocrLanguage = 'auto',
     this.ocrMinConfidence = 0.5,
     this.language = 'zh_CN',
-    this.defaultDisplayMode = DisplayMode.normal,
+    this.uiMode = UiMode.classic,
     this.isDeveloperMode = false,
     this.showPerformanceOverlay = false,
+    this.autoHideEnabled = true,
+    this.compactModeWindowWidth,
+    this.autoHideTimeoutSeconds = 3,
   });
 
   /// 从 JSON Map 创建 [UserPreferences] 实例。
@@ -279,19 +442,23 @@ class UserPreferences {
       autoStart: (json['autoStart'] as bool?) ?? false,
       minimizeToTray: (json['minimizeToTray'] as bool?) ?? true,
       globalHotkey: (json['globalHotkey'] as String?) ?? 'Cmd+Shift+V',
-      maxHistoryItems: (json['maxHistoryItems'] as int?) ?? 500,
+      maxHistoryItems:
+          (json['maxHistoryItems'] as int?) ?? ClipConstants.maxHistoryItems,
       enableEncryption: (json['enableEncryption'] as bool?) ?? true,
       enableOCR: (json['enableOCR'] as bool?) ?? true,
       ocrLanguage: (json['ocrLanguage'] as String?) ?? 'auto',
       ocrMinConfidence: ((json['ocrMinConfidence'] as num?) ?? 0.5).toDouble(),
       language: (json['language'] as String?) ?? 'zh_CN',
-      defaultDisplayMode: DisplayMode.values.firstWhere(
-        (e) => e.name == (json['defaultDisplayMode'] as String?),
-        orElse: () => DisplayMode.normal,
+      uiMode: UiMode.values.firstWhere(
+        (e) => e.name == (json['uiMode'] as String?),
+        orElse: () => UiMode.classic,
       ),
       isDeveloperMode: (json['isDeveloperMode'] as bool?) ?? false,
       showPerformanceOverlay:
           (json['showPerformanceOverlay'] as bool?) ?? false,
+      autoHideEnabled: (json['autoHideEnabled'] as bool?) ?? true,
+      compactModeWindowWidth: json['compactModeWindowWidth'] as double?,
+      autoHideTimeoutSeconds: (json['autoHideTimeoutSeconds'] as int?) ?? 3,
     );
   }
 
@@ -322,14 +489,23 @@ class UserPreferences {
   /// 显示语言代码（如 'zh_CN'）
   final String language;
 
-  /// 默认显示模式
-  final DisplayMode defaultDisplayMode;
+  /// UI 界面模式（传统剪贴板/应用切换器）
+  final UiMode uiMode;
 
   /// 是否启用开发者模式
   final bool isDeveloperMode;
 
   /// 是否显示性能监控覆盖层
   final bool showPerformanceOverlay;
+
+  /// 是否启用自动隐藏
+  final bool autoHideEnabled;
+
+  /// 紧凑模式的窗口宽度（null 表示使用默认计算值）
+  final double? compactModeWindowWidth;
+
+  /// 自动隐藏超时时间（秒）
+  final int autoHideTimeoutSeconds;
 
   /// 返回复制的新实例，并按需覆盖指定字段。
   UserPreferences copyWith({
@@ -342,9 +518,12 @@ class UserPreferences {
     String? ocrLanguage,
     double? ocrMinConfidence,
     String? language,
-    DisplayMode? defaultDisplayMode,
+    UiMode? uiMode,
     bool? isDeveloperMode,
     bool? showPerformanceOverlay,
+    bool? autoHideEnabled,
+    double? compactModeWindowWidth,
+    int? autoHideTimeoutSeconds,
   }) {
     return UserPreferences(
       autoStart: autoStart ?? this.autoStart,
@@ -356,10 +535,15 @@ class UserPreferences {
       ocrLanguage: ocrLanguage ?? this.ocrLanguage,
       ocrMinConfidence: ocrMinConfidence ?? this.ocrMinConfidence,
       language: language ?? this.language,
-      defaultDisplayMode: defaultDisplayMode ?? this.defaultDisplayMode,
+      uiMode: uiMode ?? this.uiMode,
       isDeveloperMode: isDeveloperMode ?? this.isDeveloperMode,
       showPerformanceOverlay:
           showPerformanceOverlay ?? this.showPerformanceOverlay,
+      autoHideEnabled: autoHideEnabled ?? this.autoHideEnabled,
+      compactModeWindowWidth:
+          compactModeWindowWidth ?? this.compactModeWindowWidth,
+      autoHideTimeoutSeconds:
+          autoHideTimeoutSeconds ?? this.autoHideTimeoutSeconds,
     );
   }
 
@@ -375,9 +559,12 @@ class UserPreferences {
       'ocrLanguage': ocrLanguage,
       'ocrMinConfidence': ocrMinConfidence,
       'language': language,
-      'defaultDisplayMode': defaultDisplayMode.name,
+      'uiMode': uiMode.name,
       'isDeveloperMode': isDeveloperMode,
       'showPerformanceOverlay': showPerformanceOverlay,
+      'autoHideEnabled': autoHideEnabled,
+      'compactModeWindowWidth': compactModeWindowWidth,
+      'autoHideTimeoutSeconds': autoHideTimeoutSeconds,
     };
   }
 }
@@ -387,7 +574,24 @@ class UserPreferences {
 class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 使用默认偏好初始化。
   UserPreferencesNotifier() : super(UserPreferences()) {
-    _loadPreferences();
+    unawaited(_loadPreferences());
+  }
+
+  /// 使用传入的初始偏好进行初始化。
+  /// 此构造函数不会再次触发异步偏好加载，避免冷启动阶段的 UI 模式闪动。
+  UserPreferencesNotifier.withInitial(UserPreferences initial)
+    : super(initial) {
+    // 完全同步初始化，不触发任何异步操作
+    // 确保UI模式状态稳定，避免首屏闪动
+    unawaited(
+      Log.d(
+        'UserPreferencesNotifier initialized with UI mode: ${initial.uiMode}',
+        tag: 'UserPreferences',
+      ),
+    );
+
+    // 延迟同步开机自启动状态，避免影响首屏渲染
+    unawaited(Future.microtask(_syncAutostartStatus));
   }
 
   /// 偏好设置持久化服务
@@ -399,7 +603,7 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 用 [preferences] 替换当前偏好。
   set preferences(UserPreferences preferences) {
     state = preferences;
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 加载保存的偏好设置
@@ -500,46 +704,60 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 切换"最小化到托盘"偏好。
   void toggleMinimizeToTray() {
     state = state.copyWith(minimizeToTray: !state.minimizeToTray);
-    _savePreferences();
+    unawaited(_savePreferences());
 
     // 更新托盘服务的用户偏好设置
     TrayService().userPreferences = state;
   }
 
+  /// 设置自动隐藏开关。
+  void setAutoHideEnabled(bool enabled) {
+    state = state.copyWith(autoHideEnabled: enabled);
+    unawaited(_savePreferences());
+  }
+
+  /// 设置自动隐藏超时时间（秒）。
+  void setAutoHideTimeout(int seconds) {
+    // 约束到合法区间 (3-30秒)
+    final clamped = seconds.clamp(3, 30);
+    state = state.copyWith(autoHideTimeoutSeconds: clamped);
+    unawaited(_savePreferences());
+  }
+
   /// 设置全局快捷键。
   void setGlobalHotkey(String hotkey) {
     state = state.copyWith(globalHotkey: hotkey);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置历史记录的最大保留条数。
   void setMaxHistoryItems(int maxItems) {
     state = state.copyWith(maxHistoryItems: maxItems);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 切换"启用加密"偏好。
   void toggleEncryption() {
     state = state.copyWith(enableEncryption: !state.enableEncryption);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 切换"启用 OCR"偏好。
   void toggleOCR() {
     state = state.copyWith(enableOCR: !state.enableOCR);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置显示语言代码（例如 'zh_CN'）。
   void setLanguage(String language) {
     state = state.copyWith(language: language);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置 OCR 识别语言（如 'auto', 'en-US', 'zh-Hans' 等）。
   void setOcrLanguage(String language) {
     state = state.copyWith(ocrLanguage: language);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 设置 OCR 最小置信度阈值 (0.0 - 1.0)。
@@ -547,19 +765,13 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     // 约束到合法区间
     final clamped = value.clamp(0.0, 1.0);
     state = state.copyWith(ocrMinConfidence: clamped);
-    _savePreferences();
-  }
-
-  /// 设置默认显示模式。
-  void setDefaultDisplayMode(DisplayMode mode) {
-    state = state.copyWith(defaultDisplayMode: mode);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 切换开发者模式。
   void toggleDeveloperMode() {
     state = state.copyWith(isDeveloperMode: !state.isDeveloperMode);
-    _savePreferences();
+    unawaited(_savePreferences());
   }
 
   /// 切换性能监控覆盖层。
@@ -567,7 +779,19 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     state = state.copyWith(
       showPerformanceOverlay: !state.showPerformanceOverlay,
     );
-    _savePreferences();
+    unawaited(_savePreferences());
+  }
+
+  /// 设置UI界面模式。
+  void setUiMode(UiMode mode) {
+    state = state.copyWith(uiMode: mode);
+    unawaited(_savePreferences());
+  }
+
+  /// 保存紧凑模式的窗口宽度
+  void setCompactModeWindowWidth(double? width) {
+    state = state.copyWith(compactModeWindowWidth: width);
+    unawaited(_savePreferences());
   }
 }
 
@@ -615,6 +839,28 @@ final trayServiceProvider = FutureProvider<TrayService>((ref) async {
   final trayService = TrayService();
   final userPreferences = ref.watch(userPreferencesProvider);
 
+  // 设置托盘交互回调
+  trayService.onTrayInteraction = () {
+    ref.read(windowActivationSourceProvider.notifier).state =
+        WindowActivationSource.tray;
+    ref.read(autoHideServiceProvider).stopMonitoring();
+  };
+
+  // 设置窗口显示回调
+  trayService.onWindowShown = () {
+    final autoHideEnabled = ref.read(userPreferencesProvider).autoHideEnabled;
+    if (autoHideEnabled) {
+      ref.read(autoHideServiceProvider).startMonitoring();
+    } else {
+      ref.read(autoHideServiceProvider).stopMonitoring();
+    }
+  };
+
+  // 设置窗口隐藏回调
+  trayService.onWindowHidden = () {
+    ref.read(autoHideServiceProvider).stopMonitoring();
+  };
+
   // 初始化托盘服务
   await trayService.initialize(userPreferences);
 
@@ -626,11 +872,54 @@ final trayServiceProvider = FutureProvider<TrayService>((ref) async {
   return trayService;
 });
 
+/// 窗口激活来源提供者
+/// 记录窗口是通过快捷键唤起还是托盘图标唤起
+final windowActivationSourceProvider = StateProvider<WindowActivationSource>(
+  (ref) => WindowActivationSource.none,
+);
+
+/// 自动隐藏服务提供者
+final autoHideServiceProvider = Provider<AutoHideService>((ref) {
+  final service = AutoHideService(ref);
+  final preferences = ref.read(userPreferencesProvider);
+  if (preferences.autoHideEnabled) {
+    service.startMonitoring();
+  }
+
+  ref.listen<UserPreferences>(userPreferencesProvider, (previous, next) {
+    final previousValue = previous?.autoHideEnabled ?? false;
+    final nextValue = next.autoHideEnabled;
+    if (previousValue != nextValue) {
+      if (nextValue) {
+        service.startMonitoring();
+      } else {
+        service.stopMonitoring();
+      }
+      return;
+    }
+
+    if (nextValue &&
+        previous?.autoHideTimeoutSeconds != next.autoHideTimeoutSeconds) {
+      service.startMonitoring();
+    }
+  });
+
+  return service;
+});
+
 /// 窗口监听器提供者
 /// 提供全局单例的 AppWindowListener，用于处理窗口事件。
 final windowListenerProvider = Provider<AppWindowListener>((ref) {
   final trayService = TrayService();
-  final windowListener = AppWindowListener(trayService);
+  final windowListener = AppWindowListener(
+    trayService,
+    onSaveAppSwitcherWidth: (width) {
+      // 保存 AppSwitcher 窗口宽度
+      ref
+          .read(userPreferencesProvider.notifier)
+          .setCompactModeWindowWidth(width);
+    },
+  );
 
   // 监听用户偏好变化并更新窗口监听器
   ref.listen(userPreferencesProvider, (previous, next) {

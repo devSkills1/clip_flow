@@ -45,6 +45,12 @@ class HotkeyErrorHandler {
       return reservedError;
     }
 
+    // 检查常用系统快捷键 (防止覆盖关键功能)
+    final criticalError = _checkCriticalSystemHotkeys(modifiers, key);
+    if (criticalError != null) {
+      return criticalError;
+    }
+
     return null;
   }
 
@@ -70,6 +76,42 @@ class HotkeyErrorHandler {
       const reservedKeys = {'3', '4', '5'};
       if (reservedKeys.contains(keyString)) {
         return '该快捷键为系统保留，请选择其他组合';
+      }
+    }
+
+    return null;
+  }
+
+  /// 检查关键系统快捷键
+  static String? _checkCriticalSystemHotkeys(
+    Set<HotkeyModifier> modifiers,
+    String key,
+  ) {
+    final keyString = key.toLowerCase();
+
+    // 检查单修饰符 Cmd/Ctrl 的情况
+    // 这些是操作系统最基础的快捷键，覆盖它们会导致严重的用户体验问题
+    if (modifiers.length == 1 && modifiers.contains(HotkeyModifier.command)) {
+      const criticalKeys = {
+        'c', // 复制
+        'v', // 粘贴
+        'x', // 剪切
+        'z', // 撤销
+        'a', // 全选
+        's', // 保存
+        'q', // 退出
+        'w', // 关闭窗口
+        'm', // 最小化
+        'h', // 隐藏
+        'n', // 新建
+        'o', // 打开
+        'p', // 打印
+        'tab', // 切换应用/标签
+        'space', // Spotlight/输入法
+      };
+      
+      if (criticalKeys.contains(keyString)) {
+        return '该快捷键与系统关键功能冲突，禁止使用';
       }
     }
 

@@ -377,15 +377,6 @@ class I18nCommonUtil {
     );
   }
 
-  /// 获取对话框：选择默认显示模式标题
-  static String getDialogDisplayModeTitle(BuildContext context) {
-    return getText(
-      context,
-      (l10n) => l10n.dialogDisplayModeTitle,
-      I18nFallbacks.settings.dialogDisplayModeTitle,
-    );
-  }
-
   /// 获取显示模式：紧凑
   static String getDisplayCompact(BuildContext context) {
     return getText(

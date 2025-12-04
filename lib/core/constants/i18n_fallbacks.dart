@@ -120,6 +120,15 @@ class _CommonFallback {
 
   /// 剪贴板类型：代码
   String get clipTypeCode => '代码';
+
+  /// 紧凑统计：字符
+  String statCharacters(String count) => '$count字符';
+
+  /// 紧凑统计：单词
+  String statWords(String count) => '$count词';
+
+  /// 紧凑统计：行数
+  String statLines(String count) => '$count行';
 }
 
 class _HomeFallback {
@@ -134,6 +143,12 @@ class _HomeFallback {
 
   /// 搜索提示
   String get searchHint => '搜索剪贴板历史...';
+
+  /// OCR 文本存在但功能被关闭提示
+  String get ocrDisabledHint => '检测到OCR文本，但OCR功能已禁用。请在设置中启用。';
+
+  /// OCR 识别失败提示
+  String get ocrFailedHint => 'OCR识别失败，请稍后重试。';
 }
 
 class _SettingsFallback {
@@ -167,17 +182,38 @@ class _SettingsFallback {
   /// 常规：最小化到系统托盘 副标题
   String get generalMinimizeToTraySubtitle => '关闭窗口时最小化到系统托盘';
 
+  /// 常规：自动隐藏 标题
+  String get generalAutoHideTitle => '自动隐藏窗口';
+
+  /// 常规：自动隐藏 副标题
+  String get generalAutoHideSubtitle => '静置后自动隐藏，冷启动与 Cmd + Option + ` 唤起均生效';
+
   /// 常规：全局快捷键 标题
   String get generalGlobalHotkeyTitle => '全局快捷键';
 
   /// 常规：全局快捷键 副标题（直接显示组合键）
   String generalGlobalHotkeySubtitle(String hotkey) => hotkey;
 
+  /// 常规：自动隐藏快捷键 标题
+  String get generalAutoHideHotkeyTitle => '自动隐藏快捷键';
+
+  /// 常规：自动隐藏快捷键 副标题
+  String generalAutoHideHotkeySubtitle(String hotkey) => '当前快捷键：$hotkey';
+
+  /// 常规：自动隐藏延迟 标题
+  String get generalAutoHideTimeoutTitle => '自动隐藏延迟';
+
+  /// 常规：自动隐藏延迟 副标题（显示秒数）
+  String generalAutoHideTimeoutSubtitle(int seconds) => '无操作后 $seconds 秒自动隐藏';
+
   /// 常规：最大历史记录数 标题
   String get generalMaxHistoryTitle => '最大历史记录数';
 
   /// 常规：最大历史记录数 副标题（显示条数）
   String generalMaxHistorySubtitle(int count) => '$count 条';
+
+  /// 常规：开机自启动切换错误
+  String generalAutoStartErrorMessage(String error) => '更新开机自启动失败: $error';
 
   /// 安全：启用加密 标题
   String get securityEnableEncryptionTitle => '启用加密';
@@ -205,9 +241,6 @@ class _SettingsFallback {
 
   /// 外观：主题模式 标题
   String get appearanceThemeModeTitle => '主题模式';
-
-  /// 外观：默认显示模式 标题
-  String get appearanceDefaultDisplayModeTitle => '默认显示模式';
 
   /// 外观：语言 标题
   String get appearanceLanguageTitle => '语言';
@@ -251,11 +284,11 @@ class _SettingsFallback {
   /// 弹窗：设置最大历史记录数 输入框标签
   String get dialogMaxHistoryFieldLabel => '历史记录数量';
 
+  /// 弹窗：设置最大历史记录数 Helper
+  String get dialogMaxHistoryHelperText => '建议值：100-2000';
+
   /// 弹窗：选择主题模式 标题
   String get dialogThemeTitle => '选择主题模式';
-
-  /// 弹窗：选择默认显示模式 标题
-  String get dialogDisplayModeTitle => '选择默认显示模式';
 
   /// 弹窗：选择语言 标题
   String get dialogLanguageTitle => '选择语言';
@@ -268,6 +301,21 @@ class _SettingsFallback {
 
   /// 设置页操作：检查更新 标题
   String get actionCheckUpdateTitle => '检查更新';
+
+  /// 数字格式化：千单位
+  String get formatCountThousand => '千';
+
+  /// 数字格式化：万单位
+  String get formatCountTenThousand => '万';
+
+  /// 数字格式化：亿单位
+  String get formatCountHundredMillion => '亿';
+
+  /// 数字格式化：百万单位
+  String get formatCountMillion => '百万';
+
+  /// 数字格式化：十亿单位
+  String get formatCountBillion => '十亿';
 
   /// 设置页操作：检查更新 副标题
   String get actionCheckUpdateSubtitle => '检查最新版本';
@@ -438,7 +486,8 @@ class _SettingsFallback {
   String get feedbackEmailSubject => 'ClipFlow Pro 反馈与建议';
 
   /// 邮件反馈正文
-  String get feedbackEmailBody => '请在这里描述您的反馈或建议...\n\n---\n应用版本: ${ClipConstants.appVersion}\n系统平台: ${Platform.operatingSystem}';
+  String get feedbackEmailBody =>
+      '请在这里描述您的反馈或建议...\n\n---\n应用版本: ${ClipConstants.appVersion}\n系统平台: ${Platform.operatingSystem}';
 
   /// 问题报告标题
   String get feedbackIssueTitle => '问题报告';

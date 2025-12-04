@@ -15,6 +15,9 @@ class SEn extends S {
   String get homeTitle => 'Home';
 
   @override
+  String get appSwitcherTitle => 'Compact Mode';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -37,6 +40,11 @@ class SEn extends S {
       'Automatically run when the system starts';
 
   @override
+  String generalAutoStartErrorMessage(String error) {
+    return 'Failed to update startup setting: $error';
+  }
+
+  @override
   String get generalMinimizeToTrayTitle => 'Minimize to tray';
 
   @override
@@ -44,11 +52,34 @@ class SEn extends S {
       'Minimize to tray when closing the window';
 
   @override
+  String get generalAutoHideTitle => 'Auto-hide window';
+
+  @override
+  String get generalAutoHideSubtitle =>
+      'Hide after inactivity; works on cold start and Cmd + Option + ` toggle';
+
+  @override
   String get generalGlobalHotkeyTitle => 'Global hotkey';
 
   @override
   String generalGlobalHotkeySubtitle(String hotkey) {
     return 'Current hotkey: $hotkey';
+  }
+
+  @override
+  String get generalAutoHideHotkeyTitle => 'Auto-hide hotkey';
+
+  @override
+  String generalAutoHideHotkeySubtitle(String hotkey) {
+    return 'Current hotkey: $hotkey';
+  }
+
+  @override
+  String get generalAutoHideTimeoutTitle => 'Auto-hide delay';
+
+  @override
+  String generalAutoHideTimeoutSubtitle(int seconds) {
+    return 'Hide after $seconds seconds of inactivity';
   }
 
   @override
@@ -72,6 +103,13 @@ class SEn extends S {
   @override
   String get securityEnableOcrSubtitle =>
       'Automatically recognize text in images';
+
+  @override
+  String get clipCardOcrDisabledHint =>
+      'OCR text detected but the feature is disabled. Enable it in Settings.';
+
+  @override
+  String get clipCardOcrFailedHint => 'OCR failed or confidence too low.';
 
   @override
   String get appearanceThemeModeTitle => 'Theme mode';
@@ -135,6 +173,9 @@ class SEn extends S {
   String get dialogMaxHistoryFieldLabel => 'History items';
 
   @override
+  String get dialogMaxHistoryHelperText => 'Recommended range: 100-2000';
+
+  @override
   String get dialogThemeTitle => 'Choose theme mode';
 
   @override
@@ -162,6 +203,18 @@ class SEn extends S {
   String get actionFeedbackSubtitle => 'Report bugs or suggestions';
 
   @override
+  String get headerActionOpenAppSwitcher => 'Compact Mode';
+
+  @override
+  String get headerActionBackTraditional => 'Classic Mode';
+
+  @override
+  String get windowMinimizeTooltip => 'Minimize window';
+
+  @override
+  String get windowCloseTooltip => 'Close window';
+
+  @override
   String get aboutVersionTitle => 'Version';
 
   @override
@@ -172,6 +225,12 @@ class SEn extends S {
 
   @override
   String get homeEmptySubtitle => 'Copy something to get started';
+
+  @override
+  String get searchEmptyTitle => 'No matching results';
+
+  @override
+  String get searchEmptySubtitle => 'Try another keyword or adjust filters';
 
   @override
   String snackCopiedPrefix(String text) {
@@ -202,6 +261,21 @@ class SEn extends S {
   @override
   String previewColor(String hex) {
     return 'Color: $hex';
+  }
+
+  @override
+  String compactStatCharacters(String count) {
+    return 'Ch $count';
+  }
+
+  @override
+  String compactStatWords(String count) {
+    return 'Wd $count';
+  }
+
+  @override
+  String compactStatLines(String count) {
+    return 'Ln $count';
   }
 
   @override
@@ -250,7 +324,20 @@ class SEn extends S {
   String get filterClearHistoryButton => 'Clear History';
 
   @override
+  String get filterClearSearchButton => 'Clear Search';
+
+  @override
+  String get filterClearAllUnfavoritedButton => 'Clear Unfavorited';
+
+  @override
+  String get filterClearAllButton => 'Clear All';
+
+  @override
   String get filterConfirmClearTitle => 'Confirm Clear';
+
+  @override
+  String get filterConfirmClearContent =>
+      'Are you sure you want to clear the history?\n\nThis will delete all [unfavorited] items and keep favorites.\nThis action cannot be undone.';
 
   @override
   String get searchHint => 'Search clipboard history...';
@@ -284,6 +371,21 @@ class SEn extends S {
 
   @override
   String get clipTypeImage => 'Image';
+
+  @override
+  String get formatCountThousand => 'k';
+
+  @override
+  String get formatCountTenThousand => 'k';
+
+  @override
+  String get formatCountHundredMillion => 'M';
+
+  @override
+  String get formatCountMillion => 'M';
+
+  @override
+  String get formatCountBillion => 'B';
 
   @override
   String get clipTypeColor => 'Color';

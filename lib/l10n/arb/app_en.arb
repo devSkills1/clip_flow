@@ -6,7 +6,12 @@
   },
   "homeTitle": "Home",
   "@homeTitle": {
-    "description": "Title for home page"
+    "description": "Title for classic mode page"
+  },
+
+  "appSwitcherTitle": "Compact Mode",
+  "@appSwitcherTitle": {
+    "description": "Title for Compact mode"
   },
   "settingsTitle": "Settings",
   "@settingsTitle": {
@@ -31,11 +36,25 @@
   "generalAutoStartSubtitle": "Automatically run when the system starts",
   "@generalAutoStartSubtitle": {"description": "General - Auto start - subtitle"},
 
+  "generalAutoStartErrorMessage": "Failed to update startup setting: {error}",
+  "@generalAutoStartErrorMessage": {
+    "description": "General - Auto start toggle error message",
+    "placeholders": {
+      "error": {"type": "String", "example": "Permission denied"}
+    }
+  },
+
   "generalMinimizeToTrayTitle": "Minimize to tray",
   "@generalMinimizeToTrayTitle": {"description": "General - Minimize to tray - title"},
 
   "generalMinimizeToTraySubtitle": "Minimize to tray when closing the window",
   "@generalMinimizeToTraySubtitle": {"description": "General - Minimize to tray - subtitle"},
+
+  "generalAutoHideTitle": "Auto-hide window",
+  "@generalAutoHideTitle": {"description": "General - Auto hide - title"},
+
+  "generalAutoHideSubtitle": "Hide after inactivity; works on cold start and Cmd + Option + ` toggle",
+  "@generalAutoHideSubtitle": {"description": "General - Auto hide - subtitle"},
 
   "generalGlobalHotkeyTitle": "Global hotkey",
   "@generalGlobalHotkeyTitle": {"description": "General - Global hotkey - title"},
@@ -45,6 +64,32 @@
     "description": "General - Global hotkey - current value",
     "placeholders": {
       "hotkey": {"type": "String", "example": "Ctrl+Shift+V"}
+    }
+  },
+
+  "generalAutoHideHotkeyTitle": "Auto-hide hotkey",
+  "@generalAutoHideHotkeyTitle": {
+    "description": "General - Auto-hide hotkey - title"
+  },
+
+  "generalAutoHideHotkeySubtitle": "Current hotkey: {hotkey}",
+  "@generalAutoHideHotkeySubtitle": {
+    "description": "General - Auto-hide hotkey - subtitle",
+    "placeholders": {
+      "hotkey": {"type": "String", "example": "Cmd+Option+`"}
+    }
+  },
+
+  "generalAutoHideTimeoutTitle": "Auto-hide delay",
+  "@generalAutoHideTimeoutTitle": {
+    "description": "General - Auto-hide delay - title"
+  },
+
+  "generalAutoHideTimeoutSubtitle": "Hide after {seconds} seconds of inactivity",
+  "@generalAutoHideTimeoutSubtitle": {
+    "description": "General - Auto-hide delay - subtitle",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "3"}
     }
   },
 
@@ -70,6 +115,16 @@
 
   "securityEnableOcrSubtitle": "Automatically recognize text in images",
   "@securityEnableOcrSubtitle": {"description": "Security - Enable OCR - subtitle"},
+
+  "clipCardOcrDisabledHint": "OCR text detected but the feature is disabled. Enable it in Settings.",
+  "@clipCardOcrDisabledHint": {
+    "description": "Clip item card hint shown when OCR text exists but OCR is globally disabled"
+  },
+
+  "clipCardOcrFailedHint": "OCR failed or confidence too low.",
+  "@clipCardOcrFailedHint": {
+    "description": "Clip item card hint shown when OCR recognition fails"
+  },
 
   "appearanceThemeModeTitle": "Theme mode",
   "@appearanceThemeModeTitle": {"description": "Appearance - Theme mode - title"},
@@ -128,6 +183,11 @@
   "dialogMaxHistoryFieldLabel": "History items",
   "@dialogMaxHistoryFieldLabel": {"description": "Dialog - Max history - field label"},
 
+  "dialogMaxHistoryHelperText": "Recommended range: 100-2000",
+  "@dialogMaxHistoryHelperText": {
+    "description": "Dialog - Max history - helper text"
+  },
+
   "dialogThemeTitle": "Choose theme mode",
   "@dialogThemeTitle": {"description": "Dialog - Choose theme - title"},
 
@@ -155,6 +215,26 @@
   "actionFeedbackSubtitle": "Report bugs or suggestions",
   "@actionFeedbackSubtitle": {"description": "About - Feedback - subtitle"},
 
+  "headerActionOpenAppSwitcher": "Compact Mode",
+  "@headerActionOpenAppSwitcher": {
+    "description": "Button label for switching to App Switcher mode"
+  },
+
+  "headerActionBackTraditional": "Classic Mode",
+  "@headerActionBackTraditional": {
+    "description": "Button label for returning to the traditional UI"
+  },
+
+  "windowMinimizeTooltip": "Minimize window",
+  "@windowMinimizeTooltip": {
+    "description": "Tooltip for the window minimize action"
+  },
+
+  "windowCloseTooltip": "Close window",
+  "@windowCloseTooltip": {
+    "description": "Tooltip for the window close action"
+  },
+
   "aboutVersionTitle": "Version",
   "@aboutVersionTitle": {"description": "About - Version - title"},
 
@@ -166,6 +246,12 @@
 
   "homeEmptySubtitle": "Copy something to get started",
   "@homeEmptySubtitle": {"description": "Home - empty state subtitle"},
+
+  "searchEmptyTitle": "No matching results",
+  "@searchEmptyTitle": {"description": "Search empty state title"},
+
+  "searchEmptySubtitle": "Try another keyword or adjust filters",
+  "@searchEmptySubtitle": {"description": "Search empty state subtitle"},
 
   "snackCopiedPrefix": "Copied: {text}",
   "@snackCopiedPrefix": {
@@ -205,6 +291,30 @@
   "@previewColor": {
     "description": "Home - preview - color",
     "placeholders": {"hex": {"type": "String", "example": "#FFAA00"}}
+  },
+
+  "compactStatCharacters": "Ch {count}",
+  "@compactStatCharacters": {
+    "description": "Compact stats chip label for character count",
+    "placeholders": {
+      "count": {"type": "String", "example": "1.2k"}
+    }
+  },
+
+  "compactStatWords": "Wd {count}",
+  "@compactStatWords": {
+    "description": "Compact stats chip label for word count",
+    "placeholders": {
+      "count": {"type": "String", "example": "250"}
+    }
+  },
+
+  "compactStatLines": "Ln {count}",
+  "@compactStatLines": {
+    "description": "Compact stats chip label for line count",
+    "placeholders": {
+      "count": {"type": "String", "example": "12"}
+    }
   },
 
   "unknownFormat": "Unknown",
@@ -252,8 +362,20 @@
   "filterClearHistoryButton": "Clear History",
   "@filterClearHistoryButton": {"description": "Sidebar - clear history button"},
 
+  "filterClearSearchButton": "Clear Search",
+  "@filterClearSearchButton": {"description": "Sidebar - clear search button"},
+
+  "filterClearAllUnfavoritedButton": "Clear Unfavorited",
+  "@filterClearAllUnfavoritedButton": {"description": "Sidebar - clear all unfavorited button"},
+
+  "filterClearAllButton": "Clear All",
+  "@filterClearAllButton": {"description": "Sidebar - clear all button"},
+
   "filterConfirmClearTitle": "Confirm Clear",
   "@filterConfirmClearTitle": {"description": "Sidebar - confirm clear dialog title"},
+
+  "filterConfirmClearContent": "Are you sure you want to clear the history?\n\nThis will delete all [unfavorited] items and keep favorites.\nThis action cannot be undone.",
+  "@filterConfirmClearContent": {"description": "Sidebar - confirm clear dialog content"},
 
   "searchHint": "Search clipboard history...",
   "@searchHint": {"description": "Search box hint text"},
@@ -290,6 +412,21 @@
 
   "clipTypeImage": "Image",
   "@clipTypeImage": {"description": "Clipboard type - image"},
+
+  "formatCountThousand": "k",
+  "@formatCountThousand": {"description": "Number formatting - thousand unit"},
+
+  "formatCountTenThousand": "k",
+  "@formatCountTenThousand": {"description": "Number formatting - ten thousand unit"},
+
+  "formatCountHundredMillion": "M",
+  "@formatCountHundredMillion": {"description": "Number formatting - hundred million unit"},
+
+  "formatCountMillion": "M",
+  "@formatCountMillion": {"description": "Number formatting - million unit"},
+
+  "formatCountBillion": "B",
+  "@formatCountBillion": {"description": "Number formatting - billion unit"},
 
   "clipTypeColor": "Color",
   "@clipTypeColor": {"description": "Clipboard type - color"},
