@@ -213,67 +213,81 @@ class FileTypeUtils {
     ...configExtensions,
   };
 
+  static const Set<String> _specialTextFileNames = {
+    'readme',
+    'makefile',
+    'dockerfile',
+    'license',
+    'changelog',
+  };
+
   /// 检查是否为图片文件
   static bool isImageFile(String extension) {
-    return imageExtensions.contains(extension.toLowerCase());
+    return imageExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为视频文件
   static bool isVideoFile(String extension) {
-    return videoExtensions.contains(extension.toLowerCase());
+    return videoExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为音频文件
   static bool isAudioFile(String extension) {
-    return audioExtensions.contains(extension.toLowerCase());
+    return audioExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为脚本文件
   static bool isScriptFile(String extension) {
-    return scriptExtensions.contains(extension.toLowerCase());
+    return scriptExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为代码文件
   static bool isCodeFile(String extension) {
-    return codeExtensions.contains(extension.toLowerCase());
+    return codeExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为文档文件
   static bool isDocumentFile(String extension) {
-    return documentExtensions.contains(extension.toLowerCase());
+    return documentExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为压缩文件
   static bool isArchiveFile(String extension) {
-    return archiveExtensions.contains(extension.toLowerCase());
+    return archiveExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为可执行文件
   static bool isExecutableFile(String extension) {
-    return executableExtensions.contains(extension.toLowerCase());
+    return executableExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为配置文件
   static bool isConfigFile(String extension) {
-    return configExtensions.contains(extension.toLowerCase());
+    return configExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 检查是否为常见文件类型
   static bool isCommonFile(String extension) {
-    return commonExtensions.contains(extension.toLowerCase());
+    return commonExtensions.contains(_normalizeExtension(extension));
   }
 
   /// 从文件路径提取扩展名
   static String extractExtension(String filePath) {
-    final parts = filePath.split('.');
-    if (parts.length < 2) return '';
-    return parts.last.toLowerCase();
+    final trimmed = filePath.trim();
+    final lastDot = trimmed.lastIndexOf('.');
+    if (lastDot == -1 || lastDot == trimmed.length - 1) {
+      return '';
+    }
+    return trimmed.substring(lastDot + 1).toLowerCase();
   }
 
   /// 从文件路径提取文件名（不含扩展名）
   static String extractFileName(String filePath) {
-    final parts = filePath.split(RegExp(r'[\\/]'));
-    final fileName = parts.last;
+    final normalized = filePath.replaceAll(_backslashPattern, '/');
+    final lastSlash = normalized.lastIndexOf('/');
+    final fileName = lastSlash == -1
+        ? normalized
+        : normalized.substring(lastSlash + 1);
     final dotIndex = fileName.lastIndexOf('.');
     return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
   }
@@ -285,14 +299,7 @@ class FileTypeUtils {
     if (extension.isEmpty) {
       // 处理无扩展名的特殊文件
       final fileName = extractFileName(filePath).toLowerCase();
-      const specialTextFiles = [
-        'readme',
-        'makefile',
-        'dockerfile',
-        'license',
-        'changelog',
-      ];
-      if (specialTextFiles.contains(fileName)) {
+      if (_specialTextFileNames.contains(fileName)) {
         return ClipType.text;
       }
       return ClipType.file;
@@ -334,7 +341,7 @@ class FileTypeUtils {
 
   /// 获取文件类型的分类
   static FileTypeCategory getFileTypeCategory(String extension) {
-    final ext = extension.toLowerCase();
+    final ext = _normalizeExtension(extension);
 
     if (isCodeFile(ext)) {
       return FileTypeCategory.code;
@@ -394,6 +401,12 @@ class FileTypeUtils {
 
     return isAbsolutePath || isRelativePath;
   }
+
+  static String _normalizeExtension(String extension) {
+    return extension.trim().toLowerCase();
+  }
+
+  static final RegExp _backslashPattern = RegExp(r'\\');
 }
 
 /// 文件类型分类枚举

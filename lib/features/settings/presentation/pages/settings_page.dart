@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs
 // 忽略公共成员API文档要求，因为这是内部设置页面，不需要对外暴露API文档
 // Internal settings page that doesn't require public API documentation.
 import 'dart:async';
@@ -7,6 +6,7 @@ import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow_pro/core/constants/spacing.dart';
 import 'package:clip_flow_pro/core/models/hotkey_config.dart';
+import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
@@ -32,6 +32,63 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   S? get l10n => S.of(context);
   int _versionTapCount = 0;
+  late final Future<List<String>> _availableOcrLanguagesFuture;
+  late final List<String> _supportedOcrLanguages;
+
+  // 保存服务引用，以便在 dispose 中安全使用
+  late final AutoHideService _autoHideService;
+  late final bool _autoHideEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    final ocrService = OcrServiceFactory.getInstance();
+    _supportedOcrLanguages = ocrService.getSupportedLanguages();
+    _availableOcrLanguagesFuture = ocrService.getAvailableLanguages();
+
+    // 保存引用以便在 dispose 中使用
+    _autoHideService = ref.read(autoHideServiceProvider);
+    _autoHideEnabled = ref.read(userPreferencesProvider).autoHideEnabled;
+
+    // 停止自动隐藏定时器（用户在设置页面时不应该被打断）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _autoHideService.stopMonitoring();
+      unawaited(
+        Log.i(
+          'Settings page opened, auto-hide monitoring stopped',
+          tag: 'SettingsPage',
+        ),
+      );
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 确保在设置页面中自动隐藏始终处于停止状态
+    // 即使页面重建也要保持停止
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _autoHideService.stopMonitoring();
+    });
+  }
+
+  @override
+  void dispose() {
+    // 设置页面关闭时，如果用户开启了自动隐藏，则重新启动监控
+    // 使用在 initState 中保存的引用，避免在 dispose 中使用 ref
+    if (_autoHideEnabled) {
+      _autoHideService.startMonitoring();
+      unawaited(
+        Log.i(
+          'Settings page closed, auto-hide monitoring restarted',
+          tag: 'SettingsPage',
+        ),
+      );
+    }
+    super.dispose();
+  }
 
   void _handleVersionTap() {
     setState(() {
@@ -39,24 +96,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     });
 
     if (_versionTapCount >= 7) {
-      // 激活开发者模式
-      ref.read(userPreferencesProvider.notifier).toggleDeveloperMode();
+      final isDeveloperModeEnabled = ref
+          .read(userPreferencesProvider)
+          .isDeveloperMode;
 
-      // 显示提示
+      if (!isDeveloperModeEnabled) {
+        ref.read(userPreferencesProvider.notifier).toggleDeveloperMode();
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.read(userPreferencesProvider).isDeveloperMode
-                ? l10n?.developerModeActive ??
-                      I18nFallbacks.settings.developerModeActive
-                : l10n?.developerModeInactive ??
-                      I18nFallbacks.settings.developerModeInactive,
+            l10n?.developerModeActive ??
+                I18nFallbacks.settings.developerModeActive,
           ),
           duration: const Duration(seconds: 2),
         ),
       );
 
-      // 重置计数
       _versionTapCount = 0;
     }
   }
@@ -65,6 +122,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final preferences = ref.watch(userPreferencesProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final toggleWindowHotkeyConfig = ref
+        .read(hotkeyServiceProvider)
+        .getHotkeyConfig(
+          HotkeyAction.toggleWindow,
+        );
+    final autoHideHotkeyLabel =
+        toggleWindowHotkeyConfig?.displayString ?? preferences.globalHotkey;
 
     return Scaffold(
       appBar: AppBar(
@@ -94,9 +158,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     I18nFallbacks.settings.generalAutoStartSubtitle,
                 value: preferences.autoStart,
                 onChanged: (value) async {
-                  await ref
-                      .read(userPreferencesProvider.notifier)
-                      .toggleAutoStart();
+                  await _handleAutoStartToggle();
                 },
               ),
               _buildSwitchTile(
@@ -113,6 +175,41 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       .toggleMinimizeToTray();
                 },
               ),
+              _buildSwitchTile(
+                title:
+                    l10n?.generalAutoHideTitle ??
+                    I18nFallbacks.settings.generalAutoHideTitle,
+                subtitle:
+                    l10n?.generalAutoHideSubtitle ??
+                    I18nFallbacks.settings.generalAutoHideSubtitle,
+                value: preferences.autoHideEnabled,
+                onChanged: (value) {
+                  ref
+                      .read(userPreferencesProvider.notifier)
+                      .setAutoHideEnabled(value);
+                  if (value) {
+                    ref.read(autoHideServiceProvider).startMonitoring();
+                  } else {
+                    ref.read(autoHideServiceProvider).stopMonitoring();
+                  }
+                },
+              ),
+              _buildListTile(
+                title:
+                    l10n?.generalAutoHideHotkeyTitle ??
+                    I18nFallbacks.settings.generalAutoHideHotkeyTitle,
+                subtitle:
+                    l10n?.generalAutoHideHotkeySubtitle(
+                      autoHideHotkeyLabel,
+                    ) ??
+                    I18nFallbacks.settings.generalAutoHideHotkeySubtitle(
+                      autoHideHotkeyLabel,
+                    ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  _showHotkeyDialog(context, ref);
+                },
+              ),
               // 性能监控覆盖层开关（在所有构建类型中可用）
               _buildSwitchTile(
                 title:
@@ -126,22 +223,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ref
                       .read(userPreferencesProvider.notifier)
                       .togglePerformanceOverlay();
-                },
-              ),
-              _buildListTile(
-                title:
-                    l10n?.generalGlobalHotkeyTitle ??
-                    I18nFallbacks.settings.generalGlobalHotkeyTitle,
-                subtitle:
-                    l10n?.generalGlobalHotkeySubtitle(
-                      preferences.globalHotkey,
-                    ) ??
-                    I18nFallbacks.settings.generalGlobalHotkeySubtitle(
-                      preferences.globalHotkey,
-                    ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  _showHotkeyDialog(context, ref);
                 },
               ),
               _buildListTile(
@@ -207,25 +288,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     l10n?.ocrLanguageSubtitle ??
                         I18nFallbacks.settings.ocrLanguageSubtitle,
                   ),
-                  trailing: DropdownButton<String>(
-                    value: preferences.ocrLanguage,
-                    items: OcrServiceFactory.getInstance()
-                        .getSupportedLanguages()
-                        .map(
-                          (lang) {
-                            return DropdownMenuItem(
-                              value: lang,
-                              child: Text(lang),
-                            );
-                          },
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref
-                            .read(userPreferencesProvider.notifier)
-                            .setOcrLanguage(value);
-                      }
+                  trailing: FutureBuilder<List<String>>(
+                    future: _availableOcrLanguagesFuture,
+                    initialData: _supportedOcrLanguages,
+                    builder: (context, snapshot) {
+                      final languages = snapshot.data ?? ['auto'];
+                      // 确保当前选中的语言在列表中，否则回退到 'auto'
+                      final selectedValue =
+                          languages.contains(preferences.ocrLanguage)
+                          ? preferences.ocrLanguage
+                          : 'auto';
+
+                      return DropdownButton<String>(
+                        value: selectedValue,
+                        items: languages.map((lang) {
+                          return DropdownMenuItem(
+                            value: lang,
+                            child: Text(lang),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            ref
+                                .read(userPreferencesProvider.notifier)
+                                .setOcrLanguage(value);
+                          }
+                        },
+                      );
                     },
                   ),
                 ),
@@ -288,19 +377,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showThemeDialog(context, ref);
-                },
-              ),
-              _buildListTile(
-                title:
-                    l10n?.appearanceDefaultDisplayModeTitle ??
-                    I18nFallbacks.settings.appearanceDefaultDisplayModeTitle,
-                subtitle: _getDisplayModeText(
-                  context,
-                  preferences.defaultDisplayMode,
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  _showDisplayModeDialog(context, ref);
                 },
               ),
               _buildListTile(
@@ -575,17 +651,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  String _getDisplayModeText(BuildContext context, DisplayMode mode) {
-    switch (mode) {
-      case DisplayMode.compact:
-        return l10n?.displayCompact ?? I18nFallbacks.settings.displayCompact;
-      case DisplayMode.normal:
-        return l10n?.displayNormal ?? I18nFallbacks.settings.displayNormal;
-      case DisplayMode.preview:
-        return l10n?.displayPreview ?? I18nFallbacks.settings.displayPreview;
-    }
-  }
-
   String _getLanguageText(BuildContext context, String language) {
     switch (language) {
       case 'zh_CN':
@@ -594,6 +659,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return l10n?.languageEnUS ?? I18nFallbacks.settings.languageEnUS;
       default:
         return l10n?.languageZhCN ?? I18nFallbacks.settings.languageZhCN;
+    }
+  }
+
+  Future<void> _handleAutoStartToggle() async {
+    try {
+      await ref.read(userPreferencesProvider.notifier).toggleAutoStart();
+    } on Exception catch (e) {
+      if (!mounted) {
+        return;
+      }
+      _showErrorSnackBar(
+        l10n?.generalAutoStartErrorMessage(e.toString()) ??
+            I18nFallbacks.settings.generalAutoStartErrorMessage(e.toString()),
+      );
     }
   }
 
@@ -607,6 +686,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _showMaxHistoryDialog(BuildContext context, WidgetRef ref) {
+    // 提供更丰富的预设值选项
+    const presetValues = [50, 100, 200, 500, 1000, 2000, 5000];
+
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -642,8 +724,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       fillColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerHighest,
+                      helperText:
+                          l10n?.dialogMaxHistoryHelperText ??
+                          I18nFallbacks.settings.dialogMaxHistoryHelperText,
+                      helperMaxLines: 1,
                     ),
-                    items: [100, 200, 500, 1000, 2000].map((value) {
+                    items: presetValues.map((value) {
                       return DropdownMenuItem(
                         value: value,
                         child: Text(
@@ -729,99 +815,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onChanged: (value) {
                     if (value != null) {
                       ref.read(themeModeProvider.notifier).state = value;
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showDisplayModeDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          S.of(context)?.dialogDisplayModeTitle ??
-              I18nFallbacks.settings.dialogDisplayModeTitle,
-        ),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            var selectedMode = ref
-                .read(userPreferencesProvider)
-                .defaultDisplayMode;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ModernRadioListTile<DisplayMode>(
-                  title: Text(
-                    S.of(context)?.displayCompact ??
-                        I18nFallbacks.settings.displayCompact,
-                  ),
-                  subtitle: Text(
-                    S.of(context)?.displayCompactDesc ??
-                        I18nFallbacks.settings.displayCompactDesc,
-                  ),
-                  value: DisplayMode.compact,
-                  groupValue: selectedMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedMode = value;
-                      });
-                      ref
-                          .read(userPreferencesProvider.notifier)
-                          .setDefaultDisplayMode(value);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-                ModernRadioListTile<DisplayMode>(
-                  title: Text(
-                    S.of(context)?.displayNormal ??
-                        I18nFallbacks.settings.displayNormal,
-                  ),
-                  subtitle: Text(
-                    S.of(context)?.displayNormalDesc ??
-                        I18nFallbacks.settings.displayNormalDesc,
-                  ),
-                  value: DisplayMode.normal,
-                  groupValue: selectedMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedMode = value;
-                      });
-                      ref
-                          .read(userPreferencesProvider.notifier)
-                          .setDefaultDisplayMode(value);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-                ModernRadioListTile<DisplayMode>(
-                  title: Text(
-                    S.of(context)?.displayPreview ??
-                        I18nFallbacks.settings.displayPreview,
-                  ),
-                  subtitle: Text(
-                    S.of(context)?.displayPreviewDesc ??
-                        I18nFallbacks.settings.displayPreviewDesc,
-                  ),
-                  value: DisplayMode.preview,
-                  groupValue: selectedMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedMode = value;
-                      });
-                      ref
-                          .read(userPreferencesProvider.notifier)
-                          .setDefaultDisplayMode(value);
                       Navigator.of(context).pop();
                     }
                   },

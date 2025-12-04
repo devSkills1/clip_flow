@@ -1,5 +1,4 @@
 import 'package:clip_flow_pro/app.dart';
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/constants/colors.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
@@ -8,30 +7,12 @@ import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
-  // 检查是否配置了Sentry DSN
-  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
-
-  if (sentryDsn.isNotEmpty) {
-    // 只有在配置了DSN时才初始化Sentry
-    await SentryFlutter.init(
-      (options) {
-        options
-          ..dsn = sentryDsn
-          ..environment = const bool.fromEnvironment('dart.vm.product')
-              ? 'production'
-              : 'development';
-      },
-      appRunner: _runApp,
-    );
-  } else {
-    // 开发模式下直接运行应用，不使用Sentry
-    await _runApp();
-  }
+  await _runApp();
 }
 
 Future<void> _runApp() async {
@@ -40,26 +21,53 @@ Future<void> _runApp() async {
   // 初始化全局错误处理器
   ErrorHandler.initialize();
 
-  // 注意：Sentry已在main()中初始化，这里不再重复初始化CrashService
+  // 初始化快捷键服务 - 需要在窗口设置之前获取UI模式
+  final preferencesService = PreferencesService();
+  await preferencesService.initialize();
+  // 预加载用户偏好，避免首屏 UI 模式闪动
+  final loadedPreferences = await preferencesService.loadPreferences();
 
-  // 初始化窗口管理
-  await windowManager.ensureInitialized();
+  // 可选：从平台侧读取启动时希望的 UI 模式（例如通过快捷键唤起 AppSwitcher）
+  var resolvedUiMode = loadedPreferences.uiMode;
+  try {
+    final modeString = await const MethodChannel(
+      'clipboard_service',
+    ).invokeMethod<String>('getLaunchUiMode');
+    if (modeString == 'compact') {
+      resolvedUiMode = UiMode.compact;
+    } else if (modeString == 'classic') {
+      resolvedUiMode = UiMode.classic;
+    }
+  } on Exception {
+    // 忽略平台调用失败，保持本地偏好
+  }
 
-  // 设置窗口属性
+  final initialPreferences = loadedPreferences.copyWith(uiMode: resolvedUiMode);
+  final hotkeyService = HotkeyService(preferencesService);
+  await hotkeyService.initialize();
+
+  // 设置全局快捷键服务实例
+  setHotkeyServiceInstance(hotkeyService);
+
+  // 初始化窗口管理服务
+  final windowService = WindowManagementService.instance;
+  await windowService.initialize();
+
+  // 使用 WindowManagementService 设置窗口
+  await windowService.setupWindow(resolvedUiMode);
   const windowOptions = WindowOptions(
-    size: Size(ClipConstants.minWindowWidth, ClipConstants.minWindowHeight),
     center: true,
     backgroundColor: Color(AppColors.white),
     skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.normal,
+    titleBarStyle: TitleBarStyle.hidden,
     alwaysOnTop: false,
+    windowButtonVisibility: false,
   );
 
   /// 主函数
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.setPreventClose(true); // 阻止默认关闭行为，由监听器处理
-    await windowManager.show();
-    await windowManager.focus();
+    // 使用窗口管理服务显示窗口
+    await windowService.showAndFocus();
   });
 
   // 初始化日志系统
@@ -71,6 +79,25 @@ Future<void> _runApp() async {
 
   // 初始化服务
   await DatabaseService.instance.initialize();
+  
+  // 执行数据库文件路径修复（方案3：混合修复）
+  // 在应用启动时执行一次，修复无效的file_path并清理无效记录
+  try {
+    final repairReport = await DatabaseService.instance.repairFilePaths();
+    await Log.i(
+      'Database file path repair completed',
+      tag: 'Main',
+      fields: repairReport,
+    );
+  } on Exception catch (e) {
+    // 修复失败不影响应用启动
+    await Log.w(
+      'Database file path repair failed, continuing app startup',
+      tag: 'Main',
+      error: e,
+    );
+  }
+  
   await EncryptionService.instance.initialize();
 
   // 使用剪贴板管理器替代基础剪贴板服务
@@ -81,27 +108,28 @@ Future<void> _runApp() async {
   // 为了兼容性，仍然初始化基础服务（但不再启动监控）
   await ClipboardService.instance.initialize();
 
-  // 初始化快捷键服务
-  final preferencesService = PreferencesService();
-  await preferencesService.initialize();
-  final hotkeyService = HotkeyService(preferencesService);
-  await hotkeyService.initialize();
-
-  // 设置全局快捷键服务实例
-  setHotkeyServiceInstance(hotkeyService);
-
   // 初始化自动更新服务
   try {
     await UpdateService().initialize();
     // 安排后台检查更新
     UpdateService().scheduleBackgroundCheck();
   } on Exception catch (e, stackTrace) {
-    await CrashService.reportError(
-      e,
-      stackTrace,
-      context: 'Failed to initialize UpdateService',
+    await Log.e(
+      'Failed to initialize UpdateService: $e',
+      error: e,
+      stackTrace: stackTrace,
     );
   }
 
-  runApp(const ProviderScope(child: ClipFlowProApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        // 使用预加载的偏好覆盖默认 Provider，避免加载中的 UI 闪动
+        userPreferencesProvider.overrideWith(
+          (ref) => UserPreferencesNotifier.withInitial(initialPreferences),
+        ),
+      ],
+      child: const ClipFlowProApp(),
+    ),
+  );
 }

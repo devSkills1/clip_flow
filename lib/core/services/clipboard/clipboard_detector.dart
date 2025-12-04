@@ -72,11 +72,11 @@ class ClipboardDetector {
         }
       } on Exception catch (e) {
         // 记录错误但继续处理
-        Log.w(
+        unawaited(Log.w(
           'Analysis error during content type detection',
           tag: 'clipboard_detector',
           error: e,
-        );
+        ));
       }
     }
 
@@ -554,10 +554,10 @@ class ClipboardDetector {
       if (formatAnalysis.containsKey(ClipboardFormat.text)) {
         final textContent = formatAnalysis[ClipboardFormat.text]!.content;
         if (textContent != null && textContent.toString().isNotEmpty) {
-          Log.w(
+          unawaited(Log.w(
             'File type detected but no file data found, falling back to text content',
             tag: 'ClipboardDetector',
-          );
+          ));
           return textContent;
         }
       }

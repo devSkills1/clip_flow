@@ -43,6 +43,13 @@ class ClipConstants {
   /// 默认窗口高度
   static const double defaultWindowHeight = 800;
 
+  /// 紧凑模式窗口尺寸
+  /// 紧凑模式窗口高度
+  static const double compactModeWindowHeight = 360;
+
+  /// 紧凑模式窗口宽度比例
+  static const double compactModeWidthRatio = 0.8;
+
   /// 数据库相关常量
   /// 数据库文件名
   static const String databaseName = 'clipflow_pro.db';
@@ -54,6 +61,15 @@ class ClipConstants {
   static const String clipItemsTable = 'clip_items';
 
   /// 应用内相对文件路径
+  /// 媒体文件根目录
+  static const String mediaDir = 'media';
+
+  /// 图片文件目录
+  static const String mediaImagesDir = 'media/images';
+
+  /// 其他文件目录（音频、视频、文件等）
+  static const String mediaFilesDir = 'media/files';
+
   /// 缩略图目录
   static const String thumbnailsDir = 'thumbnails';
 
@@ -64,8 +80,8 @@ class ClipConstants {
   static const String logsDir = 'logs';
 
   /// 限制值（容量/数量/长度）
-  /// 历史记录最大条数
-  static const int maxHistoryItems = 1000;
+  /// 历史记录最大条数（默认值）
+  static const int maxHistoryItems = 500;
 
   /// 缩略图最大边长（px）
   static const int maxThumbnailSize = 200;
@@ -245,9 +261,6 @@ class ClipConstants {
 
   /// 主题模式
   static const String settingThemeMode = 'theme_mode';
-
-  /// 默认显示模式
-  static const String settingDisplayMode = 'display_mode';
 
   /// 网格间距（逻辑像素）
   static const double gridSpacing = 16;

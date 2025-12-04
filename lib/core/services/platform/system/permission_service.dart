@@ -65,14 +65,15 @@ class _PermissionCacheEntry {
 ///
 /// 提供统一的权限状态管理和缓存机制，避免重复的权限检查和弹框
 class PermissionService {
+  /// 权限服务工厂构造函数
+  factory PermissionService() {
+    return _instance ??= PermissionService._internal();
+  }
+
   /// 私有构造函数
   PermissionService._internal();
 
   static PermissionService? _instance;
-
-  /// 权限服务单例实例
-  static PermissionService get instance =>
-      _instance ??= PermissionService._internal();
 
   static const MethodChannel _platformChannel = MethodChannel(
     'clipboard_service',
@@ -226,18 +227,22 @@ class PermissionService {
   /// 清除特定权限的缓存
   void clearCache(PermissionType type) {
     _permissionCache.remove(type);
-    Log.d(
-      'Permission cache cleared: $type',
-      tag: 'permission_service',
+    unawaited(
+      Log.d(
+        'Permission cache cleared: $type',
+        tag: 'permission_service',
+      ),
     );
   }
 
   /// 清除所有权限缓存
   void clearAllCache() {
     _permissionCache.clear();
-    Log.d(
-      'All permission cache cleared',
-      tag: 'permission_service',
+    unawaited(
+      Log.d(
+        'All permission cache cleared',
+        tag: 'permission_service',
+      ),
     );
   }
 
@@ -329,9 +334,11 @@ class PermissionService {
     }
 
     if (expiredKeys.isNotEmpty) {
-      Log.d(
-        'Cleaned up ${expiredKeys.length} expired permission cache entries',
-        tag: 'permission_service',
+      unawaited(
+        Log.d(
+          'Cleaned up ${expiredKeys.length} expired permission cache entries',
+          tag: 'permission_service',
+        ),
       );
     }
   }

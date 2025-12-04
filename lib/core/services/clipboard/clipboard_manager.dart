@@ -22,8 +22,7 @@ class ClipboardManager {
   ClipboardManager._internal();
 
   /// 单例实例
-  static final ClipboardManager _instance =
-      ClipboardManager._internal();
+  static final ClipboardManager _instance = ClipboardManager._internal();
 
   /// 剪贴板轮询器
   final ClipboardPoller _poller = ClipboardPoller();
@@ -80,7 +79,7 @@ class ClipboardManager {
 
     // 保存剩余的批量数据
     if (_writeBuffer.isNotEmpty) {
-      _flushWriteBuffer();
+      unawaited(_flushWriteBuffer());
     }
   }
 
@@ -93,11 +92,13 @@ class ClipboardManager {
       try {
         _uiController.add(item);
       } on Exception catch (e) {
-        Log.w(
-          'Failed to add item to UI stream - controller may be closed',
-          tag: 'OptimizedClipboardManager',
-          error: e,
-          fields: {'id': item.id},
+        unawaited(
+          Log.w(
+            'Failed to add item to UI stream - controller may be closed',
+            tag: 'OptimizedClipboardManager',
+            error: e,
+            fields: {'id': item.id},
+          ),
         );
       }
     }
@@ -129,15 +130,25 @@ class ClipboardManager {
       final existingItem = await _database.getClipItemById(clipItem.id);
       if (existingItem != null) {
         await Log.d(
-          'Clip item already exists in database, updating UI only',
+          'Clip item already exists in database, updating timestamp',
           tag: 'OptimizedClipboardManager',
           fields: {
             'id': clipItem.id,
             'type': clipItem.type.name,
           },
         );
-        // 即使数据库中已存在，仍然需要更新UI以确保该项目显示在最前面
-        _safeAddToUiStream(existingItem.copyWith(updatedAt: DateTime.now()));
+
+        // 更新数据库中的访问时间戳
+        // 注意：保持createdAt不变，只更新updatedAt
+        // createdAt代表首次创建时间，应该保持不变以维护审计追踪
+        final updatedItem = existingItem.copyWith(
+          updatedAt: DateTime.now(),
+          // ✅ 不修改createdAt，保持数据完整性
+        );
+        await _database.updateClipItem(updatedItem);
+
+        // 更新UI以确保该项目显示在最前面
+        _safeAddToUiStream(updatedItem);
         return;
       }
 
@@ -300,6 +311,7 @@ class ClipboardManager {
     final stopwatch = Stopwatch()..start();
 
     try {
+      // 显式启用事务以确保原子性 (漏洞#9)
       await _database.batchInsertClipItems(items);
 
       stopwatch.stop();
@@ -330,10 +342,12 @@ class ClipboardManager {
 
   /// 处理错误
   void _handleError(String error) {
-    Log.e(
-      'Clipboard monitoring error',
-      tag: 'OptimizedClipboardManager',
-      error: Exception(error),
+    unawaited(
+      Log.e(
+        'Clipboard monitoring error',
+        tag: 'OptimizedClipboardManager',
+        error: Exception(error),
+      ),
     );
   }
 

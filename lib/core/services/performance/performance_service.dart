@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
 // ignore_for_file: public_member_api_docs
+// Reason: Internal service module with documented API interfaces in separate files
 // Performance service internal methods that don't require public API
 // documentation.
 

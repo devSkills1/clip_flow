@@ -6,7 +6,12 @@
   },
   "homeTitle": "首页",
   "@homeTitle": {
-    "description": "首页标题"
+    "description": "经典模式标题"
+  },
+
+  "appSwitcherTitle": "紧凑模式",
+  "@appSwitcherTitle": {
+    "description": "紧凑模式标题"
   },
   "settingsTitle": "设置",
   "@settingsTitle": {
@@ -31,11 +36,25 @@
   "generalAutoStartSubtitle": "应用启动时自动运行",
   "@generalAutoStartSubtitle": {"description": "常规-开机自启动-说明"},
 
+  "generalAutoStartErrorMessage": "更新开机自启动失败：{error}",
+  "@generalAutoStartErrorMessage": {
+    "description": "常规-开机自启动-错误提示",
+    "placeholders": {
+      "error": {"type": "String", "example": "权限不足"}
+    }
+  },
+
   "generalMinimizeToTrayTitle": "最小化到系统托盘",
   "@generalMinimizeToTrayTitle": {"description": "常规-最小化到系统托盘-标题"},
 
   "generalMinimizeToTraySubtitle": "关闭窗口时最小化到系统托盘",
   "@generalMinimizeToTraySubtitle": {"description": "常规-最小化到系统托盘-说明"},
+
+  "generalAutoHideTitle": "自动隐藏窗口",
+  "@generalAutoHideTitle": {"description": "常规-自动隐藏-标题"},
+
+  "generalAutoHideSubtitle": "静置后自动隐藏，冷启动与 Cmd + Option + ` 唤起均生效",
+  "@generalAutoHideSubtitle": {"description": "常规-自动隐藏-说明"},
 
   "generalGlobalHotkeyTitle": "全局快捷键",
   "@generalGlobalHotkeyTitle": {"description": "常规-全局快捷键-标题"},
@@ -45,6 +64,32 @@
     "description": "常规-全局快捷键-当前值",
     "placeholders": {
       "hotkey": {"type": "String", "example": "Ctrl+Shift+V"}
+    }
+  },
+
+  "generalAutoHideHotkeyTitle": "自动隐藏快捷键",
+  "@generalAutoHideHotkeyTitle": {
+    "description": "常规-自动隐藏快捷键-标题"
+  },
+
+  "generalAutoHideHotkeySubtitle": "当前快捷键：{hotkey}",
+  "@generalAutoHideHotkeySubtitle": {
+    "description": "常规-自动隐藏快捷键-当前值",
+    "placeholders": {
+      "hotkey": {"type": "String", "example": "Cmd+Option+`"}
+    }
+  },
+
+  "generalAutoHideTimeoutTitle": "自动隐藏延迟",
+  "@generalAutoHideTimeoutTitle": {
+    "description": "常规-自动隐藏延迟-标题"
+  },
+
+  "generalAutoHideTimeoutSubtitle": "无操作后 {seconds} 秒自动隐藏",
+  "@generalAutoHideTimeoutSubtitle": {
+    "description": "常规-自动隐藏延迟-说明",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "3"}
     }
   },
 
@@ -70,6 +115,16 @@
 
   "securityEnableOcrSubtitle": "自动识别图片中的文字",
   "@securityEnableOcrSubtitle": {"description": "安全-启用OCR-说明"},
+
+  "clipCardOcrDisabledHint": "检测到OCR文本，但OCR功能已禁用。请在设置中启用。",
+  "@clipCardOcrDisabledHint": {
+    "description": "卡片提示：存在OCR文本但功能被全局关闭"
+  },
+
+  "clipCardOcrFailedHint": "OCR识别失败，或置信度低于阈值。",
+  "@clipCardOcrFailedHint": {
+    "description": "卡片提示：OCR识别失败"
+  },
 
   "appearanceThemeModeTitle": "主题模式",
   "@appearanceThemeModeTitle": {"description": "外观-主题模式-标题"},
@@ -128,6 +183,9 @@
   "dialogMaxHistoryFieldLabel": "历史记录数量",
   "@dialogMaxHistoryFieldLabel": {"description": "对话框-最大历史-字段标签"},
 
+  "dialogMaxHistoryHelperText": "建议值：100-2000",
+  "@dialogMaxHistoryHelperText": {"description": "对话框-最大历史-辅助文案"},
+
   "dialogThemeTitle": "选择主题模式",
   "@dialogThemeTitle": {"description": "对话框-选择主题-标题"},
 
@@ -155,6 +213,26 @@
   "actionFeedbackSubtitle": "报告Bug或建议",
   "@actionFeedbackSubtitle": {"description": "关于-反馈问题-说明"},
 
+  "headerActionOpenAppSwitcher": "紧凑模式",
+  "@headerActionOpenAppSwitcher": {
+    "description": "切换到应用切换器模式的按钮文案"
+  },
+
+  "headerActionBackTraditional": "经典模式",
+  "@headerActionBackTraditional": {
+    "description": "返回传统 UI 的按钮文案"
+  },
+
+  "windowMinimizeTooltip": "最小化窗口",
+  "@windowMinimizeTooltip": {
+    "description": "窗口最小化按钮的提示"
+  },
+
+  "windowCloseTooltip": "关闭窗口",
+  "@windowCloseTooltip": {
+    "description": "窗口关闭按钮的提示"
+  },
+
   "aboutVersionTitle": "版本",
   "@aboutVersionTitle": {"description": "关于-版本-标题"},
 
@@ -166,6 +244,12 @@
 
   "homeEmptySubtitle": "复制一些内容开始使用吧",
   "@homeEmptySubtitle": {"description": "首页-空状态副标题"},
+
+  "searchEmptyTitle": "未找到匹配内容",
+  "@searchEmptyTitle": {"description": "搜索为空时的标题"},
+
+  "searchEmptySubtitle": "尝试调整关键词或筛选条件",
+  "@searchEmptySubtitle": {"description": "搜索为空时的说明"},
 
   "snackCopiedPrefix": "已复制: {text}",
   "@snackCopiedPrefix": {
@@ -205,6 +289,30 @@
   "@previewColor": {
     "description": "首页-预览-颜色",
     "placeholders": {"hex": {"type": "String", "example": "#FFAA00"}}
+  },
+
+  "compactStatCharacters": "{count}字符",
+  "@compactStatCharacters": {
+    "description": "紧凑统计徽章-字符数量",
+    "placeholders": {
+      "count": {"type": "String", "example": "1.2万"}
+    }
+  },
+
+  "compactStatWords": "{count}词",
+  "@compactStatWords": {
+    "description": "紧凑统计徽章-词语数量",
+    "placeholders": {
+      "count": {"type": "String", "example": "250"}
+    }
+  },
+
+  "compactStatLines": "{count}行",
+  "@compactStatLines": {
+    "description": "紧凑统计徽章-行数",
+    "placeholders": {
+      "count": {"type": "String", "example": "12"}
+    }
   },
 
   "unknownFormat": "未知格式",
@@ -252,8 +360,20 @@
   "filterClearHistoryButton": "清空历史",
   "@filterClearHistoryButton": {"description": "侧边栏-清空历史按钮"},
 
+  "filterClearSearchButton": "清空搜索",
+  "@filterClearSearchButton": {"description": "侧边栏-清空搜索按钮"},
+
+  "filterClearAllUnfavoritedButton": "清空未收藏的",
+  "@filterClearAllUnfavoritedButton": {"description": "侧边栏-清空未收藏按钮"},
+
+  "filterClearAllButton": "全部清空",
+  "@filterClearAllButton": {"description": "侧边栏-全部清空按钮"},
+
   "filterConfirmClearTitle": "确认清空",
   "@filterConfirmClearTitle": {"description": "侧边栏-确认清空对话框标题"},
+
+  "filterConfirmClearContent": "确定要清空历史记录吗？\n\n此操作将删除所有【未收藏】的历史，保留收藏项。\n此操作不可撤销。",
+  "@filterConfirmClearContent": {"description": "侧边栏-确认清空对话框内容"},
 
   "searchHint": "搜索剪贴板历史...",
   "@searchHint": {"description": "搜索框提示文本"},
@@ -290,6 +410,21 @@
 
   "clipTypeImage": "图片",
   "@clipTypeImage": {"description": "剪贴板类型-图片"},
+
+  "formatCountThousand": "千",
+  "@formatCountThousand": {"description": "数字格式化-千单位"},
+
+  "formatCountTenThousand": "万",
+  "@formatCountTenThousand": {"description": "数字格式化-万单位"},
+
+  "formatCountHundredMillion": "亿",
+  "@formatCountHundredMillion": {"description": "数字格式化-亿单位"},
+
+  "formatCountMillion": "百万",
+  "@formatCountMillion": {"description": "数字格式化-百万单位"},
+
+  "formatCountBillion": "十亿",
+  "@formatCountBillion": {"description": "数字格式化-十亿单位"},
 
   "clipTypeColor": "颜色",
   "@clipTypeColor": {"description": "剪贴板类型-颜色"},

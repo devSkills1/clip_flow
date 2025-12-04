@@ -15,6 +15,9 @@ class SZh extends S {
   String get homeTitle => '首页';
 
   @override
+  String get appSwitcherTitle => '紧凑模式';
+
+  @override
   String get settingsTitle => '设置';
 
   @override
@@ -36,10 +39,21 @@ class SZh extends S {
   String get generalAutoStartSubtitle => '应用启动时自动运行';
 
   @override
+  String generalAutoStartErrorMessage(String error) {
+    return '更新开机自启动失败：$error';
+  }
+
+  @override
   String get generalMinimizeToTrayTitle => '最小化到系统托盘';
 
   @override
   String get generalMinimizeToTraySubtitle => '关闭窗口时最小化到系统托盘';
+
+  @override
+  String get generalAutoHideTitle => '自动隐藏窗口';
+
+  @override
+  String get generalAutoHideSubtitle => '静置后自动隐藏，冷启动与 Cmd + Option + ` 唤起均生效';
 
   @override
   String get generalGlobalHotkeyTitle => '全局快捷键';
@@ -47,6 +61,22 @@ class SZh extends S {
   @override
   String generalGlobalHotkeySubtitle(String hotkey) {
     return '当前快捷键：$hotkey';
+  }
+
+  @override
+  String get generalAutoHideHotkeyTitle => '自动隐藏快捷键';
+
+  @override
+  String generalAutoHideHotkeySubtitle(String hotkey) {
+    return '当前快捷键：$hotkey';
+  }
+
+  @override
+  String get generalAutoHideTimeoutTitle => '自动隐藏延迟';
+
+  @override
+  String generalAutoHideTimeoutSubtitle(int seconds) {
+    return '无操作后 $seconds 秒自动隐藏';
   }
 
   @override
@@ -68,6 +98,12 @@ class SZh extends S {
 
   @override
   String get securityEnableOcrSubtitle => '自动识别图片中的文字';
+
+  @override
+  String get clipCardOcrDisabledHint => '检测到OCR文本，但OCR功能已禁用。请在设置中启用。';
+
+  @override
+  String get clipCardOcrFailedHint => 'OCR识别失败，或置信度低于阈值。';
 
   @override
   String get appearanceThemeModeTitle => '主题模式';
@@ -127,6 +163,9 @@ class SZh extends S {
   String get dialogMaxHistoryFieldLabel => '历史记录数量';
 
   @override
+  String get dialogMaxHistoryHelperText => '建议值：100-2000';
+
+  @override
   String get dialogThemeTitle => '选择主题模式';
 
   @override
@@ -154,6 +193,18 @@ class SZh extends S {
   String get actionFeedbackSubtitle => '报告Bug或建议';
 
   @override
+  String get headerActionOpenAppSwitcher => '紧凑模式';
+
+  @override
+  String get headerActionBackTraditional => '经典模式';
+
+  @override
+  String get windowMinimizeTooltip => '最小化窗口';
+
+  @override
+  String get windowCloseTooltip => '关闭窗口';
+
+  @override
   String get aboutVersionTitle => '版本';
 
   @override
@@ -164,6 +215,12 @@ class SZh extends S {
 
   @override
   String get homeEmptySubtitle => '复制一些内容开始使用吧';
+
+  @override
+  String get searchEmptyTitle => '未找到匹配内容';
+
+  @override
+  String get searchEmptySubtitle => '尝试调整关键词或筛选条件';
 
   @override
   String snackCopiedPrefix(String text) {
@@ -194,6 +251,21 @@ class SZh extends S {
   @override
   String previewColor(String hex) {
     return '颜色: $hex';
+  }
+
+  @override
+  String compactStatCharacters(String count) {
+    return '$count字符';
+  }
+
+  @override
+  String compactStatWords(String count) {
+    return '$count词';
+  }
+
+  @override
+  String compactStatLines(String count) {
+    return '$count行';
   }
 
   @override
@@ -242,7 +314,20 @@ class SZh extends S {
   String get filterClearHistoryButton => '清空历史';
 
   @override
+  String get filterClearSearchButton => '清空搜索';
+
+  @override
+  String get filterClearAllUnfavoritedButton => '清空未收藏的';
+
+  @override
+  String get filterClearAllButton => '全部清空';
+
+  @override
   String get filterConfirmClearTitle => '确认清空';
+
+  @override
+  String get filterConfirmClearContent =>
+      '确定要清空历史记录吗？\n\n此操作将删除所有【未收藏】的历史，保留收藏项。\n此操作不可撤销。';
 
   @override
   String get searchHint => '搜索剪贴板历史...';
@@ -276,6 +361,21 @@ class SZh extends S {
 
   @override
   String get clipTypeImage => '图片';
+
+  @override
+  String get formatCountThousand => '千';
+
+  @override
+  String get formatCountTenThousand => '万';
+
+  @override
+  String get formatCountHundredMillion => '亿';
+
+  @override
+  String get formatCountMillion => '百万';
+
+  @override
+  String get formatCountBillion => '十亿';
 
   @override
   String get clipTypeColor => '颜色';

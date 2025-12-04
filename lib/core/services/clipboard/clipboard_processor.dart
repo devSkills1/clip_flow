@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/models/clipboard_detection_result.dart';
 import 'package:clip_flow_pro/core/services/clipboard/index.dart';
@@ -31,7 +32,7 @@ class ClipboardProcessor {
 
   // 缓存配置
   static const int _maxCacheSize = 100;
-  static const Duration _cacheExpiry = Duration(hours: 24);
+  static const Duration _cacheExpiry = Duration(hours: 1); // 缩短缓存过期时间 (漏洞#8)
   static const int _maxContentLength = 1024 * 1024; // 1MB
   static const int _maxMemoryUsage = 50 * 1024 * 1024; // 50MB
 
@@ -58,12 +59,45 @@ class ClipboardProcessor {
       // 创建临时ClipItem（不包含ID）用于内容检查
       final tempItem = detectionResult.createClipItem();
 
+      // 获取原始二进制数据用于生成内容哈希
+      // 这对于图片等二进制类型至关重要，确保基于内容而非文件名去重
+      Uint8List? binaryData;
+      if (tempItem.type == ClipType.image ||
+          tempItem.type == ClipType.file ||
+          tempItem.type == ClipType.audio ||
+          tempItem.type == ClipType.video) {
+        // 尝试从原始数据中获取二进制内容
+        if (detectionResult.originalData != null) {
+          // 优先使用图片数据
+          binaryData = detectionResult.originalData!.getFormat<Uint8List>(
+            ClipboardFormat.image,
+          );
+
+          // 如果没有图片数据但是文件类型，尝试读取文件
+          if (binaryData == null && tempItem.filePath != null) {
+            try {
+              final file = File(tempItem.filePath!);
+              if (file.existsSync()) {
+                binaryData = await file.readAsBytes();
+              }
+            } on Exception catch (e) {
+              await Log.w(
+                'Failed to read file for hash generation',
+                tag: 'ClipboardProcessor',
+                error: e,
+              );
+            }
+          }
+        }
+      }
+
       // 始终使用统一的ID生成器生成哈希（作为内容标识）
       final contentHash = IdGenerator.generateId(
         tempItem.type,
         tempItem.content,
         tempItem.filePath,
         tempItem.metadata,
+        binaryBytes: binaryData, // 使用原始二进制数据而非thumbnail
       );
 
       // 检查缓存（使用统一的哈希）
@@ -484,7 +518,7 @@ class ClipboardProcessor {
       try {
         thumbnail = await _generateFileThumbnail(
           File(
-            '${(await PathService.instance.getDocumentsDirectory()).path}/$relativePath',
+            await PathService.instance.resolveAbsolutePath(relativePath),
           ),
         );
       } on Exception catch (_) {
@@ -492,7 +526,7 @@ class ClipboardProcessor {
       }
 
       // 获取原始ClipItem并修改它，保持原有ID
-      final originalItem = detectionResult.createClipItem();
+      final originalItem = detectionResult.createClipItem(id: contentHash);
 
       // 合并metadata，确保不丢失原有信息
       final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata)
@@ -573,13 +607,23 @@ class ClipboardProcessor {
           originalName: originalFileName,
           keepOriginalName: true,
         );
+
+        // 如果保存到磁盘失败，则整个处理失败
+        if (relativePath.isEmpty) {
+          await Log.e(
+            'Failed to save file to disk, aborting item creation.',
+            tag: 'ClipboardProcessor',
+            fields: {'originalPath': filePath},
+          );
+          return null;
+        }
       } on Exception catch (e) {
         await Log.e(
-          'Failed to save file data',
+          'Failed to save file data, aborting item creation.',
           tag: 'ClipboardProcessor',
           error: e,
         );
-        // 如果保存失败，继续使用原始路径，但这可能导致沙盒不可见
+        return null;
       }
 
       // 提取元数据（补充文件名与原始路径）
@@ -593,10 +637,10 @@ class ClipboardProcessor {
       if (fileType == ClipType.image) {
         // 优先使用保存后的文件生成缩略图
         try {
-          if (relativePath != null && relativePath.isNotEmpty) {
-            final documentsDirectory = await PathService.instance
-                .getDocumentsDirectory();
-            final savedFilePath = '${documentsDirectory.path}/$relativePath';
+          if (relativePath.isNotEmpty) {
+            final savedFilePath = await PathService.instance.resolveAbsolutePath(
+              relativePath,
+            );
             if (await PathService.instance.fileExists(savedFilePath)) {
               thumbnail = await _generateFileThumbnail(File(savedFilePath));
             } else {
@@ -611,7 +655,7 @@ class ClipboardProcessor {
       }
 
       // 获取原始ClipItem并修改它，保持原有ID
-      final originalItem = detectionResult.createClipItem();
+      final originalItem = detectionResult.createClipItem(id: contentHash);
 
       // 合并metadata，确保不丢失原有信息
       final mergedMetadata = Map<String, dynamic>.from(originalItem.metadata)
@@ -621,9 +665,7 @@ class ClipboardProcessor {
       // 返回修改后的ClipItem，保持原有ID
       return originalItem.copyWith(
         type: fileType, // 更新文件类型（可能比检测到的更准确）
-        filePath: (relativePath != null && relativePath.isNotEmpty)
-            ? relativePath
-            : filePath, // 使用保存后的路径或原始路径
+        filePath: relativePath, // 强制使用保存后的相对路径
         thumbnail: thumbnail, // 添加缩略图
         metadata: mergedMetadata, // 合并元数据
         updatedAt: DateTime.now(), // 更新时间戳
@@ -694,6 +736,21 @@ class ClipboardProcessor {
 
   /// 更新缓存（优化版本）
   void _updateCache(String contentHash, ClipItem item) {
+    // 验证哈希一致性 (漏洞#7)
+    if (item.id != contentHash) {
+      unawaited(
+        Log.w(
+          'Cache update ignored: contentHash mismatch',
+          tag: 'ClipboardProcessor',
+          fields: {
+            'contentHash': contentHash,
+            'itemId': item.id,
+          },
+        ),
+      );
+      return;
+    }
+
     final now = DateTime.now();
 
     // 检查内存使用情况
@@ -834,8 +891,7 @@ class ClipboardProcessor {
     bool keepOriginalName = false,
   }) async {
     try {
-      final dir = await PathService.instance.getDocumentsDirectory();
-      final ts = DateTime.now().millisecondsSinceEpoch;
+      final dir = await PathService.instance.getApplicationSupportDirectory();
 
       // 计算扩展名：优先使用建议扩展名，其次取原始文件名的扩展名
       String ext;
@@ -848,7 +904,9 @@ class ClipboardProcessor {
       }
 
       // 计算文件名哈希（用于去重/避免冲突）
-      final hash = sha256.convert(bytes).toString().substring(0, 8);
+      // 使用完整哈希或较长前缀以确保唯一性
+      final hash = sha256.convert(bytes).toString();
+      final shortHash = hash.substring(0, 16); // 使用16位哈希
 
       // 原始名称清理：去除非法字符，限制长度，支持中文文件名
       String sanitizedBase(String name) {
@@ -884,14 +942,17 @@ class ClipboardProcessor {
       if (keepOriginalName && originalName != null && originalName.isNotEmpty) {
         final base = sanitizedBase(originalName);
         // 使用更简洁的格式：原始名_哈希.扩展名
-        // 哈希已经足够唯一，无需时间戳
-        fileName = '${base}_$hash.$ext';
+        // 移除时间戳，确保相同内容生成相同文件名
+        fileName = '${base}_$shortHash.$ext';
       } else {
-        // 保持原有命名策略：type_时间戳_哈希.扩展名
-        fileName = '${type}_${ts}_$hash.$ext';
+        // 移除时间戳，仅使用类型和哈希
+        // 确保相同内容生成相同文件名，支持基于文件的去重
+        fileName = '${type}_$shortHash.$ext';
       }
 
-      final relativeDir = type == 'image' ? 'media/images' : 'media/files';
+      final relativeDir = type == 'image'
+          ? ClipConstants.mediaImagesDir
+          : ClipConstants.mediaFilesDir;
       final absoluteDir = '${dir.path}/$relativeDir';
       final absolutePath = '$absoluteDir/$fileName';
       final relativePath = '$relativeDir/$fileName';

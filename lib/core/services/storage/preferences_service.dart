@@ -32,6 +32,9 @@ class PreferencesService {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
+  /// 内存缓存
+  UserPreferences? _cachedPreferences;
+
   /// 保存用户偏好设置
   ///
   /// 参数：
@@ -41,6 +44,9 @@ class PreferencesService {
   Future<bool> savePreferences(UserPreferences preferences) async {
     await initialize();
     if (_prefs == null) return false;
+
+    // 更新内存缓存
+    _cachedPreferences = preferences;
 
     try {
       final jsonString = jsonEncode(preferences.toJson());
@@ -58,17 +64,26 @@ class PreferencesService {
   ///
   /// 返回：用户偏好设置，如果不存在则返回默认设置
   Future<UserPreferences> loadPreferences() async {
+    // 优先返回内存缓存
+    if (_cachedPreferences != null) {
+      return _cachedPreferences!;
+    }
+
     await initialize();
     if (_prefs == null) return UserPreferences();
 
     try {
       final jsonString = _prefs!.getString(_userPreferencesKey);
       if (jsonString == null) {
-        return UserPreferences();
+        final defaultPrefs = UserPreferences();
+        _cachedPreferences = defaultPrefs;
+        return defaultPrefs;
       }
 
       final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
-      return UserPreferences.fromJson(jsonMap);
+      final prefs = UserPreferences.fromJson(jsonMap);
+      _cachedPreferences = prefs;
+      return prefs;
     } on Exception catch (e) {
       // 如果解析失败，返回默认设置
       unawaited(
@@ -84,6 +99,9 @@ class PreferencesService {
   Future<bool> clearPreferences() async {
     await initialize();
     if (_prefs == null) return false;
+
+    // 清除内存缓存
+    _cachedPreferences = null;
 
     try {
       return await _prefs!.remove(_userPreferencesKey);

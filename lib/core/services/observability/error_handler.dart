@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// 全局错误处理器
 ///
@@ -14,10 +13,12 @@ class ErrorHandler {
     // 捕获Flutter框架错误
     FlutterError.onError = (FlutterErrorDetails details) {
       // 记录到日志
-      Log.e(
-        'Flutter Error: ${details.exception}',
-        error: details.exception,
-        stackTrace: details.stack,
+      unawaited(
+        Log.e(
+          'Flutter Error: ${details.exception}',
+          error: details.exception,
+          stackTrace: details.stack,
+        ),
       );
 
       // 上报到崩溃监控
@@ -41,10 +42,12 @@ class ErrorHandler {
     // 捕获异步错误
     PlatformDispatcher.instance.onError = (error, stack) {
       // 记录到日志
-      Log.e(
-        'Platform Error: $error',
-        error: error,
-        stackTrace: stack,
+      unawaited(
+        Log.e(
+          'Platform Error: $error',
+          error: error,
+          stackTrace: stack,
+        ),
       );
 
       // 上报到崩溃监控
@@ -64,10 +67,12 @@ class ErrorHandler {
       },
       (error, stack) {
         // 记录到日志
-        Log.e(
-          'Zone Error: $error',
-          error: error,
-          stackTrace: stack,
+        unawaited(
+          Log.e(
+            'Zone Error: $error',
+            error: error,
+            stackTrace: stack,
+          ),
         );
 
         // 上报到崩溃监控
@@ -101,7 +106,6 @@ class ErrorHandler {
       stackTrace,
       context: context ?? 'Business Logic Error',
       extra: extra,
-      level: SentryLevel.warning,
     );
   }
 
@@ -208,25 +212,27 @@ class ErrorHandler {
     String? title,
     VoidCallback? onRetry,
   }) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title ?? '错误'),
-        content: Text(message),
-        actions: [
-          if (onRetry != null)
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                onRetry();
-              },
-              child: const Text('重试'),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(title ?? '错误'),
+          content: Text(message),
+          actions: [
+            if (onRetry != null)
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onRetry();
+                },
+                child: const Text('重试'),
+              ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('确定'),
             ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

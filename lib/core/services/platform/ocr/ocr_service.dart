@@ -71,8 +71,11 @@ abstract class OcrService {
   /// 检查OCR服务是否可用
   Future<bool> isAvailable();
 
-  /// 获取支持的语言列表
+  /// 获取支持的语言列表 (同步返回缓存)
   List<String> getSupportedLanguages();
+
+  /// 获取可用的语言列表 (异步等待加载完成)
+  Future<List<String>> getAvailableLanguages();
 
   /// 释放资源
   Future<void> dispose();

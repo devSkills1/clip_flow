@@ -23,11 +23,47 @@ class DeduplicationService {
   /// 获取去重服务实例
   static DeduplicationService get instance => _instance;
 
+  /// 并发锁：防止同一内容的并发处理导致竞态条件
+  /// Key: contentHash, Value: 正在处理的Future
+  final Map<String, Completer<ClipItem?>> _processingLocks = {};
+
+
   /// 检查并准备剪贴项，确保去重逻辑统一
+  /// 使用并发锁防止竞态条件
   Future<ClipItem?> checkAndPrepare(
     String contentHash,
     ClipItem newItem,
   ) async {
+    // 🔒 并发控制：检查是否已有线程在处理相同的contentHash
+    if (_processingLocks.containsKey(contentHash)) {
+      await Log.d(
+        'Content is being processed by another thread, waiting...',
+        tag: 'DeduplicationService',
+        fields: {
+          'contentHash': contentHash,
+          'itemType': newItem.type.name,
+        },
+      );
+      
+      // 等待其他线程完成处理
+      final result = await _processingLocks[contentHash]!.future;
+      
+      await Log.d(
+        'Other thread completed, returning cached result',
+        tag: 'DeduplicationService',
+        fields: {
+          'contentHash': contentHash,
+          'resultExists': result != null,
+        },
+      );
+      
+      return result;
+    }
+
+    // 创建新的锁
+    final completer = Completer<ClipItem?>();
+    _processingLocks[contentHash] = completer;
+
     try {
       await Log.d(
         'Checking for duplicate content',
@@ -55,7 +91,7 @@ class DeduplicationService {
         );
 
         // 返回更新后的现有项目
-        return existing.copyWith(
+        final result = existing.copyWith(
           updatedAt: DateTime.now(),
           // 如果新项目有更好的缩略图或OCR，也更新这些字段
           thumbnail: newItem.thumbnail ?? existing.thumbnail,
@@ -63,6 +99,10 @@ class DeduplicationService {
           // 合并元数据，保留最新的信息
           metadata: {...existing.metadata, ...newItem.metadata},
         );
+        
+        // ✅ 完成并返回结果
+        completer.complete(result);
+        return result;
       }
 
       await Log.i(
@@ -75,6 +115,7 @@ class DeduplicationService {
       );
 
       // 没有找到重复，返回新项目
+      completer.complete(newItem);
       return newItem;
     } on Exception catch (e) {
       await Log.e(
@@ -86,8 +127,13 @@ class DeduplicationService {
           'itemType': newItem.type.name,
         },
       );
+      
       // 发生错误时，允许创建新项目，避免数据丢失
+      completer.complete(newItem);
       return newItem;
+    } finally {
+      // 🔓 释放锁：无论成功或失败，始终清理锁
+      _processingLocks.remove(contentHash);
     }
   }
 

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:clip_flow_pro/core/constants/clip_constants.dart';
 import 'package:clip_flow_pro/core/models/clip_item.dart';
@@ -30,28 +32,68 @@ class DatabaseService {
   /// 是否已完成初始化
   bool _isInitialized = false;
 
+  /// 初始化进行中的 Future（用于防止并发初始化）
+  Completer<void>? _initializationCompleter;
+
   /// 初始化数据库
   ///
   /// - 计算数据库路径并打开/创建数据库
   /// - 设置版本及 onCreate/onUpgrade 回调
+  /// - 使用 Completer 确保并发调用时只初始化一次
   Future<void> initialize() async {
+    // 如果已经初始化完成，直接返回
     if (_isInitialized) return;
 
-    final path = await PathService.instance.getDatabasePath(
-      ClipConstants.databaseName,
-    );
+    // 如果正在初始化，等待初始化完成
+    if (_initializationCompleter != null) {
+      return _initializationCompleter!.future;
+    }
 
-    _database = await openDatabase(
-      path,
-      version: ClipConstants.databaseVersion,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
+    // 创建新的 Completer 来跟踪初始化过程
+    _initializationCompleter = Completer<void>();
 
-    // 在线迁移：确保历史库补齐新列（不清库、不中断）
-    await _ensureColumnsExist(_database!);
+    try {
+      final path = await PathService.instance.getDatabasePath(
+        ClipConstants.databaseName,
+      );
 
-    _isInitialized = true;
+      await Log.d(
+        'Initializing database',
+        tag: 'DatabaseService',
+        fields: {'path': path},
+      );
+
+      _database = await openDatabase(
+        path,
+        version: ClipConstants.databaseVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+      );
+
+      // 在线迁移：确保历史库补齐新列（不清库、不中断）
+      await _ensureColumnsExist(_database!);
+
+      _isInitialized = true;
+
+      await Log.d(
+        'Database initialized successfully',
+        tag: 'DatabaseService',
+      );
+
+      // 完成初始化
+      _initializationCompleter!.complete();
+    } on Exception catch (e) {
+      await Log.e(
+        'Database initialization failed',
+        tag: 'DatabaseService',
+        error: e,
+      );
+      // 初始化失败，清除 completer 以便重试
+      _initializationCompleter!.completeError(e);
+      _initializationCompleter = null;
+      _isInitialized = false;
+      rethrow;
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -64,6 +106,8 @@ class DatabaseService {
         thumbnail BLOB,
         metadata TEXT NOT NULL DEFAULT '{}',
         ocr_text TEXT,
+        ocr_text_id TEXT,
+        is_ocr_extracted INTEGER NOT NULL DEFAULT 0,
         is_favorite INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
@@ -143,57 +187,40 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
-    // 在插入前检查是否已存在相同ID的记录
-    final existingItem = await getClipItemById(item.id);
-    if (existingItem != null) {
-      await Log.d(
-        'Clip item already exists, updating existing record',
-        tag: 'DatabaseService',
-        fields: {
-          'id': item.id,
-          'type': item.type.name,
-          'existingCreatedAt': existingItem.createdAt.toIso8601String(),
-          'newCreatedAt': item.createdAt.toIso8601String(),
-        },
-      );
-
-      // 如果记录已存在，使用更新操作而不是插入
-      await updateClipItem(item);
-      return;
-    }
-
     await Log.i(
-      'Inserting clip item with OCR data',
+      'Inserting or replacing clip item with OCR data',
       tag: 'DatabaseService',
       fields: {
         'id': item.id,
         'type': item.type.name,
         'hasOcrText': item.ocrText != null && item.ocrText!.isNotEmpty,
-        'ocrTextLength': item.ocrText?.length ?? 0,
-        'hasOcrConfidence': item.metadata.containsKey('ocrConfidence'),
-        'ocrConfidence': item.metadata['ocrConfidence'],
       },
     );
 
-    await _database!.insert(ClipConstants.clipItemsTable, {
-      'id': item.id,
-      'type': item.type.name,
-      'content': item.content is String
-          ? item.content
-          : (item.content?.toString() ?? ''),
-      'file_path': item.filePath,
-      'thumbnail': item.thumbnail,
-      'metadata': jsonEncode(item.metadata),
-      'ocr_text': item.ocrText,
-      'ocr_text_id': item.ocrTextId,
-      'is_ocr_extracted': item.isOcrExtracted ? 1 : 0,
-      'is_favorite': item.isFavorite ? 1 : 0,
-      'created_at': item.createdAt.toIso8601String(),
-      'updated_at': item.updatedAt.toIso8601String(),
-    }, conflictAlgorithm: ConflictAlgorithm.ignore); // 改为 ignore，避免重复插入
+    await _database!.insert(
+      ClipConstants.clipItemsTable,
+      {
+        'id': item.id,
+        'type': item.type.name,
+        'content': item.content is String
+            ? item.content
+            : (item.content?.toString() ?? ''),
+        'file_path': item.filePath,
+        'thumbnail': item.thumbnail, // 使用 item.thumbnail 保持一致性
+        'metadata': jsonEncode(item.metadata),
+        'ocr_text': item.ocrText,
+        'ocr_text_id': item.ocrTextId,
+        'is_ocr_extracted': item.isOcrExtracted ? 1 : 0,
+        'is_favorite': item.isFavorite ? 1 : 0,
+        'created_at': item.createdAt.toIso8601String(),
+        'updated_at': item.updatedAt.toIso8601String(),
+        'schema_version': 1,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
 
     await Log.d(
-      'Clip item inserted successfully',
+      'Clip item inserted/replaced successfully',
       tag: 'DatabaseService',
       fields: {
         'id': item.id,
@@ -218,7 +245,7 @@ class DatabaseService {
     final stopwatch = Stopwatch()..start();
 
     await Log.i(
-      'Starting batch insert with duplicate checking',
+      'Starting batch insert',
       tag: 'DatabaseService',
       fields: {
         'count': items.length,
@@ -227,45 +254,11 @@ class DatabaseService {
     );
 
     try {
-      // 预先过滤掉已存在的项目，避免重复
-      final uniqueItems = <ClipItem>[];
-      final duplicateCount = <String, int>{};
-
-      for (final item in items) {
-        final existingItem = await getClipItemById(item.id);
-        if (existingItem == null) {
-          uniqueItems.add(item);
-        } else {
-          duplicateCount[item.type.name] =
-              (duplicateCount[item.type.name] ?? 0) + 1;
-        }
-      }
-
-      if (duplicateCount.isNotEmpty) {
-        await Log.i(
-          'Filtered out duplicate items in batch insert',
-          tag: 'DatabaseService',
-          fields: {
-            'originalCount': items.length,
-            'uniqueCount': uniqueItems.length,
-            'duplicateCount': duplicateCount,
-          },
-        );
-      }
-
-      if (uniqueItems.isEmpty) {
-        await Log.d(
-          'All items were duplicates, skipping batch insert',
-          tag: 'DatabaseService',
-        );
-        return;
-      }
-
       if (useTransaction) {
         await _database!.transaction((txn) async {
           final batch = txn.batch();
 
-          for (final item in uniqueItems) {
+          for (final item in items) {
             batch.insert(
               ClipConstants.clipItemsTable,
               {
@@ -275,7 +268,7 @@ class DatabaseService {
                     ? item.content
                     : (item.content?.toString() ?? ''),
                 'file_path': item.filePath,
-                'thumbnail': item.thumbnail,
+                'thumbnail': null, // 所有类型都不存储 thumbnail，只使用 file_path
                 'metadata': jsonEncode(item.metadata),
                 'ocr_text': item.ocrText,
                 'is_favorite': item.isFavorite ? 1 : 0,
@@ -287,12 +280,30 @@ class DatabaseService {
             );
           }
 
-          await batch.commit();
+          await batch.commit(noResult: true);
         });
       } else {
-        // 不使用事务，单独插入
-        for (final item in uniqueItems) {
-          await insertClipItem(item);
+        // 不使用事务，单独插入（仍然利用 ignore 策略）
+        for (final item in items) {
+          await _database!.insert(
+            ClipConstants.clipItemsTable,
+            {
+              'id': item.id,
+              'type': item.type.name,
+              'content': item.content is String
+                  ? item.content
+                  : (item.content?.toString() ?? ''),
+              'file_path': item.filePath,
+              'thumbnail': null, // 所有类型都不存储 thumbnail，只使用 file_path
+              'metadata': jsonEncode(item.metadata),
+              'ocr_text': item.ocrText,
+              'is_favorite': item.isFavorite ? 1 : 0,
+              'created_at': item.createdAt.toIso8601String(),
+              'updated_at': item.updatedAt.toIso8601String(),
+              'schema_version': 1,
+            },
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
         }
       }
 
@@ -302,11 +313,8 @@ class DatabaseService {
         'Batch insert completed successfully',
         tag: 'DatabaseService',
         fields: {
-          'originalCount': items.length,
-          'uniqueCount': uniqueItems.length,
-          'duplicateCount': duplicateCount,
+          'attemptedCount': items.length,
           'duration': stopwatch.elapsedMilliseconds,
-          'avgTimePerItem': stopwatch.elapsedMilliseconds / uniqueItems.length,
           'useTransaction': useTransaction,
         },
       );
@@ -428,6 +436,113 @@ class DatabaseService {
 
     // 直接删除整个媒体目录（更高效）
     await _deleteMediaDirectorySafe();
+  }
+
+  /// 清理超出最大历史记录数的旧项目
+  ///
+  /// 保留所有收藏项和最新的 [maxItems] 条非收藏项。
+  /// 超出限制的旧项目将被删除（包括数据库记录和关联的媒体文件）。
+  ///
+  /// 参数：
+  /// - maxItems：最大保留的历史记录数（不包括收藏项）
+  Future<void> cleanupExcessItems(int maxItems) async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    await Log.i(
+      'Starting cleanup of excess items',
+      tag: 'DatabaseService',
+      fields: {'maxItems': maxItems},
+    );
+
+    try {
+      // 1. 获取当前总记录数
+      final totalCount = await getClipItemsCount();
+      final favoriteCount = await getFavoriteClipItemsCount();
+      final nonFavoriteCount = totalCount - favoriteCount;
+
+      await Log.d(
+        'Current database stats',
+        tag: 'DatabaseService',
+        fields: {
+          'totalCount': totalCount,
+          'favoriteCount': favoriteCount,
+          'nonFavoriteCount': nonFavoriteCount,
+          'maxItems': maxItems,
+        },
+      );
+
+      // 2. 如果非收藏项数量未超过限制，无需清理
+      if (nonFavoriteCount <= maxItems) {
+        await Log.d(
+          'No cleanup needed - within limit',
+          tag: 'DatabaseService',
+        );
+        return;
+      }
+
+      // 3. 计算需要删除的数量
+      final excessCount = nonFavoriteCount - maxItems;
+
+      // 4. 查询需要删除的旧项目（非收藏项，按创建时间升序，取最旧的 excessCount 条）
+      final itemsToDelete = await _database!.query(
+        ClipConstants.clipItemsTable,
+        columns: ['id', 'file_path'],
+        where: 'is_favorite = ?',
+        whereArgs: [0],
+        orderBy: 'created_at ASC',
+        limit: excessCount,
+      );
+
+      if (itemsToDelete.isEmpty) {
+        await Log.d(
+          'No items to delete',
+          tag: 'DatabaseService',
+        );
+        return;
+      }
+
+      await Log.i(
+        'Deleting excess items',
+        tag: 'DatabaseService',
+        fields: {'count': itemsToDelete.length},
+      );
+
+      // 5. 批量删除数据库记录
+      final idsToDelete = itemsToDelete
+          .map((row) => row['id'] as String)
+          .toList();
+
+      await _database!.delete(
+        ClipConstants.clipItemsTable,
+        where: 'id IN (${List.filled(idsToDelete.length, '?').join(',')})',
+        whereArgs: idsToDelete,
+      );
+
+      // 6. 删除关联的媒体文件
+      for (final row in itemsToDelete) {
+        final filePath = row['file_path'] as String?;
+        if (filePath != null && filePath.isNotEmpty) {
+          await _deleteMediaFileSafe(filePath);
+        }
+      }
+
+      await Log.i(
+        'Cleanup completed successfully',
+        tag: 'DatabaseService',
+        fields: {
+          'deletedCount': itemsToDelete.length,
+          'remainingNonFavorites': maxItems,
+        },
+      );
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to cleanup excess items',
+        tag: 'DatabaseService',
+        error: e,
+      );
+      // 不重新抛出异常，避免影响主流程
+    }
   }
 
   /// 获取所有剪贴项（按创建时间倒序）
@@ -807,7 +922,11 @@ class DatabaseService {
           ? contentRaw
           : (contentRaw?.toString() ?? ''),
       filePath: filePathRaw is String ? filePathRaw : null,
-      thumbnail: thumbRaw is List ? List<int>.from(thumbRaw) : null,
+      thumbnail: thumbRaw is List<int>
+          ? Uint8List.fromList(thumbRaw)
+          : (thumbRaw is Uint8List
+              ? thumbRaw
+              : (thumbRaw is List ? Uint8List.fromList(List<int>.from(thumbRaw)) : null)),
       metadata: metadata,
       ocrText: ocrTextRaw is String ? ocrTextRaw : null,
       ocrTextId: ocrTextIdRaw is String ? ocrTextIdRaw : null,
@@ -832,8 +951,31 @@ class DatabaseService {
       final file = File(absPath);
       if (file.existsSync()) {
         await file.delete();
+        await Log.d(
+          'Successfully deleted media file: $absPath',
+          tag: 'DatabaseService',
+        );
+      } else {
+        await Log.w(
+          'Attempted to delete non-existent media file: $absPath',
+          tag: 'DatabaseService',
+        );
       }
-    } on FileSystemException catch (_) {}
+    } on FileSystemException catch (e) {
+      await Log.e(
+        'Failed to delete media file due to FileSystemException: $relativePath',
+        tag: 'DatabaseService',
+        error: e,
+        fields: {'path': relativePath},
+      );
+    } on Exception catch (e) {
+      await Log.e(
+        'Failed to delete media file due to unexpected error: $relativePath',
+        tag: 'DatabaseService',
+        error: e,
+        fields: {'path': relativePath},
+      );
+    }
   }
 
   /// 解析相对媒体路径为绝对路径
@@ -841,17 +983,17 @@ class DatabaseService {
   /// 参数：
   /// - relativePath：相对路径，如 'media/image.jpg'
   Future<String> _resolveAbsoluteMediaPath(String relativePath) async {
-    final documentsDirectory = await PathService.instance
-        .getDocumentsDirectory();
-    return join(documentsDirectory.path, relativePath);
+    final supportDirectory = await PathService.instance
+        .getApplicationSupportDirectory();
+    return join(supportDirectory.path, relativePath);
   }
 
   /// 安全删除整个媒体目录
   Future<void> _deleteMediaDirectorySafe() async {
     try {
-      final documentsDirectory = await PathService.instance
-          .getDocumentsDirectory();
-      final mediaDirectory = Directory(join(documentsDirectory.path, 'media'));
+      final supportDirectory = await PathService.instance
+          .getApplicationSupportDirectory();
+      final mediaDirectory = Directory(join(supportDirectory.path, 'media'));
       if (mediaDirectory.existsSync()) {
         await mediaDirectory.delete(recursive: true);
       }
@@ -873,9 +1015,9 @@ class DatabaseService {
         whereArgs: [0],
       );
 
-      final documentsDirectory = await PathService.instance
-          .getDocumentsDirectory();
-      final mediaDirectory = Directory(join(documentsDirectory.path, 'media'));
+      final supportDirectory = await PathService.instance
+          .getApplicationSupportDirectory();
+      final mediaDirectory = Directory(join(supportDirectory.path, 'media'));
 
       if (mediaDirectory.existsSync()) {
         // 删除非收藏项目的文件
@@ -908,9 +1050,9 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
-    final documentsDirectory = await PathService.instance
+    final supportDirectory = await PathService.instance
         .getDocumentsDirectory();
-    final mediaRoot = Directory(join(documentsDirectory.path, 'media'));
+    final mediaRoot = Directory(join(supportDirectory.path, 'media'));
     if (!mediaRoot.existsSync()) return 0;
 
     // 读取数据库中所有 file_path 引用
@@ -922,7 +1064,7 @@ class DatabaseService {
     final referenced = rows
         .map((r) => r['file_path'] as String?)
         .where((p) => p != null && p.isNotEmpty)
-        .map((p) => join(documentsDirectory.path, p))
+        .map((p) => join(supportDirectory.path, p))
         .toSet();
 
     final cutoff = DateTime.now().subtract(Duration(days: retainDays));
@@ -1218,28 +1360,28 @@ class DatabaseService {
         'schema_version',
       ];
 
+      final columnsToActuallyRemove = <String>[];
       for (final column in deprecatedColumns) {
         if (await _columnExists(db, ClipConstants.clipItemsTable, column)) {
-          try {
-            // SQLite不支持直接删除列，但可以通过重建表来实现
-            await _recreateTableWithoutColumn(
-              db,
-              ClipConstants.clipItemsTable,
-              column,
-            );
-            await Log.d(
-              'Successfully cleaned up deprecated column: $column',
-              tag: 'DatabaseService',
-            );
-          } on Exception catch (e) {
-            await Log.e(
-              'Failed to clean up deprecated column: $column',
-              tag: 'DatabaseService',
-              error: e,
-            );
-            // 不阻止其他字段的清理
-          }
+          columnsToActuallyRemove.add(column);
         }
+      }
+
+      if (columnsToActuallyRemove.isNotEmpty) {
+        await _recreateTableWithoutColumns(
+          db,
+          ClipConstants.clipItemsTable,
+          columnsToActuallyRemove,
+        );
+        await Log.d(
+          'Successfully cleaned up deprecated columns: ${columnsToActuallyRemove.join(', ')}',
+          tag: 'DatabaseService',
+        );
+      } else {
+        await Log.d(
+          'No deprecated columns to clean up',
+          tag: 'DatabaseService',
+        );
       }
 
       await Log.i(
@@ -1256,51 +1398,237 @@ class DatabaseService {
     }
   }
 
-  /// 重建表以移除指定列
-  Future<void> _recreateTableWithoutColumn(
+  /// 重建表以移除指定的一组列
+  Future<void> _recreateTableWithoutColumns(
     Database db,
     String tableName,
-    String columnToRemove,
+    List<String> columnsToRemove,
   ) async {
     final tempTableName = '${tableName}_temp';
+    final columnsToRemoveSet = columnsToRemove.toSet();
 
     // 获取原表结构
     final tableInfo = await db.rawQuery("PRAGMA table_info('$tableName')");
 
-    // 构建新表的CREATE语句
-    final columns = <String>[];
+    // 构建新表的CREATE语句的列定义
+    final keptColumnDefs = <String>[];
+    // 构建复制数据时要 SELECT 的列名
+    final keptColumnNames = <String>[];
+
     for (final column in tableInfo) {
       final name = column['name']! as String;
-      if (name != columnToRemove) {
+      if (!columnsToRemoveSet.contains(name)) {
         final type = column['type']! as String;
         final notNull = (column['notnull']! as int) == 1 ? ' NOT NULL' : '';
         final defaultValue = column['dflt_value'] != null
             ? ' DEFAULT ${column['dflt_value']}'
             : '';
-        columns.add('$name $type$notNull$defaultValue');
+        keptColumnDefs.add('$name $type$notNull$defaultValue');
+        keptColumnNames.add(name);
       }
     }
 
-    // 创建临时表
+    if (keptColumnDefs.isEmpty) {
+      // 避免创建空表
+      await Log.w('No columns left after removing, skipping table recreation.');
+      return;
+    }
+
+    // 1. 创建临时表
     final createTableSql =
-        'CREATE TABLE $tempTableName (${columns.join(', ')})';
+        'CREATE TABLE $tempTableName (${keptColumnDefs.join(', ')})';
     await db.execute(createTableSql);
 
-    // 复制数据（排除要删除的列）
-    final selectColumns = columns.map((col) => col.split(' ').first).join(', ');
+    // 2. 复制数据（仅复制保留的列）
+    final selectColumns = keptColumnNames.join(', ');
     await db.execute(
-      'INSERT INTO $tempTableName SELECT $selectColumns FROM $tableName',
+      'INSERT INTO $tempTableName ($selectColumns) SELECT $selectColumns FROM $tableName',
     );
 
-    // 删除原表
+    // 3. 删除原表
     await db.execute('DROP TABLE $tableName');
 
-    // 重命名临时表
+    // 4. 重命名临时表
     await db.execute('ALTER TABLE $tempTableName RENAME TO $tableName');
 
     await Log.d(
-      'Successfully recreated table $tableName without column $columnToRemove',
+      'Successfully recreated table $tableName without columns: ${columnsToRemove.join(', ')}',
       tag: 'DatabaseService',
     );
+  }
+
+  /// 修复数据库中的文件路径（简化版）
+  ///
+  /// 修复逻辑：
+  /// 1. 绝对路径 → 相对路径转换
+  /// 2. 路径格式规范化（确保以 media/ 开头）
+  /// 3. 验证文件是否存在，不存在则删除记录
+  ///
+  /// 返回：修复报告
+  Future<Map<String, dynamic>> repairFilePaths() async {
+    if (!_isInitialized) await initialize();
+    if (_database == null) throw Exception('Database not initialized');
+
+    await Log.i(
+      'Starting file path repair',
+      tag: 'DatabaseService',
+    );
+
+    final report = <String, dynamic>{
+      'totalChecked': 0,
+      'fixed': 0,
+      'deleted': 0,
+      'unchanged': 0,
+    };
+
+    try {
+      // 获取所有需要验证的记录（image、audio、video、file）
+      final mediaTypes = [
+        ClipType.image.name,
+        ClipType.audio.name,
+        ClipType.video.name,
+        ClipType.file.name,
+      ];
+
+      final items = await _database!.query(
+        ClipConstants.clipItemsTable,
+        where: 'type IN (${mediaTypes.map((_) => '?').join(',')})',
+        whereArgs: mediaTypes,
+      );
+
+      report['totalChecked'] = items.length;
+
+      if (items.isEmpty) {
+        await Log.i(
+          'No media items to repair',
+          tag: 'DatabaseService',
+        );
+        return report;
+      }
+
+      final supportDir = await PathService.instance.getApplicationSupportDirectory();
+      final itemsToUpdate = <Map<String, dynamic>>[];
+      final itemsToDelete = <String>[];
+
+      for (final item in items) {
+        final id = item['id']! as String;
+        final type = item['type']! as String;
+        final filePathRaw = item['file_path'] as String?;
+
+        // file_path为空，直接删除
+        if (filePathRaw == null || filePathRaw.isEmpty) {
+          itemsToDelete.add(id);
+          report['deleted'] = (report['deleted'] as int) + 1;
+          continue;
+        }
+
+        // 修复路径格式：绝对路径转相对路径，规范化格式
+        String? fixedPath = filePathRaw;
+
+        // 如果是绝对路径，转换为相对路径
+        if (filePathRaw.startsWith('/') ||
+            RegExp('^[A-Za-z]:').hasMatch(filePathRaw)) {
+          if (filePathRaw.startsWith(supportDir.path)) {
+            fixedPath = filePathRaw.substring(supportDir.path.length + 1);
+          } else {
+            // 绝对路径但不在文档目录下，删除
+            itemsToDelete.add(id);
+            report['deleted'] = (report['deleted'] as int) + 1;
+            continue;
+          }
+        }
+
+        // 规范化路径：移除开头的 / 或 ./
+        fixedPath = fixedPath.replaceFirst(RegExp(r'^\.?/'), '');
+
+        // 确保以 media/ 开头
+        if (!fixedPath.startsWith(ClipConstants.mediaDir)) {
+          // 如果已经包含 images/ 或 files/，直接补 media/ 前缀
+          if (fixedPath.startsWith('images/')) {
+            fixedPath = '${ClipConstants.mediaDir}/$fixedPath';
+          } else if (fixedPath.startsWith('files/')) {
+            fixedPath = '${ClipConstants.mediaDir}/$fixedPath';
+          } else {
+            // 否则根据类型补全完整路径
+            if (type == ClipType.image.name) {
+              fixedPath = '${ClipConstants.mediaImagesDir}/$fixedPath';
+            } else {
+              fixedPath = '${ClipConstants.mediaFilesDir}/$fixedPath';
+            }
+          }
+        }
+
+        // 验证文件是否存在
+        final absolutePath = join(supportDir.path, fixedPath);
+        final file = File(absolutePath);
+        if (file.existsSync()) {
+          if (fixedPath != filePathRaw) {
+            // 路径已修复，需要更新
+            itemsToUpdate.add({
+              'id': id,
+              'file_path': fixedPath,
+            });
+            report['fixed'] = (report['fixed'] as int) + 1;
+          } else {
+            // 路径正确，无需修改
+            report['unchanged'] = (report['unchanged'] as int) + 1;
+          }
+        } else {
+          // 文件不存在，删除记录
+          itemsToDelete.add(id);
+          report['deleted'] = (report['deleted'] as int) + 1;
+        }
+      }
+
+      // 批量更新数据库
+      if (itemsToUpdate.isNotEmpty) {
+        await _database!.transaction((txn) async {
+          for (final item in itemsToUpdate) {
+            await txn.update(
+              ClipConstants.clipItemsTable,
+              {'file_path': item['file_path']},
+              where: 'id = ?',
+              whereArgs: [item['id']],
+            );
+          }
+        });
+
+        await Log.i(
+          'Updated file paths',
+          tag: 'DatabaseService',
+          fields: {'count': itemsToUpdate.length},
+        );
+      }
+
+      // 批量删除无效记录
+      if (itemsToDelete.isNotEmpty) {
+        await _database!.delete(
+          ClipConstants.clipItemsTable,
+          where: 'id IN (${itemsToDelete.map((_) => '?').join(',')})',
+          whereArgs: itemsToDelete,
+        );
+
+        await Log.i(
+          'Deleted invalid records',
+          tag: 'DatabaseService',
+          fields: {'count': itemsToDelete.length},
+        );
+      }
+
+      await Log.i(
+        'File path repair completed',
+        tag: 'DatabaseService',
+        fields: report,
+      );
+
+      return report;
+    } on Exception catch (e) {
+      await Log.e(
+        'File path repair failed',
+        tag: 'DatabaseService',
+        error: e,
+      );
+      rethrow;
+    }
   }
 }

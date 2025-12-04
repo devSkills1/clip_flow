@@ -103,11 +103,17 @@ abstract class S {
   /// **'Clip Flow Pro'**
   String get appName;
 
-  /// Title for home page
+  /// Title for classic mode page
   ///
   /// In en, this message translates to:
   /// **'Home'**
   String get homeTitle;
+
+  /// Title for Compact mode
+  ///
+  /// In en, this message translates to:
+  /// **'Compact Mode'**
+  String get appSwitcherTitle;
 
   /// Title for settings page
   ///
@@ -151,6 +157,12 @@ abstract class S {
   /// **'Automatically run when the system starts'**
   String get generalAutoStartSubtitle;
 
+  /// General - Auto start toggle error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update startup setting: {error}'**
+  String generalAutoStartErrorMessage(String error);
+
   /// General - Minimize to tray - title
   ///
   /// In en, this message translates to:
@@ -163,6 +175,18 @@ abstract class S {
   /// **'Minimize to tray when closing the window'**
   String get generalMinimizeToTraySubtitle;
 
+  /// General - Auto hide - title
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-hide window'**
+  String get generalAutoHideTitle;
+
+  /// General - Auto hide - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Hide after inactivity; works on cold start and Cmd + Option + ` toggle'**
+  String get generalAutoHideSubtitle;
+
   /// General - Global hotkey - title
   ///
   /// In en, this message translates to:
@@ -174,6 +198,30 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Current hotkey: {hotkey}'**
   String generalGlobalHotkeySubtitle(String hotkey);
+
+  /// General - Auto-hide hotkey - title
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-hide hotkey'**
+  String get generalAutoHideHotkeyTitle;
+
+  /// General - Auto-hide hotkey - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Current hotkey: {hotkey}'**
+  String generalAutoHideHotkeySubtitle(String hotkey);
+
+  /// General - Auto-hide delay - title
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-hide delay'**
+  String get generalAutoHideTimeoutTitle;
+
+  /// General - Auto-hide delay - subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Hide after {seconds} seconds of inactivity'**
+  String generalAutoHideTimeoutSubtitle(int seconds);
 
   /// General - Max history - title
   ///
@@ -210,6 +258,18 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Automatically recognize text in images'**
   String get securityEnableOcrSubtitle;
+
+  /// Clip item card hint shown when OCR text exists but OCR is globally disabled
+  ///
+  /// In en, this message translates to:
+  /// **'OCR text detected but the feature is disabled. Enable it in Settings.'**
+  String get clipCardOcrDisabledHint;
+
+  /// Clip item card hint shown when OCR recognition fails
+  ///
+  /// In en, this message translates to:
+  /// **'OCR failed or confidence too low.'**
+  String get clipCardOcrFailedHint;
 
   /// Appearance - Theme mode - title
   ///
@@ -325,6 +385,12 @@ abstract class S {
   /// **'History items'**
   String get dialogMaxHistoryFieldLabel;
 
+  /// Dialog - Max history - helper text
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended range: 100-2000'**
+  String get dialogMaxHistoryHelperText;
+
   /// Dialog - Choose theme - title
   ///
   /// In en, this message translates to:
@@ -379,6 +445,30 @@ abstract class S {
   /// **'Report bugs or suggestions'**
   String get actionFeedbackSubtitle;
 
+  /// Button label for switching to App Switcher mode
+  ///
+  /// In en, this message translates to:
+  /// **'Compact Mode'**
+  String get headerActionOpenAppSwitcher;
+
+  /// Button label for returning to the traditional UI
+  ///
+  /// In en, this message translates to:
+  /// **'Classic Mode'**
+  String get headerActionBackTraditional;
+
+  /// Tooltip for the window minimize action
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize window'**
+  String get windowMinimizeTooltip;
+
+  /// Tooltip for the window close action
+  ///
+  /// In en, this message translates to:
+  /// **'Close window'**
+  String get windowCloseTooltip;
+
   /// About - Version - title
   ///
   /// In en, this message translates to:
@@ -402,6 +492,18 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Copy something to get started'**
   String get homeEmptySubtitle;
+
+  /// Search empty state title
+  ///
+  /// In en, this message translates to:
+  /// **'No matching results'**
+  String get searchEmptyTitle;
+
+  /// Search empty state subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Try another keyword or adjust filters'**
+  String get searchEmptySubtitle;
 
   /// Home - copied snackbar
   ///
@@ -444,6 +546,24 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Color: {hex}'**
   String previewColor(String hex);
+
+  /// Compact stats chip label for character count
+  ///
+  /// In en, this message translates to:
+  /// **'Ch {count}'**
+  String compactStatCharacters(String count);
+
+  /// Compact stats chip label for word count
+  ///
+  /// In en, this message translates to:
+  /// **'Wd {count}'**
+  String compactStatWords(String count);
+
+  /// Compact stats chip label for line count
+  ///
+  /// In en, this message translates to:
+  /// **'Ln {count}'**
+  String compactStatLines(String count);
 
   /// Home - preview - unknown format
   ///
@@ -535,11 +655,35 @@ abstract class S {
   /// **'Clear History'**
   String get filterClearHistoryButton;
 
+  /// Sidebar - clear search button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Search'**
+  String get filterClearSearchButton;
+
+  /// Sidebar - clear all unfavorited button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Unfavorited'**
+  String get filterClearAllUnfavoritedButton;
+
+  /// Sidebar - clear all button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get filterClearAllButton;
+
   /// Sidebar - confirm clear dialog title
   ///
   /// In en, this message translates to:
   /// **'Confirm Clear'**
   String get filterConfirmClearTitle;
+
+  /// Sidebar - confirm clear dialog content
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to clear the history?\n\nThis will delete all [unfavorited] items and keep favorites.\nThis action cannot be undone.'**
+  String get filterConfirmClearContent;
 
   /// Search box hint text
   ///
@@ -594,6 +738,36 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Image'**
   String get clipTypeImage;
+
+  /// Number formatting - thousand unit
+  ///
+  /// In en, this message translates to:
+  /// **'k'**
+  String get formatCountThousand;
+
+  /// Number formatting - ten thousand unit
+  ///
+  /// In en, this message translates to:
+  /// **'k'**
+  String get formatCountTenThousand;
+
+  /// Number formatting - hundred million unit
+  ///
+  /// In en, this message translates to:
+  /// **'M'**
+  String get formatCountHundredMillion;
+
+  /// Number formatting - million unit
+  ///
+  /// In en, this message translates to:
+  /// **'M'**
+  String get formatCountMillion;
+
+  /// Number formatting - billion unit
+  ///
+  /// In en, this message translates to:
+  /// **'B'**
+  String get formatCountBillion;
 
   /// Clipboard type - color
   ///

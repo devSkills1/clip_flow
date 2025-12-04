@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:meta/meta.dart';
 
 /// 快捷键修饰符
@@ -61,12 +63,14 @@ class HotkeyConfig {
     return HotkeyConfig(
       action: HotkeyAction.values.firstWhere(
         (a) => a.name == json['action'],
+        orElse: () => throw FormatException('Invalid action: ${json['action']}'),
       ),
       key: json['key'] as String,
       modifiers: (json['modifiers'] as List<dynamic>)
           .map(
             (m) => HotkeyModifier.values.firstWhere(
               (mod) => mod.name == m,
+              orElse: () => throw FormatException('Invalid modifier: $m'),
             ),
           )
           .toSet(),
@@ -151,8 +155,7 @@ class HotkeyConfig {
 
   /// 检查是否为Apple平台（macOS/iOS）
   bool get _isApplePlatform {
-    // 这里简化处理，实际应该通过Platform.isMacOS等判断
-    return true; // 暂时默认为macOS
+    return Platform.isMacOS || Platform.isIOS;
   }
 
   /// 复制并修改配置
