@@ -4,30 +4,30 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar.dart';
+import 'package:clip_flow_pro/features/classic/presentation/widgets/clip_item_card.dart';
+import 'package:clip_flow_pro/features/classic/presentation/widgets/search_bar.dart';
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// 应用切换器页面
+/// 紧凑模式页面
 ///
-/// 模拟 macOS Cmd+Tab 的应用切换界面，支持：
+/// 提供紧凑的剪贴板历史浏览界面，支持：
 /// - 全屏半透明背景
-/// - 水平居中的应用列表
+/// - 水平居中的卡片列表
 /// - 键盘和鼠标导航
 /// - 实时预览和切换
-class AppSwitcherPage extends ConsumerStatefulWidget {
+class CompactModePage extends ConsumerStatefulWidget {
   /// 构造器
-  const AppSwitcherPage({super.key});
+  const CompactModePage({super.key});
 
   @override
-  ConsumerState<AppSwitcherPage> createState() => _AppSwitcherPageState();
+  ConsumerState<CompactModePage> createState() => _CompactModePageState();
 }
 
-class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
+class _CompactModePageState extends ConsumerState<CompactModePage> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   int _selectedIndex = 0;
@@ -49,8 +49,8 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
         ref.read(autoHideServiceProvider).startMonitoring();
         unawaited(
           Log.i(
-            'AppSwitcherPage initialized, auto-hide monitoring started',
-            tag: 'AppSwitcherPage',
+            'CompactModePage initialized, auto-hide monitoring started',
+            tag: 'CompactModePage',
           ),
         );
       }
@@ -145,8 +145,8 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     }
   }
 
-  /// 构建应用切换器专用的卡片，带选中效果
-  Widget _buildAppSwitcherCard(ClipItem item, int index) {
+  /// 构建紧凑模式专用的卡片，带选中效果
+  Widget _buildCompactModeCard(ClipItem item, int index) {
     final isSelected = index == _selectedIndex;
 
     return Container(
@@ -268,7 +268,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
       icon: const Icon(Icons.view_sidebar_rounded, size: 18),
       label: Text(l10n.headerActionBackTraditional),
       onPressed: () async {
-        await _switchToTraditional();
+        await _switchToClassic();
       },
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -293,13 +293,13 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
     );
   }
 
-  Future<void> _switchToTraditional() async {
-    ref.read(userPreferencesProvider.notifier).setUiMode(UiMode.traditional);
+  Future<void> _switchToClassic() async {
+    ref.read(userPreferencesProvider.notifier).setUiMode(UiMode.classic);
     if (!mounted) {
       return;
     }
     await WindowManagementService.instance.applyUISettings(
-      UiMode.traditional,
+      UiMode.classic,
       context: context,
       userPreferences: ref.read(userPreferencesProvider),
     );
@@ -382,7 +382,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                     children: [
                       _buildWindowHeader(l10n),
 
-                      // macOS风格的应用切换器 - 居中显示，支持键盘导航
+                      // 紧凑模式的剪贴板浏览 - 居中显示，支持键盘导航
                       Expanded(
                         child: _displayItems.isEmpty
                             ? Center(
@@ -420,7 +420,7 @@ class _AppSwitcherPageState extends ConsumerState<AppSwitcherPage> {
                                     padding: const EdgeInsets.only(bottom: 15),
                                     itemBuilder: (context, index) {
                                       final item = _displayItems[index];
-                                      return _buildAppSwitcherCard(item, index);
+                                      return _buildCompactModeCard(item, index);
                                     },
                                   ),
                                 ),

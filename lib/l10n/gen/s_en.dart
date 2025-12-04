@@ -15,7 +15,7 @@ class SEn extends S {
   String get homeTitle => 'Home';
 
   @override
-  String get appSwitcherTitle => 'App Switcher';
+  String get appSwitcherTitle => 'Compact Mode';
 
   @override
   String get settingsTitle => 'Settings';
@@ -203,10 +203,10 @@ class SEn extends S {
   String get actionFeedbackSubtitle => 'Report bugs or suggestions';
 
   @override
-  String get headerActionOpenAppSwitcher => 'Switch to compact mode';
+  String get headerActionOpenAppSwitcher => 'Compact Mode';
 
   @override
-  String get headerActionBackTraditional => 'Back to classic';
+  String get headerActionBackTraditional => 'Classic Mode';
 
   @override
   String get windowMinimizeTooltip => 'Minimize window';

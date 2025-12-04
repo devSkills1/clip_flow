@@ -3,8 +3,8 @@
 // 忽略公共成员API文档要求，因为这是内部数据仓库实现，已有类级别文档说明
 import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
-import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
+import 'package:clip_flow_pro/features/classic/domain/entities/clip_entity.dart';
+import 'package:clip_flow_pro/features/classic/domain/repositories/clip_repository.dart';
 
 /// 剪贴板历史仓库实现类
 /// 实现剪贴板历史仓库接口，通过调用 [DatabaseService] 映射到数据库操作。

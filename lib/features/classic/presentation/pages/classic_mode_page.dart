@@ -6,9 +6,9 @@ import 'package:clip_flow_pro/core/models/clip_item.dart';
 import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
 import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
 import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/basic_sidebar.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/responsive_home_layout.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/search_bar.dart'
+import 'package:clip_flow_pro/features/classic/presentation/widgets/basic_sidebar.dart';
+import 'package:clip_flow_pro/features/classic/presentation/widgets/responsive_home_layout.dart';
+import 'package:clip_flow_pro/features/classic/presentation/widgets/search_bar.dart'
     show EnhancedSearchBar;
 import 'package:clip_flow_pro/l10n/gen/s.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
@@ -16,16 +16,16 @@ import 'package:clip_flow_pro/shared/widgets/window_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// 增强版首页 - 解决所有布局溢出和性能问题
-class HomePage extends ConsumerStatefulWidget {
-  /// 创建增强版首页
-  const HomePage({super.key});
+/// 经典模式页面 - 解决所有布局溢出和性能问题
+class ClassicModePage extends ConsumerStatefulWidget {
+  /// 创建经典模式页面
+  const ClassicModePage({super.key});
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
+  ConsumerState<ClassicModePage> createState() => _ClassicModePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage>
+class _ClassicModePageState extends ConsumerState<ClassicModePage>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -51,8 +51,8 @@ class _HomePageState extends ConsumerState<HomePage>
         ref.read(autoHideServiceProvider).startMonitoring();
         unawaited(
           Log.i(
-            'HomePage initialized, auto-hide monitoring started',
-            tag: 'HomePage',
+            'ClassicModePage initialized, auto-hide monitoring started',
+            tag: 'ClassicModePage',
           ),
         );
       }
@@ -87,7 +87,7 @@ class _HomePageState extends ConsumerState<HomePage>
       if (mounted) {
         // 使用WindowManagementService统一处理窗口设置
         await WindowManagementService.instance.applyUISettings(
-          UiMode.traditional,
+          UiMode.classic,
           context: context,
         );
       }
@@ -119,12 +119,12 @@ class _HomePageState extends ConsumerState<HomePage>
       next.whenData((clipItem) async {
         await Log.d(
           'UI received clipboard item: ${clipItem.type} - ID: ${clipItem.id}',
-          tag: 'HomePage',
+          tag: 'ClassicModePage',
         );
         if (clipItem.type == ClipType.image) {
           await Log.d(
             'Image item details - hasContent: ${clipItem.content != null}, hasFilePath: ${clipItem.filePath != null}',
-            tag: 'HomePage',
+            tag: 'ClassicModePage',
           );
         }
         ref.read(clipboardHistoryProvider.notifier).addItem(clipItem);
@@ -206,7 +206,7 @@ class _HomePageState extends ConsumerState<HomePage>
       icon: const Icon(Icons.space_dashboard_rounded, size: 18),
       label: Text(l10n.headerActionOpenAppSwitcher),
       onPressed: () async {
-        await _switchToAppSwitcher();
+        await _switchToCompactMode();
       },
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -214,13 +214,13 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
-  Future<void> _switchToAppSwitcher() async {
-    ref.read(userPreferencesProvider.notifier).setUiMode(UiMode.appSwitcher);
+  Future<void> _switchToCompactMode() async {
+    ref.read(userPreferencesProvider.notifier).setUiMode(UiMode.compact);
     if (!mounted) {
       return;
     }
     await WindowManagementService.instance.applyUISettings(
-      UiMode.appSwitcher,
+      UiMode.compact,
       context: context,
       userPreferences: ref.read(userPreferencesProvider),
     );

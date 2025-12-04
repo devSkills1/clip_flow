@@ -33,10 +33,10 @@ Future<void> _runApp() async {
     final modeString = await const MethodChannel(
       'clipboard_service',
     ).invokeMethod<String>('getLaunchUiMode');
-    if (modeString == 'appSwitcher') {
-      resolvedUiMode = UiMode.appSwitcher;
-    } else if (modeString == 'traditional') {
-      resolvedUiMode = UiMode.traditional;
+    if (modeString == 'compact') {
+      resolvedUiMode = UiMode.compact;
+    } else if (modeString == 'classic') {
+      resolvedUiMode = UiMode.classic;
     }
   } on Exception {
     // 忽略平台调用失败，保持本地偏好

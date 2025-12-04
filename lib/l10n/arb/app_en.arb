@@ -6,12 +6,12 @@
   },
   "homeTitle": "Home",
   "@homeTitle": {
-    "description": "Title for home page"
+    "description": "Title for classic mode page"
   },
 
-  "appSwitcherTitle": "App Switcher",
+  "appSwitcherTitle": "Compact Mode",
   "@appSwitcherTitle": {
-    "description": "Title for App Switcher mode"
+    "description": "Title for Compact mode"
   },
   "settingsTitle": "Settings",
   "@settingsTitle": {
@@ -215,12 +215,12 @@
   "actionFeedbackSubtitle": "Report bugs or suggestions",
   "@actionFeedbackSubtitle": {"description": "About - Feedback - subtitle"},
 
-  "headerActionOpenAppSwitcher": "Switch to compact mode",
+  "headerActionOpenAppSwitcher": "Compact Mode",
   "@headerActionOpenAppSwitcher": {
     "description": "Button label for switching to App Switcher mode"
   },
 
-  "headerActionBackTraditional": "Back to classic",
+  "headerActionBackTraditional": "Classic Mode",
   "@headerActionBackTraditional": {
     "description": "Button label for returning to the traditional UI"
   },

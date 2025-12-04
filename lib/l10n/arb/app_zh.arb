@@ -6,12 +6,12 @@
   },
   "homeTitle": "首页",
   "@homeTitle": {
-    "description": "首页标题"
+    "description": "经典模式标题"
   },
 
-  "appSwitcherTitle": "应用切换器",
+  "appSwitcherTitle": "紧凑模式",
   "@appSwitcherTitle": {
-    "description": "应用切换器模式标题"
+    "description": "紧凑模式标题"
   },
   "settingsTitle": "设置",
   "@settingsTitle": {
@@ -213,12 +213,12 @@
   "actionFeedbackSubtitle": "报告Bug或建议",
   "@actionFeedbackSubtitle": {"description": "关于-反馈问题-说明"},
 
-  "headerActionOpenAppSwitcher": "切换简洁模式",
+  "headerActionOpenAppSwitcher": "紧凑模式",
   "@headerActionOpenAppSwitcher": {
     "description": "切换到应用切换器模式的按钮文案"
   },
 
-  "headerActionBackTraditional": "回到经典模式",
+  "headerActionBackTraditional": "经典模式",
   "@headerActionBackTraditional": {
     "description": "返回传统 UI 的按钮文案"
   },

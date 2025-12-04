@@ -335,13 +335,13 @@ class WindowManagementService {
       'UI窗口管理 - 窗口配置',
       () async {
         switch (uiMode) {
-          case UiMode.traditional:
+          case UiMode.classic:
             await _configureTraditionalWindow(
               enableLogging: enableLogging,
               applyDelay: applyDelay,
             );
-          case UiMode.appSwitcher:
-            await _configureAppSwitcherMode(
+          case UiMode.compact:
+            await _configureCompactMode(
               context,
               enableLogging: enableLogging,
               applyDelay: applyDelay,
@@ -402,8 +402,8 @@ class WindowManagementService {
     await center();
   }
 
-  /// 统一的应用切换器模式窗口配置
-  Future<void> _configureAppSwitcherMode(
+  /// 统一的紧凑模式窗口配置
+  Future<void> _configureCompactMode(
     BuildContext? context, {
     bool enableLogging = true,
     bool applyDelay = true,
@@ -414,27 +414,27 @@ class WindowManagementService {
     final screenInfo = await getMainScreenInfo();
 
     // 使用用户自定义宽度或默认计算宽度
-    final appSwitcherWidth =
-        userPreferences?.appSwitcherWindowWidth ??
-        screenInfo.screenWidth * ClipConstants.appSwitcherWidthRatio;
+    final compactModeWidth =
+        userPreferences?.compactModeWindowWidth ??
+        screenInfo.screenWidth * ClipConstants.compactModeWidthRatio;
 
-    const appSwitcherHeight = ClipConstants.appSwitcherWindowHeight;
+    const compactModeHeight = ClipConstants.compactModeWindowHeight;
 
     if (enableLogging) {
       await Log.i(
-        '配置应用切换器窗口: ${appSwitcherWidth.toStringAsFixed(0)}x${appSwitcherHeight.toStringAsFixed(0)}',
+        '配置紧凑模式窗口: ${compactModeWidth.toStringAsFixed(0)}x${compactModeHeight.toStringAsFixed(0)}',
         tag: 'WindowManagementService',
       );
     }
 
     // 使用统一的约束设置方法
     await _setWindowConstraints(
-      width: appSwitcherWidth,
-      height: appSwitcherHeight,
+      width: compactModeWidth,
+      height: compactModeHeight,
       enableLogging: enableLogging,
     );
 
-    await windowManager.setTitle('应用切换器 - ${ClipConstants.appName}');
+    await windowManager.setTitle('紧凑模式 - ${ClipConstants.appName}');
 
     // 应用延迟和居中（修复约束竞争条件）
     if (applyDelay) {
@@ -659,8 +659,8 @@ class AppWindowListener with WindowListener {
   Future<void> onWindowResize() async {
     await Log.d('Window resize event received');
 
-    // 只在 AppSwitcher 模式下保存窗口宽度
-    if (_userPreferences?.uiMode == UiMode.appSwitcher) {
+    // 只在 Compact 模式下保存窗口宽度
+    if (_userPreferences?.uiMode == UiMode.compact) {
       try {
         final size = await windowManager.getSize();
         final width = size.width;

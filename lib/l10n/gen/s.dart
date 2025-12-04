@@ -103,16 +103,16 @@ abstract class S {
   /// **'Clip Flow Pro'**
   String get appName;
 
-  /// Title for home page
+  /// Title for classic mode page
   ///
   /// In en, this message translates to:
   /// **'Home'**
   String get homeTitle;
 
-  /// Title for App Switcher mode
+  /// Title for Compact mode
   ///
   /// In en, this message translates to:
-  /// **'App Switcher'**
+  /// **'Compact Mode'**
   String get appSwitcherTitle;
 
   /// Title for settings page
@@ -448,13 +448,13 @@ abstract class S {
   /// Button label for switching to App Switcher mode
   ///
   /// In en, this message translates to:
-  /// **'Switch to compact mode'**
+  /// **'Compact Mode'**
   String get headerActionOpenAppSwitcher;
 
   /// Button label for returning to the traditional UI
   ///
   /// In en, this message translates to:
-  /// **'Back to classic'**
+  /// **'Classic Mode'**
   String get headerActionBackTraditional;
 
   /// Tooltip for the window minimize action

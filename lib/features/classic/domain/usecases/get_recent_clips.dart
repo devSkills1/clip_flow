@@ -1,5 +1,5 @@
-import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
-import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
+import 'package:clip_flow_pro/features/classic/domain/entities/clip_entity.dart';
+import 'package:clip_flow_pro/features/classic/domain/repositories/clip_repository.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

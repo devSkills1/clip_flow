@@ -13,10 +13,10 @@ import 'package:clip_flow_pro/core/services/observability/index.dart';
 import 'package:clip_flow_pro/core/services/operations/index.dart';
 import 'package:clip_flow_pro/core/services/platform/index.dart';
 import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/features/appswitcher/presentation/pages/app_switcher_page.dart';
-import 'package:clip_flow_pro/features/home/data/repositories/clip_repository_impl.dart';
-import 'package:clip_flow_pro/features/home/domain/repositories/clip_repository.dart';
-import 'package:clip_flow_pro/features/home/presentation/pages/home_page.dart';
+import 'package:clip_flow_pro/features/classic/data/repositories/clip_repository_impl.dart';
+import 'package:clip_flow_pro/features/classic/domain/repositories/clip_repository.dart';
+import 'package:clip_flow_pro/features/classic/presentation/pages/classic_mode_page.dart';
+import 'package:clip_flow_pro/features/compact/presentation/pages/compact_mode_page.dart';
 import 'package:clip_flow_pro/features/settings/presentation/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,10 +47,10 @@ class DynamicHomePage extends ConsumerWidget {
     final uiMode = ref.watch(uiModeProvider);
 
     switch (uiMode) {
-      case UiMode.traditional:
-        return const HomePage();
-      case UiMode.appSwitcher:
-        return const AppSwitcherPage();
+      case UiMode.classic:
+        return const ClassicModePage();
+      case UiMode.compact:
+        return const CompactModePage();
     }
   }
 }
@@ -392,7 +392,7 @@ enum DisplayMode { compact, normal, preview }
 
 //// UI 模式（传统剪贴板/应用切换器）
 /// UI 界面模式枚举，用于切换不同的UI风格。
-enum UiMode { traditional, appSwitcher }
+enum UiMode { classic, compact }
 
 //// 显示模式提供者
 /// 当前 UI 显示模式（紧凑/默认/预览）的状态提供者。
@@ -428,11 +428,11 @@ class UserPreferences {
     this.ocrLanguage = 'auto',
     this.ocrMinConfidence = 0.5,
     this.language = 'zh_CN',
-    this.uiMode = UiMode.traditional,
+    this.uiMode = UiMode.classic,
     this.isDeveloperMode = false,
     this.showPerformanceOverlay = false,
     this.autoHideEnabled = true,
-    this.appSwitcherWindowWidth,
+    this.compactModeWindowWidth,
     this.autoHideTimeoutSeconds = 3,
   });
 
@@ -451,13 +451,13 @@ class UserPreferences {
       language: (json['language'] as String?) ?? 'zh_CN',
       uiMode: UiMode.values.firstWhere(
         (e) => e.name == (json['uiMode'] as String?),
-        orElse: () => UiMode.traditional,
+        orElse: () => UiMode.classic,
       ),
       isDeveloperMode: (json['isDeveloperMode'] as bool?) ?? false,
       showPerformanceOverlay:
           (json['showPerformanceOverlay'] as bool?) ?? false,
       autoHideEnabled: (json['autoHideEnabled'] as bool?) ?? true,
-      appSwitcherWindowWidth: json['appSwitcherWindowWidth'] as double?,
+      compactModeWindowWidth: json['compactModeWindowWidth'] as double?,
       autoHideTimeoutSeconds: (json['autoHideTimeoutSeconds'] as int?) ?? 3,
     );
   }
@@ -501,8 +501,8 @@ class UserPreferences {
   /// 是否启用自动隐藏
   final bool autoHideEnabled;
 
-  /// AppSwitcher 模式的窗口宽度（null 表示使用默认计算值）
-  final double? appSwitcherWindowWidth;
+  /// 紧凑模式的窗口宽度（null 表示使用默认计算值）
+  final double? compactModeWindowWidth;
 
   /// 自动隐藏超时时间（秒）
   final int autoHideTimeoutSeconds;
@@ -522,7 +522,7 @@ class UserPreferences {
     bool? isDeveloperMode,
     bool? showPerformanceOverlay,
     bool? autoHideEnabled,
-    double? appSwitcherWindowWidth,
+    double? compactModeWindowWidth,
     int? autoHideTimeoutSeconds,
   }) {
     return UserPreferences(
@@ -540,8 +540,8 @@ class UserPreferences {
       showPerformanceOverlay:
           showPerformanceOverlay ?? this.showPerformanceOverlay,
       autoHideEnabled: autoHideEnabled ?? this.autoHideEnabled,
-      appSwitcherWindowWidth:
-          appSwitcherWindowWidth ?? this.appSwitcherWindowWidth,
+      compactModeWindowWidth:
+          compactModeWindowWidth ?? this.compactModeWindowWidth,
       autoHideTimeoutSeconds:
           autoHideTimeoutSeconds ?? this.autoHideTimeoutSeconds,
     );
@@ -563,7 +563,7 @@ class UserPreferences {
       'isDeveloperMode': isDeveloperMode,
       'showPerformanceOverlay': showPerformanceOverlay,
       'autoHideEnabled': autoHideEnabled,
-      'appSwitcherWindowWidth': appSwitcherWindowWidth,
+      'compactModeWindowWidth': compactModeWindowWidth,
       'autoHideTimeoutSeconds': autoHideTimeoutSeconds,
     };
   }
@@ -788,9 +788,9 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
     unawaited(_savePreferences());
   }
 
-  /// 保存 AppSwitcher 模式的窗口宽度
-  void setAppSwitcherWindowWidth(double? width) {
-    state = state.copyWith(appSwitcherWindowWidth: width);
+  /// 保存紧凑模式的窗口宽度
+  void setCompactModeWindowWidth(double? width) {
+    state = state.copyWith(compactModeWindowWidth: width);
     unawaited(_savePreferences());
   }
 }
@@ -917,7 +917,7 @@ final windowListenerProvider = Provider<AppWindowListener>((ref) {
       // 保存 AppSwitcher 窗口宽度
       ref
           .read(userPreferencesProvider.notifier)
-          .setAppSwitcherWindowWidth(width);
+          .setCompactModeWindowWidth(width);
     },
   );
 

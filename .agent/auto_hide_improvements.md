@@ -3,7 +3,7 @@
 ## 需求概述
 
 1. **开启自动隐藏开关后要求进入 setting_page 也不隐藏**
-2. **设置回到 home_page 或者 app_switcher_page 都要继续隐藏**
+2. **设置回到 classic_mode_page 或者 compact_mode_page 都要继续隐藏**
 3. **自动隐藏时间要求能设置**
 4. **用户交互（鼠标移动、滚动）应重置自动隐藏定时器**
 
@@ -72,13 +72,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 2. **`didChangeDependencies` 确保停止**：防止被其他逻辑意外重新启动
 3. **`dispose` 中恢复监控**：使用保存的引用，不使用 `ref`
 
-### 2. 返回 home_page 或 app_switcher_page 时恢复自动隐藏
+### 2. 返回 classic_mode_page 或 compact_mode_page 时恢复自动隐藏
 
 #### 实现方式
 
-**文件**: 
-- `lib/features/home/presentation/pages/home_page.dart`
-- `lib/features/appswitcher/presentation/pages/app_switcher_page.dart`
+**文件**:
+- `lib/features/classic/presentation/pages/classic_mode_page.dart`
+- `lib/features/compact/presentation/pages/compact_mode_page.dart`
 
 ```dart
 @override
@@ -215,7 +215,7 @@ if (preferences.autoHideEnabled) ...[
 
 ```
 应用启动:
-├─ HomePage initState
+├─ ClassicModePage initState
 ├─ 检查 autoHideEnabled
 └─ 如果开启 → startMonitoring() ✅
 
@@ -280,7 +280,7 @@ if (preferences.autoHideEnabled) ...[
    - 在 `dispose` 中安全地恢复监控
    - 添加超时滑块控件
 
-3. `lib/features/home/presentation/pages/home_page.dart`
+3. `lib/features/classic/presentation/pages/classic_mode_page.dart`
    - 在 `initState` 中启动监控
    - 添加 `_onUserInteraction()` 方法
    - 使用 `MouseRegion` 和 `Listener` 捕获用户交互
@@ -346,7 +346,7 @@ if (preferences.autoHideEnabled) ...[
 **解决方案**: 在 `initState` 中保存 provider 引用到字段，在 `dispose` 中使用保存的引用
 
 ### ❌ 问题 2: `didChangeDependencies` 被意外触发
-**现象**: 打开设置页面时，HomePage 的 `didChangeDependencies` 也被触发，导致重新启动监控
+**现象**: 打开设置页面时，ClassicModePage 的 `didChangeDependencies` 也被触发，导致重新启动监控
 
 **解决方案**: 移除 `didChangeDependencies` 中的启动逻辑，只在 `initState` 中启动一次
 
