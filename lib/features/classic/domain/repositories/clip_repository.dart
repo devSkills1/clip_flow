@@ -1,4 +1,4 @@
-import 'package:clip_flow_pro/features/home/domain/entities/clip_entity.dart';
+import 'package:clip_flow_pro/features/classic/domain/entities/clip_entity.dart';
 
 /// Repository contract for clipboard items persistence/query.
 abstract class ClipRepository {

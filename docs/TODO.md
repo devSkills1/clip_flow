@@ -399,9 +399,9 @@
 ### 关联文件（需要评审与变更）
 - `lib/core/services/clipboard_service.dart`
 - `lib/shared/providers/app_providers.dart`
-- `lib/features/home/presentation/pages/enhanced_home_page.dart`
-- `lib/features/home/presentation/widgets/modern_clip_item_card.dart`
-- `lib/features/home/presentation/widgets/enhanced_search_bar.dart`
+- `lib/features/classic/presentation/pages/classic_mode_page.dart`
+- `lib/features/classic/presentation/widgets/clip_item_card.dart`
+- `lib/features/classic/presentation/widgets/search_bar.dart`
 
 ### 建议提交信息（示例）
 ```

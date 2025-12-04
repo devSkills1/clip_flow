@@ -15,7 +15,7 @@ class SZh extends S {
   String get homeTitle => '首页';
 
   @override
-  String get appSwitcherTitle => '应用切换器';
+  String get appSwitcherTitle => '紧凑模式';
 
   @override
   String get settingsTitle => '设置';
@@ -193,10 +193,10 @@ class SZh extends S {
   String get actionFeedbackSubtitle => '报告Bug或建议';
 
   @override
-  String get headerActionOpenAppSwitcher => '切换简洁模式';
+  String get headerActionOpenAppSwitcher => '紧凑模式';
 
   @override
-  String get headerActionBackTraditional => '回到经典模式';
+  String get headerActionBackTraditional => '经典模式';
 
   @override
   String get windowMinimizeTooltip => '最小化窗口';

@@ -1,5 +1,5 @@
 import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/features/home/presentation/widgets/clip_item_card.dart';
+import 'package:clip_flow_pro/features/classic/presentation/widgets/clip_item_card.dart';
 import 'package:clip_flow_pro/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 
