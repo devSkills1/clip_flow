@@ -731,4 +731,95 @@ class SEn extends S {
 
   @override
   String get checkUpdateDialogContent => 'You are up to date';
+
+  @override
+  String get userGuideTitle => 'User Guide';
+
+  @override
+  String get userGuideBasicUsageTitle => 'Basic Usage';
+
+  @override
+  String get userGuideBasicUsage1 =>
+      '1. Copy any content (text, images, files, etc.)';
+
+  @override
+  String get userGuideBasicUsage2 =>
+      '2. Content will be automatically saved to clipboard history';
+
+  @override
+  String get userGuideBasicUsage3 =>
+      '3. View and manage all copied content here';
+
+  @override
+  String get userGuideSearchFilterTitle => 'Search & Filter';
+
+  @override
+  String get userGuideSearchFilter1 =>
+      '• Use the search box to quickly find content';
+
+  @override
+  String get userGuideSearchFilter2 => '• Use filters to view by type';
+
+  @override
+  String get userGuideSearchFilter3 => '• Use shortcuts for quick access';
+
+  @override
+  String get userGuideAdvancedTitle => 'Advanced Features';
+
+  @override
+  String get userGuideAdvanced1 =>
+      '• Favorite important content to prevent cleanup';
+
+  @override
+  String get userGuideAdvanced2 => '• Deleting favorites requires confirmation';
+
+  @override
+  String get userGuideAdvanced3 => '• Export clipboard history';
+
+  @override
+  String get userGuideAdvanced4 => '• Customize behavior in settings';
+
+  @override
+  String get actionClose => 'Close';
+
+  @override
+  String copyErrorMessage(String error) {
+    return 'Copy failed: $error';
+  }
+
+  @override
+  String get ocrImageOnlyError => 'OCR is only available for images';
+
+  @override
+  String get ocrNoTextAvailable => 'No OCR text available for this image';
+
+  @override
+  String ocrTextCopied(int length) {
+    return 'OCR text copied to clipboard ($length characters)';
+  }
+
+  @override
+  String ocrCopyError(String error) {
+    return 'OCR copy error: $error';
+  }
+
+  @override
+  String favoriteToggleError(String error) {
+    return 'Failed to toggle favorite: $error';
+  }
+
+  @override
+  String get dialogDeleteFavoriteTitle => 'Delete favorite item?';
+
+  @override
+  String get dialogDeleteFavoriteWarning =>
+      'This is a favorited item! It cannot be recovered after deletion.';
+
+  @override
+  String get dialogDeleteFavoriteConfirm =>
+      'Are you sure you want to continue?';
+
+  @override
+  String get dialogDeleteConfirm =>
+      'Are you sure you want to delete this item?';
 }

@@ -89,6 +89,24 @@ class ClipItemUtil {
   /// 私有构造：禁止实例化
   ClipItemUtil._();
 
+  /// 安全地将 dynamic 值解析为 int
+  static int safeParseInt(dynamic value, {int defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? defaultValue;
+    return defaultValue;
+  }
+
+  /// 安全地将 dynamic 值解析为 int?（保持可空性）
+  static int? safeParseIntOrNull(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   /// 获取剪贴板项目的标题
   static String getItemTitle(ClipItem item, {S? l10n}) {
     final strings = l10n;
@@ -107,8 +125,8 @@ class ClipItemUtil {
       case ClipType.code:
         return previewText;
       case ClipType.image:
-        final width = item.metadata['width'] as int? ?? 0;
-        final height = item.metadata['height'] as int? ?? 0;
+        final width = safeParseInt(item.metadata['width']);
+        final height = safeParseInt(item.metadata['height']);
         final label = strings?.clipTypeImage ?? fallback.clipTypeImage;
         if (width > 0 && height > 0) {
           return '$label $width×$height';
@@ -233,7 +251,10 @@ class ClipItemUtil {
       );
 
       if (context != null && context.mounted) {
-        _showErrorMessage(context, '复制失败：$e');
+        final l10n = S.of(context);
+        final msg = l10n?.copyErrorMessage('$e') ??
+            I18nFallbacks.common.copyErrorMessage('$e');
+        _showErrorMessage(context, msg);
       }
     }
   }
@@ -273,7 +294,10 @@ class ClipItemUtil {
         },
       );
       if (context != null && context.mounted) {
-        _showOcrErrorMessage(context, '只能对图片类型进行OCR操作');
+        final l10n = S.of(context);
+        final msg = l10n?.ocrImageOnlyError ??
+            I18nFallbacks.common.ocrImageOnlyError;
+        _showOcrErrorMessage(context, msg);
       }
       return;
     }
@@ -288,7 +312,10 @@ class ClipItemUtil {
         },
       );
       if (context != null && context.mounted) {
-        _showOcrErrorMessage(context, '该图片没有可用的OCR文本');
+        final l10n = S.of(context);
+        final msg = l10n?.ocrNoTextAvailable ??
+            I18nFallbacks.common.ocrNoTextAvailable;
+        _showOcrErrorMessage(context, msg);
       }
       return;
     }
@@ -330,9 +357,12 @@ class ClipItemUtil {
       );
 
       if (context != null && context.mounted) {
+        final l10n = S.of(context);
+        final msg = l10n?.ocrTextCopied(item.ocrText!.length) ??
+            I18nFallbacks.common.ocrTextCopied(item.ocrText!.length);
         ToastView.show(
           context,
-          'OCR文本已复制到剪贴板 (${item.ocrText!.length}字符)',
+          msg,
           icon: Icons.text_fields,
           iconColor: Theme.of(context).colorScheme.primary,
         );
@@ -340,7 +370,10 @@ class ClipItemUtil {
     } on Exception catch (e) {
       await Log.e('OCR copy operation failed', tag: 'ClipItemUtil', error: e);
       if (context != null && context.mounted) {
-        _showOcrErrorMessage(context, 'OCR复制错误：$e');
+        final l10n = S.of(context);
+        final msg = l10n?.ocrCopyError('$e') ??
+            I18nFallbacks.common.ocrCopyError('$e');
+        _showOcrErrorMessage(context, msg);
       }
     }
   }
@@ -377,7 +410,10 @@ class ClipItemUtil {
       await Log.e('Failed to toggle favorite', tag: 'ClipItemUtil', error: e);
 
       if (context != null && context.mounted) {
-        _showErrorMessage(context, '收藏操作失败：$e');
+        final l10n = S.of(context);
+        final msg = l10n?.favoriteToggleError('$e') ??
+            I18nFallbacks.common.favoriteToggleError('$e');
+        _showErrorMessage(context, msg);
       }
     }
   }
@@ -397,6 +433,8 @@ class ClipItemUtil {
     }
 
     final isFavorite = item.isFavorite;
+    final l10n = S.of(context);
+    const fallback = I18nFallbacks.common;
 
     await showDialog<void>(
       context: context,
@@ -412,7 +450,12 @@ class ClipItemUtil {
               size: 24,
             ),
             const SizedBox(width: 12),
-            Text(isFavorite ? '删除收藏项目？' : '确认删除'),
+            Text(
+              isFavorite
+                  ? (l10n?.dialogDeleteFavoriteTitle ??
+                      fallback.dialogDeleteFavoriteTitle)
+                  : (l10n?.dialogDeleteTitle ?? fallback.dialogDeleteTitle),
+            ),
           ],
         ),
         content: Column(
@@ -420,17 +463,21 @@ class ClipItemUtil {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (isFavorite) ...[
-              const Text(
-                '这是一个收藏的项目！删除后将无法恢复。',
-                style: TextStyle(
+              Text(
+                l10n?.dialogDeleteFavoriteWarning ??
+                    fallback.dialogDeleteFavoriteWarning,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text('你确定要继续删除吗？'),
+              Text(
+                l10n?.dialogDeleteFavoriteConfirm ??
+                    fallback.dialogDeleteFavoriteConfirm,
+              ),
             ] else ...[
-              const Text('确定要删除这个项目吗？'),
+              Text(l10n?.dialogDeleteConfirm ?? fallback.dialogDeleteConfirm),
             ],
           ],
         ),
@@ -438,7 +485,7 @@ class ClipItemUtil {
           TextButton.icon(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.cancel_outlined),
-            label: const Text('取消'),
+            label: Text(l10n?.actionCancel ?? fallback.actionCancel),
           ),
           FilledButton.icon(
             onPressed: () async {
@@ -447,7 +494,7 @@ class ClipItemUtil {
               onDeleteConfirmed?.call();
             },
             icon: const Icon(Icons.delete_forever),
-            label: const Text('删除'),
+            label: Text(l10n?.actionDelete ?? fallback.actionDelete),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
@@ -465,8 +512,8 @@ class ClipItemUtil {
 
     switch (item.type) {
       case ClipType.image:
-        final width = item.metadata['width'] as int? ?? 0;
-        final height = item.metadata['height'] as int? ?? 0;
+        final width = safeParseInt(item.metadata['width']);
+        final height = safeParseInt(item.metadata['height']);
         final format = item.metadata['format'] as String?;
         final resolvedFormat =
             format?.toUpperCase() ??

@@ -1,12 +1,9 @@
-# AI 编程工具配置（不应提交到开源仓库）
+# AI 编程工具配置
 .gemini/
 .agent/
 .claude/
 .trae/
 .cursorrules
-GEMINI.md
-CLAUDE.md
-AGENTS.md
 
 # 构建计数器（本地开发用）
 .build_counter

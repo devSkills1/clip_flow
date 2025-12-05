@@ -355,17 +355,23 @@ class ColorUtils {
 
   /// Parses HEX string to [Color]. Supports #RGB/#RGBA/#RRGGBB/#RRGGBBAA and no-# input.
   static Color hexToColor(String hex) {
-    var value = hex.trim();
-    if (value.startsWith('#')) value = value.substring(1);
+    try {
+      var value = hex.trim();
+      if (value.startsWith('#')) value = value.substring(1);
 
-    // 基于现有校验规则验证输入
-    if (!_isHexColor('#$value')) {
-      throw FormatException('Invalid hex color: $hex');
+      // 基于现有校验规则验证输入
+      if (!_isHexColor('#$value')) {
+        throw FormatException('Invalid hex color: $hex');
+      }
+
+      final normalized = _normalizeToArgb(value);
+      final argb = int.parse(normalized, radix: ClipConstants.hexRadix);
+      return Color(argb);
+    } on FormatException {
+      rethrow;
+    } on Exception catch (e) {
+      throw FormatException('Failed to parse hex color: $hex - $e');
     }
-
-    final normalized = _normalizeToArgb(value);
-    final argb = int.parse(normalized, radix: ClipConstants.hexRadix);
-    return Color(argb);
   }
 
   static String _normalizeToArgb(String input) {

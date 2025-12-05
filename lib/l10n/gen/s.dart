@@ -1350,6 +1350,156 @@ abstract class S {
   /// In en, this message translates to:
   /// **'You are up to date'**
   String get checkUpdateDialogContent;
+
+  /// User guide dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'User Guide'**
+  String get userGuideTitle;
+
+  /// User guide - basic usage section title
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Usage'**
+  String get userGuideBasicUsageTitle;
+
+  /// User guide - basic usage item 1
+  ///
+  /// In en, this message translates to:
+  /// **'1. Copy any content (text, images, files, etc.)'**
+  String get userGuideBasicUsage1;
+
+  /// User guide - basic usage item 2
+  ///
+  /// In en, this message translates to:
+  /// **'2. Content will be automatically saved to clipboard history'**
+  String get userGuideBasicUsage2;
+
+  /// User guide - basic usage item 3
+  ///
+  /// In en, this message translates to:
+  /// **'3. View and manage all copied content here'**
+  String get userGuideBasicUsage3;
+
+  /// User guide - search and filter section title
+  ///
+  /// In en, this message translates to:
+  /// **'Search & Filter'**
+  String get userGuideSearchFilterTitle;
+
+  /// User guide - search filter item 1
+  ///
+  /// In en, this message translates to:
+  /// **'• Use the search box to quickly find content'**
+  String get userGuideSearchFilter1;
+
+  /// User guide - search filter item 2
+  ///
+  /// In en, this message translates to:
+  /// **'• Use filters to view by type'**
+  String get userGuideSearchFilter2;
+
+  /// User guide - search filter item 3
+  ///
+  /// In en, this message translates to:
+  /// **'• Use shortcuts for quick access'**
+  String get userGuideSearchFilter3;
+
+  /// User guide - advanced features section title
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Features'**
+  String get userGuideAdvancedTitle;
+
+  /// User guide - advanced item 1
+  ///
+  /// In en, this message translates to:
+  /// **'• Favorite important content to prevent cleanup'**
+  String get userGuideAdvanced1;
+
+  /// User guide - advanced item 2
+  ///
+  /// In en, this message translates to:
+  /// **'• Deleting favorites requires confirmation'**
+  String get userGuideAdvanced2;
+
+  /// User guide - advanced item 3
+  ///
+  /// In en, this message translates to:
+  /// **'• Export clipboard history'**
+  String get userGuideAdvanced3;
+
+  /// User guide - advanced item 4
+  ///
+  /// In en, this message translates to:
+  /// **'• Customize behavior in settings'**
+  String get userGuideAdvanced4;
+
+  /// Action - Close button
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get actionClose;
+
+  /// Copy operation error message
+  ///
+  /// In en, this message translates to:
+  /// **'Copy failed: {error}'**
+  String copyErrorMessage(String error);
+
+  /// OCR error - image only
+  ///
+  /// In en, this message translates to:
+  /// **'OCR is only available for images'**
+  String get ocrImageOnlyError;
+
+  /// OCR error - no text
+  ///
+  /// In en, this message translates to:
+  /// **'No OCR text available for this image'**
+  String get ocrNoTextAvailable;
+
+  /// OCR text copy success
+  ///
+  /// In en, this message translates to:
+  /// **'OCR text copied to clipboard ({length} characters)'**
+  String ocrTextCopied(int length);
+
+  /// OCR copy error message
+  ///
+  /// In en, this message translates to:
+  /// **'OCR copy error: {error}'**
+  String ocrCopyError(String error);
+
+  /// Favorite toggle error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to toggle favorite: {error}'**
+  String favoriteToggleError(String error);
+
+  /// Delete favorite dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Delete favorite item?'**
+  String get dialogDeleteFavoriteTitle;
+
+  /// Delete favorite warning
+  ///
+  /// In en, this message translates to:
+  /// **'This is a favorited item! It cannot be recovered after deletion.'**
+  String get dialogDeleteFavoriteWarning;
+
+  /// Delete favorite secondary confirm
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to continue?'**
+  String get dialogDeleteFavoriteConfirm;
+
+  /// Delete confirm
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this item?'**
+  String get dialogDeleteConfirm;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

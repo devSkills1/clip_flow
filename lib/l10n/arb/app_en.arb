@@ -761,5 +761,92 @@
   "checkUpdateDialogContent": "You are up to date",
   "@checkUpdateDialogContent": {
     "description": "Check update dialog content"
-  }
+  },
+
+  "userGuideTitle": "User Guide",
+  "@userGuideTitle": {"description": "User guide dialog title"},
+
+  "userGuideBasicUsageTitle": "Basic Usage",
+  "@userGuideBasicUsageTitle": {"description": "User guide - basic usage section title"},
+
+  "userGuideBasicUsage1": "1. Copy any content (text, images, files, etc.)",
+  "@userGuideBasicUsage1": {"description": "User guide - basic usage item 1"},
+
+  "userGuideBasicUsage2": "2. Content will be automatically saved to clipboard history",
+  "@userGuideBasicUsage2": {"description": "User guide - basic usage item 2"},
+
+  "userGuideBasicUsage3": "3. View and manage all copied content here",
+  "@userGuideBasicUsage3": {"description": "User guide - basic usage item 3"},
+
+  "userGuideSearchFilterTitle": "Search & Filter",
+  "@userGuideSearchFilterTitle": {"description": "User guide - search and filter section title"},
+
+  "userGuideSearchFilter1": "• Use the search box to quickly find content",
+  "@userGuideSearchFilter1": {"description": "User guide - search filter item 1"},
+
+  "userGuideSearchFilter2": "• Use filters to view by type",
+  "@userGuideSearchFilter2": {"description": "User guide - search filter item 2"},
+
+  "userGuideSearchFilter3": "• Use shortcuts for quick access",
+  "@userGuideSearchFilter3": {"description": "User guide - search filter item 3"},
+
+  "userGuideAdvancedTitle": "Advanced Features",
+  "@userGuideAdvancedTitle": {"description": "User guide - advanced features section title"},
+
+  "userGuideAdvanced1": "• Favorite important content to prevent cleanup",
+  "@userGuideAdvanced1": {"description": "User guide - advanced item 1"},
+
+  "userGuideAdvanced2": "• Deleting favorites requires confirmation",
+  "@userGuideAdvanced2": {"description": "User guide - advanced item 2"},
+
+  "userGuideAdvanced3": "• Export clipboard history",
+  "@userGuideAdvanced3": {"description": "User guide - advanced item 3"},
+
+  "userGuideAdvanced4": "• Customize behavior in settings",
+  "@userGuideAdvanced4": {"description": "User guide - advanced item 4"},
+
+  "actionClose": "Close",
+  "@actionClose": {"description": "Action - Close button"},
+
+  "copyErrorMessage": "Copy failed: {error}",
+  "@copyErrorMessage": {
+    "description": "Copy operation error message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+
+  "ocrImageOnlyError": "OCR is only available for images",
+  "@ocrImageOnlyError": {"description": "OCR error - image only"},
+
+  "ocrNoTextAvailable": "No OCR text available for this image",
+  "@ocrNoTextAvailable": {"description": "OCR error - no text"},
+
+  "ocrTextCopied": "OCR text copied to clipboard ({length} characters)",
+  "@ocrTextCopied": {
+    "description": "OCR text copy success",
+    "placeholders": {"length": {"type": "int"}}
+  },
+
+  "ocrCopyError": "OCR copy error: {error}",
+  "@ocrCopyError": {
+    "description": "OCR copy error message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+
+  "favoriteToggleError": "Failed to toggle favorite: {error}",
+  "@favoriteToggleError": {
+    "description": "Favorite toggle error message",
+    "placeholders": {"error": {"type": "String"}}
+  },
+
+  "dialogDeleteFavoriteTitle": "Delete favorite item?",
+  "@dialogDeleteFavoriteTitle": {"description": "Delete favorite dialog title"},
+
+  "dialogDeleteFavoriteWarning": "This is a favorited item! It cannot be recovered after deletion.",
+  "@dialogDeleteFavoriteWarning": {"description": "Delete favorite warning"},
+
+  "dialogDeleteFavoriteConfirm": "Are you sure you want to continue?",
+  "@dialogDeleteFavoriteConfirm": {"description": "Delete favorite secondary confirm"},
+
+  "dialogDeleteConfirm": "Are you sure you want to delete this item?",
+  "@dialogDeleteConfirm": {"description": "Delete confirm"}
 }

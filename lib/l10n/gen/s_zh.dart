@@ -704,4 +704,87 @@ class SZh extends S {
 
   @override
   String get checkUpdateDialogContent => '您已经是最新版本';
+
+  @override
+  String get userGuideTitle => '使用指南';
+
+  @override
+  String get userGuideBasicUsageTitle => '基本使用';
+
+  @override
+  String get userGuideBasicUsage1 => '1. 复制任何内容（文字、图片、文件等）';
+
+  @override
+  String get userGuideBasicUsage2 => '2. 内容将自动保存到剪贴板历史';
+
+  @override
+  String get userGuideBasicUsage3 => '3. 在这里查看和管理所有复制的内容';
+
+  @override
+  String get userGuideSearchFilterTitle => '搜索和筛选';
+
+  @override
+  String get userGuideSearchFilter1 => '• 使用搜索框快速查找内容';
+
+  @override
+  String get userGuideSearchFilter2 => '• 使用筛选器按类型查看';
+
+  @override
+  String get userGuideSearchFilter3 => '• 使用快捷键快速访问';
+
+  @override
+  String get userGuideAdvancedTitle => '高级功能';
+
+  @override
+  String get userGuideAdvanced1 => '• 收藏重要内容防止被清理';
+
+  @override
+  String get userGuideAdvanced2 => '• 收藏项目删除需要二次确认';
+
+  @override
+  String get userGuideAdvanced3 => '• 导出剪贴板历史';
+
+  @override
+  String get userGuideAdvanced4 => '• 在设置中自定义行为';
+
+  @override
+  String get actionClose => '关闭';
+
+  @override
+  String copyErrorMessage(String error) {
+    return '复制失败：$error';
+  }
+
+  @override
+  String get ocrImageOnlyError => '只能对图片类型进行OCR操作';
+
+  @override
+  String get ocrNoTextAvailable => '该图片没有可用的OCR文本';
+
+  @override
+  String ocrTextCopied(int length) {
+    return 'OCR文本已复制到剪贴板 ($length字符)';
+  }
+
+  @override
+  String ocrCopyError(String error) {
+    return 'OCR复制错误：$error';
+  }
+
+  @override
+  String favoriteToggleError(String error) {
+    return '收藏操作失败：$error';
+  }
+
+  @override
+  String get dialogDeleteFavoriteTitle => '删除收藏项目？';
+
+  @override
+  String get dialogDeleteFavoriteWarning => '这是一个收藏的项目！删除后将无法恢复。';
+
+  @override
+  String get dialogDeleteFavoriteConfirm => '你确定要继续删除吗？';
+
+  @override
+  String get dialogDeleteConfirm => '确定要删除这个项目吗？';
 }

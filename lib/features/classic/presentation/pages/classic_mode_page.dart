@@ -305,7 +305,7 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
         TextButton.icon(
           onPressed: _showUserGuide,
           icon: const Icon(Icons.help_outline),
-          label: const Text('使用指南'),
+          label: Text(l10n.userGuideTitle),
         ),
       ],
     );
@@ -406,40 +406,41 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
   }
 
   void _showUserGuide() {
+    final l10n = S.of(context)!;
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('使用指南'),
+        title: Text(l10n.userGuideTitle),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildGuideSection(
-                '基本使用',
+                l10n.userGuideBasicUsageTitle,
                 [
-                  '1. 复制任何内容（文字、图片、文件等）',
-                  '2. 内容将自动保存到剪贴板历史',
-                  '3. 在这里查看和管理所有复制的内容',
+                  l10n.userGuideBasicUsage1,
+                  l10n.userGuideBasicUsage2,
+                  l10n.userGuideBasicUsage3,
                 ],
               ),
               const SizedBox(height: 16),
               _buildGuideSection(
-                '搜索和筛选',
+                l10n.userGuideSearchFilterTitle,
                 [
-                  '• 使用搜索框快速查找内容',
-                  '• 使用筛选器按类型查看',
-                  '• 使用快捷键快速访问',
+                  l10n.userGuideSearchFilter1,
+                  l10n.userGuideSearchFilter2,
+                  l10n.userGuideSearchFilter3,
                 ],
               ),
               const SizedBox(height: 16),
               _buildGuideSection(
-                '高级功能',
+                l10n.userGuideAdvancedTitle,
                 [
-                  '• 收藏重要内容防止被清理',
-                  '• 收藏项目删除需要二次确认',
-                  '• 导出剪贴板历史',
-                  '• 在设置中自定义行为',
+                  l10n.userGuideAdvanced1,
+                  l10n.userGuideAdvanced2,
+                  l10n.userGuideAdvanced3,
+                  l10n.userGuideAdvanced4,
                 ],
               ),
             ],
@@ -448,7 +449,7 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
+            child: Text(l10n.actionClose),
           ),
         ],
       ),
