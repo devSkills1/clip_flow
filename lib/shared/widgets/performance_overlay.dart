@@ -1,8 +1,4 @@
-// ignore_for_file: public_member_api_docs
-// Reason: Internal module with documented interfaces at higher level
-// 忽略公共成员API文档要求，因为这是内部性能监控组件，不需要对外暴露API文档
-// Internal performance monitoring component that doesn't require public API
-// documentation.
+// ignore_for_file: public_member_api_docs  内部性能监控组件，已有类级别文档说明
 import 'dart:async';
 
 import 'package:clip_flow/core/constants/i18n_fallbacks.dart';
@@ -350,7 +346,7 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
                       PerformanceService.instance.resetJankCount();
 
                       // 提供触觉反馈
-                      HapticFeedback.lightImpact();
+                      unawaited(HapticFeedback.lightImpact());
 
                       // 显示重置反馈
                       if (mounted) {
@@ -768,9 +764,10 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
   }
 
   void _showRecommendationsDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
         title: Text(
           S.of(context)?.performanceOptimizationTitle ??
               I18nFallbacks.performance.optimizationTitle,
@@ -814,6 +811,7 @@ class _PerformanceOverlayState extends ConsumerState<PerformanceOverlay>
           ),
         ],
       ),
+    ),
     );
   }
 

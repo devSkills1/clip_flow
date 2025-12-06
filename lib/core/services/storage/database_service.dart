@@ -510,7 +510,8 @@ class DatabaseService {
 
       // 5. 批量删除数据库记录
       final idsToDelete = itemsToDelete
-          .map((row) => row['id'] as String)
+          .map((row) => row['id'] as String?)
+          .whereType<String>()
           .toList();
 
       await _database!.delete(

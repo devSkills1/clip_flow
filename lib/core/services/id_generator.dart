@@ -43,7 +43,7 @@ class IdGenerator {
         // 2. 如果有二进制数据，使用数据的哈希（小文件/内存数据）
         if (binaryBytes != null && binaryBytes.isNotEmpty) {
           final digest = sha256.convert(binaryBytes);
-          contentString = '${type.name}_bytes:${digest.toString()}';
+          contentString = '${type.name}_bytes:$digest';
           break;
         }
 

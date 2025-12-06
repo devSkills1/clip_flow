@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clip_flow/l10n/gen/s.dart';
 import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -326,18 +328,19 @@ class BasicSidebar extends ConsumerWidget {
   void _showClearHistoryDialog(BuildContext context, WidgetRef ref) {
     final l10n = S.of(context)!;
 
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.filterConfirmClearTitle),
-        content: Text(l10n.filterConfirmClearContent),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.actionCancel),
-          ),
-          // 新增一个“全部清空”按钮
-          TextButton(
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.filterConfirmClearTitle),
+          content: Text(l10n.filterConfirmClearContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.actionCancel),
+            ),
+            // 新增一个"全部清空"按钮
+            TextButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
               final historyNotifier = ref.read(
@@ -367,6 +370,7 @@ class BasicSidebar extends ConsumerWidget {
           ),
         ],
       ),
+    )
     );
   }
 }

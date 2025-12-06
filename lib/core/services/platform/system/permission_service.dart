@@ -329,9 +329,7 @@ class PermissionService {
       }
     }
 
-    for (final key in expiredKeys) {
-      _permissionCache.remove(key);
-    }
+    expiredKeys.forEach(_permissionCache.remove);
 
     if (expiredKeys.isNotEmpty) {
       unawaited(
@@ -354,9 +352,11 @@ class PermissionService {
     // 清除缓存
     _permissionCache.clear();
 
-    Log.d(
-      'PermissionService disposed',
-      tag: 'permission_service',
+    unawaited(
+      Log.d(
+        'PermissionService disposed',
+        tag: 'permission_service',
+      ),
     );
   }
 }

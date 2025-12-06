@@ -677,10 +677,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _showHotkeyDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => const HotkeyCaptureDialog(
-        action: HotkeyAction.toggleWindow,
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => const HotkeyCaptureDialog(
+          action: HotkeyAction.toggleWindow,
+        ),
       ),
     );
   }
@@ -689,9 +691,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // 提供更丰富的预设值选项
     const presetValues = [50, 100, 200, 500, 1000, 2000, 5000];
 
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
         title: Text(
           S.of(context)?.dialogMaxHistoryTitle ??
               I18nFallbacks.settings.dialogMaxHistoryTitle,
@@ -760,13 +763,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
         ],
       ),
-    );
+      ), // 关闭 showDialog
+    ); // 关闭 unawaited
   }
 
   void _showThemeDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
         title: Text(
           S.of(context)?.dialogThemeTitle ??
               I18nFallbacks.settings.dialogThemeTitle,
@@ -824,13 +829,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           },
         ),
       ),
-    );
+      ), // 关闭 showDialog
+    ); // 关闭 unawaited
   }
 
   void _showLanguageDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
         title: Text(
           S.of(context)?.dialogLanguageTitle ??
               I18nFallbacks.settings.dialogLanguageTitle,
@@ -884,7 +891,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           },
         ),
       ),
-    );
+      ), // 关闭 showDialog
+    ); // 关闭 unawaited
   }
 
   // 存储管理相关方法
@@ -1141,7 +1149,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 FilledButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    updateService.openDownloadPage();
+                    unawaited(updateService.openDownloadPage());
                   },
                   child: Text(
                     S.of(context)?.downloadNowAction ??
@@ -1212,7 +1220,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _openEmailFeedback();
+                  unawaited(_openEmailFeedback());
                 },
               ),
               ListTile(
@@ -1227,7 +1235,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _openIssuePage();
+                  unawaited(_openIssuePage());
                 },
               ),
             ],

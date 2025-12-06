@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:clip_flow/core/services/platform/ocr/index.dart';
 
@@ -93,7 +94,7 @@ class OcrServiceFactory {
 
   /// 设置自定义OCR服务实例
   static void setInstance(OcrService service) {
-    _instance?.dispose();
+    unawaited(_instance?.dispose());
     _instance = service;
   }
 

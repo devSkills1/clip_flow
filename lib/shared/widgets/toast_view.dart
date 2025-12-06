@@ -221,11 +221,13 @@ class _ToastOverlayState extends State<_ToastOverlay>
 
     Future.delayed(widget.duration, () {
       if (mounted) {
-        _controller.reverse().then((_) {
-          if (mounted) {
-            widget.onDismiss();
-          }
-        });
+        unawaited(
+          _controller.reverse().then((_) {
+            if (mounted) {
+              widget.onDismiss();
+            }
+          }),
+        );
       }
     });
   }

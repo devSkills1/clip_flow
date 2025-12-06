@@ -1,6 +1,4 @@
-// ignore_for_file: public_member_api_docs
-// Reason: Internal module with documented interfaces at higher level
-// 忽略公共成员API文档要求，因为这是领域实体类，已有类和构造函数级别文档说明
+// ignore_for_file: public_member_api_docs  领域实体类，已有类和构造函数级别文档说明
 
 /// Domain entity representing a clipboard item.
 class ClipEntity {

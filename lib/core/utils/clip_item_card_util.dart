@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:characters/characters.dart';
 import 'package:clip_flow/core/constants/colors.dart';
 import 'package:clip_flow/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow/core/models/clip_item.dart';

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:clip_flow/core/models/clip_item.dart';
@@ -36,7 +37,7 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    unawaited(_loadData());
     _scrollController.addListener(_handleScrollActivity);
     // 自动滚动到选中项
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -137,10 +138,12 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
           (screenWidth / 2) +
           (totalCardWidth / 2);
 
-      _scrollController.animateTo(
-        targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
+      unawaited(
+        _scrollController.animateTo(
+          targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        ),
       );
     }
   }
@@ -161,7 +164,11 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()..scale(isSelected ? 1.05 : 1.0),
+          transform: Matrix4.diagonal3Values(
+            isSelected ? 1.05 : 1.0,
+            isSelected ? 1.05 : 1.0,
+            1,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             boxShadow: isSelected
@@ -212,23 +219,31 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
                       _selectedIndex = index;
                     });
                     // 点击图片时复制图片
-                    ClipItemUtil.handleItemTap(item, ref, context: context);
+                    unawaited(
+                      ClipItemUtil.handleItemTap(item, ref, context: context),
+                    );
                   },
                   onDelete: () {
-                    ClipItemUtil.handleItemDelete(item, ref, context: context);
+                    unawaited(
+                      ClipItemUtil.handleItemDelete(item, ref, context: context),
+                    );
                   },
                   onFavoriteToggle: () {
-                    ClipItemUtil.handleFavoriteToggle(
-                      item,
-                      ref,
-                      context: context,
+                    unawaited(
+                      ClipItemUtil.handleFavoriteToggle(
+                        item,
+                        ref,
+                        context: context,
+                      ),
                     );
                   },
                   searchQuery: _searchController.text,
                   enableOcrCopy: true,
                   onOcrTextTap: () {
                     // 点击OCR文字时只复制文字
-                    ClipItemUtil.handleOcrTextTap(item, ref, context: context);
+                    unawaited(
+                      ClipItemUtil.handleOcrTextTap(item, ref, context: context),
+                    );
                   },
                 ),
               ),
@@ -343,19 +358,23 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
                 _navigateRight,
             const SingleActivator(LogicalKeyboardKey.enter): () {
               if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
-                ClipItemUtil.handleItemTap(
-                  _displayItems[_selectedIndex],
-                  ref,
-                  context: context,
+                unawaited(
+                  ClipItemUtil.handleItemTap(
+                    _displayItems[_selectedIndex],
+                    ref,
+                    context: context,
+                  ),
                 );
               }
             },
             const SingleActivator(LogicalKeyboardKey.space): () {
               if (_selectedIndex >= 0 && _displayItems.isNotEmpty) {
-                ClipItemUtil.handleItemTap(
-                  _displayItems[_selectedIndex],
-                  ref,
-                  context: context,
+                unawaited(
+                  ClipItemUtil.handleItemTap(
+                    _displayItems[_selectedIndex],
+                    ref,
+                    context: context,
+                  ),
                 );
               }
             },

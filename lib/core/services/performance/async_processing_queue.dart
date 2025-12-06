@@ -73,7 +73,7 @@ class AsyncProcessingQueue {
 
     _isProcessing = true;
     _startCleanupTimer();
-    _processQueue();
+    unawaited(_processQueue());
   }
 
   /// 停止队列处理器
@@ -137,7 +137,7 @@ class AsyncProcessingQueue {
       const Duration(milliseconds: 50),
       () {
         if (_isProcessing) {
-          _processQueue();
+          unawaited(_processQueue());
         }
       },
     );
@@ -167,11 +167,13 @@ class AsyncProcessingQueue {
             .catchError((Object error) {
               _processingIds.remove(queueItem.id);
               _totalFailed++;
-              Log.e(
-                'Task processing failed',
-                tag: 'AsyncProcessingQueue',
-                error: error,
-                fields: {'taskId': queueItem.id},
+              unawaited(
+                Log.e(
+                  'Task processing failed',
+                  tag: 'AsyncProcessingQueue',
+                  error: error,
+                  fields: {'taskId': queueItem.id},
+                ),
               );
             }),
       );

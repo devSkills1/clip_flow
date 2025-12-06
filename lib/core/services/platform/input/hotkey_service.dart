@@ -598,15 +598,6 @@ class HotkeyService {
                 'configData': configJson,
               },
             );
-          } on ArgumentError catch (e) {
-            await Log.e(
-              '快捷键配置参数错误',
-              tag: _tag,
-              error: e,
-              fields: {
-                'configData': configJson,
-              },
-            );
           } on Exception catch (e) {
             await Log.e(
               '加载单个快捷键配置失败',

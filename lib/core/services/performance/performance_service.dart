@@ -5,10 +5,7 @@ import 'package:clip_flow/core/services/observability/index.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
-// ignore_for_file: public_member_api_docs
-// Reason: Internal service module with documented API interfaces in separate files
-// Performance service internal methods that don't require public API
-// documentation.
+// ignore_for_file: public_member_api_docs  内部服务模块，公共API接口在独立文件中有文档
 
 /// 性能监控服务
 /// 提供实时性能指标收集，包括FPS、内存、CPU等
@@ -542,7 +539,7 @@ class PerformanceService {
   /// 释放资源
   void dispose() {
     stopMonitoring();
-    _metricsController?.close();
+    unawaited(_metricsController?.close());
     _metricsController = null;
     _frameTimes.clear();
 

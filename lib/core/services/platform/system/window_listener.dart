@@ -1,12 +1,6 @@
-// ignore_for_file: public_member_api_docs
-// Reason: Internal service module with documented API interfaces in separate files, avoid_setters_without_getters
-/*
-  解释忽略的诊断：
-  - public_member_api_docs：该文件属于内部服务实现，不对外暴露公共 API，发布前会在核心公共接口处补全文档。
-  - avoid_setters_without_getters：我们刻意仅暴露写入入口（setter）以便 Provider 推送最新用户偏好，
-    保持字段只读于类内部，避免对外暴露不必要的读取接口造成耦合。
-*/
+// ignore_for_file: public_member_api_docs, avoid_setters_without_getters  内部服务实现，userPreferences setter是单向依赖注入
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -319,7 +313,7 @@ class WindowManagementService {
     _currentState = newState;
 
     if (oldState != newState) {
-      Log.d('Window state changed from $oldState to $newState');
+      unawaited(Log.d('Window state changed from $oldState to $newState'));
     }
   }
 
@@ -817,8 +811,8 @@ class ScreenInfo {
         isMain: map['isMain'] as bool? ?? false,
       );
     } catch (e) {
-      Log.e('📏 [ScreenInfo.fromMap] 解析失败: $e', tag: 'WindowManagementService');
-      Log.e('📏 [ScreenInfo.fromMap] 数据: $map', tag: 'WindowManagementService');
+      unawaited(Log.e('📏 [ScreenInfo.fromMap] 解析失败: $e', tag: 'WindowManagementService'));
+      unawaited(Log.e('📏 [ScreenInfo.fromMap] 数据: $map', tag: 'WindowManagementService'));
       rethrow;
     }
   }
@@ -883,14 +877,14 @@ class ScreenInfoResponse {
 
   factory ScreenInfoResponse.fromMap(Map<String, dynamic> map) {
     try {
-      Log.d(
+      unawaited(Log.d(
         '📏 [ScreenInfoResponse.fromMap] 开始解析数据',
         tag: 'WindowManagementService',
-      );
-      Log.d(
+      ));
+      unawaited(Log.d(
         '📏 [ScreenInfoResponse.fromMap] mainDisplay 类型: ${map['mainDisplay']?.runtimeType}',
         tag: 'WindowManagementService',
-      );
+      ));
 
       final mainDisplayData = map['mainDisplay'];
       if (mainDisplayData == null) {
@@ -900,10 +894,10 @@ class ScreenInfoResponse {
       final mainDisplay = ScreenInfo.fromMap(
         Map<String, dynamic>.from(mainDisplayData as Map),
       );
-      Log.d(
+      unawaited(Log.d(
         '📏 [ScreenInfoResponse.fromMap] 主屏幕解析成功: ${mainDisplay.physicalWidth}x${mainDisplay.physicalHeight}',
         tag: 'WindowManagementService',
-      );
+      ));
 
       final allDisplaysData = map['allDisplays'] as List? ?? [];
       final allDisplays = allDisplaysData
@@ -915,10 +909,10 @@ class ScreenInfoResponse {
 
       final displayCount = map['displayCount'] as int? ?? allDisplays.length;
 
-      Log.d(
+      unawaited(Log.d(
         '📏 [ScreenInfoResponse.fromMap] 解析完成，显示器数量: $displayCount',
         tag: 'WindowManagementService',
-      );
+      ));
 
       return ScreenInfoResponse(
         mainDisplay: mainDisplay,
@@ -926,10 +920,10 @@ class ScreenInfoResponse {
         displayCount: displayCount,
       );
     } catch (e) {
-      Log.e(
+      unawaited(Log.e(
         '📏 [ScreenInfoResponse.fromMap] 解析失败: $e',
         tag: 'WindowManagementService',
-      );
+      ));
       rethrow;
     }
   }

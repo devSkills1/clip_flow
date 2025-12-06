@@ -40,7 +40,7 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _setupWindow();
+    unawaited(_setupWindow());
     _scrollController.addListener(_handleScrollActivity);
 
     // 在页面初始化时检查并启动自动隐藏监控
@@ -77,7 +77,7 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
       parent: _fadeController,
       curve: Curves.easeInOut,
     );
-    _fadeController.forward();
+    unawaited(_fadeController.forward());
   }
 
   /// 设置传统模式窗口
@@ -389,11 +389,11 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
   }
 
   void _onItemTap(ClipItem item) {
-    ClipItemUtil.handleItemTap(item, ref, context: context);
+    unawaited(ClipItemUtil.handleItemTap(item, ref, context: context));
   }
 
   void _onDeleteItem(ClipItem item) {
-    ClipItemUtil.handleItemDelete(item, ref, context: context);
+    unawaited(ClipItemUtil.handleItemDelete(item, ref, context: context));
   }
 
   Future<void> _onItemFavoriteToggle(ClipItem item) async {
@@ -407,7 +407,8 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
 
   void _showUserGuide() {
     final l10n = S.of(context)!;
-    showDialog<void>(
+    unawaited(
+      showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.userGuideTitle),
@@ -453,7 +454,8 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
           ),
         ],
       ),
-    );
+      ), // 关闭 showDialog
+    ); // 关闭 unawaited
   }
 
   Widget _buildGuideSection(String title, List<String> items) {

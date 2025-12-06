@@ -1,6 +1,4 @@
-// ignore_for_file: public_member_api_docs
-// Reason: Internal module with documented interfaces at higher level
-// 忽略公共成员API文档要求，因为这是内部数据仓库实现，已有类级别文档说明
+// ignore_for_file: public_member_api_docs  内部数据仓库实现模块，接口在更高层级有文档
 import 'package:clip_flow/core/models/clip_item.dart';
 import 'package:clip_flow/core/services/storage/index.dart';
 import 'package:clip_flow/features/classic/domain/entities/clip_entity.dart';

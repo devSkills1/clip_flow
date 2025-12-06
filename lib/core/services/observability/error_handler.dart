@@ -22,15 +22,17 @@ class ErrorHandler {
       );
 
       // 上报到崩溃监控
-      CrashService.reportError(
-        details.exception,
-        details.stack,
-        context: 'Flutter Framework Error',
-        extra: {
-          'library': details.library,
-          'context': details.context?.toString(),
-          'informationCollector': details.informationCollector?.toString(),
-        },
+      unawaited(
+        CrashService.reportError(
+          details.exception,
+          details.stack,
+          context: 'Flutter Framework Error',
+          extra: {
+            'library': details.library,
+            'context': details.context?.toString(),
+            'informationCollector': details.informationCollector?.toString(),
+          },
+        ),
       );
 
       // 在debug模式下显示红屏
@@ -51,10 +53,12 @@ class ErrorHandler {
       );
 
       // 上报到崩溃监控
-      CrashService.reportError(
-        error,
-        stack,
-        context: 'Platform Error',
+      unawaited(
+        CrashService.reportError(
+          error,
+          stack,
+          context: 'Platform Error',
+        ),
       );
 
       return true; // 表示错误已处理
@@ -76,10 +80,12 @@ class ErrorHandler {
         );
 
         // 上报到崩溃监控
-        CrashService.reportError(
-          error,
-          stack,
-          context: 'Zone Error',
+        unawaited(
+          CrashService.reportError(
+            error,
+            stack,
+            context: 'Zone Error',
+          ),
         );
       },
     );
