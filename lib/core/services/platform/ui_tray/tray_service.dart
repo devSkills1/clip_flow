@@ -99,7 +99,7 @@ class TrayService with TrayListener {
   Future<void> _setTrayIcon() async {
     try {
       // 使用项目中的图标文件
-      await trayManager.setIcon('assets/icons/clipboard_brand_fresh_192.png');
+      await trayManager.setIcon('assets/icons/clipflow_icon_192.png');
       await Log.i('Tray icon set successfully');
     } on Exception catch (e, stackTrace) {
       await Log.e(
