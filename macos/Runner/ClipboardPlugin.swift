@@ -123,6 +123,8 @@ import Vision
             getHotkeyStats(result: result)
         case "getPhysicalScreenSize":
             getPhysicalScreenSize(result: result)
+        case "isLoginLaunch":
+            isLoginLaunch(result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -1645,6 +1647,7 @@ import Vision
                 <key>ProgramArguments</key>
                 <array>
                     <string>\(appPath)/Contents/MacOS/clip_flow</string>
+                    <string>--hidden</string>
                 </array>
                 <key>RunAtLoad</key>
                 <true/>
@@ -2009,5 +2012,21 @@ import Vision
         print("📏 [getPhysicalScreenSize] 完成")
 
         result(resultData)
+    }
+
+    /// 检测是否是登录启动（用于 SMAppService 场景）
+    /// 通过系统运行时间判断：如果系统启动时间小于120秒，认为是登录启动
+    private func isLoginLaunch(result: @escaping FlutterResult) {
+        let uptime = ProcessInfo.processInfo.systemUptime
+        // 如果系统运行时间小于120秒，认为是登录时的自动启动
+        let isLoginLaunch = uptime < 120
+
+        NSLog("ClipboardPlugin: isLoginLaunch check - uptime: %.1f seconds, isLoginLaunch: %@",
+              uptime, isLoginLaunch ? "true" : "false")
+
+        result([
+            "isLoginLaunch": isLoginLaunch,
+            "systemUptime": uptime
+        ])
     }
 }

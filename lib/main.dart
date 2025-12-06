@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:clip_flow/app.dart';
 import 'package:clip_flow/core/constants/colors.dart';
 import 'package:clip_flow/core/services/clipboard/index.dart';
@@ -10,6 +12,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
+
+/// 检测是否以隐藏模式启动（开机自启动时使用）
+bool _isHiddenLaunch() {
+  // 检查命令行参数是否包含 --hidden（LaunchAgents 方式）
+  final args = Platform.executableArguments;
+  return args.contains('--hidden');
+}
+
+/// 检测是否是登录启动（SMAppService 方式）
+/// 通过系统运行时间判断：如果系统启动时间小于120秒，认为是登录启动
+Future<bool> _isLoginLaunch() async {
+  try {
+    final result = await const MethodChannel('clipboard_service')
+        .invokeMethod<Map<Object?, Object?>>('isLoginLaunch');
+    if (result != null) {
+      return result['isLoginLaunch'] as bool? ?? false;
+    }
+  } on Exception {
+    // 忽略异常，返回 false
+  }
+  return false;
+}
 
 void main() async {
   await _runApp();
@@ -64,10 +88,30 @@ Future<void> _runApp() async {
     windowButtonVisibility: false,
   );
 
+  // 检测是否应该以隐藏模式启动
+  // 1. 如果有 --hidden 参数（LaunchAgents 方式），直接隐藏
+  // 2. 如果是登录启动且开机自启动已启用（SMAppService 方式），也隐藏
+  var shouldStartHidden = _isHiddenLaunch();
+
+  if (!shouldStartHidden) {
+    // 检查是否是 SMAppService 方式的登录启动
+    final isLoginLaunch = await _isLoginLaunch();
+    if (isLoginLaunch) {
+      // 检查自动启动是否启用
+      final isAutostartEnabled = await AutostartService.instance.isEnabled();
+      shouldStartHidden = isAutostartEnabled;
+    }
+  }
+
   /// 主函数
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    // 使用窗口管理服务显示窗口
-    await windowService.showAndFocus();
+    if (shouldStartHidden) {
+      // 开机自启动时隐藏窗口，只在后台运行
+      await windowService.hide();
+    } else {
+      // 正常启动时显示窗口
+      await windowService.showAndFocus();
+    }
   });
 
   // 初始化日志系统
