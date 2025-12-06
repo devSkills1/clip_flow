@@ -3,7 +3,7 @@ import FlutterMacOS
 
 // 应用常量定义 (与 Flutter ClipConstants 保持一致)
 struct ClipConstants {
-  static let appName = "ClipFlow Pro"
+  static let appName = "ClipFlow"
   static let minWindowWidth: CGFloat = 800.0
   static let minWindowHeight: CGFloat = 600.0
   static let maxWindowWidth: CGFloat = 1920.0

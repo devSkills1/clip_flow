@@ -4,10 +4,10 @@
 // from production environment.
 
 // The application's name for development
-PRODUCT_NAME = ClipFlow Pro Dev
+PRODUCT_NAME = ClipFlow Dev
 
 // The application's bundle identifier for development
-PRODUCT_BUNDLE_IDENTIFIER = com.clipflow.pro.dev
+PRODUCT_BUNDLE_IDENTIFIER = com.clipflow.app.dev
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 ClipFlow. All rights reserved.

@@ -16,7 +16,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
-/// The root application widget of ClipFlow Pro.
+/// The root application widget of ClipFlow.
 /// Provides router configuration and light/dark themes.
 class ClipFlowApp extends ConsumerStatefulWidget {
   /// Creates the root application widget.

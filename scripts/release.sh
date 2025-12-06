@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ClipFlow Pro 发布脚本
+# ClipFlow 发布脚本
 # 用于准备 GitHub Release 发布文件
 
 set -euo pipefail
@@ -21,7 +21,7 @@ BUILD_UNSIGNED="$SCRIPT_DIR/build-unsigned.sh"
 
 # 显示帮助信息
 show_help() {
-    echo "ClipFlow Pro 发布脚本"
+    echo "ClipFlow 发布脚本"
     echo ""
     echo "用法: $0 [version] [选项]"
     echo ""
@@ -267,7 +267,7 @@ if [ -z "$VERSION" ] || [ "$AUTO_VERSION" = true ]; then
     echo -e "${BLUE}📋 自动获取版本号: $VERSION${NC}"
 fi
 
-echo -e "${BLUE}🚀 准备发布 ClipFlow Pro $VERSION${NC}"
+echo -e "${BLUE}🚀 准备发布 ClipFlow $VERSION${NC}"
 echo ""
 # 计算平台后缀（如未指定）
 if [ -z "$PLATFORM_SUFFIX" ]; then
@@ -373,7 +373,7 @@ BUILD_DIR="$PROJECT_ROOT/build"
 
 # 查找 DMG 文件（统一命名后无需重命名）
 if [ "$CREATE_DMG" = true ]; then
-    TARGET_DMG="$BUILD_DIR/ClipFlowPro-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
+    TARGET_DMG="$BUILD_DIR/ClipFlow-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
     if [ -f "$TARGET_DMG" ]; then
         echo -e "${GREEN}✅ 找到 DMG 文件: $TARGET_DMG${NC}"
         # 若校验文件不存在则生成
@@ -389,7 +389,7 @@ if [ "$CREATE_DMG" = true ]; then
 fi
 
 # 查找应用文件
-APP_PATH="build/macos/Build/Products/Release/ClipFlow Pro.app"
+APP_PATH="build/macos/Build/Products/Release/ClipFlow.app"
 if [ -d "$APP_PATH" ]; then
     APP_SIZE=$(du -sh "$APP_PATH" | cut -f1)
     echo -e "${GREEN}✅ 应用文件: $APP_PATH (大小: $APP_SIZE)${NC}"
@@ -399,7 +399,7 @@ fi
 echo ""
 echo -e "${BLUE}📁 发布文件列表:${NC}"
 if [ "$CREATE_DMG" = true ]; then
-    ls -la "$BUILD_DIR"/ClipFlowPro-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.* 2>/dev/null || echo "  (未找到 DMG 文件)"
+    ls -la "$BUILD_DIR"/ClipFlow-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.* 2>/dev/null || echo "  (未找到 DMG 文件)"
 fi
 if [ -d "$APP_PATH" ]; then
     echo "  应用文件: $APP_PATH"
@@ -431,18 +431,18 @@ fi
 
 # 生成发布说明模板
 cat > "$RELEASE_NOTES" << EOF
-# ClipFlow Pro $VERSION
+# ClipFlow $VERSION
 
 ## 📥 下载安装
 
 ### 安装说明（未签名版本）
 
-1. 下载 \`ClipFlowPro-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg\`
+1. 下载 \`ClipFlow-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg\`
 2. 双击 DMG 文件挂载（macOS）或解压相应包（其他平台）
-3. 将 \`ClipFlow Pro\` 拖拽到 \`Applications\` 文件夹（macOS）或按平台指引安装
+3. 将 \`ClipFlow\` 拖拽到 \`Applications\` 文件夹（macOS）或按平台指引安装
 4. 首次运行时：
    - 如果提示"无法打开"，请右键点击应用选择"打开"
-   - 或在终端执行：\`xattr -dr com.apple.quarantine "/Applications/ClipFlow Pro.app"\`（针对本应用解除隔离）
+   - 或在终端执行：\`xattr -dr com.apple.quarantine "/Applications/ClipFlow.app"\`（针对本应用解除隔离）
 
 ## ✨ 新功能
 EOF
@@ -588,8 +588,8 @@ echo -e "${BLUE}📋 下一步操作:${NC}"
 echo "1. 编辑发布说明: $RELEASE_NOTES"
 echo "2. 创建 GitHub Release: $VERSION"
 if [ "$CREATE_DMG" = true ]; then
-    echo "3. 上传文件: build/ClipFlowPro-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
-    echo "4. 上传校验和: build/ClipFlowPro-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg.sha256"
+    echo "3. 上传文件: build/ClipFlow-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
+    echo "4. 上传校验和: build/ClipFlow-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg.sha256"
 fi
 echo "5. 复制发布说明内容到 GitHub"
 

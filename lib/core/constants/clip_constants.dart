@@ -16,7 +16,7 @@
 class ClipConstants {
   /// 应用信息（元数据）
   /// 应用名称
-  static const String appName = 'ClipFlow Pro';
+  static const String appName = 'ClipFlow';
 
   /// 应用版本
   static const String appVersion = '1.0.0';
@@ -52,7 +52,7 @@ class ClipConstants {
 
   /// 数据库相关常量
   /// 数据库文件名
-  static const String databaseName = 'clipflow_pro.db';
+  static const String databaseName = 'clip_flow.db';
 
   /// 数据库版本号
   static const int databaseVersion = 2;

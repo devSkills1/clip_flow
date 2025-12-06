@@ -1,4 +1,4 @@
-# ClipFlow Pro 开发 TODO
+# ClipFlow 开发 TODO
 
 ## 项目完成度评估与下一步建议（2025-09-30）
 ### 完成度概览

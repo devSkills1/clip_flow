@@ -1,18 +1,18 @@
-# ClipFlow Pro 构建与发布指南
+# ClipFlow 构建与发布指南
 
-本文档说明 ClipFlow Pro 项目的包名配置方案、构建流程和 GitHub 发布流程，以及如何在开发和生产环境之间进行切换。
+本文档说明 ClipFlow 项目的包名配置方案、构建流程和 GitHub 发布流程，以及如何在开发和生产环境之间进行切换。
 
 ## 包名方案
 
 ### 生产环境 (Production)
-- **包名**: `com.clipflow.pro`
-- **应用名**: `ClipFlow Pro`
-- **数据库**: `clipflow_pro.db`
+- **包名**: `com.clipflow.app`
+- **应用名**: `ClipFlow`
+- **数据库**: `clip_flow.db`
 
 ### 开发环境 (Development)
-- **包名**: `com.clipflow.pro.dev`
-- **应用名**: `ClipFlow Pro (Dev)`
-- **数据库**: `clipflow_pro_dev.db`
+- **包名**: `com.clipflow.app.dev`
+- **应用名**: `ClipFlow Dev`
+- **数据库**: `clip_flow_dev.db`
 
 ## 设计理念
 
@@ -44,7 +44,7 @@ docs/
 
 ### 脚本概览
 
-ClipFlow Pro 项目包含 5 个核心脚本，它们之间有明确的分工和依赖关系：
+ClipFlow 项目包含 5 个核心脚本，它们之间有明确的分工和依赖关系：
 
 #### 🔧 **工具脚本**（可独立使用）
 - **`version-manager.sh`**: 版本管理工具，从 `pubspec.yaml` 提取版本号并生成构建号
@@ -207,7 +207,7 @@ switch-env.sh → 修改配置文件 → 影响后续构建行为
 
 ### 版本号获取
 
-ClipFlow Pro 使用 `version-manager.sh` 脚本自动从 `pubspec.yaml` 获取版本号，并生成构建号。
+ClipFlow 使用 `version-manager.sh` 脚本自动从 `pubspec.yaml` 获取版本号，并生成构建号。
 
 #### 基本用法
 
@@ -343,7 +343,7 @@ flutter build macos --dart-define=ENVIRONMENT=development --release
 
 ### 🚨 重要提醒
 
-由于 ClipFlow Pro 目前**没有 Apple 开发者证书**，用户在 macOS 上安装时会遇到安全警告。这是正常现象，不是应用本身的问题。
+由于 ClipFlow 目前**没有 Apple 开发者证书**，用户在 macOS 上安装时会遇到安全警告。这是正常现象，不是应用本身的问题。
 
 ### 使用发布脚本（推荐）
 
@@ -391,7 +391,7 @@ flutter build macos --dart-define=ENVIRONMENT=development --release
     "$DMG_OUTPUT_PATH" \
     "$TEMP_DIR"
   ```
-- 验证：构建完成后双击挂载，窗口内应出现应用图标与 `Applications` 别名；拖拽安装后在 `/Applications` 中可见 `ClipFlow Pro.app` 并能正常启动。
+- 验证：构建完成后双击挂载，窗口内应出现应用图标与 `Applications` 别名；拖拽安装后在 `/Applications` 中可见 `ClipFlow.app` 并能正常启动。
 - 若首次运行受隔离限制，按“安装说明”章节中的 `xattr -dr com.apple.quarantine` 单应用豁免处理。
 
 #### `.pkg` 安装器文档
@@ -449,7 +449,7 @@ release-notes-<version>.md                        # 发布说明模板（如生�
 在 GitHub Release 中使用以下模板：
 
 ```markdown
-# ClipFlow Pro v1.0.0
+# ClipFlow v1.0.0
 
 ## 📥 下载安装
 
@@ -460,7 +460,7 @@ release-notes-<version>.md                        # 发布说明模板（如生�
 #### 方法一：DMG 安装（推荐）
 1. 下载 `ClipFlow-<version>-<build>-macos.dmg`
 2. 双击 DMG 文件挂载
-3. 将 `ClipFlow Pro` 拖拽到 `Applications` 文件夹
+3. 将 `ClipFlow` 拖拽到 `Applications` 文件夹
 4. 首次运行时：
    - 如果提示"无法打开"，请右键点击应用
    - 选择"打开"
@@ -470,7 +470,7 @@ release-notes-<version>.md                        # 发布说明模板（如生�
 如果仍遇到“已损坏”或“无法打开”，可对单个应用解除隔离：
 ```bash
 # 解除隔离（单应用豁免，不修改系统级设置）
-xattr -dr com.apple.quarantine "/Applications/ClipFlow Pro.app"
+xattr -dr com.apple.quarantine "/Applications/ClipFlow.app"
 ```
 
 #### 方法三：系统设置
@@ -561,9 +561,9 @@ if (AppConfig.isProduction) {
 
 | 特性 | 开发环境 | 生产环境 |
 |------|----------|----------|
-| 包名 | `com.clipflow.pro.dev` | `com.clipflow.pro` |
-| 应用名 | `ClipFlow Pro (Dev)` | `ClipFlow Pro` |
-| 数据库 | `clipflow_pro_dev.db` | `clipflow_pro.db` |
+| 包名 | `com.clipflow.app.dev` | `com.clipflow.app` |
+| 应用名 | `ClipFlow Dev` | `ClipFlow` |
+| 数据库 | `clip_flow_dev.db` | `clip_flow.db` |
 | 日志级别 | Debug | Warning |
 | 调试功能 | 启用 | 禁用 |
 | 性能监控 | 禁用 | 启用 |
@@ -618,8 +618,8 @@ if (AppConfig.isProduction) {
 # 场景1: 开发阶段，确保使用开发环境
 $ ./scripts/switch-env.sh status
 当前环境: 开发环境 (Development)
-包名: com.clipflow.pro.dev
-应用名: ClipFlow Pro Dev
+包名: com.clipflow.app.dev
+应用名: ClipFlow Dev
 
 # 场景2: 准备发布，切换到生产环境
 $ ./scripts/switch-env.sh prod
@@ -656,19 +656,19 @@ $ ./scripts/switch-env.sh dev
 ```bash
 # 场景1: 日常开发测试
 $ ./scripts/build.sh dev macos
-🚀 开始构建 ClipFlow Pro...
+🚀 开始构建 ClipFlow...
 环境: development
 平台: macos
-✅ 构建完成: build/macos/Build/Products/Release/ClipFlow Pro Dev.app
+✅ 构建完成: build/macos/Build/Products/Release/ClipFlow Dev.app
 
 # 场景2: 发布前最终构建
 $ ./scripts/build.sh -c -r prod macos
 🧹 清理构建缓存...
-🚀 开始构建 ClipFlow Pro...
+🚀 开始构建 ClipFlow...
 环境: production
 平台: macos
 模式: release
-✅ 构建完成: build/macos/Build/Products/Release/ClipFlow Pro.app
+✅ 构建完成: build/macos/Build/Products/Release/ClipFlow.app
 
 # 场景3: 多平台发布构建
 $ ./scripts/build.sh prod all
@@ -704,11 +704,11 @@ $ ./scripts/build.sh prod all
 ```bash
 # 场景1: 个人使用，快速构建测试
 $ ./scripts/build-unsigned.sh
-🚀 开始构建 ClipFlow Pro (无签名版本)
+🚀 开始构建 ClipFlow (无签名版本)
 📝 切换到开发环境...
 🔨 构建 macOS 应用...
 ✅ 应用构建成功
-   路径: build/macos/Build/Products/Release/ClipFlow Pro Dev.app
+   路径: build/macos/Build/Products/Release/ClipFlow Dev.app
    大小: 45.2M
 
 # 场景2: 分发给朋友测试，创建 DMG 安装包

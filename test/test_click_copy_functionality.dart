@@ -5,12 +5,12 @@ import 'dart:io';
 /// 测试点击卡片重新复制到剪贴板功能的脚本
 ///
 /// 使用方法：
-/// 1. 确保ClipFlow Pro应用正在运行
+/// 1. 确保ClipFlow应用正在运行
 /// 2. 运行此脚本：dart test_click_copy_functionality.dart
 /// 3. 按照提示操作
 
 void main() async {
-  print('🧪 ClipFlow Pro - 点击卡片重新复制功能测试');
+  print('🧪 ClipFlow - 点击卡片重新复制功能测试');
   print('=' * 50);
 
   // 测试步骤1：复制不同类型的内容
@@ -33,7 +33,7 @@ Future<void> testStep1() async {
   final testContents = [
     {
       'type': '文本',
-      'content': '这是一个测试文本内容 - ClipFlow Pro 功能验证',
+      'content': '这是一个测试文本内容 - ClipFlow 功能验证',
     },
     {
       'type': 'URL',
@@ -42,20 +42,20 @@ Future<void> testStep1() async {
     {
       'type': 'JSON',
       'content':
-          '{"name": "ClipFlow Pro", "version": "1.0.0", "platform": "macOS"}',
+          '{"name": "ClipFlow", "version": "1.0.0", "platform": "macOS"}',
     },
     {
       'type': '代码',
       'content': r'''
 function greetUser(name) {
   console.log(`Hello, ${name}!`);
-  return `Welcome to ClipFlow Pro, ${name}`;
+  return `Welcome to ClipFlow, ${name}`;
 }''',
     },
     {
       'type': 'HTML',
       'content':
-          '<div class="test"><h2>ClipFlow Pro</h2><p>剪贴板历史管理工具</p></div>',
+          '<div class="test"><h2>ClipFlow</h2><p>剪贴板历史管理工具</p></div>',
     },
   ];
 
@@ -66,10 +66,10 @@ function greetUser(name) {
     await copyToClipboard(item['content']!);
     await Future.delayed(const Duration(seconds: 2));
 
-    print('   ✓ 已复制，请检查ClipFlow Pro应用中是否出现新的卡片');
+    print('   ✓ 已复制，请检查ClipFlow应用中是否出现新的卡片');
   }
 
-  print('\n📱 请检查ClipFlow Pro应用，确认所有测试内容都已显示为卡片');
+  print('\n📱 请检查ClipFlow应用，确认所有测试内容都已显示为卡片');
   await waitForUser('确认所有卡片都已显示后，按Enter继续...');
 }
 
@@ -85,7 +85,7 @@ Future<void> testStep2() async {
 
   print('   ✓ 当前剪贴板内容：$newContent');
 
-  print('\n2. 现在请在ClipFlow Pro应用中：');
+  print('\n2. 现在请在ClipFlow应用中：');
   print('   - 点击任意一个之前的卡片（比如URL卡片或代码卡片）');
   print('   - 观察是否显示"已复制"的提示');
   print('   - 注意应用界面的反馈');
@@ -111,7 +111,7 @@ Future<void> testStep3() async {
     final testContents = [
       'https://github.com/flutter/flutter',
       'function greetUser(name)',
-      '{"name": "ClipFlow Pro"',
+      '{"name": "ClipFlow"',
       '<div class="test">',
       '这是一个测试文本内容',
     ];

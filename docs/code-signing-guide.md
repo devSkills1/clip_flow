@@ -1,4 +1,4 @@
-# ClipFlow Pro 代码签名指南
+# ClipFlow 代码签名指南
 
 本文档说明在没有开发证书情况下的打包、安装和分发策略。
 
@@ -26,7 +26,7 @@ security unlock-keychain -p "password" build.keychain
 
 # 2. 生成自签名证书
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes \
-  -subj "/C=CN/ST=State/L=City/O=ClipFlow/OU=Dev/CN=ClipFlow Pro"
+  -subj "/C=CN/ST=State/L=City/O=ClipFlow/OU=Dev/CN=ClipFlow"
 
 # 3. 导入证书到钥匙串
 security import cert.pem -k build.keychain -T /usr/bin/codesign
@@ -39,8 +39,8 @@ security import key.pem -k build.keychain -T /usr/bin/codesign
 
 ```xcconfig
 // macos/Runner/Configs/AppInfo-Prod.xcconfig
-PRODUCT_NAME = ClipFlow Pro
-PRODUCT_BUNDLE_IDENTIFIER = com.clipflow.pro
+PRODUCT_NAME = ClipFlow
+PRODUCT_BUNDLE_IDENTIFIER = com.clipflow.app
 PRODUCT_COPYRIGHT = Copyright © 2025 ClipFlow. All rights reserved.
 
 // 使用自动签名（无需开发者证书）
@@ -78,7 +78,7 @@ flutter build macos --dart-define=ENVIRONMENT=development
 
 ```bash
 # 创建 DMG 安装包
-hdiutil create -volname "ClipFlow Pro" -srcfolder "build/macos/Build/Products/Release/ClipFlow Pro.app" -ov -format UDZO ClipFlow.dmg
+hdiutil create -volname "ClipFlow" -srcfolder "build/macos/Build/Products/Release/ClipFlow.app" -ov -format UDZO ClipFlow.dmg
 ```
 
 **用户安装指南**：
@@ -111,11 +111,11 @@ echo "构建未签名版本..."
 flutter build macos --dart-define=ENVIRONMENT=development
 
 # 创建 DMG
-APP_PATH="build/macos/Build/Products/Release/ClipFlow Pro Dev.app"
+APP_PATH="build/macos/Build/Products/Release/ClipFlow Dev.app"
 DMG_NAME="ClipFlow-Dev-$(date +%Y%m%d).dmg"
 
 if [ -d "$APP_PATH" ]; then
-    hdiutil create -volname "ClipFlow Pro Dev" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG_NAME"
+    hdiutil create -volname "ClipFlow Dev" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG_NAME"
     echo "✅ DMG 创建完成: $DMG_NAME"
 else
     echo "❌ 应用构建失败"
@@ -187,7 +187,7 @@ fi
   - `com.apple.security.files.bookmarks.app-scope = true`
 - 如果只是访问“下载”目录，可使用 `com.apple.security.files.downloads.read-write` 直接授权，减少额外弹窗。
 
-开发侧验证：在“系统设置 > 隐私与安全 > 文件与文件夹”中确认 ClipFlow Pro 已获得对应目录的访问权限；若未出现，请从应用内发起一次真实访问（或通过 NSOpenPanel 选择目录）后再检查。
+开发侧验证：在“系统设置 > 隐私与安全 > 文件与文件夹”中确认 ClipFlow 已获得对应目录的访问权限；若未出现，请从应用内发起一次真实访问（或通过 NSOpenPanel 选择目录）后再检查。
 
 ---
 

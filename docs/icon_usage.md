@@ -1,4 +1,4 @@
-# 📱 ClipFlow Pro 图标使用指南
+# 📱 ClipFlow 图标使用指南
 
 ## 🎯 快速开始
 
@@ -45,7 +45,7 @@
 ## 📁 文件结构（已简化）
 
 ```
-ClipFlow Pro/
+ClipFlow/
 ├── assets/icons/
 │   ├── app_icon.svg              # 动态版本（带动画）
 │   ├── app_icon_static.svg       # 静态版本
@@ -141,7 +141,7 @@ git add assets/icons/ macos/Runner/Assets.xcassets/ web/
 # 提交更改
 git commit -m "feat(ui): 更新应用图标设计
 
-- 设计全新的 ClipFlow Pro 应用图标
+- 设计全新的 ClipFlow 应用图标
 - 体现剪贴板和数据流动概念
 - 支持 macOS 和 Web 平台
 - 更新品牌元数据和配置文件"

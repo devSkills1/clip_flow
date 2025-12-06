@@ -23,9 +23,9 @@ class AppConfig {
   static String get packageName {
     switch (environment) {
       case AppEnvironment.production:
-        return 'com.clipflow.pro';
+        return 'com.clipflow.app';
       case AppEnvironment.development:
-        return 'com.clipflow.pro.dev';
+        return 'com.clipflow.app.dev';
     }
   }
 
@@ -33,9 +33,9 @@ class AppConfig {
   static String get appName {
     switch (environment) {
       case AppEnvironment.production:
-        return 'ClipFlow Pro';
+        return 'ClipFlow';
       case AppEnvironment.development:
-        return 'ClipFlow Pro (Dev)';
+        return 'ClipFlow Dev';
     }
   }
 
@@ -59,9 +59,9 @@ class AppConfig {
   static String get databaseName {
     switch (environment) {
       case AppEnvironment.production:
-        return 'clipflow_pro.db';
+        return 'clip_flow.db';
       case AppEnvironment.development:
-        return 'clipflow_pro_dev.db';
+        return 'clip_flow_dev.db';
     }
   }
 

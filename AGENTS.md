@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Stack
-ClipFlow Pro targets Flutter 3.19+/Dart 3.9+. `lib/core/services/` hosts clipboard, OCR, storage, and logging layers; `lib/features/` implements UX flows with Riverpod; `lib/shared/` contains widgets/utilities; `lib/l10n/` stores generated strings. Tests live in `test/`, shared assets in `assets/`, and automation scripts in `scripts/`.
+ClipFlow targets Flutter 3.19+/Dart 3.9+. `lib/core/services/` hosts clipboard, OCR, storage, and logging layers; `lib/features/` implements UX flows with Riverpod; `lib/shared/` contains widgets/utilities; `lib/l10n/` stores generated strings. Tests live in `test/`, shared assets in `assets/`, and automation scripts in `scripts/`.
 
 ## Build, Test & Dev Commands
 - `flutter pub get` — install dependencies.

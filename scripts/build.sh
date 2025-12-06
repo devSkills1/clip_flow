@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ClipFlow Pro 构建脚本
+# ClipFlow 构建脚本
 # 支持开发和生产环境的构建
 
 set -e
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # 显示帮助信息
 show_help() {
-    echo -e "${BLUE}ClipFlow Pro 构建脚本${NC}"
+    echo -e "${BLUE}ClipFlow 构建脚本${NC}"
     echo ""
     echo "用法: $0 [选项] <环境> <平台>"
     echo ""
@@ -110,7 +110,7 @@ case $ENVIRONMENT in
         ;;
 esac
 
-echo -e "${BLUE}开始构建 ClipFlow Pro${NC}"
+echo -e "${BLUE}开始构建 ClipFlow${NC}"
 echo -e "${YELLOW}环境: $ENV_NAME${NC}"
 echo -e "${YELLOW}平台: $PLATFORM${NC}"
 echo -e "${YELLOW}模式: $BUILD_MODE${NC}"
@@ -241,7 +241,7 @@ echo -e "${GREEN}✅ 构建完成！${NC}"
 echo -e "${BLUE}构建产物位置:${NC}"
 
 if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "all" ]]; then
-    echo -e "  macOS: build/macos/Build/Products/Release/ClipFlow Pro*.app"
+    echo -e "  macOS: build/macos/Build/Products/Release/ClipFlow*.app"
 fi
 
 if [[ "$PLATFORM" == "windows" || "$PLATFORM" == "all" ]]; then

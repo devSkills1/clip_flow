@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ClipFlow Pro 版本管理脚本
+# ClipFlow 版本管理脚本
 # 功能：从 pubspec.yaml 提取版本号，生成构建号
 
 # 颜色定义
@@ -126,7 +126,7 @@ reset_build_counter() {
 
 # 显示帮助信息
 show_help() {
-    echo "ClipFlow Pro 版本管理脚本"
+    echo "ClipFlow 版本管理脚本"
     echo ""
     echo "用法:"
     echo "  $0 [选项]"

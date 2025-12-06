@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ClipFlow Pro 无签名构建脚本
+# ClipFlow 无签名构建脚本
 # 用于在没有开发者证书的情况下构建应用
 
 set -euo pipefail
@@ -19,7 +19,7 @@ SWITCH_ENV="$SCRIPT_DIR/switch-env.sh"
 
 # 显示帮助信息
 show_help() {
-    echo "ClipFlow Pro 无签名构建脚本"
+    echo "ClipFlow 无签名构建脚本"
     echo ""
     echo "用法: $0 [选项]"
     echo ""
@@ -84,7 +84,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo -e "${BLUE}🚀 开始构建 ClipFlow Pro (无签名版本)${NC}"
+echo -e "${BLUE}🚀 开始构建 ClipFlow (无签名版本)${NC}"
 echo ""
 
 # 计算平台后缀（如未指定）
@@ -192,9 +192,9 @@ flutter build macos $BUILD_ARGS
 
 # 检查构建结果
 if [ "$BUILD_ENV" = "prod" ]; then
-    APP_PATH="build/macos/Build/Products/Release/ClipFlow Pro.app"
+    APP_PATH="build/macos/Build/Products/Release/ClipFlow.app"
 else
-    APP_PATH="build/macos/Build/Products/Release/ClipFlow Pro Dev.app"
+    APP_PATH="build/macos/Build/Products/Release/ClipFlow Dev.app"
 fi
 
 if [ ! -d "$APP_PATH" ]; then
@@ -215,11 +215,11 @@ if [ "$CREATE_DMG" = true ]; then
     
     # 根据环境生成 DMG 名称（使用构建号）
 if [ "$BUILD_ENV" = "prod" ]; then
-    DMG_NAME="ClipFlowPro-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
-    VOLUME_NAME="ClipFlow Pro"
+    DMG_NAME="ClipFlow-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
+    VOLUME_NAME="ClipFlow"
 else
-    DMG_NAME="ClipFlowPro-Dev-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
-    VOLUME_NAME="ClipFlow Pro Dev"
+    DMG_NAME="ClipFlow-Dev-$VERSION-$BUILD_NUMBER-$PLATFORM_SUFFIX.dmg"
+    VOLUME_NAME="ClipFlow Dev"
 fi
     
     # DMG 输出路径

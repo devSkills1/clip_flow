@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ClipFlow Pro 应用清理脚本（增强版）
+# ClipFlow 应用清理脚本（增强版）
 # - 扩大搜索范围：系统/用户应用目录以及项目构建产物
 # - 清理应用支持/偏好/缓存目录
 # - 重建 LaunchServices 数据库，移除系统残留的应用索引
@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-echo "🧹 ClipFlow Pro 应用清理脚本（增强版）"
+echo "🧹 ClipFlow 应用清理脚本（增强版）"
 echo "=============================="
 
 # 解析项目根目录（脚本所在目录的上一级）
@@ -18,8 +18,8 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # 目标 Bundle 标识与名称关键词
 # 环境化的 Bundle ID（支持通过环境变量或参数传入）
-RELEASE_BUNDLE_ID="${APP_RELEASE_BUNDLE_ID:-com.clipflow.pro}"
-DEV_BUNDLE_ID="${APP_DEV_BUNDLE_ID:-com.clipflow.pro.dev}"
+RELEASE_BUNDLE_ID="${APP_RELEASE_BUNDLE_ID:-com.clipflow.app}"
+DEV_BUNDLE_ID="${APP_DEV_BUNDLE_ID:-com.clipflow.app.dev}"
 ENV="${APP_ENV:-all}"
 DRY_RUN=false
 SPOTLIGHT=false
@@ -67,7 +67,7 @@ else
   BUNDLE_IDS=("$RELEASE_BUNDLE_ID" "$DEV_BUNDLE_ID")
 fi
 echo "🔧 当前目标环境: ${ENV}（Bundle IDs: ${BUNDLE_IDS[*]}，dry-run: ${DRY_RUN}，verbose: ${VERBOSE}，spotlight: ${SPOTLIGHT}）"
-NAME_PATTERNS=("*ClipFlow*.app" "*clip_flow*.app" "*ClipFlowPro*.app" "*ClipFlow*Dev*.app" "*ClipFlow*Debug*.app")
+NAME_PATTERNS=("*ClipFlow*.app" "*clip_flow*.app" "*ClipFlow*Dev*.app" "*ClipFlow*Debug*.app")
 
 # 搜索应用的函数
 find_apps() {
@@ -101,7 +101,7 @@ spotlight_apps() {
   for id in "${BUNDLE_IDS[@]}"; do
     while IFS= read -r item; do
       [ -n "$item" ] && results+=("$item")
-    done < <(mdfind "kMDItemCFBundleIdentifier == '$id' || kMDItemDisplayName == 'ClipFlow Pro' || kMDItemDisplayName == 'ClipFlow Pro Dev'" 2>/dev/null || true)
+    done < <(mdfind "kMDItemCFBundleIdentifier == '$id' || kMDItemDisplayName == 'ClipFlow' || kMDItemDisplayName == 'ClipFlow Dev'" 2>/dev/null || true)
   done
   if [ "${#results[@]}" -gt 0 ]; then
     printf "%s\n" "${results[@]}" | sort -u
@@ -114,7 +114,7 @@ SYSTEM_APPS=$(find_apps)
 SPOTLIGHT_APPS=$(spotlight_apps)
 
 if [ -z "$SYSTEM_APPS" ] && [ -z "$SPOTLIGHT_APPS" ]; then
-  echo "✅ 未找到任何 ClipFlow Pro 应用或索引项"
+  echo "✅ 未找到任何 ClipFlow 应用或索引项"
 else
   echo "📱 找到以下可能的应用/索引路径："
   if [ -n "$SYSTEM_APPS" ]; then
@@ -184,10 +184,10 @@ echo "🧽 清理相关缓存/支持/偏好..."
 APP_SUPPORT_DIRS=(
   "$HOME/Library/Application Support/$RELEASE_BUNDLE_ID"
   "$HOME/Library/Application Support/$DEV_BUNDLE_ID"
-  "$HOME/Library/Application Support/ClipFlow Pro"
-  "$HOME/Library/Application Support/clip_flow_pro"
-  "$HOME/Library/Application Support/ClipFlow Pro Dev"
-  "$HOME/Library/Application Support/clip_flow_pro_dev"
+  "$HOME/Library/Application Support/ClipFlow"
+  "$HOME/Library/Application Support/clip_flow"
+  "$HOME/Library/Application Support/ClipFlow Dev"
+  "$HOME/Library/Application Support/clip_flow_dev"
 )
 for dir in "${APP_SUPPORT_DIRS[@]}"; do
   if [ -d "$dir" ]; then
@@ -203,8 +203,8 @@ done
 PREF_FILES=(
   "$HOME/Library/Preferences/${RELEASE_BUNDLE_ID}.plist"
   "$HOME/Library/Preferences/${DEV_BUNDLE_ID}.plist"
-  "$HOME/Library/Preferences/ClipFlow Pro.plist"
-  "$HOME/Library/Preferences/ClipFlow Pro Dev.plist"
+  "$HOME/Library/Preferences/ClipFlow.plist"
+  "$HOME/Library/Preferences/ClipFlow Dev.plist"
 )
 for pref in "${PREF_FILES[@]}"; do
   if [ -f "$pref" ]; then
@@ -220,8 +220,8 @@ done
 CACHE_DIRS=(
   "$HOME/Library/Caches/${RELEASE_BUNDLE_ID}"
   "$HOME/Library/Caches/${DEV_BUNDLE_ID}"
-  "$HOME/Library/Caches/ClipFlow Pro"
-  "$HOME/Library/Caches/ClipFlow Pro Dev"
+  "$HOME/Library/Caches/ClipFlow"
+  "$HOME/Library/Caches/ClipFlow Dev"
 )
 for cache in "${CACHE_DIRS[@]}"; do
   if [ -d "$cache" ]; then
@@ -236,8 +236,8 @@ done
 
 # 新增：清理日志目录
 LOG_DIRS=(
-  "$HOME/Library/Logs/ClipFlow Pro"
-  "$HOME/Library/Logs/ClipFlow Pro Dev"
+  "$HOME/Library/Logs/ClipFlow"
+  "$HOME/Library/Logs/ClipFlow Dev"
   "$HOME/Library/Logs/${RELEASE_BUNDLE_ID}"
   "$HOME/Library/Logs/${DEV_BUNDLE_ID}"
 )

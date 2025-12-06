@@ -282,7 +282,7 @@ class OCRCopyService {
 
     buffer
       ..writeln('> ')
-      ..writeln('> *由 ClipFlow Pro OCR 识别*');
+      ..writeln('> *由 ClipFlow OCR 识别*');
 
     return buffer.toString();
   }

@@ -1,4 +1,4 @@
-# ClipFlow Pro 需求审阅与优化 TODO（2025-XX-XX）
+# ClipFlow 需求审阅与优化 TODO（2025-XX-XX）
 
 ## 审阅范围
 - `README.md`（核心功能、阶段目标、版本计划）

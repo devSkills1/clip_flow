@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ClipFlow Pro 环境切换脚本
+# ClipFlow 环境切换脚本
 # 快速切换开发和生产环境配置
 
 set -euo pipefail
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # 显示帮助信息
 show_help() {
-    echo -e "${BLUE}ClipFlow Pro 环境切换脚本${NC}"
+    echo -e "${BLUE}ClipFlow 环境切换脚本${NC}"
     echo ""
     echo "用法: $0 <环境>"
     echo ""
@@ -57,12 +57,12 @@ show_status() {
     if [[ -f "$config_file" ]]; then
         if grep -q "^#include \"AppInfo-Dev.xcconfig\"" "$config_file"; then
             echo -e "  环境: ${GREEN}开发环境 (Development)${NC}"
-            echo -e "  包名: ${YELLOW}com.clipflow.pro.dev${NC}"
-            echo -e "  应用名: ${YELLOW}ClipFlow Pro Dev${NC}"
+            echo -e "  包名: ${YELLOW}com.clipflow.app.dev${NC}"
+            echo -e "  应用名: ${YELLOW}ClipFlow Dev${NC}"
         elif grep -q "^#include \"AppInfo-Prod.xcconfig\"" "$config_file"; then
             echo -e "  环境: ${GREEN}生产环境 (Production)${NC}"
-            echo -e "  包名: ${YELLOW}com.clipflow.pro${NC}"
-            echo -e "  应用名: ${YELLOW}ClipFlow Pro${NC}"
+            echo -e "  包名: ${YELLOW}com.clipflow.app${NC}"
+            echo -e "  应用名: ${YELLOW}ClipFlow${NC}"
         else
             echo -e "  环境: ${RED}未知${NC}"
             echo -e "  ${YELLOW}请运行环境切换命令来配置环境${NC}"

@@ -516,7 +516,7 @@ class _SettingsFallback {
   String get feedbackEmailTitle => '邮件反馈';
 
   /// 邮件反馈主题
-  String get feedbackEmailSubject => 'ClipFlow Pro 反馈与建议';
+  String get feedbackEmailSubject => 'ClipFlow 反馈与建议';
 
   /// 邮件反馈正文
   String get feedbackEmailBody =>

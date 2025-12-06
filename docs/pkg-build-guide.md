@@ -1,6 +1,6 @@
 # macOS `.pkg` 安装器制作指南
 
-本指南介绍如何将 `ClipFlow Pro.app` 封装为 `.pkg` 安装器，以实现“一键安装”（自动复制到 `Applications`）。本指南仅为文档与命令示例，不改动项目脚本。
+本指南介绍如何将 `ClipFlow.app` 封装为 `.pkg` 安装器，以实现“一键安装”（自动复制到 `Applications`）。本指南仅为文档与命令示例，不改动项目脚本。
 
 ## 场景与注意事项
 
@@ -12,7 +12,7 @@
 
 ## 前置条件
 
-- 已完成 macOS 构建：`build/macos/Build/Products/Release/ClipFlow Pro.app`
+- 已完成 macOS 构建：`build/macos/Build/Products/Release/ClipFlow.app`
 - 可选：Apple 开发者账号与证书
   - `Developer ID Installer: <Name> (<TEAMID>)`
   - 建议后续进行 Apple Notarization（公证）
@@ -23,8 +23,8 @@
 
 ```bash
 mkdir -p build/pkgroot/Applications
-cp -R "build/macos/Build/Products/Release/ClipFlow Pro.app" \
-      "build/pkgroot/Applications/ClipFlow Pro.app"
+cp -R "build/macos/Build/Products/Release/ClipFlow.app" \
+      "build/pkgroot/Applications/ClipFlow.app"
 ```
 
 2) 生成 `.pkg`
@@ -37,7 +37,7 @@ BUILD="20250101"
 pkgbuild \
   --root build/pkgroot \
   --install-location / \
-  --identifier com.clipflow.pro \
+  --identifier com.clipflow.app \
   --version "${VERSION#v}.${BUILD}" \
   "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg"
 ```
@@ -48,7 +48,7 @@ pkgbuild \
 pkgbuild \
   --root build/pkgroot \
   --install-location / \
-  --identifier com.clipflow.pro \
+  --identifier com.clipflow.app \
   --version "${VERSION#v}.${BUILD}" \
   --sign "Developer ID Installer: Your Name (TEAMID)" \
   "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg"
@@ -61,13 +61,13 @@ pkgbuild \
 ```bash
 # 组件包（将 app 复制到 Applications）
 mkdir -p build/pkgroot/Applications
-cp -R "build/macos/Build/Products/Release/ClipFlow Pro.app" \
-      "build/pkgroot/Applications/ClipFlow Pro.app"
+cp -R "build/macos/Build/Products/Release/ClipFlow.app" \
+      "build/pkgroot/Applications/ClipFlow.app"
 
 pkgbuild \
   --root build/pkgroot \
   --install-location / \
-  --identifier com.clipflow.pro \
+  --identifier com.clipflow.app \
   --version "${VERSION#v}.${BUILD}" \
   "build/ClipFlow.component.pkg"
 
@@ -89,7 +89,7 @@ productbuild \
 sudo installer -pkg "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg" -target /
 ```
 
-- 安装完成后，`/Applications/ClipFlow Pro.app` 应可见并可启动。
+- 安装完成后，`/Applications/ClipFlow.app` 应可见并可启动。
 
 ## 公证与分发建议（概览）
 
@@ -109,7 +109,7 @@ xcrun notarytool submit "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg" \
 ## 故障排查
 
 - 无法双击安装：未签名或未公证导致；请改用终端 `installer` 或进行签名、公证。
-- 安装后找不到应用：确认 `pkgbuild --root` 的目录结构为 `Applications/ClipFlow Pro.app`，且 `--install-location /`。
+- 安装后找不到应用：确认 `pkgbuild --root` 的目录结构为 `Applications/ClipFlow.app`，且 `--install-location /`。
 - 权限与沙盒：`.pkg` 不改变应用沙盒配置；与 Xcode entitlements 配置无关。
 
 ## 与发布指南的关系
