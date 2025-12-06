@@ -434,6 +434,7 @@ class UserPreferences {
     this.autoHideEnabled = true,
     this.compactModeWindowWidth,
     this.autoHideTimeoutSeconds = 3,
+    this.themeMode = ThemeMode.system,
   });
 
   /// 从 JSON Map 创建 [UserPreferences] 实例。
@@ -459,6 +460,10 @@ class UserPreferences {
       autoHideEnabled: (json['autoHideEnabled'] as bool?) ?? true,
       compactModeWindowWidth: json['compactModeWindowWidth'] as double?,
       autoHideTimeoutSeconds: (json['autoHideTimeoutSeconds'] as int?) ?? 3,
+      themeMode: ThemeMode.values.firstWhere(
+        (e) => e.name == (json['themeMode'] as String?),
+        orElse: () => ThemeMode.system,
+      ),
     );
   }
 
@@ -507,6 +512,9 @@ class UserPreferences {
   /// 自动隐藏超时时间（秒）
   final int autoHideTimeoutSeconds;
 
+  /// 主题模式（系统/浅色/深色）
+  final ThemeMode themeMode;
+
   /// 返回复制的新实例，并按需覆盖指定字段。
   UserPreferences copyWith({
     bool? autoStart,
@@ -524,6 +532,7 @@ class UserPreferences {
     bool? autoHideEnabled,
     double? compactModeWindowWidth,
     int? autoHideTimeoutSeconds,
+    ThemeMode? themeMode,
   }) {
     return UserPreferences(
       autoStart: autoStart ?? this.autoStart,
@@ -544,6 +553,7 @@ class UserPreferences {
           compactModeWindowWidth ?? this.compactModeWindowWidth,
       autoHideTimeoutSeconds:
           autoHideTimeoutSeconds ?? this.autoHideTimeoutSeconds,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 
@@ -565,6 +575,7 @@ class UserPreferences {
       'autoHideEnabled': autoHideEnabled,
       'compactModeWindowWidth': compactModeWindowWidth,
       'autoHideTimeoutSeconds': autoHideTimeoutSeconds,
+      'themeMode': themeMode.name,
     };
   }
 }
@@ -791,6 +802,12 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
   /// 保存紧凑模式的窗口宽度
   void setCompactModeWindowWidth(double? width) {
     state = state.copyWith(compactModeWindowWidth: width);
+    unawaited(_savePreferences());
+  }
+
+  /// 设置主题模式
+  void setThemeMode(ThemeMode mode) {
+    state = state.copyWith(themeMode: mode);
     unawaited(_savePreferences());
   }
 }

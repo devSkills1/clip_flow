@@ -121,7 +121,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final preferences = ref.watch(userPreferencesProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final toggleWindowHotkeyConfig = ref
         .read(hotkeyServiceProvider)
         .getHotkeyConfig(
@@ -373,7 +372,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 title:
                     l10n?.appearanceThemeModeTitle ??
                     I18nFallbacks.settings.appearanceThemeModeTitle,
-                subtitle: _getThemeModeText(context, themeMode),
+                subtitle: _getThemeModeText(context, preferences.themeMode),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showThemeDialog(context, ref);
@@ -778,7 +777,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
         content: StatefulBuilder(
           builder: (context, setState) {
-            final selectedTheme = ref.read(themeModeProvider);
+            final selectedTheme = ref.read(userPreferencesProvider).themeMode;
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -791,7 +790,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                   onChanged: (value) {
                     if (value != null) {
-                      ref.read(themeModeProvider.notifier).state = value;
+                      ref.read(userPreferencesProvider.notifier).setThemeMode(value);
                       Navigator.of(context).pop();
                     }
                   },
@@ -805,7 +804,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                   onChanged: (value) {
                     if (value != null) {
-                      ref.read(themeModeProvider.notifier).state = value;
+                      ref.read(userPreferencesProvider.notifier).setThemeMode(value);
                       Navigator.of(context).pop();
                     }
                   },
@@ -819,7 +818,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                   onChanged: (value) {
                     if (value != null) {
-                      ref.read(themeModeProvider.notifier).state = value;
+                      ref.read(userPreferencesProvider.notifier).setThemeMode(value);
                       Navigator.of(context).pop();
                     }
                   },

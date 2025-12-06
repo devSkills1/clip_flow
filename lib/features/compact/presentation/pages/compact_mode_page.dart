@@ -389,7 +389,9 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
                 width: double.infinity,
                 height: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.8),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black.withValues(alpha: 0.8)
+                      : Colors.white.withValues(alpha: 0.85),
                 ),
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(
@@ -411,15 +413,17 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
                                     Icon(
                                       Icons.content_paste_search,
                                       size: 64,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.6,
-                                      ),
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? Colors.white.withValues(alpha: 0.6)
+                                          : Colors.black.withValues(alpha: 0.6),
                                     ),
                                     const SizedBox(height: 16),
-                                    const Text(
+                                    Text(
                                       '没有找到匹配的内容',
                                       style: TextStyle(
-                                        color: Colors.white,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.white
+                                            : Colors.black,
                                         fontSize: 18,
                                         fontWeight: FontWeight.w500,
                                       ),

@@ -104,7 +104,6 @@ class _ClipFlowAppState extends ConsumerState<ClipFlowApp> {
   /// Builds the root MaterialApp with routing, theming, and localization.
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final userPreferences = ref.watch(userPreferencesProvider);
 
     // 初始化托盘服务（异步）
@@ -127,7 +126,7 @@ class _ClipFlowAppState extends ConsumerState<ClipFlowApp> {
     return MaterialApp.router(
       title: ClipConstants.appName,
       debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
+      themeMode: userPreferences.themeMode,
       theme: _lightTheme,
       darkTheme: _darkTheme,
       routerConfig: router,
