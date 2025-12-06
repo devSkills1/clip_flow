@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:characters/characters.dart';
 import 'package:clip_flow/core/constants/colors.dart';
 import 'package:clip_flow/core/constants/i18n_fallbacks.dart';
 import 'package:clip_flow/core/models/clip_item.dart';
@@ -28,6 +30,17 @@ class IconConfig {
 class ClipItemCardUtil {
   /// 私有构造：禁止实例化
   ClipItemCardUtil._();
+
+  static const LineSplitter _lineSplitter = LineSplitter();
+  static final RegExp _cjkLikeCharacterPattern = RegExp(
+    r'[\u2E80-\u2EFF\u2F00-\u2FDF\u3040-\u30FF\u31A0-\u31BF\u31F0-\u31FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFF65-\uFF9F\u{20000}-\u{2EBE0}]',
+    unicode: true,
+  );
+  static final RegExp _tokenWordMatcher = RegExp(
+    r'[\p{L}\p{N}]',
+    unicode: true,
+  );
+  static final RegExp _whitespacePattern = RegExp(r'\s+');
 
   /// 获取剪贴板项目的图标配置
   static IconConfig getIconConfig(ClipItem item) {
@@ -81,6 +94,54 @@ class ClipItemCardUtil {
   /// 获取剪贴板项目的图标
   static IconData getIcon(ClipItem item) {
     return getIconConfig(item).icon;
+  }
+
+  /// 计算字符数（按用户可见字符）
+  static int calculateCharacterCount(String content) {
+    if (content.isEmpty) {
+      return 0;
+    }
+    return content.characters.length;
+  }
+
+  /// 计算行数（兼容多平台换行符）
+  static int calculateLineCount(String content) {
+    if (content.isEmpty) {
+      return 0;
+    }
+    final normalized = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final lines = _lineSplitter.convert(normalized);
+    if (lines.isEmpty) {
+      return normalized.isEmpty ? 0 : 1;
+    }
+    return lines.length;
+  }
+
+  /// 计算词/字数量（兼容中英文及混合内容）
+  static int calculateWordCount(String content) {
+    final trimmed = content.trim();
+    if (trimmed.isEmpty) {
+      return 0;
+    }
+
+    final cjkMatches = _cjkLikeCharacterPattern.allMatches(trimmed).length;
+    if (cjkMatches == trimmed.length) {
+      return cjkMatches;
+    }
+
+    final sanitized = trimmed.replaceAll(_cjkLikeCharacterPattern, ' ');
+    final tokens = sanitized.split(_whitespacePattern);
+
+    var count = cjkMatches;
+    for (final token in tokens) {
+      if (token.isEmpty) {
+        continue;
+      }
+      if (_tokenWordMatcher.hasMatch(token)) {
+        count++;
+      }
+    }
+    return count;
   }
 }
 

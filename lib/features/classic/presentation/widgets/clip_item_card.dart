@@ -1154,14 +1154,37 @@ class _ClipItemCardState extends State<ClipItemCard>
 
     final previewText = _resolveTextPreviewContent(content);
     final maxLines = _resolveTextPreviewLines();
+    final previewLineCount =
+        ClipItemCardUtil.calculateLineCount(previewText);
+    final shouldEnableScroll = previewLineCount > maxLines;
 
-    return Align(
+    final text = _buildTextContent(
+      context,
+      previewText,
+      textStyle,
+      shouldEnableScroll ? previewLineCount : maxLines,
+    );
+
+    final contentWidget = Align(
       alignment: Alignment.topLeft,
-      child: _buildTextContent(
-        context,
-        previewText,
-        textStyle,
-        maxLines,
+      child: text,
+    );
+
+    if (!shouldEnableScroll) {
+      return contentWidget;
+    }
+
+    return ScrollConfiguration(
+      behavior: const MaterialScrollBehavior().copyWith(
+        overscroll: false,
+        scrollbars: false,
+        physics: const ClampingScrollPhysics(),
+      ),
+      child: SingleChildScrollView(
+        primary: false,
+        padding: EdgeInsets.zero,
+        physics: const ClampingScrollPhysics(),
+        child: contentWidget,
       ),
     );
   }
@@ -1686,9 +1709,10 @@ class _ClipItemCardState extends State<ClipItemCard>
     const fallback = I18nFallbacks.common;
 
     // 计算统计信息
-    final charCount = content.length;
-    final wordCount = _calculateWordCount(content);
-    final lineCount = content.split('\n').length;
+    final charCount =
+        ClipItemCardUtil.calculateCharacterCount(content);
+    final wordCount = ClipItemCardUtil.calculateWordCount(content);
+    final lineCount = ClipItemCardUtil.calculateLineCount(content);
 
     final charCountText = _formatCount(charCount);
     final wordCountText = _formatCount(wordCount);
@@ -1873,18 +1897,6 @@ class _ClipItemCardState extends State<ClipItemCard>
       return '$hours:$minutes:$seconds';
     }
     return '$minutes:$seconds';
-  }
-
-  int _calculateWordCount(String content) {
-    if (content.isEmpty) return 0;
-
-    final hasChineseChars = RegExp(r'[\u4e00-\u9fff]').hasMatch(content);
-    if (hasChineseChars) {
-      return RegExp(r'\S').allMatches(content).length;
-    }
-
-    final words = content.trim().split(RegExp(r'\s+'));
-    return words.where((word) => word.isNotEmpty).length;
   }
 
   List<TextSpan> _buildHighlightedSpans(
