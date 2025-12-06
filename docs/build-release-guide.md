@@ -7,12 +7,12 @@
 ### 生产环境 (Production)
 - **包名**: `com.clipflow.app`
 - **应用名**: `ClipFlow`
-- **数据库**: `clip_flow.db`
+- **数据库**: `clip_flow.db` (通过包名自动隔离到不同目录)
 
 ### 开发环境 (Development)
 - **包名**: `com.clipflow.app.dev`
 - **应用名**: `ClipFlow Dev`
-- **数据库**: `clip_flow_dev.db`
+- **数据库**: `clip_flow.db` (通过包名自动隔离到不同目录)
 
 ## 设计理念
 
@@ -24,8 +24,6 @@
 ## 文件结构
 
 ```
-config/
-├── app_config.dart              # Flutter 应用配置
 macos/Runner/Configs/
 ├── AppInfo.xcconfig             # 默认配置（指向开发环境）
 ├── AppInfo-Dev.xcconfig         # 开发环境配置
