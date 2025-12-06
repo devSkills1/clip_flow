@@ -1,5 +1,5 @@
 // Filter components for clip item filtering and display mode selection.
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 
 /// 筛选选项

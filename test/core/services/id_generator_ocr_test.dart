@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:clip_flow_pro/core/services/id_generator.dart';
+import 'package:clip_flow/core/services/id_generator.dart';
 
 void main() {
   group('IdGenerator OCR Tests', () {

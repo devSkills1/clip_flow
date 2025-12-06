@@ -1,4 +1,4 @@
-import 'package:clip_flow_pro/core/services/performance_service.dart';
+import 'package:clip_flow/core/services/performance_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

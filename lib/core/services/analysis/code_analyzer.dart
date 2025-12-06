@@ -1,5 +1,5 @@
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/analysis/index.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/analysis/index.dart';
 
 /// 代码分析器
 class CodeAnalyzer extends ContentAnalyzer {

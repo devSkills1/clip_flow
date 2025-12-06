@@ -14,8 +14,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/devSkills1/clip_flow_pro.git
-cd clip_flow_pro
+git clone https://github.com/devSkills1/clip_flow.git
+cd clip_flow
 
 # 安装依赖
 flutter pub get
@@ -37,7 +37,7 @@ flutter run -d macos --dart-define=ENVIRONMENT=development
 
 ```bash
 # Fork 项目后克隆到本地
-git clone https://github.com/YOUR_USERNAME/clip_flow_pro.git
+git clone https://github.com/YOUR_USERNAME/clip_flow.git
 
 # 创建功能分支
 git checkout -b feature/your-feature-name

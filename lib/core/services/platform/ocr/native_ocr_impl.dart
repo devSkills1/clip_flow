@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/platform/ocr/ocr_service.dart';
+import 'package:clip_flow/core/services/observability/logger/logger.dart';
+import 'package:clip_flow/core/services/platform/ocr/ocr_service.dart';
 import 'package:flutter/services.dart';
 
 /// 原生OCR实现类

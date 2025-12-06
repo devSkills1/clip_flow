@@ -140,7 +140,7 @@ class ClipConstants {
 
   /// GitHub 仓库地址
   static const String githubRepositoryUrl =
-      'https://github.com/devSkills1/clip_flow_pro';
+      'https://github.com/devSkills1/clip_flow';
 
   /// 全局快捷键默认值（平台：macOS）
   static const String defaultGlobalHotkey = 'cmd+shift+v';

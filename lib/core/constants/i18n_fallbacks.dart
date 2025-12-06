@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow/core/constants/clip_constants.dart';
 
 //// 文案回退常量
 /// 集中管理 UI 文案的本地回退值，避免 i18n 缺失造成的崩溃或空白。

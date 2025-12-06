@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
-import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 

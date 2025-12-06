@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
 import 'package:flutter/services.dart';
 
 /// 权限状态枚举

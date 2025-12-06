@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/platform/system/window_listener.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 // ignore_for_file: public_member_api_docs
 // Reason: Internal service module with documented API interfaces in separate files
 // 忽略公共成员API文档要求，因为这是内部服务，不需要对外暴露API文档
@@ -99,7 +99,7 @@ class TrayService with TrayListener {
   Future<void> _setTrayIcon() async {
     try {
       // 使用项目中的图标文件
-      await trayManager.setIcon('assets/icons/clipboard_brand_fresh_192.png');
+      await trayManager.setIcon('assets/icons/clipflow_icon_192.png');
       await Log.i('Tray icon set successfully');
     } on Exception catch (e, stackTrace) {
       await Log.e(

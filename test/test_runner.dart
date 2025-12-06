@@ -1,7 +1,7 @@
 /// 简单的测试运行脚本，用于验证快捷键唤起功能
 library;
 
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

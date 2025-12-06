@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
-import 'package:clip_flow_pro/core/constants/dimensions.dart';
-import 'package:clip_flow_pro/core/utils/file_type_utils.dart';
+import 'package:clip_flow/core/constants/clip_constants.dart';
+import 'package:clip_flow/core/constants/dimensions.dart';
+import 'package:clip_flow/core/utils/file_type_utils.dart';
 import 'package:image/image.dart' as img;
 
 /// Image utilities for format detection, resizing/compressing and helpers.

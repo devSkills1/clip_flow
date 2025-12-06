@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:clip_flow_pro/core/services/clipboard_service.dart';
+import 'package:clip_flow/core/services/clipboard_service.dart';
 import 'package:flutter/services.dart';
 
 /// 剪贴板诊断工具

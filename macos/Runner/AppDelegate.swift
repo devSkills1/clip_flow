@@ -11,6 +11,18 @@ class AppDelegate: FlutterAppDelegate {
   override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true
   }
+
+  // 处理程序坞图标点击 - 当窗口隐藏时唤起窗口
+  override func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+    // 如果没有可见窗口，显示主窗口
+    if !flag {
+      if let window = mainFlutterWindow {
+        window.makeKeyAndOrderFront(self)
+        NSApp.activate(ignoringOtherApps: true)
+      }
+    }
+    return true
+  }
   
   override func applicationDidFinishLaunching(_ notification: Notification) {
     super.applicationDidFinishLaunching(notification)

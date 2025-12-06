@@ -1,8 +1,8 @@
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
-import 'package:clip_flow_pro/features/settings/presentation/widgets/enhanced_key_handler.dart';
-import 'package:clip_flow_pro/features/settings/presentation/widgets/hotkey_dialog_constants.dart';
-import 'package:clip_flow_pro/features/settings/presentation/widgets/hotkey_error_handler.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
+import 'package:clip_flow/features/settings/presentation/widgets/enhanced_key_handler.dart';
+import 'package:clip_flow/features/settings/presentation/widgets/hotkey_dialog_constants.dart';
+import 'package:clip_flow/features/settings/presentation/widgets/hotkey_error_handler.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -2,16 +2,16 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/models/clipboard_detection_result.dart';
-import 'package:clip_flow_pro/core/services/clipboard/index.dart';
-import 'package:clip_flow_pro/core/services/deduplication_service.dart';
-import 'package:clip_flow_pro/core/services/id_generator.dart';
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/platform/index.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/core/utils/image_utils.dart';
+import 'package:clip_flow/core/constants/clip_constants.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/models/clipboard_detection_result.dart';
+import 'package:clip_flow/core/services/clipboard/index.dart';
+import 'package:clip_flow/core/services/deduplication_service.dart';
+import 'package:clip_flow/core/services/id_generator.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/platform/index.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
+import 'package:clip_flow/core/utils/image_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart' as flutter;
 

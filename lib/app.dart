@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
-import 'package:clip_flow_pro/core/constants/spacing.dart';
-import 'package:clip_flow_pro/core/constants/theme_tokens.dart';
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/operations/index.dart';
-import 'package:clip_flow_pro/l10n/gen/s.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
-import 'package:clip_flow_pro/shared/widgets/performance_overlay.dart'
+import 'package:clip_flow/core/constants/clip_constants.dart';
+import 'package:clip_flow/core/constants/spacing.dart';
+import 'package:clip_flow/core/constants/theme_tokens.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/operations/index.dart';
+import 'package:clip_flow/l10n/gen/s.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
+import 'package:clip_flow/shared/widgets/performance_overlay.dart'
     as custom;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,15 +18,15 @@ import 'package:window_manager/window_manager.dart';
 
 /// The root application widget of ClipFlow Pro.
 /// Provides router configuration and light/dark themes.
-class ClipFlowProApp extends ConsumerStatefulWidget {
+class ClipFlowApp extends ConsumerStatefulWidget {
   /// Creates the root application widget.
-  const ClipFlowProApp({super.key});
+  const ClipFlowApp({super.key});
 
   @override
-  ConsumerState<ClipFlowProApp> createState() => _ClipFlowProAppState();
+  ConsumerState<ClipFlowApp> createState() => _ClipFlowAppState();
 }
 
-class _ClipFlowProAppState extends ConsumerState<ClipFlowProApp> {
+class _ClipFlowAppState extends ConsumerState<ClipFlowApp> {
   @override
   void initState() {
     super.initState();

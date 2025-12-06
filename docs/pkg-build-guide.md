@@ -39,7 +39,7 @@ pkgbuild \
   --install-location / \
   --identifier com.clipflow.pro \
   --version "${VERSION#v}.${BUILD}" \
-  "build/ClipFlowPro-${VERSION}-${BUILD}-macos.pkg"
+  "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg"
 ```
 
 3) 可选：签名（公开分发推荐）
@@ -51,7 +51,7 @@ pkgbuild \
   --identifier com.clipflow.pro \
   --version "${VERSION#v}.${BUILD}" \
   --sign "Developer ID Installer: Your Name (TEAMID)" \
-  "build/ClipFlowPro-${VERSION}-${BUILD}-macos.pkg"
+  "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg"
 ```
 
 ## 进阶：`productbuild` 生成分发包
@@ -69,13 +69,13 @@ pkgbuild \
   --install-location / \
   --identifier com.clipflow.pro \
   --version "${VERSION#v}.${BUILD}" \
-  "build/ClipFlowPro.component.pkg"
+  "build/ClipFlow.component.pkg"
 
 # 分发包（可选签名）
 productbuild \
   --sign "Developer ID Installer: Your Name (TEAMID)" \
-  --package "build/ClipFlowPro.component.pkg" \
-  "build/ClipFlowPro-${VERSION}-${BUILD}-macos.pkg"
+  --package "build/ClipFlow.component.pkg" \
+  "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg"
 ```
 
 > 提示：如不签名，`productbuild` 的 `--sign` 参数可省略；但公开分发时强烈建议签名并公证。
@@ -86,7 +86,7 @@ productbuild \
 - 终端安装（便于验证）：
 
 ```bash
-sudo installer -pkg "build/ClipFlowPro-${VERSION}-${BUILD}-macos.pkg" -target /
+sudo installer -pkg "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg" -target /
 ```
 
 - 安装完成后，`/Applications/ClipFlow Pro.app` 应可见并可启动。
@@ -97,14 +97,14 @@ sudo installer -pkg "build/ClipFlowPro-${VERSION}-${BUILD}-macos.pkg" -target /
 - 公证：使用 `notarytool` 提交公证并附加凭证。示例流程（仅概览）：
 
 ```bash
-xcrun notarytool submit "build/ClipFlowPro-${VERSION}-${BUILD}-macos.pkg" \
+xcrun notarytool submit "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg" \
   --apple-id "your@appleid" \
   --team-id "TEAMID" \
   --password "app-specific-password" \
   --wait
 ```
 
-- 验证：`spctl -a -vv "build/ClipFlowPro-${VERSION}-${BUILD}-macos.pkg"` 与安装后运行验证。
+- 验证：`spctl -a -vv "build/ClipFlow-${VERSION}-${BUILD}-macos.pkg"` 与安装后运行验证。
 
 ## 故障排查
 

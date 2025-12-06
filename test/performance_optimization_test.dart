@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/async_processing_queue.dart';
-import 'package:clip_flow_pro/core/services/clipboard_poller.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_manager.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/async_processing_queue.dart';
+import 'package:clip_flow/core/services/clipboard_poller.dart';
+import 'package:clip_flow/core/services/clipboard/clipboard_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

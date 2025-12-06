@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
-import 'package:clip_flow_pro/core/services/clipboard_poller.dart';
-import 'package:clip_flow_pro/core/services/clipboard_processor.dart';
-import 'package:clip_flow_pro/core/services/clipboard_service.dart';
+import 'package:clip_flow/core/services/clipboard_detector.dart';
+import 'package:clip_flow/core/services/clipboard_poller.dart';
+import 'package:clip_flow/core/services/clipboard_processor.dart';
+import 'package:clip_flow/core/services/clipboard_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 

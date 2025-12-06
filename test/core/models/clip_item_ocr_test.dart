@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
 
 void main() {
   group('ClipItem OCR Tests', () {

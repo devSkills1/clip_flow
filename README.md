@@ -41,8 +41,8 @@
 1. **克隆项目**
 
 ```bash
-git clone https://github.com/devSkills1/clip_flow_pro.git
-cd clip_flow_pro
+git clone https://github.com/devSkills1/clip_flow.git
+cd clip_flow
 ```
 
 2. **安装依赖**
@@ -352,25 +352,6 @@ platform ← 最底层 (不依赖业务服务)
 - [x] 国际化支持
 - [x] 错误监控系统
 
-### v1.1 - 稳定化与发布准备（进行中）
-
-- [x] 响应式布局优化
-- [x] 搜索交互改进
-- [x] UI 性能与自动隐藏体验
-- [ ] 跨平台 CI/CD（Flutter Analyze/Test/Build + 制品上传）
-- [ ] 应用与托盘图标、品牌资源及 `Info.plist` 配置
-- [ ] 核心服务单元测试 ≥80% + 性能/端到端门禁
-- [ ] macOS 签名/公证、Windows 安装器与 Linux 包装脚本
-- [ ] `CHANGELOG.md` 与版本脚本、发布流程文档
-
-### v1.2 - 协作与高级功能（规划中）
-
-- [ ] 云同步服务（iCloud/OneDrive/自建服务）
-- [ ] 团队协作与角色权限
-- [ ] 高级搜索语法与多条件筛选
-- [ ] 批量操作与导出增强
-
-
 > 更多需求与改进 TODO 汇总可参考 [docs/requirements_optimization_todo.md](docs/requirements_optimization_todo.md)。
 
 ## 🤝 贡献指南
@@ -430,8 +411,8 @@ platform ← 最底层 (不依赖业务服务)
 
 ## 📞 联系我们
 
-- 项目主页：https://github.com/devSkills1/clip_flow_pro
-- 问题反馈：https://github.com/devSkills1/clip_flow_pro/issues
+- 项目主页：https://github.com/devSkills1/clip_flow
+- 问题反馈：https://github.com/devSkills1/clip_flow/issues
 - 邮箱：jr.lu.jobs@gmail.com
 
 ---

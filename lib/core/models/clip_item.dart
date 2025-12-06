@@ -1,4 +1,4 @@
-import 'package:clip_flow_pro/core/services/id_generator.dart';
+import 'package:clip_flow/core/services/id_generator.dart';
 import 'package:meta/meta.dart';
 
 /// 剪贴内容类型：表示剪贴板条目的数据类型，用于解析与渲染。

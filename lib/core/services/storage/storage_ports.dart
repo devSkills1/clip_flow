@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
 
 /// 数据库服务端口接口
 ///

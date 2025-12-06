@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
 import 'package:flutter/foundation.dart';
 
 /// 控制台日志适配器

@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
 import 'package:flutter/services.dart';
 
 /// OCR复制服务

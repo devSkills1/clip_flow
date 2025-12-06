@@ -1,5 +1,5 @@
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/clipboard_detector.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/clipboard_detector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

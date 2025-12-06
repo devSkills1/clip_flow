@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
 
 /// 快捷键综合测试（不依赖平台插件）
 void main() {
