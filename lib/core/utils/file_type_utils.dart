@@ -390,6 +390,15 @@ class FileTypeUtils {
     final invalidChars = RegExp('[<>:"|?*]');
     if (invalidChars.hasMatch(filePath)) return false;
 
+    // 安全检查：拒绝空字节注入
+    if (filePath.contains('\x00')) return false;
+
+    // 安全检查：拒绝路径遍历攻击
+    final normalized = filePath.replaceAll(r'\', '/');
+    if (normalized.contains('../') || normalized.contains('/..')) {
+      return false;
+    }
+
     // 检查是否为绝对路径或相对路径
     final isAbsolutePath =
         filePath.startsWith('/') ||

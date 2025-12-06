@@ -370,12 +370,6 @@ platform ← 最底层 (不依赖业务服务)
 - [ ] 高级搜索语法与多条件筛选
 - [ ] 批量操作与导出增强
 
-### v2.0 - AI 增强（计划中）
-
-- [ ] AI 摘要功能
-- [ ] 智能标签生成
-- [ ] 内容分类优化
-- [ ] 智能推荐系统
 
 > 更多需求与改进 TODO 汇总可参考 [docs/requirements_optimization_todo.md](docs/requirements_optimization_todo.md)。
 

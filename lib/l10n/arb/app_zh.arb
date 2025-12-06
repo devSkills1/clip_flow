@@ -759,5 +759,92 @@
   "checkUpdateDialogContent": "您已经是最新版本",
   "@checkUpdateDialogContent": {
     "description": "检查更新对话框内容"
-  }
+  },
+
+  "userGuideTitle": "使用指南",
+  "@userGuideTitle": {"description": "使用指南对话框标题"},
+
+  "userGuideBasicUsageTitle": "基本使用",
+  "@userGuideBasicUsageTitle": {"description": "使用指南-基本使用章节标题"},
+
+  "userGuideBasicUsage1": "1. 复制任何内容（文字、图片、文件等）",
+  "@userGuideBasicUsage1": {"description": "使用指南-基本使用项1"},
+
+  "userGuideBasicUsage2": "2. 内容将自动保存到剪贴板历史",
+  "@userGuideBasicUsage2": {"description": "使用指南-基本使用项2"},
+
+  "userGuideBasicUsage3": "3. 在这里查看和管理所有复制的内容",
+  "@userGuideBasicUsage3": {"description": "使用指南-基本使用项3"},
+
+  "userGuideSearchFilterTitle": "搜索和筛选",
+  "@userGuideSearchFilterTitle": {"description": "使用指南-搜索和筛选章节标题"},
+
+  "userGuideSearchFilter1": "• 使用搜索框快速查找内容",
+  "@userGuideSearchFilter1": {"description": "使用指南-搜索筛选项1"},
+
+  "userGuideSearchFilter2": "• 使用筛选器按类型查看",
+  "@userGuideSearchFilter2": {"description": "使用指南-搜索筛选项2"},
+
+  "userGuideSearchFilter3": "• 使用快捷键快速访问",
+  "@userGuideSearchFilter3": {"description": "使用指南-搜索筛选项3"},
+
+  "userGuideAdvancedTitle": "高级功能",
+  "@userGuideAdvancedTitle": {"description": "使用指南-高级功能章节标题"},
+
+  "userGuideAdvanced1": "• 收藏重要内容防止被清理",
+  "@userGuideAdvanced1": {"description": "使用指南-高级功能项1"},
+
+  "userGuideAdvanced2": "• 收藏项目删除需要二次确认",
+  "@userGuideAdvanced2": {"description": "使用指南-高级功能项2"},
+
+  "userGuideAdvanced3": "• 导出剪贴板历史",
+  "@userGuideAdvanced3": {"description": "使用指南-高级功能项3"},
+
+  "userGuideAdvanced4": "• 在设置中自定义行为",
+  "@userGuideAdvanced4": {"description": "使用指南-高级功能项4"},
+
+  "actionClose": "关闭",
+  "@actionClose": {"description": "按钮-关闭"},
+
+  "copyErrorMessage": "复制失败：{error}",
+  "@copyErrorMessage": {
+    "description": "复制操作错误消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+
+  "ocrImageOnlyError": "只能对图片类型进行OCR操作",
+  "@ocrImageOnlyError": {"description": "OCR错误-仅限图片"},
+
+  "ocrNoTextAvailable": "该图片没有可用的OCR文本",
+  "@ocrNoTextAvailable": {"description": "OCR错误-无文本"},
+
+  "ocrTextCopied": "OCR文本已复制到剪贴板 ({length}字符)",
+  "@ocrTextCopied": {
+    "description": "OCR文本复制成功",
+    "placeholders": {"length": {"type": "int"}}
+  },
+
+  "ocrCopyError": "OCR复制错误：{error}",
+  "@ocrCopyError": {
+    "description": "OCR复制错误消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+
+  "favoriteToggleError": "收藏操作失败：{error}",
+  "@favoriteToggleError": {
+    "description": "收藏切换错误消息",
+    "placeholders": {"error": {"type": "String"}}
+  },
+
+  "dialogDeleteFavoriteTitle": "删除收藏项目？",
+  "@dialogDeleteFavoriteTitle": {"description": "删除收藏对话框标题"},
+
+  "dialogDeleteFavoriteWarning": "这是一个收藏的项目！删除后将无法恢复。",
+  "@dialogDeleteFavoriteWarning": {"description": "删除收藏警告"},
+
+  "dialogDeleteFavoriteConfirm": "你确定要继续删除吗？",
+  "@dialogDeleteFavoriteConfirm": {"description": "删除收藏二次确认"},
+
+  "dialogDeleteConfirm": "确定要删除这个项目吗？",
+  "@dialogDeleteConfirm": {"description": "删除确认"}
 }

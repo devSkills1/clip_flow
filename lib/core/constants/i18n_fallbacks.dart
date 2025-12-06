@@ -129,6 +129,39 @@ class _CommonFallback {
 
   /// 紧凑统计：行数
   String statLines(String count) => '$count行';
+
+  /// 复制失败错误消息
+  String copyErrorMessage(String error) => '复制失败：$error';
+
+  /// OCR错误：仅限图片
+  String get ocrImageOnlyError => '只能对图片类型进行OCR操作';
+
+  /// OCR错误：无可用文本
+  String get ocrNoTextAvailable => '该图片没有可用的OCR文本';
+
+  /// OCR文本复制成功
+  String ocrTextCopied(int length) => 'OCR文本已复制到剪贴板 ($length字符)';
+
+  /// OCR复制错误
+  String ocrCopyError(String error) => 'OCR复制错误：$error';
+
+  /// 收藏操作失败
+  String favoriteToggleError(String error) => '收藏操作失败：$error';
+
+  /// 删除对话框标题
+  String get dialogDeleteTitle => '确认删除';
+
+  /// 删除收藏对话框标题
+  String get dialogDeleteFavoriteTitle => '删除收藏项目？';
+
+  /// 删除收藏警告
+  String get dialogDeleteFavoriteWarning => '这是一个收藏的项目！删除后将无法恢复。';
+
+  /// 删除收藏二次确认
+  String get dialogDeleteFavoriteConfirm => '你确定要继续删除吗？';
+
+  /// 删除确认
+  String get dialogDeleteConfirm => '确定要删除这个项目吗？';
 }
 
 class _HomeFallback {

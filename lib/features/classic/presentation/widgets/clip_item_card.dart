@@ -1068,7 +1068,7 @@ class _ClipItemCardState extends State<ClipItemCard>
   Widget _buildFilePreview(BuildContext context) {
     final theme = Theme.of(context);
     final fileName = _resolveFileName(context);
-    final fileSize = widget.item.metadata['fileSize'] as int? ?? 0;
+    final fileSize = ClipItemUtil.safeParseInt(widget.item.metadata['fileSize']);
     final durationLabel = _resolveMediaDurationLabel();
     final fileIcon = _getFileIcon();
 
@@ -1399,10 +1399,13 @@ class _ClipItemCardState extends State<ClipItemCard>
       },
     );
 
-    final metadataWidth = widget.item.metadata['width'] as int?;
-    final metadataHeight = widget.item.metadata['height'] as int?;
-    final aspectRatio = _resolveAspectRatio(metadataWidth, metadataHeight);
-    final originWidth = metadataWidth?.toDouble() ?? maxWidth;
+    final metadataWidth = ClipItemUtil.safeParseInt(widget.item.metadata['width']);
+    final metadataHeight = ClipItemUtil.safeParseInt(widget.item.metadata['height']);
+    final aspectRatio = _resolveAspectRatio(
+      metadataWidth > 0 ? metadataWidth : null,
+      metadataHeight > 0 ? metadataHeight : null,
+    );
+    final originWidth = metadataWidth > 0 ? metadataWidth.toDouble() : maxWidth;
 
     final displayWidth = math.min(maxWidth, originWidth);
     final maxHeightFromMode = _getImageHeightLimit();
@@ -1460,6 +1463,11 @@ class _ClipItemCardState extends State<ClipItemCard>
 
   Future<String?> _resolveAbsoluteImagePath(String path) async {
     try {
+      // 安全检查：拒绝路径遍历和空字节注入
+      if (path.contains('..') || path.contains('\x00')) {
+        return null;
+      }
+
       final isAbsolute =
           path.startsWith('/') || RegExp('^[A-Za-z]:').hasMatch(path);
       if (isAbsolute) {
@@ -1468,7 +1476,13 @@ class _ClipItemCardState extends State<ClipItemCard>
       }
 
       final dir = await PathService.instance.getApplicationSupportDirectory();
-      final abs = p.join(dir.path, path);
+      final abs = p.normalize(p.join(dir.path, path));
+
+      // 验证解析后的路径仍在允许的目录内
+      if (!abs.startsWith(dir.path)) {
+        return null; // 路径遍历尝试
+      }
+
       final file = File(abs);
       return file.existsSync() ? abs : null;
     } on Exception catch (_) {
@@ -1524,7 +1538,7 @@ class _ClipItemCardState extends State<ClipItemCard>
   }
 
   String? _resolveMediaDurationLabel() {
-    final durationMs = widget.item.metadata['durationMs'] as int?;
+    final durationMs = ClipItemUtil.safeParseIntOrNull(widget.item.metadata['durationMs']);
     final durationSecondsRaw = widget.item.metadata['durationSeconds'];
     final durationFromSeconds = durationSecondsRaw is num
         ? (durationSecondsRaw * 1000).round()
@@ -1719,10 +1733,10 @@ class _ClipItemCardState extends State<ClipItemCard>
   Widget _buildCompactImageMetadata(BuildContext context) {
     final metadataItems = <Widget>[];
 
-    final width = widget.item.metadata['width'] as int?;
-    final height = widget.item.metadata['height'] as int?;
+    final width = ClipItemUtil.safeParseIntOrNull(widget.item.metadata['width']);
+    final height = ClipItemUtil.safeParseIntOrNull(widget.item.metadata['height']);
     final format = widget.item.metadata['format'] as String?;
-    final size = widget.item.metadata['fileSize'] as int?;
+    final size = ClipItemUtil.safeParseIntOrNull(widget.item.metadata['fileSize']);
 
     if (width != null && height != null) {
       metadataItems.add(
@@ -1754,7 +1768,7 @@ class _ClipItemCardState extends State<ClipItemCard>
   Widget _buildCompactFileMetadata(BuildContext context) {
     final metadataItems = <Widget>[];
 
-    final fileSize = widget.item.metadata['fileSize'] as int?;
+    final fileSize = ClipItemUtil.safeParseIntOrNull(widget.item.metadata['fileSize']);
     final fileType = widget.item.metadata['fileType'] as String?;
     final durationLabel = _resolveMediaDurationLabel();
 

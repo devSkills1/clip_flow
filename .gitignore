@@ -1,3 +1,16 @@
+# AI 编程工具配置
+.gemini/
+.agent/
+.claude/
+.trae/
+.cursorrules
+
+# 构建计数器（本地开发用）
+.build_counter
+
+# 测试临时文件
+ocr_test_image.png
+
 # Flutter/Dart
 .dart_tool/
 .flutter-plugins
