@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
 import 'package:flutter/foundation.dart';
 
 /// 崩溃监控服务 (Local Only Version)
@@ -148,7 +148,7 @@ class CrashService {
   Future<void> _setTags() async {
     await setTag('platform', Platform.operatingSystem);
     await setTag('environment', kDebugMode ? 'debug' : 'release');
-    await setTag('app_name', 'clip_flow_pro');
+    await setTag('app_name', 'clip_flow');
     await setTag('mode', 'local_only');
   }
 

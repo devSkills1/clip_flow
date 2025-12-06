@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/services/observability/logger/adapters/console_adapter.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/adapters/file_adapter.dart';
+import 'package:clip_flow/core/services/observability/logger/adapters/console_adapter.dart';
+import 'package:clip_flow/core/services/observability/logger/adapters/file_adapter.dart';
 
 // ignore_for_file: public_member_api_docs
 // Reason: 日志系统内部使用，不需要为每个方法添加文档注释

@@ -2,18 +2,18 @@
 // Internal settings page that doesn't require public API documentation.
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
-import 'package:clip_flow_pro/core/constants/i18n_fallbacks.dart';
-import 'package:clip_flow_pro/core/constants/spacing.dart';
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/operations/index.dart';
-import 'package:clip_flow_pro/core/services/platform/index.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/features/settings/presentation/widgets/hotkey_capture_dialog.dart';
-import 'package:clip_flow_pro/features/settings/presentation/widgets/modern_radio_list_tile.dart';
-import 'package:clip_flow_pro/l10n/gen/s.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/core/constants/clip_constants.dart';
+import 'package:clip_flow/core/constants/i18n_fallbacks.dart';
+import 'package:clip_flow/core/constants/spacing.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
+import 'package:clip_flow/core/services/observability/logger/logger.dart';
+import 'package:clip_flow/core/services/operations/index.dart';
+import 'package:clip_flow/core/services/platform/index.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
+import 'package:clip_flow/features/settings/presentation/widgets/hotkey_capture_dialog.dart';
+import 'package:clip_flow/features/settings/presentation/widgets/modern_radio_list_tile.dart';
+import 'package:clip_flow/l10n/gen/s.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

@@ -1,4 +1,4 @@
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_data.dart';
+import 'package:clip_flow/core/services/clipboard/clipboard_data.dart';
 
 /// 格式信息
 class FormatInfo {

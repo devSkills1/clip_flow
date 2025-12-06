@@ -88,7 +88,7 @@
 
 ### 基本用法
 ```dart
-import 'package:clip_flow_pro/core/services/ocr_service.dart';
+import 'package:clip_flow/core/services/ocr_service.dart';
 
 // 获取OCR服务实例
 final ocrService = OcrServiceFactory.getInstance();

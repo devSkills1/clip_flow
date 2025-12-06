@@ -132,8 +132,8 @@ OptimizedClipboardProcessor ──→ FileTypeUtils (统一)
 ### 基本使用
 
 ```dart
-import 'package:clip_flow_pro/core/services/clipboard/index.dart';
-import 'package:clip_flow_pro/core/utils/index.dart';
+import 'package:clip_flow/core/services/clipboard/index.dart';
+import 'package:clip_flow/core/utils/index.dart';
 
 // 使用优化后的处理器
 final processor = OptimizedClipboardProcessor();
@@ -213,8 +213,8 @@ final metrics = processor.getPerformanceMetrics();
 3. **更新导入**:
    ```dart
    // 使用统一导出
-   import 'package:clip_flow_pro/core/utils/index.dart';
-   import 'package:clip_flow_pro/core/services/clipboard/index.dart';
+   import 'package:clip_flow/core/utils/index.dart';
+   import 'package:clip_flow/core/services/clipboard/index.dart';
    ```
 
 ## 性能优化

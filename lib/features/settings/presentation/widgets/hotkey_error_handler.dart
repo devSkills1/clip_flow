@@ -1,4 +1,4 @@
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
 
 /// 快捷键错误处理器
 /// 提供用户友好的错误消息和验证功能

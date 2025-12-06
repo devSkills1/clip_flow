@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
 import 'package:flutter/foundation.dart';
 
 /// 剪贴板服务端口接口

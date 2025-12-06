@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/models/clipboard_detection_result.dart';
-import 'package:clip_flow_pro/core/models/clipboard_format_info.dart';
-import 'package:clip_flow_pro/core/services/analysis/index.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_data.dart';
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/utils/content_detection_utils.dart';
-import 'package:clip_flow_pro/core/utils/file_type_utils.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/models/clipboard_detection_result.dart';
+import 'package:clip_flow/core/models/clipboard_format_info.dart';
+import 'package:clip_flow/core/services/analysis/index.dart';
+import 'package:clip_flow/core/services/clipboard/clipboard_data.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/utils/content_detection_utils.dart';
+import 'package:clip_flow/core/utils/file_type_utils.dart';
 
 /// 剪贴板内容类型检测器
 ///

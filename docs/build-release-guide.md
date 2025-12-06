@@ -414,8 +414,8 @@ flutter build macos --dart-define=ENVIRONMENT=development --release
 发布后会在 `build/` 目录生成：
 
 ```
-ClipFlowPro-<version>-<build>-macos.dmg          # DMG 安装包
-ClipFlowPro-<version>-<build>-macos.dmg.sha256   # DMG 校验和
+ClipFlow-<version>-<build>-macos.dmg          # DMG 安装包
+ClipFlow-<version>-<build>-macos.dmg.sha256   # DMG 校验和
 release-notes-<version>.md                        # 发布说明模板（如生成）
 ```
 
@@ -436,7 +436,7 @@ release-notes-<version>.md                        # 发布说明模板（如生�
    - 在 GitHub 仓库页面点击 "Releases"
    - 点击 "Create a new release"
    - 填写 Tag version（如 v1.0.0）
-   - 上传生成的 `build/ClipFlowPro-<version>-<build>-macos.dmg` 与对应 `.sha256`
+   - 上传生成的 `build/ClipFlow-<version>-<build>-macos.dmg` 与对应 `.sha256`
    - 复制发布说明内容
 
 4. **发布后验证**:
@@ -458,7 +458,7 @@ release-notes-<version>.md                        # 发布说明模板（如生�
 ⚠️ **重要提醒**：由于应用未经 Apple 签名，首次安装需要额外步骤。
 
 #### 方法一：DMG 安装（推荐）
-1. 下载 `ClipFlowPro-<version>-<build>-macos.dmg`
+1. 下载 `ClipFlow-<version>-<build>-macos.dmg`
 2. 双击 DMG 文件挂载
 3. 将 `ClipFlow Pro` 拖拽到 `Applications` 文件夹
 4. 首次运行时：
@@ -501,9 +501,9 @@ xattr -dr com.apple.quarantine "/Applications/ClipFlow Pro.app"
 ### 文件命名规范
 
 ```
-ClipFlowPro-<version>-<build>-macos.dmg
-ClipFlowPro-<version>-<build>-windows.zip
-ClipFlowPro-<version>-<build>-linux.tar.gz
+ClipFlow-<version>-<build>-macos.dmg
+ClipFlow-<version>-<build>-windows.zip
+ClipFlow-<version>-<build>-linux.tar.gz
 ```
 
 ### 用户反馈处理
@@ -536,7 +536,7 @@ ClipFlowPro-<version>-<build>-linux.tar.gz
 在 Flutter 代码中，可以通过 `AppConfig` 类获取当前环境的配置：
 
 ```dart
-import 'package:clip_flow_pro/config/app_config.dart';
+import 'package:clip_flow/config/app_config.dart';
 
 // 获取当前环境
 AppEnvironment env = AppConfig.environment;
@@ -718,7 +718,7 @@ $ ./scripts/build-unsigned.sh --clean --dmg
 ✅ 应用构建成功
 📦 创建 DMG 安装包...
 ✅ DMG 创建成功
-   文件: ClipFlowPro-Dev-20250103-143022.dmg
+   文件: ClipFlow-Dev-20250103-143022.dmg
    大小: 42.8M
 
 📋 安装说明
@@ -766,9 +766,9 @@ $ ./scripts/release.sh
 🔨 构建 macOS 应用 (无签名)...
 ✅ 应用构建成功
 📦 重命名输出文件...
-   ClipFlowPro-20250103-143022.app
+   ClipFlow-20250103-143022.app
 🔐 生成 SHA256 校验和...
-   ClipFlowPro-20250103-143022.app.sha256
+   ClipFlow-20250103-143022.app.sha256
 📝 生成发布说明模板...
    release-notes-20250103-143022.md
 ✅ GitHub Release 文件准备完成！
@@ -783,11 +783,11 @@ $ ./scripts/release.sh --clean --dmg --version v1.0.0
 📦 创建 DMG 安装包...
 ✅ DMG 创建成功
 📦 重命名输出文件...
-   ClipFlowPro-v1.0.0.app
-   ClipFlowPro-v1.0.0.dmg
+   ClipFlow-v1.0.0.app
+   ClipFlow-v1.0.0.dmg
 🔐 生成 SHA256 校验和...
-   ClipFlowPro-v1.0.0.app.sha256
-   ClipFlowPro-v1.0.0.dmg.sha256
+   ClipFlow-v1.0.0.app.sha256
+   ClipFlow-v1.0.0.dmg.sha256
 📝 生成发布说明模板...
    release-notes-v1.0.0.md
 
@@ -809,9 +809,9 @@ $ ./scripts/release.sh --version v1.0.1-hotfix
 🔨 构建 macOS 应用 (无签名)...
 ✅ 应用构建成功
 📦 重命名输出文件...
-   ClipFlowPro-v1.0.1-hotfix.app
+   ClipFlow-v1.0.1-hotfix.app
 🔐 生成 SHA256 校验和...
-   ClipFlowPro-v1.0.1-hotfix.app.sha256
+   ClipFlow-v1.0.1-hotfix.app.sha256
 📝 生成发布说明模板...
    release-notes-v1.0.1-hotfix.md
 ✅ GitHub Release 文件准备完成！

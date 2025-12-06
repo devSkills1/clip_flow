@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/platform/system/window_listener.dart';
-import 'package:clip_flow_pro/l10n/gen/s.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/platform/system/window_listener.dart';
+import 'package:clip_flow/l10n/gen/s.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 

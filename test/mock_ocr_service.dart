@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:clip_flow_pro/core/services/ocr_service.dart';
+import 'package:clip_flow/core/services/ocr_service.dart';
 
 /// 用于测试的模拟OCR服务
 class MockOcrService implements OcrService {

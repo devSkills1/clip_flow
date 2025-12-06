@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:clip_flow_pro/core/services/clipboard_processor.dart';
+import 'package:clip_flow/core/services/clipboard_processor.dart';
 import 'package:path/path.dart' as p;
 import 'package:crypto/crypto.dart';
 import 'dart:convert';

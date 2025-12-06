@@ -78,7 +78,7 @@ flutter build macos --dart-define=ENVIRONMENT=development
 
 ```bash
 # 创建 DMG 安装包
-hdiutil create -volname "ClipFlow Pro" -srcfolder "build/macos/Build/Products/Release/ClipFlow Pro.app" -ov -format UDZO ClipFlowPro.dmg
+hdiutil create -volname "ClipFlow Pro" -srcfolder "build/macos/Build/Products/Release/ClipFlow Pro.app" -ov -format UDZO ClipFlow.dmg
 ```
 
 **用户安装指南**：
@@ -112,7 +112,7 @@ flutter build macos --dart-define=ENVIRONMENT=development
 
 # 创建 DMG
 APP_PATH="build/macos/Build/Products/Release/ClipFlow Pro Dev.app"
-DMG_NAME="ClipFlowPro-Dev-$(date +%Y%m%d).dmg"
+DMG_NAME="ClipFlow-Dev-$(date +%Y%m%d).dmg"
 
 if [ -d "$APP_PATH" ]; then
     hdiutil create -volname "ClipFlow Pro Dev" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG_NAME"

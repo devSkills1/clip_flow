@@ -1,4 +1,4 @@
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
 import 'package:flutter/services.dart';
 
 /// 增强的按键处理器

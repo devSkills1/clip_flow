@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/utils/color_utils.dart';
 import 'package:crypto/crypto.dart';
 
 /// 统一的ID生成服务

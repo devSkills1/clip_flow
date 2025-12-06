@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Enum to track how the window was activated

@@ -1,6 +1,6 @@
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
-import 'package:clip_flow_pro/core/utils/color_utils.dart';
-import 'package:clip_flow_pro/core/utils/file_type_utils.dart';
+import 'package:clip_flow/core/constants/clip_constants.dart';
+import 'package:clip_flow/core/utils/color_utils.dart';
+import 'package:clip_flow/core/utils/file_type_utils.dart';
 
 /// 内容检测工具类
 ///

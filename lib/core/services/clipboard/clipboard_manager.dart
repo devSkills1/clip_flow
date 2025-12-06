@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/clipboard/index.dart';
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/performance/index.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/clipboard/index.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/performance/index.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
 
 /// 剪贴板管理器
 ///

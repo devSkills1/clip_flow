@@ -1,6 +1,6 @@
 import 'dart:math' as math; //Dart 的核心数学库dart:math导入，并为其指定了别名math。
 import 'dart:ui' show Color; //部分导入dart:ui库的语句，仅导入了该库中的Color类。
-import 'package:clip_flow_pro/core/constants/clip_constants.dart';
+import 'package:clip_flow/core/constants/clip_constants.dart';
 
 /// Color utilities for validating and converting between HEX/RGB/HSL.
 class ColorUtils {

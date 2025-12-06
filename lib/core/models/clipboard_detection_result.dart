@@ -1,7 +1,7 @@
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/models/clipboard_format_info.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_data.dart';
-import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/models/clipboard_format_info.dart';
+import 'package:clip_flow/core/services/clipboard/clipboard_data.dart';
+import 'package:clip_flow/core/utils/color_utils.dart';
 
 /// 剪贴板检测结果
 class ClipboardDetectionResult {

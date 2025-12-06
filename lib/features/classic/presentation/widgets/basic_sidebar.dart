@@ -1,5 +1,5 @@
-import 'package:clip_flow_pro/l10n/gen/s.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/l10n/gen/s.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

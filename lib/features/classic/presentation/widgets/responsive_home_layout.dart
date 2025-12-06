@@ -1,6 +1,6 @@
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/features/classic/presentation/widgets/clip_item_card.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/features/classic/presentation/widgets/clip_item_card.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 
 /// 响应式首页布局组件 - 解决布局溢出和响应式问题

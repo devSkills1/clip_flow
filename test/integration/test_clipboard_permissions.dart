@@ -13,7 +13,7 @@ void main() async {
   print('=== 剪贴板权限和序列号测试 ===\n');
 
   print('这个测试将验证剪贴板权限和平台特定功能。');
-  print('请确保 ClipFlowPro 应用正在运行。\n');
+  print('请确保 ClipFlow 应用正在运行。\n');
 
   // 测试 1: 基本文本权限测试
   print('测试 1: 基本剪贴板权限');

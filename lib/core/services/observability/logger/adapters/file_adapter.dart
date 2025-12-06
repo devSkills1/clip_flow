@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io' as io;
 
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
 import 'package:flutter/foundation.dart';
 
 /// 文件日志适配器：

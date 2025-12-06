@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/id_generator.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/id_generator.dart';
+import 'package:clip_flow/core/services/observability/logger/logger.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
 import 'package:crypto/crypto.dart';
 
 /// 集中化去重服务

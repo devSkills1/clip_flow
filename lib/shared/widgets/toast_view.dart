@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:clip_flow_pro/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
 import 'package:flutter/material.dart';
 
 /// ToastView is a widget that displays a toast message.

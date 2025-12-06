@@ -1,11 +1,11 @@
-import 'package:clip_flow_pro/app.dart';
-import 'package:clip_flow_pro/core/constants/colors.dart';
-import 'package:clip_flow_pro/core/services/clipboard/index.dart';
-import 'package:clip_flow_pro/core/services/observability/index.dart';
-import 'package:clip_flow_pro/core/services/operations/index.dart';
-import 'package:clip_flow_pro/core/services/platform/index.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/app.dart';
+import 'package:clip_flow/core/constants/colors.dart';
+import 'package:clip_flow/core/services/clipboard/index.dart';
+import 'package:clip_flow/core/services/observability/index.dart';
+import 'package:clip_flow/core/services/operations/index.dart';
+import 'package:clip_flow/core/services/platform/index.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -129,7 +129,7 @@ Future<void> _runApp() async {
           (ref) => UserPreferencesNotifier.withInitial(initialPreferences),
         ),
       ],
-      child: const ClipFlowProApp(),
+      child: const ClipFlowApp(),
     ),
   );
 }

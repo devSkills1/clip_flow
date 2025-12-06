@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:clip_flow_pro/core/models/hotkey_config.dart';
-import 'package:clip_flow_pro/core/services/platform/input/hotkey_service.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
+import 'package:clip_flow/core/models/hotkey_config.dart';
+import 'package:clip_flow/core/services/platform/input/hotkey_service.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
+import 'package:clip_flow/core/services/observability/logger/logger.dart';
 
 /// 快捷键集成测试
 void main() {

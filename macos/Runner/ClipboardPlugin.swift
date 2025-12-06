@@ -1594,7 +1594,7 @@ import Vision
             return
         }
         // 旧版系统回退到 LaunchAgents 检查
-        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow"
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
         let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")
@@ -1619,7 +1619,7 @@ import Vision
             }
         }
         // 旧版系统回退到 LaunchAgents
-        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow"
         let appPath = Bundle.main.bundlePath
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
@@ -1644,7 +1644,7 @@ import Vision
                 <string>\(bundleIdentifier)</string>
                 <key>ProgramArguments</key>
                 <array>
-                    <string>\(appPath)/Contents/MacOS/clip_flow_pro</string>
+                    <string>\(appPath)/Contents/MacOS/clip_flow</string>
                 </array>
                 <key>RunAtLoad</key>
                 <true/>
@@ -1806,7 +1806,7 @@ import Vision
                 return
             }
         }
-        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow_pro"
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.example.clip_flow"
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let launchAgentsPath = homeDirectory.appendingPathComponent("Library/LaunchAgents")
         let plistPath = launchAgentsPath.appendingPathComponent("\(bundleIdentifier).plist")

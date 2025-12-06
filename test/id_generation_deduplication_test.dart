@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/id_generator.dart';
-import 'package:clip_flow_pro/core/services/deduplication_service.dart';
-import 'package:clip_flow_pro/core/services/clipboard/universal_clipboard_detector.dart';
-import 'package:clip_flow_pro/core/services/clipboard/clipboard_processor.dart';
-import 'package:clip_flow_pro/core/services/storage/index.dart';
-import 'package:clip_flow_pro/core/utils/color_utils.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/id_generator.dart';
+import 'package:clip_flow/core/services/deduplication_service.dart';
+import 'package:clip_flow/core/services/clipboard/universal_clipboard_detector.dart';
+import 'package:clip_flow/core/services/clipboard/clipboard_processor.dart';
+import 'package:clip_flow/core/services/storage/index.dart';
+import 'package:clip_flow/core/utils/color_utils.dart';
 import 'package:crypto/crypto.dart';
 
 void main() {

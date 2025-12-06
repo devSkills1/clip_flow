@@ -67,5 +67,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes
 - `Security` for vulnerability fixes
 
-[Unreleased]: https://github.com/Jemiking/Clip-Flow-Pro/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/Jemiking/Clip-Flow-Pro/releases/tag/v1.0.0
+[Unreleased]: https://github.com/devSkills1/clip_flow/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/devSkills1/clip_flow/releases/tag/v1.0.0

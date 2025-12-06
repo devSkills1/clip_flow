@@ -1,13 +1,13 @@
 import 'dart:ui' as ui;
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/observability/logger/logger.dart';
-import 'package:clip_flow_pro/core/services/platform/index.dart';
-import 'package:clip_flow_pro/core/utils/clip_item_card_util.dart';
-import 'package:clip_flow_pro/features/classic/presentation/widgets/clip_item_card.dart';
-import 'package:clip_flow_pro/features/classic/presentation/widgets/search_bar.dart';
-import 'package:clip_flow_pro/l10n/gen/s.dart';
-import 'package:clip_flow_pro/shared/providers/app_providers.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/observability/logger/logger.dart';
+import 'package:clip_flow/core/services/platform/index.dart';
+import 'package:clip_flow/core/utils/clip_item_card_util.dart';
+import 'package:clip_flow/features/classic/presentation/widgets/clip_item_card.dart';
+import 'package:clip_flow/features/classic/presentation/widgets/search_bar.dart';
+import 'package:clip_flow/l10n/gen/s.dart';
+import 'package:clip_flow/shared/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

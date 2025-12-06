@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:clip_flow_pro/core/models/clip_item.dart';
-import 'package:clip_flow_pro/core/services/clipboard_poller.dart';
+import 'package:clip_flow/core/models/clip_item.dart';
+import 'package:clip_flow/core/services/clipboard_poller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
