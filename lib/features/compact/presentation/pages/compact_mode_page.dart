@@ -279,15 +279,12 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
   }
 
   Widget _buildBackAction(S l10n) {
-    return FilledButton.tonalIcon(
-      icon: const Icon(Icons.view_sidebar_rounded, size: 18),
-      label: Text(l10n.headerActionBackTraditional),
+    return IconButton(
+      icon: const Icon(Icons.view_sidebar_rounded, size: 20),
+      tooltip: l10n.headerActionBackTraditional,
       onPressed: () async {
         await _switchToClassic();
       },
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      ),
     );
   }
 

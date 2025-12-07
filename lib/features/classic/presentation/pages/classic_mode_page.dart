@@ -202,15 +202,12 @@ class _ClassicModePageState extends ConsumerState<ClassicModePage>
   }
 
   Widget _buildModeSwitchAction(S l10n) {
-    return FilledButton.tonalIcon(
-      icon: const Icon(Icons.space_dashboard_rounded, size: 18),
-      label: Text(l10n.headerActionOpenAppSwitcher),
+    return IconButton(
+      icon: const Icon(Icons.space_dashboard_rounded, size: 20),
+      tooltip: l10n.headerActionOpenAppSwitcher,
       onPressed: () async {
         await _switchToCompactMode();
       },
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      ),
     );
   }
 
