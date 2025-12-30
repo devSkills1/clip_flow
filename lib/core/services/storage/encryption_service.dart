@@ -26,34 +26,28 @@ class EncryptionService {
   /// 加解密器（AES-GCM）
   Encrypter? _encrypter;
 
-  /// 初始向量（IV）
-  IV? _iv;
-
   /// 是否已初始化
   bool _isInitialized = false;
 
   /// 初始化加密组件
   ///
-  /// - 从 SharedPreferences 读取或生成并保存密钥与 IV
+  /// - 从 SharedPreferences 读取或生成并保存密钥
   /// - 构建 AES-GCM Encrypter
+  ///
+  /// 安全改进：不再持久化 IV，每次加密生成新的随机 IV
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     final prefs = await SharedPreferences.getInstance();
     var keyString = prefs.getString('encryption_key');
-    var ivString = prefs.getString('encryption_iv');
 
-    if (keyString == null || ivString == null) {
+    if (keyString == null) {
       final key = Key.fromSecureRandom(32);
-      final iv = IV.fromSecureRandom(16);
       keyString = base64Encode(key.bytes);
-      ivString = base64Encode(iv.bytes);
       await prefs.setString('encryption_key', keyString);
-      await prefs.setString('encryption_iv', ivString);
     }
 
     final key = Key.fromBase64(keyString);
-    _iv = IV.fromBase64(ivString);
     _encrypter = Encrypter(AES(key, mode: AESMode.gcm));
 
     _isInitialized = true;
@@ -64,28 +58,70 @@ class EncryptionService {
   /// 参数：
   /// - data：待加密的字节数组
   ///
-  /// 返回：加密后的字节数组（包含密文与认证信息）
-  Future<Uint8List> encrypt(Uint8List data) async {
+  /// 返回：包含 IV 和密文的元组 (iv, ciphertext)
+  /// - iv: Base64 编码的初始化向量（16 字节）
+  /// - ciphertext: Base64 编码的密文
+  ///
+  /// 安全改进：每次加密生成新的随机 IV，与密文一起返回
+  Future<(String iv, String ciphertext)> encryptData(Uint8List data) async {
     if (!_isInitialized) await initialize();
-    if (_encrypter == null || _iv == null) {
+    if (_encrypter == null) {
       throw Exception('Encryption not initialized');
     }
-    final enc = _encrypter!.encryptBytes(data, iv: _iv);
-    return Uint8List.fromList(enc.bytes);
+
+    // 每次加密生成新的随机 IV
+    final iv = IV.fromSecureRandom(16);
+    final enc = _encrypter!.encryptBytes(data, iv: iv);
+
+    return (iv.base64, enc.base64);
   }
 
   /// 解密字节数据
   ///
   /// 参数：
-  /// - encryptedData：加密后的字节数组
+  /// - ivBase64: Base64 编码的初始化向量
+  /// - ciphertextBase64: Base64 编码的密文
   ///
   /// 返回：解密后的原始字节数组
-  Future<Uint8List> decrypt(Uint8List encryptedData) async {
+  Future<Uint8List> decryptData(String ivBase64, String ciphertextBase64) async {
     if (!_isInitialized) await initialize();
-    if (_encrypter == null || _iv == null) {
+    if (_encrypter == null) {
       throw Exception('Encryption not initialized');
     }
-    final dec = _encrypter!.decryptBytes(Encrypted(encryptedData), iv: _iv);
+
+    final iv = IV.fromBase64(ivBase64);
+    final dec = _encrypter!.decryptBytes(Encrypted.fromBase64(ciphertextBase64), iv: iv);
+    return Uint8List.fromList(dec);
+  }
+
+  /// 加密字节数据（旧接口，向后兼容）
+  ///
+  /// 参数：
+  /// - data：待加密的字节数组
+  ///
+  /// 返回：加密后的字节数组（包含密文与认证信息）
+  @Deprecated('使用 encryptData 代替，返回 IV 和密文')
+  Future<Uint8List> encrypt(Uint8List data) async {
+    if (!_isInitialized) await initialize();
+    if (_encrypter == null) {
+      throw Exception('Encryption not initialized');
+    }
+    // 使用固定 IV 保持向后兼容，但不推荐
+    final iv = IV.fromLength(16);
+    final enc = _encrypter!.encryptBytes(data, iv: iv);
+    return Uint8List.fromList(enc.bytes);
+  }
+
+  /// 解密字节数据（旧接口，向后兼容）
+  @Deprecated('使用 decryptData 代替，需要传入 IV')
+  Future<Uint8List> decrypt(Uint8List encryptedData) async {
+    if (!_isInitialized) await initialize();
+    if (_encrypter == null) {
+      throw Exception('Encryption not initialized');
+    }
+    // 使用固定 IV 保持向后兼容
+    final iv = IV.fromLength(16);
+    final dec = _encrypter!.decryptBytes(Encrypted(encryptedData), iv: iv);
     return Uint8List.fromList(dec);
   }
 
@@ -94,27 +130,36 @@ class EncryptionService {
   /// 参数：
   /// - text：待加密的明文字符串
   ///
-  /// 返回：Base64 编码的密文字符串
-  Future<String> encryptString(String text) async {
+  /// 返回：包含 IV 和密文的元组 (iv, ciphertext)
+  ///
+  /// 安全改进：每次加密生成新的随机 IV
+  Future<(String iv, String ciphertext)> encryptString(String text) async {
     if (!_isInitialized) await initialize();
-    if (_encrypter == null || _iv == null) {
+    if (_encrypter == null) {
       throw Exception('Encryption not initialized');
     }
-    return _encrypter!.encrypt(text, iv: _iv).base64;
+
+    final iv = IV.fromSecureRandom(16);
+    final enc = _encrypter!.encrypt(text, iv: iv);
+
+    return (iv.base64, enc.base64);
   }
 
   /// 解密字符串（Base64 编码输入）
   ///
   /// 参数：
-  /// - encryptedText：Base64 编码的密文字符串
+  /// - ivBase64: Base64 编码的初始化向量
+  /// - ciphertextBase64: Base64 编码的密文字符串
   ///
   /// 返回：解密后的明文字符串
-  Future<String> decryptString(String encryptedText) async {
+  Future<String> decryptString(String ivBase64, String ciphertextBase64) async {
     if (!_isInitialized) await initialize();
-    if (_encrypter == null || _iv == null) {
+    if (_encrypter == null) {
       throw Exception('Encryption not initialized');
     }
-    return _encrypter!.decrypt(Encrypted.fromBase64(encryptedText), iv: _iv);
+
+    final iv = IV.fromBase64(ivBase64);
+    return _encrypter!.decrypt(Encrypted.fromBase64(ciphertextBase64), iv: iv);
   }
 
   /// 加密 Map 数据
@@ -123,14 +168,16 @@ class EncryptionService {
   ///
   /// 返回：包含以下键的 Map：
   /// - encrypted: 是否加密（true）
+  /// - iv: Base64 编码的初始化向量
   /// - data: Base64 密文
   /// - timestamp: ISO8601 时间戳
   Future<Map<String, dynamic>> encryptMap(Map<String, dynamic> data) async {
     final jsonString = jsonEncode(data);
-    final encryptedString = await encryptString(jsonString);
+    final (iv, ciphertext) = await encryptString(jsonString);
     return {
       'encrypted': true,
-      'data': encryptedString,
+      'iv': iv,
+      'data': ciphertext,
       'timestamp': DateTime.now().toIso8601String(),
     };
   }
@@ -144,39 +191,34 @@ class EncryptionService {
     if (encryptedData['encrypted'] != true) {
       return Map<String, dynamic>.from(encryptedData);
     }
+    final iv = encryptedData['iv'] as String?;
     final encryptedString = encryptedData['data'] as String?;
-    if (encryptedString == null) return <String, dynamic>{};
-    final decryptedString = await decryptString(encryptedString);
+    if (iv == null || encryptedString == null) return <String, dynamic>{};
+    final decryptedString = await decryptString(iv, encryptedString);
     final decoded = jsonDecode(decryptedString);
     return decoded is Map
         ? Map<String, dynamic>.from(decoded)
         : <String, dynamic>{};
   }
 
-  /// 解密 Map 数据
-  ///
-  /// 若传入的数据未标记为加密（encrypted != true），将原样返回副本。
-
-  /// 重新生成并替换持久化密钥与 IV
+  /// 重新生成并替换持久化密钥
   ///
   /// 注意：更换密钥后，之前的密文将无法解密，请确保有迁移方案。
   Future<void> changeEncryptionKey() async {
     final prefs = await SharedPreferences.getInstance();
     final newKey = Key.fromSecureRandom(32);
-    final newIv = IV.fromSecureRandom(16);
     await prefs.setString('encryption_key', base64Encode(newKey.bytes));
-    await prefs.setString('encryption_iv', base64Encode(newIv.bytes));
-    _iv = newIv;
+    // 移除旧的 IV（不再需要）
+    await prefs.remove('encryption_iv');
     _encrypter = Encrypter(AES(newKey, mode: AESMode.gcm));
   }
 
-  /// 清空持久化的密钥与 IV，并重置初始化状态
+  /// 清空持久化的密钥，并重置初始化状态
   Future<void> clearEncryptionKey() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('encryption_key');
-    await prefs.remove('encryption_iv');
+    await prefs.remove('encryption_iv'); // 移除旧的 IV
     _encrypter = null;
-    _iv = null;
     _isInitialized = false;
   }
 
