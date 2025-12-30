@@ -38,6 +38,8 @@ final clipRepositoryProvider = Provider<ClipRepository>((ref) {
 
 //// 路由提供者
 /// 动态主页组件，根据UI模式切换不同的页面
+///
+/// 使用页面过渡动画增强用户体验
 class DynamicHomePage extends ConsumerWidget {
   const DynamicHomePage({super.key});
 
@@ -46,12 +48,31 @@ class DynamicHomePage extends ConsumerWidget {
     // 直接读取uiModeProvider，确保使用预加载的值避免闪动
     final uiMode = ref.watch(uiModeProvider);
 
-    switch (uiMode) {
-      case UiMode.classic:
-        return const ClassicModePage();
-      case UiMode.compact:
-        return const CompactModePage();
-    }
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (child, animation) {
+        // 使用淡入淡出动画
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.05, 0), // 轻微的滑动效果
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          ),
+        );
+      },
+      child: switch (uiMode) {
+        case UiMode.classic =>
+          const ClassicModePage(key: ValueKey('classic')),
+        case UiMode.compact =>
+          const CompactModePage(key: ValueKey('compact')),
+      },
+    );
   }
 }
 
