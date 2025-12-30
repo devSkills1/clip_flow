@@ -135,6 +135,16 @@ class DatabaseService {
     await db.execute('''
       CREATE INDEX idx_clip_items_is_ocr_extracted ON ${ClipConstants.clipItemsTable}(is_ocr_extracted)
     ''');
+
+    // 复合索引：优化清理操作（收藏状态 + 创建时间）
+    await db.execute('''
+      CREATE INDEX idx_clip_items_favorite_created ON ${ClipConstants.clipItemsTable}(is_favorite, created_at)
+    ''');
+
+    // 复合索引：优化类型+时间查询
+    await db.execute('''
+      CREATE INDEX idx_clip_items_type_created ON ${ClipConstants.clipItemsTable}(type, created_at DESC)
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -177,6 +187,23 @@ class DatabaseService {
       ClipConstants.clipItemsTable,
       'is_ocr_extracted',
     );
+
+    // 创建复合索引（如果不存在）
+    try {
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_clip_items_favorite_created
+        ON ${ClipConstants.clipItemsTable}(is_favorite, created_at)
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_clip_items_type_created
+        ON ${ClipConstants.clipItemsTable}(type, created_at DESC)
+      ''');
+    } on Exception catch (e) {
+      await Log.d(
+        'Composite indexes already exist or creation failed: $e',
+        tag: 'DatabaseService',
+      );
+    }
   }
 
   /// 新增或替换一条剪贴项记录
