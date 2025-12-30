@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// 增强的搜索栏组件 - Material Design 3 风格
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 /// - 简洁的底部边框设计
 /// - 支持加载状态、自动聚焦、紧凑模式
 /// - 清除按钮带 hover 和按压动画
+/// - 内置 300ms 防抖机制，优化搜索性能
 class EnhancedSearchBar extends StatefulWidget {
   /// Creates an enhanced search bar.
   const EnhancedSearchBar({
@@ -17,6 +19,7 @@ class EnhancedSearchBar extends StatefulWidget {
     this.isLoading = false,
     this.autofocus = false,
     this.dense = false,
+    this.debounceDuration = const Duration(milliseconds: 300),
     super.key,
   });
 
@@ -44,12 +47,16 @@ class EnhancedSearchBar extends StatefulWidget {
   /// 是否使用紧凑样式
   final bool dense;
 
+  /// 防抖延迟时间
+  final Duration debounceDuration;
+
   @override
   State<EnhancedSearchBar> createState() => _EnhancedSearchBarState();
 }
 
 class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
   late FocusNode _focusNode;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -60,7 +67,18 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
   @override
   void dispose() {
     _focusNode.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    // 取消之前的 Timer
+    _debounceTimer?.cancel();
+
+    // 创建新的 Timer
+    _debounceTimer = Timer(widget.debounceDuration, () {
+      widget.onChanged(query);
+    });
   }
 
   @override
@@ -88,7 +106,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
         focusNode: _focusNode,
         autofocus: widget.autofocus,
         textAlignVertical: TextAlignVertical.center,
-        onChanged: widget.onChanged,
+        onChanged: _onSearchChanged,
         onSubmitted: widget.onSubmitted,
         decoration: InputDecoration(
           isDense: true,
