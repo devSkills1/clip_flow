@@ -42,6 +42,9 @@ class ClipboardPoller {
   bool _isPaused = false;
   bool _isIdleMode = false;
 
+  // 防止 Timer 回调重复执行的标志
+  bool _isProcessingCallback = false;
+
   // 变化检测状态
   int _lastClipboardSequence = -1;
   int _consecutiveNoChangeCount = 0;
@@ -157,12 +160,20 @@ class ClipboardPoller {
   void _scheduleNextPoll() {
     if (!_isPolling || _isPaused) return;
 
+    // 先取消现有的 Timer，防止竞态条件
+    _pollingTimer?.cancel();
+
     // 智能调度：根据系统负载和历史模式调整
     final adjustedInterval = _getSmartInterval();
 
     _pollingTimer = Timer(adjustedInterval, () async {
       // 如果在等待期间已停止或暂停，直接退出当前回合
       if (!_isPolling || _isPaused) return;
+
+      // 防止回调重复执行
+      if (_isProcessingCallback) return;
+      _isProcessingCallback = true;
+
       try {
         _totalChecks++;
         final hasChanged = await _checkClipboardChange();
@@ -182,6 +193,8 @@ class ClipboardPoller {
         _failedChecks++;
         _onError?.call('轮询检查失败: $e');
         _scheduleNextPoll();
+      } finally {
+        _isProcessingCallback = false;
       }
     });
   }
