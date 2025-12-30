@@ -41,7 +41,14 @@ class ClipboardService {
   /// 剪贴板变更流（广播）
   ///
   /// 订阅该流以获取新的剪贴项事件。
-  Stream<ClipItem> get clipboardStream => _clipboardController.stream;
+  ///
+  /// 防御性检查：如果已关闭或正在关闭，返回空流
+  Stream<ClipItem> get clipboardStream {
+    if (_isShuttingDown || _clipboardController.isClosed) {
+      return const Stream.empty();
+    }
+    return _clipboardController.stream;
+  }
 
   bool _isInitialized = false;
   // 关闭保护：避免在关闭后继续向流推送事件
