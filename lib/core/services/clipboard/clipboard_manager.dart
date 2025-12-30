@@ -49,6 +49,8 @@ class ClipboardManager {
   final List<ClipItem> _writeBuffer = [];
   Timer? _batchWriteTimer;
   static const Duration _batchWriteDelay = Duration(milliseconds: 500);
+  static const int _maxBufferSize = 50; // 批量写入最大缓冲区
+  static const Duration _maxBufferAge = Duration(seconds: 2); // 最大缓冲时间
 
   // 性能监控
   int _totalClipsDetected = 0;
@@ -232,11 +234,17 @@ class ClipboardManager {
   Future<void> _addToWriteBuffer(ClipItem item) async {
     _writeBuffer.add(item);
 
-    // 如果缓冲区满了或者这是高优先级项目，立即写入
-    if (_writeBuffer.length >= 10 || item.type == ClipType.text) {
+    // 检查缓冲区是否需要刷新：达到最大大小、高优先级项目、或超时
+    final bufferAge = _lastClipTime == null
+        ? Duration.zero
+        : DateTime.now().difference(_lastClipTime!);
+    final shouldFlush = _writeBuffer.length >= _maxBufferSize ||
+        item.type == ClipType.text ||
+        bufferAge > _maxBufferAge;
+
+    if (shouldFlush) {
       _scheduleImmediateBatchWrite();
     } else {
-      // 否则延迟批量写入
       _scheduleBatchWrite();
     }
   }
