@@ -10,6 +10,67 @@ import 'package:clip_flow/core/services/storage/index.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+/// SQL 输入验证器
+///
+/// 防止 SQL 注入和输入攻击
+class SqlInputValidator {
+  /// 最大搜索查询长度
+  static const int maxSearchLength = 100;
+
+  /// 危险的 SQL 字符模式
+  static const List<String> dangerousPatterns = [
+    ";--",
+    "/*",
+    "*/",
+    "xp_",
+    "exec(",
+    "execute(",
+    "script:",
+    "javascript:",
+    "union.*select",
+    "drop.*table",
+    "delete.*from",
+    "insert.*into",
+    "update.*set",
+    "'or'1'='1",
+    "' or 1=1",
+    "--",
+    "/*",
+    "*/",
+  ];
+
+  /// 验证并清理搜索查询
+  ///
+  /// 返回清理后的查询，如果输入不安全则抛出异常
+  static String sanitizeSearchQuery(String query) {
+    // 检查长度
+    if (query.length > maxSearchLength) {
+      throw ArgumentError(
+        '搜索查询过长: ${query.length} 字符（最大 $maxSearchLength）',
+      );
+    }
+
+    // 检查危险模式
+    final lowerQuery = query.toLowerCase();
+    for (final pattern in dangerousPatterns) {
+      if (lowerQuery.contains(RegExp(pattern, caseSensitive: false))) {
+        throw ArgumentError(
+          '搜索查询包含不安全字符: $pattern',
+        );
+      }
+    }
+
+    // 移除控制字符
+    final sanitized = query.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').trim();
+
+    if (sanitized.isEmpty) {
+      throw ArgumentError('搜索查询不能为空或仅包含空白字符');
+    }
+
+    return sanitized;
+  }
+}
+
 /// 数据库服务类
 ///
 /// 提供对数据库的增删改查操作
@@ -658,11 +719,14 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
+    // 验证并清理搜索查询，防止 SQL 注入
+    final sanitizedQuery = SqlInputValidator.sanitizeSearchQuery(query);
+
     await Log.i(
       'Searching clip items with OCR text support',
       tag: 'DatabaseService',
       fields: {
-        'query': query,
+        'query': sanitizedQuery,
         'limit': limit,
         'offset': offset,
       },
@@ -672,11 +736,11 @@ class DatabaseService {
     final List<Map<String, dynamic>> maps = await _database!.query(
       ClipConstants.clipItemsTable,
       where: '''
-        content LIKE ? OR 
-        metadata LIKE ? OR 
+        content LIKE ? OR
+        metadata LIKE ? OR
         ocr_text LIKE ?
       ''',
-      whereArgs: ['%$query%', '%$query%', '%$query%'],
+      whereArgs: ['%$sanitizedQuery%', '%$sanitizedQuery%', '%$sanitizedQuery%'],
       orderBy: 'created_at DESC',
       limit: limit,
       offset: offset,
@@ -718,11 +782,14 @@ class DatabaseService {
     if (!_isInitialized) await initialize();
     if (_database == null) throw Exception('Database not initialized');
 
+    // 验证并清理搜索查询，防止 SQL 注入
+    final sanitizedQuery = SqlInputValidator.sanitizeSearchQuery(query);
+
     await Log.i(
       'Searching clip items by type with OCR text support',
       tag: 'DatabaseService',
       fields: {
-        'query': query,
+        'query': sanitizedQuery,
         'type': type?.name,
         'limit': limit,
         'offset': offset,
@@ -730,11 +797,11 @@ class DatabaseService {
     );
 
     var whereClause = '''
-      content LIKE ? OR 
-      metadata LIKE ? OR 
+      content LIKE ? OR
+      metadata LIKE ? OR
       ocr_text LIKE ?
     ''';
-    final whereArgs = ['%$query%', '%$query%', '%$query%'];
+    final whereArgs = ['%$sanitizedQuery%', '%$sanitizedQuery%', '%$sanitizedQuery%'];
 
     // 如果指定了类型，添加类型过滤
     if (type != null) {
@@ -757,12 +824,12 @@ class DatabaseService {
       'Type-specific search completed with OCR text support',
       tag: 'DatabaseService',
       fields: {
-        'query': query,
+        'query': sanitizedQuery,
         'type': type?.name,
         'resultCount': results.length,
         'hasOcrMatches': results.any(
           (item) =>
-              item.ocrText?.toLowerCase().contains(query.toLowerCase()) ??
+              item.ocrText?.toLowerCase().contains(sanitizedQuery.toLowerCase()) ??
               false,
         ),
       },
