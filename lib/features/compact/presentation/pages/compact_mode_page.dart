@@ -416,7 +416,7 @@ class _CompactModePageState extends ConsumerState<CompactModePage> {
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      '没有找到匹配的内容',
+                                      S.of(context)!.searchEmptyTitle,
                                       style: TextStyle(
                                         color: Theme.of(context).brightness == Brightness.dark
                                             ? Colors.white
