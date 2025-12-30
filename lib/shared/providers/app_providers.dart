@@ -66,13 +66,17 @@ class DynamicHomePage extends ConsumerWidget {
           ),
         );
       },
-      child: switch (uiMode) {
-        case UiMode.classic =>
-          const ClassicModePage(key: ValueKey('classic')),
-        case UiMode.compact =>
-          const CompactModePage(key: ValueKey('compact')),
-      },
+      child: _buildPage(uiMode),
     );
+  }
+
+  Widget _buildPage(UiMode uiMode) {
+    switch (uiMode) {
+      case UiMode.classic:
+        return const ClassicModePage(key: ValueKey('classic'));
+      case UiMode.compact:
+        return const CompactModePage(key: ValueKey('compact'));
+    }
   }
 }
 
